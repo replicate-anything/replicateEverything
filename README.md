@@ -13,6 +13,8 @@ repository in special way and adding it to a registry.
 The goal is to make research **transparent, modular, and easily
 reproducible**.
 
+------------------------------------------------------------------------
+
 ## Overview
 
 `replicateEverything` provides a simple interface to:
@@ -25,6 +27,8 @@ reproducible**.
 The system is built around a **registry architecture** where replication
 repositories are indexed and accessed dynamically, making it easier for
 academics papers to be **replicated in one line of code.**
+
+------------------------------------------------------------------------
 
 ## Installation
 
@@ -181,7 +185,7 @@ run_replication(
 
     Warning in readLines(file, warn = readLines.warn): incomplete final line found
     on
-    '/var/folders/wb/t2ltn_4d6dvgx6qgpcq4fq8c0000gn/T//RtmpbIGF1Q/filedc746f68fdcb.yml'
+    '/var/folders/wb/t2ltn_4d6dvgx6qgpcq4fq8c0000gn/T//RtmptMxYKM/filedd284b32c2e5.yml'
 
     [1] "fig_1" "tab_1"
 

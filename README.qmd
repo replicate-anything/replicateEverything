@@ -11,6 +11,7 @@ The package allows users to reproduce figures and tables from academic papers us
 
 The goal is to make research **transparent, modular, and easily reproducible**.
 
+---
 
 
 ## Overview
@@ -24,7 +25,7 @@ The goal is to make research **transparent, modular, and easily reproducible**.
 
 The system is built around a **registry architecture** where replication repositories are indexed and accessed dynamically, making it easier for academics papers to be **replicated in one line of code.**
 
-
+---
 
 
 ## Installation
