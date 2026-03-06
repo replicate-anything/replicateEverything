@@ -7,12 +7,11 @@ A platform for **reproducing academic research results programmatically
 and simply**.
 
 The package allows users to reproduce figures and tables from academic
-papers using a standardized replication registry.
+papers using a standardized way by structuring the replication
+repository in special way and adding it to a registry.
 
 The goal is to make research **transparent, modular, and easily
 reproducible**.
-
-------------------------------------------------------------------------
 
 ## Overview
 
@@ -24,9 +23,8 @@ reproducible**.
 - run full paper replications
 
 The system is built around a **registry architecture** where replication
-repositories are indexed and accessed dynamically.
-
-------------------------------------------------------------------------
+repositories are indexed and accessed dynamically, making it easier for
+academics papers to be **replicated in one line of code.**
 
 ## Installation
 
@@ -40,7 +38,7 @@ if (!requireNamespace("replicateEverything", quietly = TRUE)) {
 }
 ```
 
-## Load Package
+# Load Package
 
 Load the package in your environment.
 
@@ -48,7 +46,7 @@ Load the package in your environment.
 library(replicateEverything)
 ```
 
-# How the Package Works
+## How the Package Works
 
 The package in this very early version allows users to search for papers
 in the repository, find the replication repository for a paper, talk
@@ -56,7 +54,11 @@ look at the list of existing replications, reproduce a specific result
 (e.g. **Fig.1**), reproduce all outputs (i.e. **Fig.1**, **Fig.2**,
 **Table 1**, etc).
 
-## Search Papers
+## Functions
+
+The following fuctions allows you do execute the aim of the package.
+
+### Search Papers
 
 To search papers, you should run the command below. You have to specify
 closely associated words with the paper.
@@ -94,7 +96,7 @@ search_papers("employment")
 You can use many **key words** to search from the **title** of a paper
 to see if it is in the directory.
 
-## Find Replication Repository
+### Find Replication Repository
 
 The way the package is set up now, researchers will have to outline
 their Github repository is an aligned way to allows it to be merge into
@@ -110,7 +112,7 @@ find_repo("10.1257/aer.20221688")
 
     [1] "replicate-anything/aer-replications"
 
-## List Repository
+### List Repository
 
 The `list_replications` function allows you to look up **structures** in
 an uploaded repository. It also allows you to see some important
@@ -163,7 +165,7 @@ list_replications("10.1257/aer.20221688")
     [[2]]$dependencies
     [1] "dplyr" "gt"   
 
-## Run Replication
+### Run Replication
 
 The `run_replication` function allows you to run **single** replication
 for a specific table or figure. This must have already be specified in
@@ -179,7 +181,7 @@ run_replication(
 
     Warning in readLines(file, warn = readLines.warn): incomplete final line found
     on
-    '/var/folders/wb/t2ltn_4d6dvgx6qgpcq4fq8c0000gn/T//RtmpH36DPm/filed64e17af37aa.yml'
+    '/var/folders/wb/t2ltn_4d6dvgx6qgpcq4fq8c0000gn/T//RtmpbIGF1Q/filedc746f68fdcb.yml'
 
     [1] "fig_1" "tab_1"
 
@@ -189,12 +191,14 @@ run_replication(
 
 ![](README_files/figure-commonmark/unnamed-chunk-6-1.png)
 
-## Replicate Paper
+### Replicate Paper
 
 This is the **single most important function** in this
 `replicateEverything` package. It allows you to replicate an entire
 paper. With a single line of code, you can be able to generate all
 figures at one go. See how it works below:
+
+#### option A
 
 ``` r
 replicate_paper("10.1257/aer.20221688")
@@ -213,7 +217,7 @@ replicate_paper("10.1257/aer.20221688")
     2     B    20
     3     C    30
 
-# System Architecture
+## System Architecture
 
 ``` mermaid
 
@@ -222,7 +226,7 @@ flowchart LR
   B --> C{replicateEverything}
 ```
 
-## Registry
+### Registry
 
 The registry indexes all replication repositories. See an example entry:
 
@@ -235,7 +239,7 @@ The registry indexes all replication repositories. See an example entry:
         "journal": "American Economic Review",
         "repo": "replicate-anything/aer-replications"
 
-## Repositories Structures
+### Repositories Structures
 
 Every replication repository **MUST** follows a standardized structure.
 All data must be store in `processed` folder. All code must be stored in
@@ -253,7 +257,7 @@ the `code` folder.
              fig_1.R
              tab_1.R
 
-### Example
+#### Example
 
 See the example below for structure of a repo for a single figure. This
 should similarly work for a single table as well. The repo should have
@@ -268,29 +272,71 @@ the data and code as seen below.
           code/
              fig_1.R
 
-# Metadata Specification
+## Metadata Specification
 
 Each paper must include a metadata file.
 
     replication.yml
 
-## Example
+### Example
 
 Ideally, make sure to include if a table has `dependencies`.
 
-# Writing Replication Scripts
+
+    paper:
+      title: Market Design and Moral Behavior
+      authors:
+        - Bartling, Björn
+        - Fehr, Ernst
+      year: 2024
+      doi: 10.1257/aer.20221688
+      journal: American Economic Review
+
+    replications:
+
+      - id: fig_1
+        type: figure
+        description: Example figure
+        data: processed/fig_1.csv
+        code: code/fig_1.R
+
+      - id: tab_1
+        type: table
+        description: Example table
+        data: processed/tab_1.csv
+        code: code/tab_1.R
+        dependencies:
+          - dplyr
+          - gt
+
+## Writing Replication Scripts
 
 Replications Scripts **must** define the `generate` function. For
 figure, use `generate_figure` and for table, use `generate_table`.
 
-## Figures
+### Figures
 
-## Tables
+
+    generate_figure <- function(data){
+
+      ggplot2::ggplot(data, ggplot2::aes(group,value)) +
+        ggplot2::geom_col()
+
+    }
+
+### Tables
+
+
+    generate_table <- function(data){
+
+      dplyr::summarise(data, mean_value = mean(value))
+
+    }
 
 This allows the the `package` to automatically: \* download the datasets
 \* loads dependencies \* sources the script \* runs the function
 
-# Contributing to a Repository
+## Contributing to a Repository
 
 This is a very important aspect in our quest to create a reprocible
 research culture so please follow the instructions below keenly:
@@ -307,7 +353,7 @@ See example below:
 
     papers/10.xxxx_xxxx/
 
-# Developer Workflow
+## Developer Workflow
 
 Start by cloning the repository:
 
@@ -315,12 +361,16 @@ Start by cloning the repository:
 
 Install the dependencies:
 
+    devtools::install()
+
 Run package checks:
+
+    devtools::check()
 
 # Project Status
 
-This idea is conceived by [Macartan
-Humphreys](https://github.com/replicate-anything/registry), Director of
-the IPI Research Unit at [WZB](https://www.wzb.eu) in 2024. The project
-is under active development at the moment. All feedback are welcome.
-Feel free to [email me](mailto:vermon.washington@wzb.eu).
+This idea was conceived by [Macartan
+Humphreys](https://macartan.github.io), Director of the IPI Research
+Unit at [WZB](https://www.wzb.eu) in 2024. The project is under active
+development at the moment. All feedback are welcome. Feel free to [email
+me](mailto:vermon.washington@wzb.eu).
