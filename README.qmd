@@ -37,7 +37,7 @@ if (!requireNamespace("replicateEverything", quietly = TRUE)) {
 }
 ```
 
-
+---
 
 # Load Package 
 Load the package in your environment. 
@@ -47,6 +47,8 @@ library(replicateEverything)
 
 ## How the Package Works
 The package in this very early version allows users to search for papers in the repository, find the replication repository for a paper, talk look at the list of existing replications, reproduce a specific result (e.g. **Fig.1**), reproduce all outputs (i.e. **Fig.1**, **Fig.2**, **Table 1**, etc).  
+
+---
 
 ## Functions 
 The following fuctions allows you do execute the aim of the package. 
@@ -97,12 +99,7 @@ This is the **single most important function** in this `replicateEverything` pac
 ```{r}
 replicate_paper("10.1257/aer.20221688")
 ```
-
-### option B
-```{r}
-p <- replicate_paper("10.1257/aer.20221688")
-print(p)
-```
+---
 
 ## System Architecture
 ```{mermaid}
@@ -156,7 +153,7 @@ papers/
 
 ```
 
-
+---
 ## Metadata Specification 
 Each paper must include a metadata file. 
 ```{}
@@ -195,6 +192,8 @@ replications:
 
 ```
 
+---
+
 ## Writing Replication Scripts 
 Replications Scripts **must** define the `generate` function. For figure, use `generate_figure` and for table, use `generate_table`. 
 
@@ -226,6 +225,7 @@ This allows the the `package` to automatically:
 * sources the script 
 * runs the function 
 
+---
 ## Contributing to a Repository 
 This is a very important aspect in our quest to create a reprocible research culture so please follow the instructions below keenly: 
 
@@ -243,6 +243,7 @@ See example below:
 papers/10.xxxx_xxxx/
 ```
 
+---
 ## Developer Workflow 
 Start by cloning the repository: 
 
@@ -259,7 +260,7 @@ Run package checks:
 ```{}
 devtools::check()
 ```
-
+---
 
 # Project Status
 This idea was conceived by [Macartan Humphreys](https://macartan.github.io), Director of the IPI Research Unit at [WZB](https://www.wzb.eu) in 2024. The project is under active development at the moment. All feedback are welcome. Feel free to [email me](mailto:vermon.washington@wzb.eu). 
