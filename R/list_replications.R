@@ -19,7 +19,7 @@ list_replications <- function(doi){
     "/replication.yml"
   )
 
-  print(meta_url)
+  suppressWarnings(print(meta_url))
 
   meta <- yaml::read_yaml(meta_url)
 
