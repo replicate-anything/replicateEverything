@@ -58,13 +58,13 @@ The following fuctions allows you do execute the aim of the package.
 To search papers, you should run the command below. You have to specify closely associated words with the paper. 
 ```{r}
 # first option 
-search_papers("minimum wage")
+search_papers("causes")
 
 # second option 
-search_papers("wage")
+search_papers("effects")
 
 # third option
-search_papers("employment")
+search_papers("mediators")
 
 ```
 
@@ -74,21 +74,21 @@ You can use many **key words** to search from the **title** of a paper to see if
 The way the package is set up now, researchers will have to outline their Github repository is an aligned way to allows it to be merge into the [Registry](https://github.com/replicate-anything/registry). More details on this later. However, you can use the `find_repo` function and the paper's `DOI` to located and look up a paper's repository from the registry. 
 ```{r}
 # find repo
-find_repo("10.1257/aer.20221688")
+find_repo("10.1177/00491241211036161")
 ```
 
 
 ### List Repository 
 The `list_replications` function allows you to look up **structures** in an uploaded repository. It also allows you to see some important **$id* that are subsequently used in key replication functions in the package, for example `fig_1`.
 ```{r}
-list_replications("10.1257/aer.20221688")
+list_replications("10.1177/00491241211036161")
 ```
 
 ### Run Replication
 The `run_replication` function allows you to run **single** replication for a specific table or figure. This must have already be specified in the root directory on Github. More details on this later when discussing directory. 
 ```{r}
 run_replication(
-  "10.1257/aer.20221688",
+  "10.1177/00491241211036161",
   "fig_1"
 )
 ```
@@ -98,7 +98,7 @@ This is the **single most important function** in this `replicateEverything` pac
 
 #### option A
 ```{r}
-replicate_paper("10.1257/aer.20221688")
+replicate_paper("10.1177/00491241211036161")
 ```
 
 
@@ -193,6 +193,45 @@ replications:
 
 ```
 
+## Contributor's Workflow
+
+### Step 1: Get DOI Metatdata 
+```{r}
+get_doi_metadata("10.1177/00491241211036161")
+```
+
+### Step 2: Create Template 
+This create a folder on your local machine. Now, you will have to upload the final processed data used for generating the figure as well as the code in their exact areas. Read the `Writing Scripts` section below for how to include the `generate` function into your code.  
+```{r}
+#create a local folder 
+create_replication_template("10.1177/00491241211036161")
+
+#see what is in there. 
+list_replications("10.1177/00491241211036161")
+```
+
+### Step 3: Clone the Registry Repository from Github
+Now, clone the Git repo: 
+```{}
+git clone https://github.com/replicate-anything/registry
+```
+
+### Step 4: Move local folder to Github cloned repo
+At this point, you would have added your data and code to the folder on your local machine. A good text would be to make sure that you ensure that the code runs in your `r console`. 
+```{}
+mv 10.1257_app.20230717 registry/papers/
+```
+
+### Step 5: Commit and Push
+Commit your changes in the folder and then push them to remotes. 
+```{}
+git add .
+git commit -m "Add replication for 10.1257/app.20230717"
+git push
+```
+
+### Step 6: Open a Pull Request. 
+That's it! Thank you for embracing a **transparent, modular, and easily reproducible** research culture. 
 
 
 ## Writing Replication Scripts 
@@ -264,4 +303,4 @@ devtools::check()
 
 
 # Project Status
-This idea was conceived by [Macartan Humphreys](https://macartan.github.io), Director of the IPI Research Unit at [WZB](https://www.wzb.eu) in 2024. The project is under active development at the moment. All feedback are welcome. Feel free to [email me](mailto:vermon.washington@wzb.eu). 
+This idea was conceived and inspired by [Macartan Humphreys](https://macartan.github.io), Director of the IPI Research Unit at [WZB](https://www.wzb.eu) in 2024. The project is under active development at the moment. All feedback are welcome. Feel free to [email me](mailto:vermon.washington@wzb.eu) or [Marcatan](mailto:macartan.humphreys@zwb.eu). 

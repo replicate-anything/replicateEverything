@@ -7,6 +7,9 @@
 #' @export
 replicate_paper <- function(doi){
 
+  # normalize DOI first
+  doi <- normalize_doi(doi)
+
   repo <- find_repo(doi)
 
   doi_path <- gsub("/", "_", doi)
@@ -35,15 +38,20 @@ replicate_paper <- function(doi){
 
     message("Running: ", rep$id)
 
-    data_url <- paste0(base_url, "/", rep$data)
+    # load data if provided
+    if(!is.null(rep$data)){
 
-    if(!(rep$data %in% names(data_cache))){
+      data_url <- paste0(base_url, "/", rep$data)
 
-      data_cache[[rep$data]] <- read.csv(data_url)
+      if(!(rep$data %in% names(data_cache))){
+        data_cache[[rep$data]] <- read.csv(data_url)
+      }
 
+      data <- data_cache[[rep$data]]
+
+    } else {
+      data <- NULL
     }
-
-    data <- data_cache[[rep$data]]
 
     code_url <- paste0(base_url, "/", rep$code)
 
@@ -54,15 +62,11 @@ replicate_paper <- function(doi){
     source(tmp)
 
     if(rep$type == "figure"){
-
       print(generate_figure(data))
-
     }
 
     if(rep$type == "table"){
-
       print(generate_table(data))
-
     }
 
   }

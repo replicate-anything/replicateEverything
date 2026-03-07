@@ -7,6 +7,8 @@
 #' @export
 find_repo <- function(doi){
 
+  doi <- normalize_doi(doi)
+
   index <- load_index()
 
   row <- index[index$doi == doi, ]
@@ -15,9 +17,7 @@ find_repo <- function(doi){
     stop("DOI not found in replication index")
   }
 
-  # return only first match
   repo <- row$repo[1]
 
   repo
-
 }

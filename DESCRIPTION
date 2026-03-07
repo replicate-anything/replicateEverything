@@ -1,9 +1,13 @@
 Package: replicateEverything
-Title: Replicate Empirical Papers 
+Title: Replicate Empirical Research Papers
 Version: 0.1.0
-Authors@R: 
-    person("Vermon", "Washington", , "vermon.washington@wzb.eu", role = c("aut", "cre"))
-Description: We sort of want to make sure that empirical research can be replicated. This paper allows you to do exactly that.
+Authors@R: c(
+    person("Macartan", "Humphreys", email = "macartan.humphreys@wzb.eu", role = c("aut", "cre")),
+    person("Vermon", "Washington", email = "vermon.washington@wzb.eu", role = c("aut", "cre"))
+)
+Description: Tools for discovering and running computational replications of empirical research papers. 
+    The package connects to a replication registry, retrieves replication materials 
+    (data, code, and metadata), and reproduces figures and tables from published studies.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

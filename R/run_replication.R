@@ -9,7 +9,15 @@
 #' @export
 run_replication <- function(doi, what){
 
-  repo <- find_repo(doi)
+  repo <- tryCatch(
+    find_repo(doi),
+    error = function(e) NULL
+  )
+
+  if(is.null(repo)){
+    message("Using local replication folder")
+    base_path <- gsub("/", "_", doi)
+  }
 
   doi_path <- gsub("/", "_", doi)
 
