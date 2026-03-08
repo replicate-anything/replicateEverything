@@ -217,7 +217,7 @@ git clone https://github.com/replicate-anything/registry
 ```
 
 ### Step 4: Move local folder to Github cloned repo
-At this point, you would have added your data and code to the folder on your local machine. A good text would be to make sure that you ensure that the code runs in your `r console`. 
+At this point, you would have added your data and code to the folder on your local machine. A good text would be to make sure that you ensure that the code runs in your `R console`. 
 ```{}
 mv 10.1257_app.20230717 registry/papers/
 ```
@@ -300,6 +300,9 @@ Run package checks:
 ```{}
 devtools::check()
 ```
+
+## Report Bugs 
+To report bugs or fixes, please create an issues [here](https://github.com/replicate-anything/replicateEverything/issues). 
 
 
 # Project Status
