@@ -158,7 +158,8 @@ list_replications("10.1177/00491241211036161")
 The `run_replication` function allows you to run **single** replication
 for a specific table or figure. This must have already be specified in
 the root directory on Github. More details on this later when discussing
-`contribution` below. See the output in this article.
+`contribution` below. See the output in this
+[article](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
 
 ``` R
 run_replication(
@@ -167,12 +168,13 @@ run_replication(
 )
 ```
 
-### Replicate the entire aper
+### Replicate the entire paper
 
 This is the **single most important function** in this
 `replicateEverything` package. It allows you to replicate an entire
 paper. With a single line of code, you can be able to generate all
-figures at one go. See the output in this article.
+figures at one go. See the output in this
+[article](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
 
 ``` R
 replicate_paper("10.1177/00491241211036161")
