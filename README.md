@@ -38,7 +38,7 @@ and Political Inequality](https://wzb-ipi.github.io/) Research Group at
 he gave to a $Lab^2$ audience in 2024. The project is under active
 development at the moment. All feedback are welcome. Feel free to [email
 me](mailto:vermon.washington@wzb.eu) or
-[Marcatan](mailto:macartan.humphreys@zwb.eu).
+[Macartan](mailto:macartan.humphreys@zwb.eu).
 
 ## Installation
 
