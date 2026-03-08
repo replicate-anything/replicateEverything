@@ -22,7 +22,8 @@ Suggests:
     testthat (>= 3.0.0),
     quarto, 
     knitr,
-    rmarkdown
+    rmarkdown, 
+    DiagrammeR
 URL: https://github.com/replicate-anything/replicateEverything, https://replicate-anything.github.io/replicateEverything/
 BugReports: https://github.com/replicate-anything/replicateEverything/issues
 Roxygen: list(markdown = TRUE)
