@@ -23,6 +23,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: quarto-dev/quarto-actions/setup@v2
       - uses: actions/checkout@v4
 
       - uses: r-lib/actions/setup-pandoc@v2
