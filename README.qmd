@@ -1,11 +1,11 @@
 ---
-title: "replicateEverything"
+title: "Overview of the replicateEverything Package"
 format: gfm
 ---
 
 # replicateEverything
 
-A platform for **reproducing academic research results programmatically and simply**.
+A package for **reproducing academic research results programmatically and simply**.
 
 The package allows users to reproduce figures and tables from academic papers using a standardized way by structuring the replication repository in special way and adding it to a registry.
 
@@ -25,7 +25,10 @@ The goal is to make research **transparent, modular, and easily reproducible**.
 
 The system is built around a **registry architecture** where replication repositories are indexed and accessed dynamically, making it easier for academics papers to be **replicated in one line of code.**
 
----
+
+## Project Status
+The inspiration to create this package came from an idea by [Macartan Humphreys](https://macartan.github.io), Director of the [Institutions and Political Inequality](https://wzb-ipi.github.io/) Research Group at [WZB](https://www.wzb.eu) in a [talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2) he gave to a $Lab^2$ audience in 2024. The project is under active development at the moment. All feedback are welcome. Feel free to [email me](mailto:vermon.washington@wzb.eu) or [Marcatan](mailto:macartan.humphreys@zwb.eu). 
+
 
 
 ## Installation
@@ -258,6 +261,7 @@ generate_figure <- function(data){
 
 ```
 
+
 ### Tables 
 See a very simple example below. This generates a table. 
 ```{}
@@ -270,16 +274,16 @@ generate_table <- function(data){
 ```
 
 This allows the the `package` to automatically: 
-(@) download the datasets
-(@) loads dependencies 
-(@) sources the script 
-(@) runs the function 
+- download the dataset(s)
+- loads all dependencies 
+- sources the replication script 
+- runs the function 
 
 
 ## Contributing to a Repository 
 This is a very important aspect in our quest to create a reprocible research culture so please follow the instructions below keenly: 
 
-1. Fork the replication repository
+1. Fork or the replication repository
 
 2. Add a new paper directory
 
@@ -288,14 +292,8 @@ This is a very important aspect in our quest to create a reprocible research cul
 4. Submit a pull request
 
 
-See example below: 
-```{}
-papers/10.xxxx_xxxx/
-```
-
-
 ## Developer Workflow 
-Start by cloning the repository: 
+Start by cloning the repository. Look at the steps below for starter. After including features or making changes to the package, make sure to submit a [pull request](https://github.com/replicate-anything/replicateEverything/pulls) so as to merge it with the updated version of the software.  
 
 ```{}
 git clone https://github.com/replicate-anything/replicateEverything
@@ -311,9 +309,6 @@ Run package checks:
 devtools::check()
 ```
 
+
 ## Report Bugs 
-To report bugs or fixes, please create an issues [here](https://github.com/replicate-anything/replicateEverything/issues). 
-
-
-# Project Status
-The inspiration to create this package came from an idea which was conceived by [Macartan Humphreys](https://macartan.github.io), Director of the [Institutions and Political Inequality](https://wzb-ipi.github.io/) Research Group at [WZB](https://www.wzb.eu) in a [talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2) he gave to a $Lab^2$ audience in 2024. The project is under active development at the moment. All feedback are welcome. Feel free to [email me](mailto:vermon.washington@wzb.eu) or [Marcatan](mailto:macartan.humphreys@zwb.eu). 
+To report bugs or fixes, please create an issues [here](https://github.com/replicate-anything/replicateEverything/issues).
