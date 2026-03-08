@@ -63,14 +63,15 @@ library(replicateEverything)
 ## How the Package Works
 
 The package in this very early version allows users to search for papers
-in the repository, find the replication repository for a paper, talk
+in the repository, find the replication repository for a paper, take a
 look at the list of existing replications, reproduce a specific result
 (e.g. **Fig.1**), reproduce all outputs (i.e. **Fig.1**, **Fig.2**,
 **Table 1**, etc).
 
 ## Functions
 
-The following fuctions allows you do execute the aim of the package.
+The following are a few of the functions allows you do execute the aim
+of the package.
 
 ### Search Papers
 
