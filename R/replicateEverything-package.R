@@ -22,39 +22,27 @@
 #'
 #' Retrieve metadata for a paper:
 #'
-#' \donttest{
 #' get_doi_metadata("10.1177/00491241211036161")
-#' }
 #'
-#' Search the replication registry:
+#' Search the registry:
 #'
-#' \donttest{
 #' search_papers("causal")
-#' }
 #'
-#' Create a template for contributing a replication:
+#' Create a replication template:
 #'
-#' \donttest{
 #' create_replication_template("10.1177/00491241211036161")
-#' }
 #'
-#' List available replications:
+#' List replications:
 #'
-#' \donttest{
 #' list_replications("10.1177/00491241211036161")
-#' }
 #'
 #' Run a single replication:
 #'
-#' \donttest{
-#' run_replication("10.1177/00491241211036161", "fig_1")
-#' }
+#' run_replication("10.1177/00491241211036161","fig_1")
 #'
-#' Replicate all results from a paper:
+#' Replicate an entire paper:
 #'
-#' \donttest{
 #' replicate_paper("10.1177/00491241211036161")
-#' }
 #'
 #' @section Registry:
 #'
