@@ -6,7 +6,7 @@ library(replicateEverything)
 
 ### System Architecture
 
-The is the system architecture on which this package is built.
+This is the system architecture on which this package is built.
 
 ``` mermaid
 flowchart LR
@@ -23,14 +23,14 @@ run_replication(
 )
 ```
 
-    ## [1] "fig_1"
+    [1] "fig_1"
 
-    ## Using repository: replicate-anything/registry
+    Using repository: replicate-anything/registry
 
-    ## Replication type: figure
+    Replication type: figure
 
-    ## Ignoring unknown labels:
-    ## • shape : "ρ"
+    Ignoring unknown labels:
+    • shape : "ρ"
 
 ![](replication-example_files/figure-html/unnamed-chunk-3-1.png)
 
@@ -40,13 +40,11 @@ run_replication(
 replicate_paper("10.1177/00491241211036161")
 ```
 
-    ## Replicating: Bounding Causes of Effects With Mediators
+    Replicating: Bounding Causes of Effects With Mediators
 
-    ## 
+    Running: fig_1
 
-    ## Running: fig_1
-
-    ## Ignoring unknown labels:
-    ## • shape : "ρ"
+    Ignoring unknown labels:
+    • shape : "ρ"
 
 ![](replication-example_files/figure-html/unnamed-chunk-4-1.png)

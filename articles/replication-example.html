@@ -10,9 +10,26 @@
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Replication Examples Using Code">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><script src="replication-example_files/libs/quarto-html/popper.min.js"></script><script src="replication-example_files/libs/quarto-html/tippy.umd.min.js"></script><link href="replication-example_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="replication-example_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<script src="replication-example_files/libs/quarto-diagram/mermaid.min.js"></script><script src="replication-example_files/libs/quarto-diagram/mermaid-init.js"></script><link href="replication-example_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Replication Examples Using Code">
 </head>
 <body>
+<p>
+
+
+
+
+
+
+
+
+  mermaid.html
+
+  
+
+  </p>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -39,65 +56,184 @@
 
 
   </div>
-</nav><div class="container template-article">
-
-
-
-
+</nav><div class="container template-quarto">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Replication Examples Using Code</h1>
-            
-      
-      <small class="dont-index">Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/main/vignettes/replication-example.Rmd" class="external-link"><code>vignettes/replication-example.Rmd</code></a></small>
-      <div class="d-none name"><code>replication-example.Rmd</code></div>
+
+
+
+
+      <small class="dont-index">Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/main/vignettes/replication-example.qmd" class="external-link"><code>vignettes/replication-example.qmd</code></a></small>
+      <div class="d-none name"><code></code></div>
     </div>
 
-    
-    
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+
+
+
+
+
+    <div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="system-architecture">System Architecture<a class="anchor" aria-label="anchor" href="#system-architecture"></a>
-</h3>
-<p>The is the system architecture on which this package is built.</p>
-<pre class="mermaid"><code>
-flowchart LR
-  A[Registry] --&gt; B(Replication Repositories)
-  B --&gt; C{replicateEverything}</code></pre>
 </div>
-<div class="section level2">
-<h2 id="run-single-replication">Run single replication<a class="anchor" aria-label="anchor" href="#run-single-replication"></a>
+<section class="section level3"><h3 id="system-architecture">System Architecture<a class="anchor" aria-label="anchor" href="#system-architecture"></a>
+</h3>
+<p>This is the system architecture on which this package is built.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p>
+<figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+  A[Registry] --&gt; B(Replication Repositories)
+  B --&gt; C{replicateEverything}
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</section><section class="section level2"><h2 id="run-single-replication">Run single replication<a class="anchor" aria-label="anchor" href="#run-single-replication"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span></span>
 <span>  <span class="st">"10.1177/00491241211036161"</span>,</span>
 <span>  <span class="st">"fig_1"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] "fig_1"</span></span></code></pre>
-<pre><code><span><span class="co">## Using repository: replicate-anything/registry</span></span></code></pre>
-<pre><code><span><span class="co">## Replication type: figure</span></span></code></pre>
-<pre><code><span><span class="co">## Ignoring unknown labels:</span></span>
-<span><span class="co">## <span style="color: #00BBBB;">•</span> <span style="color: #00BB00;">shape</span> : <span style="color: #0000BB;">"ρ"</span></span></span></code></pre>
-<p><img src="replication-example_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="1200"></p>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "fig_1"</code></pre>
 </div>
-<div class="section level2">
-<h2 id="replicate-and-entire-paper">Replicate and entire paper<a class="anchor" aria-label="anchor" href="#replicate-and-entire-paper"></a>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using repository: replicate-anything/registry</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Replication type: figure</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Ignoring unknown labels:
+• shape : "ρ"</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="replication-example_files/figure-html/unnamed-chunk-3-1.png" width="1200"></p>
+</figure>
+</div>
+</div>
+</div>
+</section><section class="section level2"><h2 id="replicate-and-entire-paper">Replicate and entire paper<a class="anchor" aria-label="anchor" href="#replicate-and-entire-paper"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Replicating: Bounding Causes of Effects With Mediators</span></span></code></pre>
-<pre><code><span><span class="co">## </span></span></code></pre>
-<pre><code><span><span class="co">## Running: fig_1</span></span></code></pre>
-<pre><code><span><span class="co">## Ignoring unknown labels:</span></span>
-<span><span class="co">## <span style="color: #00BBBB;">•</span> <span style="color: #00BB00;">shape</span> : <span style="color: #0000BB;">"ρ"</span></span></span></code></pre>
-<p><img src="replication-example_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="1200"></p>
+<div class="cell-output cell-output-stderr">
+<pre><code>Replicating: Bounding Causes of Effects With Mediators</code></pre>
 </div>
-  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
-    </nav></aside>
+<div class="cell-output cell-output-stderr">
+<pre><code></code></pre>
 </div>
-
+<div class="cell-output cell-output-stderr">
+<pre><code><span><span class="va">Running</span><span class="op">:</span> <span class="va">fig_1</span></span></code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Ignoring unknown labels:
+• shape : "ρ"</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure><p><img src="replication-example_files/figure-html/unnamed-chunk-4-1.png" width="1200"></p>
+</figure>
+</div>
+</div>
+</div>
+</section><script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'light-border',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config);
+    }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script></main>
+</div>
 
 
     <footer><div class="pkgdown-footer-left">
@@ -115,5 +251,6 @@ flowchart LR
 
 
 
-  </body>
+  
+</body>
 </html>
