@@ -20,9 +20,12 @@ Imports:
 Suggests:
     ggplot2,
     testthat (>= 3.0.0),
-    quarto
+    quarto, 
+    knitr,
+    rmarkdown
 URL: https://github.com/replicate-anything/replicateEverything, https://replicate-anything.github.io/replicateEverything/
 BugReports: https://github.com/replicate-anything/replicateEverything/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-VignetteBuilder: quarto
+VignetteBuilder: knitr
+Config/Needs/website: pkgdown

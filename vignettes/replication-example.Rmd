@@ -2,7 +2,7 @@
 title: "Replication Examples Using Code"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{replication-example}
+  %\VignetteIndexEntry{Replication Examples Using Code}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
