@@ -2,13 +2,24 @@
 % Please edit documentation in R/replicate_paper.R
 \name{replicate_paper}
 \alias{replicate_paper}
-\title{Replicate an entire paper}
+\title{Replicate all results from a paper}
 \usage{
 replicate_paper(doi)
 }
 \arguments{
-\item{doi}{Character DOI of the paper.}
+\item{doi}{Character. DOI of the paper.}
 }
 \description{
-Runs all replications (figures and tables) listed in the metadata.
+Runs all registered replications (figures and tables) for a given paper.
+}
+\details{
+The function retrieves replication metadata from the registry,
+downloads required data and scripts, and executes each replication
+sequentially.
+}
+\examples{
+\dontrun{
+replicate_paper("10.1177/00491241211036161")
+}
+
 }

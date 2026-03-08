@@ -1,9 +1,19 @@
-#' Replicate an entire paper
+#' Replicate all results from a paper
 #'
-#' Runs all replications (figures and tables) listed in the metadata.
+#' Runs all registered replications (figures and tables) for a given paper.
 #'
-#' @param doi Character DOI of the paper.
-#' @importFrom utils read.csv download.file
+#' @param doi Character. DOI of the paper.
+#'
+#' @details
+#' The function retrieves replication metadata from the registry,
+#' downloads required data and scripts, and executes each replication
+#' sequentially.
+#'
+#' @examples
+#' \dontrun{
+#' replicate_paper("10.1177/00491241211036161")
+#' }
+#'
 #' @export
 replicate_paper <- function(doi){
 

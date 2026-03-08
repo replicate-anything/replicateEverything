@@ -2,13 +2,23 @@
 % Please edit documentation in R/find_repo.R
 \name{find_repo}
 \alias{find_repo}
-\title{Find replication repository}
+\title{Find the repository for a paper replication}
 \usage{
 find_repo(doi)
 }
 \arguments{
-\item{doi}{Character DOI of the paper.}
+\item{doi}{Character. DOI of the paper.}
+}
+\value{
+Character string containing the GitHub repository name.
 }
 \description{
-Returns the GitHub repository that hosts replications for a paper.
+Looks up the replication registry to determine which repository
+contains the replication materials for a given DOI.
+}
+\examples{
+\dontrun{
+find_repo("10.1177/00491241211036161")
+}
+
 }

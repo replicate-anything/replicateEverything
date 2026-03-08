@@ -1,11 +1,17 @@
-#' Run a replication
+#' Run a single replication
 #'
-#' Reproduces a single figure or table from a paper using the
-#' replication metadata stored in the registry.
+#' Executes a specific replication (figure or table) for a paper.
 #'
-#' @param doi Character. The DOI of the paper.
-#' @param what Character. The replication ID (e.g., "fig_1", "tab_1").
-#' @importFrom utils read.csv download.file
+#' @param doi Character. DOI of the paper.
+#' @param what Character. Replication identifier (e.g., "fig_1").
+#'
+#' @return A plot or table produced by the replication code.
+#'
+#' @examples
+#' \dontrun{
+#' run_replication("10.1177/00491241211036161", "fig_1")
+#' }
+#'
 #' @export
 run_replication <- function(doi, what){
 

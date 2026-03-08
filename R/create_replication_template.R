@@ -1,10 +1,18 @@
 #' Create a replication template
 #'
-#' Creates a folder structure and template files for replicating a paper.
+#' Generates a local folder structure for contributing a new replication
+#' to the replication registry. The template includes metadata,
+#' example data, and example scripts.
 #'
-#' @param doi Character DOI of the paper.
+#' @param doi Character. DOI of the paper.
 #'
-#' @importFrom utils write.csv
+#' @return Creates a folder containing replication scaffolding.
+#'
+#' @examples
+#' \dontrun{
+#' create_replication_template("10.1177/00491241211036161")
+#' }
+#'
 #' @export
 create_replication_template <- function(doi){
 

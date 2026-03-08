@@ -1,8 +1,16 @@
-#' Find replication repository
+#' Find the repository for a paper replication
 #'
-#' Returns the GitHub repository that hosts replications for a paper.
+#' Looks up the replication registry to determine which repository
+#' contains the replication materials for a given DOI.
 #'
-#' @param doi Character DOI of the paper.
+#' @param doi Character. DOI of the paper.
+#'
+#' @return Character string containing the GitHub repository name.
+#'
+#' @examples
+#' \dontrun{
+#' find_repo("10.1177/00491241211036161")
+#' }
 #'
 #' @export
 find_repo <- function(doi){

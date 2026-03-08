@@ -2,13 +2,35 @@
 % Please edit documentation in R/get_doi_metadata.R
 \name{get_doi_metadata}
 \alias{get_doi_metadata}
-\title{Get DOI metadata}
+\title{Retrieve metadata for a DOI}
 \usage{
 get_doi_metadata(doi)
 }
 \arguments{
-\item{doi}{Character DOI of the paper.}
+\item{doi}{Character. DOI of the paper.}
+}
+\value{
+A list containing:
+\describe{
+\item{title}{Title of the paper}
+\item{journal}{Journal name}
+\item{year}{Publication year}
+\item{authors}{Vector of author names}
+}
 }
 \description{
-Retrieves metadata for a paper from its DOI.
+Fetches bibliographic metadata for a research paper using its DOI.
+The function queries a DOI resolver and returns basic metadata
+including the paper title, journal, publication year, and authors.
+}
+\details{
+This function is primarily used by \code{create_replication_template()}
+to automatically populate metadata in the \code{replication.yml}
+file when creating a new replication.
+}
+\examples{
+\dontrun{
+get_doi_metadata("10.1177/00491241211036161")
+}
+
 }

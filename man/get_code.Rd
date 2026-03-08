@@ -2,15 +2,31 @@
 % Please edit documentation in R/get_code.R
 \name{get_code}
 \alias{get_code}
-\title{Retrieve replication code}
+\title{Retrieve replication code for a paper}
 \usage{
 get_code(doi, what)
 }
 \arguments{
-\item{doi}{Character DOI of the paper.}
+\item{doi}{Character. DOI of the paper.}
 
-\item{what}{Replication ID.}
+\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+}
+\value{
+A character vector containing the lines of R code from the
+replication script.
 }
 \description{
-Downloads the replication script for a specific output.
+Downloads and returns the replication script associated with a
+specific figure or table from the replication registry.
+}
+\details{
+The function locates the appropriate replication repository using
+\code{find_repo()}, constructs the URL to the replication script,
+and downloads the script from the registry.
+}
+\examples{
+\dontrun{
+get_code("10.1177/00491241211036161", "fig_1")
+}
+
 }

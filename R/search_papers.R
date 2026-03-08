@@ -1,8 +1,16 @@
-#' Search papers in the replication registry
+#' Search replicated papers
 #'
-#' Searches the registry index by keyword.
+#' Searches the replication registry for papers matching a keyword
+#' in the title or author fields.
 #'
-#' @param query Character search term.
+#' @param query Character string used to search paper titles or authors.
+#'
+#' @return A filtered data frame of matching papers.
+#'
+#' @examples
+#' \dontrun{
+#' search_papers("causal")
+#' }
 #'
 #' @export
 search_papers <- function(query){

@@ -2,13 +2,23 @@
 % Please edit documentation in R/search_papers.R
 \name{search_papers}
 \alias{search_papers}
-\title{Search papers in the replication registry}
+\title{Search replicated papers}
 \usage{
 search_papers(query)
 }
 \arguments{
-\item{query}{Character search term.}
+\item{query}{Character string used to search paper titles or authors.}
+}
+\value{
+A filtered data frame of matching papers.
 }
 \description{
-Searches the registry index by keyword.
+Searches the replication registry for papers matching a keyword
+in the title or author fields.
+}
+\examples{
+\dontrun{
+search_papers("causal")
+}
+
 }

@@ -2,16 +2,24 @@
 % Please edit documentation in R/run_replication.R
 \name{run_replication}
 \alias{run_replication}
-\title{Run a replication}
+\title{Run a single replication}
 \usage{
 run_replication(doi, what)
 }
 \arguments{
-\item{doi}{Character. The DOI of the paper.}
+\item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. The replication ID (e.g., "fig_1", "tab_1").}
+\item{what}{Character. Replication identifier (e.g., "fig_1").}
+}
+\value{
+A plot or table produced by the replication code.
 }
 \description{
-Reproduces a single figure or table from a paper using the
-replication metadata stored in the registry.
+Executes a specific replication (figure or table) for a paper.
+}
+\examples{
+\dontrun{
+run_replication("10.1177/00491241211036161", "fig_1")
+}
+
 }

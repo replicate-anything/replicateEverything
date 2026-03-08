@@ -2,13 +2,23 @@
 % Please edit documentation in R/list_replications.R
 \name{list_replications}
 \alias{list_replications}
-\title{List replications for a paper}
+\title{List available replications for a paper}
 \usage{
 list_replications(doi)
 }
 \arguments{
-\item{doi}{Character DOI of the paper.}
+\item{doi}{Character. DOI of the paper.}
+}
+\value{
+A list of replication identifiers.
 }
 \description{
-Returns all figures and tables available for replication.
+Retrieves the replication metadata for a paper and lists all
+available figures and tables that can be reproduced.
+}
+\examples{
+\dontrun{
+list_replications("10.1177/00491241211036161")
+}
+
 }
