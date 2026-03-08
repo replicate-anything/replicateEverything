@@ -3,3 +3,7 @@
 ^LICENSE\.md$
 ^.*\.Rproj$
 ^\.github$
+^papers$
+^10\..*$
+^README\.qmd$
+^README_files$

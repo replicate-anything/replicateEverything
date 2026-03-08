@@ -1,7 +1,11 @@
+#' Get DOI metadata
+#'
+#' Retrieves metadata for a paper from its DOI.
+#'
+#' @param doi Character DOI of the paper.
+#'
+#' @export
 get_doi_metadata <- function(doi){
-
-  library(httr)
-  library(jsonlite)
 
   url <- paste0("https://doi.org/", doi)
 

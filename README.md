@@ -69,33 +69,45 @@ closely associated words with the paper.
 
 ``` r
 # first option 
-search_papers("minimum wage")
+search_papers("causes")
 ```
 
-                       doi                        title       authors year journal
-    2 10.1257/aer.91.2.134 Minimum Wages and Employment Card, Krueger   NA    <NA>
-                                     repo
-    2 replicate-anything/aer-replications
+                            doi                                     title
+    1 10.1177/00491241211036161 Bounding Causes of Effects With Mediators
+                 authors year                             journal
+    1 Macartan Humphreys 2022 Sociological Methods &amp; Research
+                             repo
+    1 replicate-anything/registry
 
 ``` r
 # second option 
-search_papers("wage")
+search_papers("effects")
 ```
 
-                       doi                        title       authors year journal
-    2 10.1257/aer.91.2.134 Minimum Wages and Employment Card, Krueger   NA    <NA>
-                                     repo
-    2 replicate-anything/aer-replications
+                            doi
+    1 10.1177/00491241211036161
+    2     10.1515/jci-2024-0040
+                                                                                              title
+    1                                                     Bounding Causes of Effects With Mediators
+    2 Bounds on the fixed effects estimand in the presence of heterogeneous assignment propensities
+                 authors year                             journal
+    1 Macartan Humphreys 2022 Sociological Methods &amp; Research
+    2                    2025         Journal of Causal Inference
+                             repo
+    1 replicate-anything/registry
+    2 replicate-anything/registry
 
 ``` r
 # third option
-search_papers("employment")
+search_papers("mediators")
 ```
 
-                       doi                        title       authors year journal
-    2 10.1257/aer.91.2.134 Minimum Wages and Employment Card, Krueger   NA    <NA>
-                                     repo
-    2 replicate-anything/aer-replications
+                            doi                                     title
+    1 10.1177/00491241211036161 Bounding Causes of Effects With Mediators
+                 authors year                             journal
+    1 Macartan Humphreys 2022 Sociological Methods &amp; Research
+                             repo
+    1 replicate-anything/registry
 
 You can use many **key words** to search from the **title** of a paper
 to see if it is in the directory.
@@ -111,10 +123,10 @@ registry.
 
 ``` r
 # find repo
-find_repo("10.1257/aer.20221688")
+find_repo("10.1177/00491241211036161")
 ```
 
-    [1] "replicate-anything/aer-replications"
+    [1] "replicate-anything/registry"
 
 ### List Repository
 
@@ -124,14 +136,10 @@ an uploaded repository. It also allows you to see some important
 the package, for example `fig_1`.
 
 ``` r
-list_replications("10.1257/aer.20221688")
+list_replications("10.1177/00491241211036161")
 ```
 
-    [1] "https://raw.githubusercontent.com/replicate-anything/aer-replications/main/papers/10.1257_aer.20221688/replication.yml"
-
-    Warning in readLines(file, warn = readLines.warn): incomplete final line found
-    on
-    'https://raw.githubusercontent.com/replicate-anything/aer-replications/main/papers/10.1257_aer.20221688/replication.yml'
+    [1] "https://raw.githubusercontent.com/replicate-anything/registry/main/papers/10.1177_00491241211036161/replication.yml"
 
     [[1]]
     [[1]]$id
@@ -149,26 +157,6 @@ list_replications("10.1257/aer.20221688")
     [[1]]$code
     [1] "code/fig_1.R"
 
-
-    [[2]]
-    [[2]]$id
-    [1] "tab_1"
-
-    [[2]]$type
-    [1] "table"
-
-    [[2]]$description
-    [1] "Example table"
-
-    [[2]]$data
-    [1] "processed/tab_1.csv"
-
-    [[2]]$code
-    [1] "code/tab_1.R"
-
-    [[2]]$dependencies
-    [1] "dplyr" "gt"   
-
 ### Run Replication
 
 The `run_replication` function allows you to run **single** replication
@@ -178,20 +166,19 @@ directory.
 
 ``` r
 run_replication(
-  "10.1257/aer.20221688",
+  "10.1177/00491241211036161",
   "fig_1"
 )
 ```
 
-    Warning in readLines(file, warn = readLines.warn): incomplete final line found
-    on
-    '/var/folders/wb/t2ltn_4d6dvgx6qgpcq4fq8c0000gn/T//RtmptMxYKM/filedd284b32c2e5.yml'
+    [1] "fig_1"
 
-    [1] "fig_1" "tab_1"
-
-    Using repository: replicate-anything/aer-replications
+    Using repository: replicate-anything/registry
 
     Replication type: figure
+
+    Ignoring unknown labels:
+    • shape : "ρ"
 
 ![](README_files/figure-commonmark/unnamed-chunk-6-1.png)
 
@@ -205,21 +192,17 @@ figures at one go. See how it works below:
 #### option A
 
 ``` r
-replicate_paper("10.1257/aer.20221688")
+replicate_paper("10.1177/00491241211036161")
 ```
 
-    Replicating: Market Design and Moral Behavior
+    Replicating: Bounding Causes of Effects With Mediators
 
     Running: fig_1
 
+    Ignoring unknown labels:
+    • shape : "ρ"
+
 ![](README_files/figure-commonmark/unnamed-chunk-7-1.png)
-
-    Running: tab_1
-
-      group value
-    1     A    10
-    2     B    20
-    3     C    30
 
 ## System Architecture
 
@@ -313,6 +296,90 @@ Ideally, make sure to include if a table has `dependencies`.
           - dplyr
           - gt
 
+## Contributor’s Workflow
+
+### Step 1: Get DOI Metatdata
+
+``` r
+get_doi_metadata("10.1177/00491241211036161")
+```
+
+    $title
+    [1] "Bounding Causes of Effects With Mediators"
+
+    $journal
+    [1] "Sociological Methods &amp; Research"
+
+    $year
+    [1] 2022
+
+    $authors
+    [1] "Philip Dawid"       "Macartan Humphreys" "Monica Musio"      
+
+### Step 2: Create Template
+
+This create a folder on your local machine. Now, you will have to upload
+the final processed data used for generating the figure as well as the
+code in their exact areas. Read the `Writing Scripts` section below for
+how to include the `generate` function into your code.
+
+``` r
+#create a local folder 
+create_replication_template("10.1177/00491241211036161")
+```
+
+    Replication template created at: 10.1177_00491241211036161
+
+``` r
+#see what is in there. 
+list_replications("10.1177/00491241211036161")
+```
+
+    [1] "https://raw.githubusercontent.com/replicate-anything/registry/main/papers/10.1177_00491241211036161/replication.yml"
+
+    [[1]]
+    [[1]]$id
+    [1] "fig_1"
+
+    [[1]]$type
+    [1] "figure"
+
+    [[1]]$description
+    [1] "Example figure"
+
+    [[1]]$data
+    [1] "processed/fig_1.csv"
+
+    [[1]]$code
+    [1] "code/fig_1.R"
+
+### Step 3: Clone the Registry Repository from Github
+
+Now, clone the Git repo:
+
+    git clone https://github.com/replicate-anything/registry
+
+### Step 4: Move local folder to Github cloned repo
+
+At this point, you would have added your data and code to the folder on
+your local machine. A good text would be to make sure that you ensure
+that the code runs in your `R console`.
+
+    mv 10.1257_app.20230717 registry/papers/
+
+### Step 5: Commit and Push
+
+Commit your changes in the folder and then push them to remotes.
+
+    git add .
+    git commit -m "Add replication for 10.1257/app.20230717"
+    git push
+
+### Step 6: Open a Pull Request.
+
+That’s it! Thank you for embracing a **transparent, modular, and easily
+reproducible** research culture.
+
 ## Writing Replication Scripts
 
 Replications Scripts **must** define the `generate` function. For
@@ -371,10 +438,16 @@ Run package checks:
 
     devtools::check()
 
+## Report Bugs
+
+To report bugs or fixes, please create an issues
+[here](https://github.com/replicate-anything/replicateEverything/issues).
+
 # Project Status
 
-This idea was conceived by [Macartan
+This idea was conceived and inspired by [Macartan
 Humphreys](https://macartan.github.io), Director of the IPI Research
 Unit at [WZB](https://www.wzb.eu) in 2024. The project is under active
 development at the moment. All feedback are welcome. Feel free to [email
-me](mailto:vermon.washington@wzb.eu).
+me](mailto:vermon.washington@wzb.eu) or
+[Marcatan](mailto:macartan.humphreys@zwb.eu).

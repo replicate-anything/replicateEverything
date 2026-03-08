@@ -1,3 +1,11 @@
+#' Create a replication template
+#'
+#' Creates a folder structure and template files for replicating a paper.
+#'
+#' @param doi Character DOI of the paper.
+#'
+#' @importFrom utils write.csv
+#' @export
 create_replication_template <- function(doi){
 
   meta <- get_doi_metadata(doi)
