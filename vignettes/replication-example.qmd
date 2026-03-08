@@ -22,7 +22,7 @@ library(replicateEverything)
 
 
 ## System Architecture
-The is the system architecture on which this package is built. 
+This is the system architecture on which this package is built. 
 ```{mermaid}
 
 flowchart LR

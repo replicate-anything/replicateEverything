@@ -1,6 +1,8 @@
 url: https://replicate-anything.github.io/replicateEverything/
 template:
   bootstrap: 5
+  includes:
+    in_header: mermaid.html
 home:
   title: replicateEverything
   description: Reproduce empirical research results programmatically
@@ -25,4 +27,6 @@ build:
 articles:
 - title: Articles
   contents: replication-example
+
+
 
