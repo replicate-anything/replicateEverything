@@ -361,8 +361,11 @@ Now, clone the Git repo:
 ### Step 4: Move local folder to Github cloned repo
 
 At this point, you would have added your data and code to the folder on
-your local machine. A good text would be to make sure that you ensure
-that the code runs in your `R console`.
+your local machine. A good test would be to make sure that you ensure
+that the code runs in your `R console`. See example code below on using
+command line to move this to the `registry`. You can also just copy and
+paste the final folder with your code in the clone repo as well. Use
+what methods works well for you.
 
     mv 10.1257_app.20230717 registry/papers/
 
@@ -386,6 +389,8 @@ figure, use `generate_figure` and for table, use `generate_table`.
 
 ### Figures
 
+See a very simple example below. This generates a figure.
+
 
     generate_figure <- function(data){
 
@@ -396,6 +401,8 @@ figure, use `generate_figure` and for table, use `generate_table`.
 
 ### Tables
 
+See a very simple example below. This generates a table.
+
 
     generate_table <- function(data){
 
@@ -403,8 +410,9 @@ figure, use `generate_figure` and for table, use `generate_table`.
 
     }
 
-This allows the the `package` to automatically: \* download the datasets
-\* loads dependencies \* sources the script \* runs the function
+This allows the the `package` to automatically: (@) download the
+datasets (@) loads dependencies (@) sources the script (@) runs the
+function
 
 ## Contributing to a Repository
 
