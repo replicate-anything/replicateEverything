@@ -60,26 +60,45 @@ Load the package in your environment.
 library(replicateEverything)
 ```
 
-## How the Package Works
+## Quick Start
 
-The package in this very early version allows users to search for papers
-in the repository, find the replication repository for a paper, take a
-look at the list of existing replications, reproduce a specific result
-(e.g. **Fig.1**), reproduce all outputs (i.e. **Fig.1**, **Fig.2**,
-**Table 1**, etc).
-
-## Functions
-
-The following are a few of the functions allows you do execute the aim
-of the package.
-
-### Search Papers
-
-To search papers, you should run the command below. You have to specify
-closely associated words with the paper.
+### Retrieve metadata for a paper
 
 ``` r
-# first option 
+get_doi_metadata("10.1177/00491241211036161")
+```
+
+    $title
+    [1] "Bounding Causes of Effects With Mediators"
+
+    $journal
+    [1] "Sociological Methods &amp; Research"
+
+    $year
+    [1] 2022
+
+    $authors
+    [1] "Philip Dawid"       "Macartan Humphreys" "Monica Musio"      
+
+### Find Replication Repository
+
+``` r
+# find repo
+find_repo("10.1177/00491241211036161")
+```
+
+    [1] "replicate-anything/registry"
+
+The way the package is set up now, researchers will have to outline
+their Github repository is an aligned way to allows it to be merge into
+the [Registry](https://github.com/replicate-anything/registry). More
+details on this later. However, you can use the `find_repo` function and
+the paper’s `DOI` to located and look up a paper’s repository from the
+registry.
+
+### Search the replication registry
+
+``` r
 search_papers("causes")
 ```
 
@@ -90,56 +109,11 @@ search_papers("causes")
                              repo
     1 replicate-anything/registry
 
-``` r
-# second option 
-search_papers("effects")
-```
+If the paper is in `"replicate-anything/registry"`, you can use many
+**key words** to search from the **title** of a paper to see if it is
+already in the registry.
 
-                            doi
-    1 10.1177/00491241211036161
-    2     10.1515/jci-2024-0040
-                                                                                              title
-    1                                                     Bounding Causes of Effects With Mediators
-    2 Bounds on the fixed effects estimand in the presence of heterogeneous assignment propensities
-                 authors year                             journal
-    1 Macartan Humphreys 2022 Sociological Methods &amp; Research
-    2                    2025         Journal of Causal Inference
-                             repo
-    1 replicate-anything/registry
-    2 replicate-anything/registry
-
-``` r
-# third option
-search_papers("mediators")
-```
-
-                            doi                                     title
-    1 10.1177/00491241211036161 Bounding Causes of Effects With Mediators
-                 authors year                             journal
-    1 Macartan Humphreys 2022 Sociological Methods &amp; Research
-                             repo
-    1 replicate-anything/registry
-
-You can use many **key words** to search from the **title** of a paper
-to see if it is in the directory.
-
-### Find Replication Repository
-
-The way the package is set up now, researchers will have to outline
-their Github repository is an aligned way to allows it to be merge into
-the [Registry](https://github.com/replicate-anything/registry). More
-details on this later. However, you can use the `find_repo` function and
-the paper’s `DOI` to located and look up a paper’s repository from the
-registry.
-
-``` r
-# find repo
-find_repo("10.1177/00491241211036161")
-```
-
-    [1] "replicate-anything/registry"
-
-### List Repository
+### List available replication options
 
 The `list_replications` function allows you to look up **structures** in
 an uploaded repository. It also allows you to see some important $id$
@@ -168,12 +142,12 @@ list_replications("10.1177/00491241211036161")
     [[1]]$code
     [1] "code/fig_1.R"
 
-### Run Replication
+### Run a single replication
 
 The `run_replication` function allows you to run **single** replication
 for a specific table or figure. This must have already be specified in
 the root directory on Github. More details on this later when discussing
-directory.
+`contribution` below.
 
 ``` r
 run_replication(
@@ -191,16 +165,14 @@ run_replication(
     Ignoring unknown labels:
     • shape : "ρ"
 
-![](README_files/figure-commonmark/unnamed-chunk-6-1.png)
+![](README_files/figure-commonmark/unnamed-chunk-7-1.png)
 
-### Replicate Paper
+### Replicate the entire aper
 
 This is the **single most important function** in this
 `replicateEverything` package. It allows you to replicate an entire
 paper. With a single line of code, you can be able to generate all
 figures at one go. See how it works below:
-
-#### option A
 
 ``` r
 replicate_paper("10.1177/00491241211036161")
@@ -213,7 +185,7 @@ replicate_paper("10.1177/00491241211036161")
     Ignoring unknown labels:
     • shape : "ρ"
 
-![](README_files/figure-commonmark/unnamed-chunk-7-1.png)
+![](README_files/figure-commonmark/unnamed-chunk-8-1.png)
 
 ## System Architecture
 
@@ -226,9 +198,9 @@ flowchart LR
 
 ### Registry
 
-The registry indexes all replication repositories. See an example entry:
+The [registry](https://github.com/replicate-anything/registry) indexes
+all replication repositories. See an example entry:
 
-    #| include: false
 
         "doi": "10.1257/aer.20221688",
         "title": "Market Design and Moral Behavior",
@@ -262,7 +234,7 @@ the data and code as seen below.
 
 
     papers/
-       10.1257_aer.20221688/
+       10.1177/00491241211036161/
           replication.yml
           processed/
              fig_1.csv
@@ -308,7 +280,7 @@ Ideally, make sure to include if a table has `dependencies`.
 
 ## Contributor’s Workflow
 
-### Step 1: Get DOI Metatdata
+### Retrieve DOI metadata
 
 ``` r
 get_doi_metadata("10.1177/00491241211036161")
@@ -326,7 +298,7 @@ get_doi_metadata("10.1177/00491241211036161")
     $authors
     [1] "Philip Dawid"       "Macartan Humphreys" "Monica Musio"      
 
-### Step 2: Create Template
+### Create a replication template
 
 This create a folder on your local machine. Now, you will have to upload
 the final processed data used for generating the figure as well as the
@@ -340,36 +312,13 @@ create_replication_template("10.1177/00491241211036161")
 
     Replication template created at: 10.1177_00491241211036161
 
-``` r
-#see what is in there. 
-list_replications("10.1177/00491241211036161")
-```
-
-    [1] "https://raw.githubusercontent.com/replicate-anything/registry/main/papers/10.1177_00491241211036161/replication.yml"
-
-    [[1]]
-    [[1]]$id
-    [1] "fig_1"
-
-    [[1]]$type
-    [1] "figure"
-
-    [[1]]$description
-    [1] "Example figure"
-
-    [[1]]$data
-    [1] "processed/fig_1.csv"
-
-    [[1]]$code
-    [1] "code/fig_1.R"
-
-### Step 3: Clone the Registry Repository from Github
+### Clone the registry repository from Github
 
 Now, clone the Git repo:
 
     git clone https://github.com/replicate-anything/registry
 
-### Step 4: Move local folder to Github cloned repo
+### Add the replication folder to Registry on Github
 
 At this point, you would have added your data and code to the folder on
 your local machine. A good test would be to make sure that you ensure
@@ -378,9 +327,10 @@ command line to move this to the `registry`. You can also just copy and
 paste the final folder with your code in the clone repo as well. Use
 what methods works well for you.
 
+    # seen how to use command line example below 
     mv 10.1257_app.20230717 registry/papers/
 
-### Step 5: Commit and Push
+### Commit and Push
 
 Commit your changes in the folder and then push them to remotes.
 
@@ -388,10 +338,11 @@ Commit your changes in the folder and then push them to remotes.
     git commit -m "Add replication for 10.1257/app.20230717"
     git push
 
-### Step 6: Open a Pull Request.
+### Open a Pull Request.
 
-That’s it! Thank you for embracing a **transparent, modular, and easily
-reproducible** research culture.
+Submit the replication to the registry on Github. *That’s it!* Thank you
+for embracing a **transparent, modular, and easily reproducible**
+research culture.
 
 ## Writing Replication Scripts
 
@@ -424,19 +375,6 @@ See a very simple example below. This generates a table.
 This allows the the `package` to automatically: - download the
 dataset(s) - loads all dependencies - sources the replication script -
 runs the function
-
-## Contributing to a Repository
-
-This is a very important aspect in our quest to create a reprocible
-research culture so please follow the instructions below keenly:
-
-1.  Fork or the replication repository
-
-2.  Add a new paper directory
-
-3.  Provide metadata and scripts
-
-4.  Submit a pull request
 
 ## Developer Workflow
 
