@@ -1,6 +1,8 @@
 ---
 title: "Overview of the replicateEverything Package"
-format: gfm
+format: 
+  gfm:
+    embed-resources: true 
 ---
 
 # replicateEverything
@@ -85,8 +87,8 @@ list_replications("10.1177/00491241211036161")
 ```
 
 ### Run a single replication
-The `run_replication` function allows you to run **single** replication for a specific table or figure. This must have already be specified in the root directory on Github. More details on this later when discussing `contribution` below. 
-```{r}
+The `run_replication` function allows you to run **single** replication for a specific table or figure. This must have already be specified in the root directory on Github. More details on this later when discussing `contribution` below. See the output in this article.  
+```{}
 run_replication(
   "10.1177/00491241211036161",
   "fig_1"
@@ -94,19 +96,11 @@ run_replication(
 ```
 
 ### Replicate the entire aper 
-This is the **single most important function** in this `replicateEverything` package. It allows you to replicate an entire paper. With a single line of code, you can be able to generate all figures at one go. See how it works below:
-```{r}
+This is the **single most important function** in this `replicateEverything` package. It allows you to replicate an entire paper. With a single line of code, you can be able to generate all figures at one go. See the output in this article. 
+```{}
 replicate_paper("10.1177/00491241211036161")
 ```
 
-
-## System Architecture
-```{mermaid}
-
-flowchart LR
-  A[Registry] --> B(Replication Repositories)
-  B --> C{replicateEverything}
-```
 
 ### Registry
 The [registry](https://github.com/replicate-anything/registry) indexes all replication repositories. See an example entry:

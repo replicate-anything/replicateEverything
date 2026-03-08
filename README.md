@@ -147,54 +147,21 @@ list_replications("10.1177/00491241211036161")
 The `run_replication` function allows you to run **single** replication
 for a specific table or figure. This must have already be specified in
 the root directory on Github. More details on this later when discussing
-`contribution` below.
+`contribution` below. See the output in this article.
 
-``` r
-run_replication(
-  "10.1177/00491241211036161",
-  "fig_1"
-)
-```
-
-    [1] "fig_1"
-
-    Using repository: replicate-anything/registry
-
-    Replication type: figure
-
-    Ignoring unknown labels:
-    • shape : "ρ"
-
-![](README_files/figure-commonmark/unnamed-chunk-7-1.png)
+    run_replication(
+      "10.1177/00491241211036161",
+      "fig_1"
+    )
 
 ### Replicate the entire aper
 
 This is the **single most important function** in this
 `replicateEverything` package. It allows you to replicate an entire
 paper. With a single line of code, you can be able to generate all
-figures at one go. See how it works below:
+figures at one go. See the output in this article.
 
-``` r
-replicate_paper("10.1177/00491241211036161")
-```
-
-    Replicating: Bounding Causes of Effects With Mediators
-
-    Running: fig_1
-
-    Ignoring unknown labels:
-    • shape : "ρ"
-
-![](README_files/figure-commonmark/unnamed-chunk-8-1.png)
-
-## System Architecture
-
-``` mermaid
-
-flowchart LR
-  A[Registry] --> B(Replication Repositories)
-  B --> C{replicateEverything}
-```
+    replicate_paper("10.1177/00491241211036161")
 
 ### Registry
 
