@@ -32,15 +32,15 @@ academics papers to be **replicated in one line of code.**
 
 ## Installation
 
-Install the development version from GitHub by using `remotes` and
-`devtools`.
+Install the package from GitHub by using `remotes` and `devtools`.
 
-``` r
-if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-  options(repos = c(CRAN = "https://cloud.r-project.org"))
-  remotes::install_github("replicate-anything/replicateEverything")
-}
-```
+### Usings Remotes
+
+    remotes::install_github("replicate-anything/replicateEverything")
+
+### Usings Devtools
+
+    devtools::install_github("replicate-anything/replicateEverything")
 
 # Load Package
 
@@ -452,9 +452,13 @@ To report bugs or fixes, please create an issues
 
 # Project Status
 
-This idea was conceived and inspired by [Macartan
-Humphreys](https://macartan.github.io), Director of the IPI Research
-Unit at [WZB](https://www.wzb.eu) in 2024. The project is under active
+The inspiration to create this package came from an idea which was
+conceived by [Macartan Humphreys](https://macartan.github.io), Director
+of the [Institutions and Political
+Inequality](https://wzb-ipi.github.io/) Research Group at
+[WZB](https://www.wzb.eu) in a
+[talk](https://macartan.github.io/slides/2024_standards.html#/design-based-critique-1)
+he gave to an $Lab^2$ audience in 2024. The project is under active
 development at the moment. All feedback are welcome. Feel free to [email
 me](mailto:vermon.washington@wzb.eu) or
 [Marcatan](mailto:macartan.humphreys@zwb.eu).
