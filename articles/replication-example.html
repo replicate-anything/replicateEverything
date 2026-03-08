@@ -57,8 +57,9 @@
 
 
 
-
-<div class="row">
+<link href="replication-example_files/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
+<script src="replication-example_files/htmlwidgets-1.6.4/htmlwidgets.js"></script><script src="replication-example_files/viz-1.8.2/viz.js"></script><link href="replication-example_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet">
+<script src="replication-example_files/grViz-binding-1.0.11/grViz.js"></script><div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Replication Examples Using Code</h1>
@@ -75,16 +76,17 @@
 <div class="section level3">
 <h3 id="system-architecture">System Architecture<a class="anchor" aria-label="anchor" href="#system-architecture"></a>
 </h3>
-<p>This is the system architecture on which this package is built.</p>
-<pre class="mermaid"><code>
-flowchart LR
-  A[Registry] --&gt; B(Replication Repositories)
-  B --&gt; C{replicateEverything}</code></pre>
+<p>This is the system architecture on which this package is built. There
+is a registry that host all the repositories for past studies. Then, the
+<code>replicateEverything</code> package interact with the repositories
+and then works the magic.</p>
+<div class="grViz html-widget html-fill-item" id="htmlwidget-ac96cb3ee4656e2e9ec3" style="width:70%;height:600px;"></div>
+<script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"diagram":"\ndigraph {\n  Registry -> \"Replication Repositories\"\n  \"Replication Repositories\" -> replicateEverything\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 <div class="section level2">
 <h2 id="run-single-replication">Run single replication<a class="anchor" aria-label="anchor" href="#run-single-replication"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span></span>
 <span>  <span class="st">"10.1177/00491241211036161"</span>,</span>
 <span>  <span class="st">"fig_1"</span></span>
@@ -94,19 +96,19 @@ flowchart LR
 <pre><code><span><span class="co">## Replication type: figure</span></span></code></pre>
 <pre><code><span><span class="co">## Ignoring unknown labels:</span></span>
 <span><span class="co">## <span style="color: #00BBBB;">•</span> <span style="color: #00BB00;">shape</span> : <span style="color: #0000BB;">"ρ"</span></span></span></code></pre>
-<p><img src="replication-example_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="replication-example_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="" width="1200"></p>
 </div>
 <div class="section level2">
-<h2 id="replicate-and-entire-paper">Replicate and entire paper<a class="anchor" aria-label="anchor" href="#replicate-and-entire-paper"></a>
+<h2 id="replicate-an-entire-paper">Replicate an entire paper<a class="anchor" aria-label="anchor" href="#replicate-an-entire-paper"></a>
 </h2>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Replicating: Bounding Causes of Effects With Mediators</span></span></code></pre>
 <pre><code><span><span class="co">## </span></span></code></pre>
 <pre><code><span><span class="co">## Running: fig_1</span></span></code></pre>
 <pre><code><span><span class="co">## Ignoring unknown labels:</span></span>
 <span><span class="co">## <span style="color: #00BBBB;">•</span> <span style="color: #00BB00;">shape</span> : <span style="color: #0000BB;">"ρ"</span></span></span></code></pre>
-<p><img src="replication-example_files/figure-html/unnamed-chunk-4-1.png" class="r-plt" alt="" width="1200"></p>
+<p><img src="replication-example_files/figure-html/unnamed-chunk-3-1.png" class="r-plt" alt="" width="1200"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

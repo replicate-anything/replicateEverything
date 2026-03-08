@@ -6,13 +6,10 @@ library(replicateEverything)
 
 ### System Architecture
 
-This is the system architecture on which this package is built.
-
-``` mermaid
-flowchart LR
-  A[Registry] --> B(Replication Repositories)
-  B --> C{replicateEverything}
-```
+This is the system architecture on which this package is built. There is
+a registry that host all the repositories for past studies. Then, the
+`replicateEverything` package interact with the repositories and then
+works the magic.
 
 ## Run single replication
 
@@ -32,9 +29,9 @@ run_replication(
     ## Ignoring unknown labels:
     ## • shape : "ρ"
 
-![](replication-example_files/figure-html/unnamed-chunk-3-1.png)
+![](replication-example_files/figure-html/unnamed-chunk-2-1.png)
 
-## Replicate and entire paper
+## Replicate an entire paper
 
 ``` r
 replicate_paper("10.1177/00491241211036161")
@@ -49,4 +46,4 @@ replicate_paper("10.1177/00491241211036161")
     ## Ignoring unknown labels:
     ## • shape : "ρ"
 
-![](replication-example_files/figure-html/unnamed-chunk-4-1.png)
+![](replication-example_files/figure-html/unnamed-chunk-3-1.png)
