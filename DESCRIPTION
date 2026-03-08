@@ -23,9 +23,10 @@ Suggests:
     knitr,
     rmarkdown,
     quarto
-VignetteBuilder: quarto
 URL: https://github.com/replicate-anything/replicateEverything, https://replicate-anything.github.io/replicateEverything/
 BugReports: https://github.com/replicate-anything/replicateEverything/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-VignetteBuilder: knitr
+VignetteBuilder: 
+      knitr, 
+      quarto
