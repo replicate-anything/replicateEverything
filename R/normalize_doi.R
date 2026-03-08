@@ -11,6 +11,7 @@
 #' @examples
 #' normalize_doi("https://doi.org/10.1177/00491241211036161")
 #'
+#' @keywords internal
 #' @export
 normalize_doi <- function(doi){
 

@@ -1,0 +1,44 @@
+---
+title: "Replication Examples Using Code"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{replication-example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  fig.width = 8,
+  fig.height = 6,
+  dpi = 150
+)
+```
+
+```{r setup}
+library(replicateEverything)
+
+```
+
+
+## System Architecture
+The is the system architecture on which this package is built. 
+```{mermaid}
+
+flowchart LR
+  A[Registry] --> B(Replication Repositories)
+  B --> C{replicateEverything}
+```
+
+# Run single replication 
+```{r}
+run_replication(
+  "10.1177/00491241211036161",
+  "fig_1"
+)
+```
+
+# Replicate and entire paper 
+```{r}
+replicate_paper("10.1177/00491241211036161")
+```

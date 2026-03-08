@@ -1,0 +1,31 @@
+url: https://replicate-anything.github.io/replicateEverything/
+template:
+  bootstrap: 5
+
+home:
+  title: replicateEverything
+  description: Reproduce empirical research results programmatically
+
+navbar:
+  structure:
+    left:  [home, reference, articles]
+    right: [github]
+
+reference:
+  - title: Main Functions
+    contents:
+      - get_doi_metadata
+      - search_papers
+      - create_replication_template
+      - list_replications
+      - run_replication
+      - replicate_paper
+
+build:
+  readme: true
+
+articles:
+  - title: Articles
+    contents:
+      - replication-example
+

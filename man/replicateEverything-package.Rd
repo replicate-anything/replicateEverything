@@ -66,6 +66,7 @@ Replication metadata and materials are stored in the public registry:
 Useful links:
 \itemize{
   \item \url{https://github.com/replicate-anything/replicateEverything}
+  \item \url{https://replicate-anything.github.io/replicateEverything/}
   \item Report bugs at \url{https://github.com/replicate-anything/replicateEverything/issues}
 }
 

@@ -11,6 +11,7 @@
 #' load_index()
 #' }
 #'
+#' @keywords internal
 #' @export
 load_index <- function(){
 

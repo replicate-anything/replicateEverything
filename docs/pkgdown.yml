@@ -1,5 +1,9 @@
 pandoc: 3.6.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
-articles: {}
-last_built: 2026-03-08T18:25Z
+articles:
+  replication-example: replication-example.html
+last_built: 2026-03-08T19:49Z
+urls:
+  reference: https://replicate-anything.github.io/replicateEverything/reference
+  article: https://replicate-anything.github.io/replicateEverything/articles

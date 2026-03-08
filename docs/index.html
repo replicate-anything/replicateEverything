@@ -4,66 +4,46 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tools to Replicate Empirical Research Papers • replicateEverything</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="bootstrap-toc.css">
-<script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
-<script src="pkgdown.js"></script><meta property="og:title" content="Tools to Replicate Empirical Research Papers">
-<meta property="og:description" content="Provides tools for discovering and running computational replications of empirical research papers. The package connects to a replication registry, retrieves replication materials (data, code, and metadata), and reproduces figures and tables from published studies in a standardized workflow.">
-<!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
-<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-<![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>replicateEverything • replicateEverything</title>
+<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="replicateEverything">
+<meta name="description" content="Reproduce empirical research results programmatically">
+<meta property="og:description" content="Reproduce empirical research results programmatically">
 </head>
-<body data-spy="scroll" data-target="#toc">
+<body>
+    <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <div class="container template-home">
-      <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
-  <div class="container">
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <span class="navbar-brand">
-        <a class="navbar-link" href="index.html">replicateEverything</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
-      </span>
-    </div>
+    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
-    <div id="navbar" class="navbar-collapse collapse">
-      <ul class="nav navbar-nav">
-<li>
-  <a href="reference/index.html">Reference</a>
-</li>
+    <a class="navbar-brand me-2" href="index.html">replicateEverything</a>
+
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div id="navbar" class="collapse navbar-collapse ms-3">
+      <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="articles/index.html">Articles</a></li>
       </ul>
-<ul class="nav navbar-nav navbar-right">
-<li>
-  <a href="https://github.com/replicate-anything/replicateEverything/" class="external-link">
-    <span class="fab fa-github fa-lg"></span>
-
-  </a>
-</li>
+<ul class="navbar-nav">
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/replicate-anything/replicateEverything/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
-<!--/.nav-collapse -->
+
+
   </div>
-<!--/.container -->
-</div>
-<!--/.navbar -->
-
-
-
-      </header><div class="row">
-  <div class="contents col-md-9">
-
-<div class="section level1">
+</nav><div class="container template-home">
+<div class="row">
+  <main id="main" class="col-md-9"><div class="section level1">
 <div class="page-header"><h1 id="overview-of-the-replicateeverything-package">Overview of the replicateEverything Package<a class="anchor" aria-label="anchor" href="#overview-of-the-replicateeverything-package"></a>
 </h1></div>
 </div>
@@ -182,79 +162,53 @@
 <div class="section level3">
 <h3 id="run-a-single-replication">Run a single replication<a class="anchor" aria-label="anchor" href="#run-a-single-replication"></a>
 </h3>
-<p>The <code>run_replication</code> function allows you to run <strong>single</strong> replication for a specific table or figure. This must have already be specified in the root directory on Github. More details on this later when discussing <code>contribution</code> below.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/run_replication.html">run_replication</a></span><span class="op">(</span></span>
-<span>  <span class="st">"10.1177/00491241211036161"</span>,</span>
-<span>  <span class="st">"fig_1"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb13"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"fig_1"</span></span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>Using repository<span class="sc">:</span> replicate<span class="sc">-</span>anything<span class="sc">/</span>registry</span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>Replication type<span class="sc">:</span> figure</span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>Ignoring unknown labels<span class="sc">:</span></span>
-<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>• shape <span class="sc">:</span> <span class="st">"ρ"</span></span></code></pre></div>
-<p><img src="README_files/figure-commonmark/unnamed-chunk-7-1.png"></p>
+<p>The <code>run_replication</code> function allows you to run <strong>single</strong> replication for a specific table or figure. This must have already be specified in the root directory on Github. More details on this later when discussing <code>contribution</code> below. See the output in this article.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">run_replication</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="st">"10.1177/00491241211036161"</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="st">"fig_1"</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="replicate-the-entire-aper">Replicate the entire aper<a class="anchor" aria-label="anchor" href="#replicate-the-entire-aper"></a>
 </h3>
-<p>This is the <strong>single most important function</strong> in this <code>replicateEverything</code> package. It allows you to replicate an entire paper. With a single line of code, you can be able to generate all figures at one go. See how it works below:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb15"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>Replicating<span class="sc">:</span> Bounding Causes of Effects With Mediators</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a></span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>Running<span class="sc">:</span> fig_1</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>Ignoring unknown labels<span class="sc">:</span></span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>• shape <span class="sc">:</span> <span class="st">"ρ"</span></span></code></pre></div>
-<p><img src="README_files/figure-commonmark/unnamed-chunk-8-1.png"></p>
+<p>This is the <strong>single most important function</strong> in this <code>replicateEverything</code> package. It allows you to replicate an entire paper. With a single line of code, you can be able to generate all figures at one go. See the output in this article.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">replicate_paper</span>(<span class="st">"10.1177/00491241211036161"</span>)</span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="system-architecture">System Architecture<a class="anchor" aria-label="anchor" href="#system-architecture"></a>
-</h2>
-<pre class="mermaid"><code>
-flowchart LR
-  A[Registry] --&gt; B(Replication Repositories)
-  B --&gt; C{replicateEverything}</code></pre>
 <div class="section level3">
 <h3 id="registry">Registry<a class="anchor" aria-label="anchor" href="#registry"></a>
 </h3>
 <p>The <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a> indexes all replication repositories. See an example entry:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>    <span class="st">"doi"</span><span class="sc">:</span> <span class="st">"10.1257/aer.20221688"</span>,</span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>    <span class="st">"title"</span><span class="sc">:</span> <span class="st">"Market Design and Moral Behavior"</span>,</span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>    <span class="st">"authors"</span><span class="sc">:</span> [<span class="st">"Bartling"</span>, <span class="st">"Fehr"</span>],</span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>    <span class="st">"year"</span><span class="sc">:</span> <span class="dv">2024</span>,</span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>    <span class="st">"journal"</span><span class="sc">:</span> <span class="st">"American Economic Review"</span>,</span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>    <span class="st">"repo"</span><span class="sc">:</span> <span class="st">"replicate-anything/aer-replications"</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>    <span class="st">"doi"</span><span class="sc">:</span> <span class="st">"10.1257/aer.20221688"</span>,</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>    <span class="st">"title"</span><span class="sc">:</span> <span class="st">"Market Design and Moral Behavior"</span>,</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>    <span class="st">"authors"</span><span class="sc">:</span> [<span class="st">"Bartling"</span>, <span class="st">"Fehr"</span>],</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>    <span class="st">"year"</span><span class="sc">:</span> <span class="dv">2024</span>,</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>    <span class="st">"journal"</span><span class="sc">:</span> <span class="st">"American Economic Review"</span>,</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>    <span class="st">"repo"</span><span class="sc">:</span> <span class="st">"replicate-anything/aer-replications"</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="repositories-structures">Repositories Structures<a class="anchor" aria-label="anchor" href="#repositories-structures"></a>
 </h3>
 <p>Every replication repository <strong>MUST</strong> follows a standardized structure. All data must be store in <code>processed</code> folder. All code must be stored in the <code>code</code> folder.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>papers<span class="sc">/</span></span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>   DOI<span class="sc">/</span></span>
-<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>      replication.yml</span>
-<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>      processed<span class="sc">/</span></span>
-<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>         fig_1.csv</span>
-<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>         tab_1.csv</span>
-<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>      code<span class="sc">/</span></span>
-<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>         fig_1.R</span>
-<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>         tab_1.R</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>papers<span class="sc">/</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>   DOI<span class="sc">/</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>      replication.yml</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>      processed<span class="sc">/</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>         fig_1.csv</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>         tab_1.csv</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>      code<span class="sc">/</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>         fig_1.R</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>         tab_1.R</span></code></pre></div>
 <div class="section level4">
 <h4 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h4>
 <p>See the example below for structure of a repo for a single figure. This should similarly work for a single table as well. The repo should have the data and code as seen below.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>papers<span class="sc">/</span></span>
-<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>   <span class="fl">10.1177</span><span class="sc">/</span><span class="dv">00491241211036161</span><span class="sc">/</span></span>
-<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>      replication.yml</span>
-<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>      processed<span class="sc">/</span></span>
-<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>         fig_1.csv</span>
-<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>      code<span class="sc">/</span></span>
-<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>         fig_1.R</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>papers<span class="sc">/</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>   <span class="fl">10.1177</span><span class="sc">/</span><span class="dv">00491241211036161</span><span class="sc">/</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>      replication.yml</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>      processed<span class="sc">/</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>         fig_1.csv</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>      code<span class="sc">/</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>         fig_1.R</span></code></pre></div>
 </div>
 </div>
 </div>
@@ -262,36 +216,36 @@ flowchart LR
 <h2 id="metadata-specification">Metadata Specification<a class="anchor" aria-label="anchor" href="#metadata-specification"></a>
 </h2>
 <p>Each paper must include a metadata file.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>replication.yml</span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>replication.yml</span></code></pre></div>
 <div class="section level3">
 <h3 id="example-1">Example<a class="anchor" aria-label="anchor" href="#example-1"></a>
 </h3>
 <p>Ideally, make sure to include if a table has <code>dependencies</code>.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>paper<span class="sc">:</span></span>
-<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>  title<span class="sc">:</span> Market Design and Moral Behavior</span>
-<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  authors<span class="sc">:</span></span>
-<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>    <span class="sc">-</span> Bartling, Björn</span>
-<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>    <span class="sc">-</span> Fehr, Ernst</span>
-<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>  year<span class="sc">:</span> <span class="dv">2024</span></span>
-<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>  doi<span class="sc">:</span> <span class="fl">10.1257</span><span class="sc">/</span>aer<span class="fl">.20221688</span></span>
-<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>  journal<span class="sc">:</span> American Economic Review</span>
-<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a></span>
-<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>replications<span class="sc">:</span></span>
-<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a></span>
-<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a>  <span class="sc">-</span> id<span class="sc">:</span> fig_1</span>
-<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a>    type<span class="sc">:</span> figure</span>
-<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a>    description<span class="sc">:</span> Example figure</span>
-<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a>    data<span class="sc">:</span> processed<span class="sc">/</span>fig_1.csv</span>
-<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a>    code<span class="sc">:</span> code<span class="sc">/</span>fig_1.R</span>
-<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a></span>
-<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a>  <span class="sc">-</span> id<span class="sc">:</span> tab_1</span>
-<span id="cb21-19"><a href="#cb21-19" tabindex="-1"></a>    type<span class="sc">:</span> table</span>
-<span id="cb21-20"><a href="#cb21-20" tabindex="-1"></a>    description<span class="sc">:</span> Example table</span>
-<span id="cb21-21"><a href="#cb21-21" tabindex="-1"></a>    data<span class="sc">:</span> processed<span class="sc">/</span>tab_1.csv</span>
-<span id="cb21-22"><a href="#cb21-22" tabindex="-1"></a>    code<span class="sc">:</span> code<span class="sc">/</span>tab_1.R</span>
-<span id="cb21-23"><a href="#cb21-23" tabindex="-1"></a>    dependencies<span class="sc">:</span></span>
-<span id="cb21-24"><a href="#cb21-24" tabindex="-1"></a>      <span class="sc">-</span> dplyr</span>
-<span id="cb21-25"><a href="#cb21-25" tabindex="-1"></a>      <span class="sc">-</span> gt</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>paper<span class="sc">:</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>  title<span class="sc">:</span> Market Design and Moral Behavior</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  authors<span class="sc">:</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>    <span class="sc">-</span> Bartling, Björn</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>    <span class="sc">-</span> Fehr, Ernst</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>  year<span class="sc">:</span> <span class="dv">2024</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>  doi<span class="sc">:</span> <span class="fl">10.1257</span><span class="sc">/</span>aer<span class="fl">.20221688</span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>  journal<span class="sc">:</span> American Economic Review</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>replications<span class="sc">:</span></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>  <span class="sc">-</span> id<span class="sc">:</span> fig_1</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>    type<span class="sc">:</span> figure</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>    description<span class="sc">:</span> Example figure</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>    data<span class="sc">:</span> processed<span class="sc">/</span>fig_1.csv</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>    code<span class="sc">:</span> code<span class="sc">/</span>fig_1.R</span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a></span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>  <span class="sc">-</span> id<span class="sc">:</span> tab_1</span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>    type<span class="sc">:</span> table</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a>    description<span class="sc">:</span> Example table</span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a>    data<span class="sc">:</span> processed<span class="sc">/</span>tab_1.csv</span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a>    code<span class="sc">:</span> code<span class="sc">/</span>tab_1.R</span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a>    dependencies<span class="sc">:</span></span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a>      <span class="sc">-</span> dplyr</span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a>      <span class="sc">-</span> gt</span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -300,49 +254,49 @@ flowchart LR
 <div class="section level3">
 <h3 id="retrieve-doi-metadata">Retrieve DOI metadata<a class="anchor" aria-label="anchor" href="#retrieve-doi-metadata"></a>
 </h3>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/get_doi_metadata.html">get_doi_metadata</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb23"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="sc">$</span>title</span>
-<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"Bounding Causes of Effects With Mediators"</span></span>
-<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a></span>
-<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="sc">$</span>journal</span>
-<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"Sociological Methods &amp;amp; Research"</span></span>
-<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a></span>
-<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a><span class="sc">$</span>year</span>
-<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a>[<span class="dv">1</span>] <span class="dv">2022</span></span>
-<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a></span>
-<span id="cb23-10"><a href="#cb23-10" tabindex="-1"></a><span class="sc">$</span>authors</span>
-<span id="cb23-11"><a href="#cb23-11" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"Philip Dawid"</span>       <span class="st">"Macartan Humphreys"</span> <span class="st">"Monica Musio"</span>      </span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="sc">$</span>title</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"Bounding Causes of Effects With Mediators"</span></span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="sc">$</span>journal</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"Sociological Methods &amp;amp; Research"</span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="sc">$</span>year</span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>[<span class="dv">1</span>] <span class="dv">2022</span></span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="sc">$</span>authors</span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">"Philip Dawid"</span>       <span class="st">"Macartan Humphreys"</span> <span class="st">"Monica Musio"</span>      </span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="create-a-replication-template">Create a replication template<a class="anchor" aria-label="anchor" href="#create-a-replication-template"></a>
 </h3>
 <p>This create a folder on your local machine. Now, you will have to upload the final processed data used for generating the figure as well as the code in their exact areas. Read the <code>Writing Scripts</code> section below for how to include the <code>generate</code> function into your code.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#create a local folder </span></span>
 <span><span class="fu"><a href="reference/create_replication_template.html">create_replication_template</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb25"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>Replication template created at<span class="sc">:</span> <span class="fl">10.1177</span>_00491241211036161</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>Replication template created at<span class="sc">:</span> <span class="fl">10.1177</span>_00491241211036161</span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="clone-the-registry-repository-from-github">Clone the registry repository from Github<a class="anchor" aria-label="anchor" href="#clone-the-registry-repository-from-github"></a>
 </h3>
 <p>Now, clone the Git repo:</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>git clone https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>replicate<span class="sc">-</span>anything<span class="sc">/</span>registry</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>git clone https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>replicate<span class="sc">-</span>anything<span class="sc">/</span>registry</span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="add-the-replication-folder-to-registry-on-github">Add the replication folder to Registry on Github<a class="anchor" aria-label="anchor" href="#add-the-replication-folder-to-registry-on-github"></a>
 </h3>
 <p>At this point, you would have added your data and code to the folder on your local machine. A good test would be to make sure that you ensure that the code runs in your <code>R console</code>. See example code below on using command line to move this to the <code>registry</code>. You can also just copy and paste the final folder with your code in the clone repo as well. Use what methods works well for you.</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a><span class="co"># seen how to use command line example below </span></span>
-<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a>mv <span class="fl">10.1257</span>_app<span class="fl">.20230717</span> registry<span class="sc">/</span>papers<span class="sc">/</span></span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="co"># seen how to use command line example below </span></span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>mv <span class="fl">10.1257</span>_app<span class="fl">.20230717</span> registry<span class="sc">/</span>papers<span class="sc">/</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="commit-and-push">Commit and Push<a class="anchor" aria-label="anchor" href="#commit-and-push"></a>
 </h3>
 <p>Commit your changes in the folder and then push them to remotes.</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>git add .</span>
-<span id="cb28-2"><a href="#cb28-2" tabindex="-1"></a>git commit <span class="sc">-</span>m <span class="st">"Add replication for 10.1257/app.20230717"</span></span>
-<span id="cb28-3"><a href="#cb28-3" tabindex="-1"></a>git push</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>git add .</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>git commit <span class="sc">-</span>m <span class="st">"Add replication for 10.1257/app.20230717"</span></span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>git push</span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="open-a-pull-request">Open a Pull Request.<a class="anchor" aria-label="anchor" href="#open-a-pull-request"></a>
@@ -358,22 +312,22 @@ flowchart LR
 <h3 id="figures">Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
 </h3>
 <p>See a very simple example below. This generates a figure.</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a>generate_figure <span class="ot">&lt;-</span> <span class="cf">function</span>(data){</span>
-<span id="cb29-2"><a href="#cb29-2" tabindex="-1"></a></span>
-<span id="cb29-3"><a href="#cb29-3" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(data, ggplot2<span class="sc">::</span><span class="fu">aes</span>(group,value)) <span class="sc">+</span></span>
-<span id="cb29-4"><a href="#cb29-4" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_col</span>()</span>
-<span id="cb29-5"><a href="#cb29-5" tabindex="-1"></a></span>
-<span id="cb29-6"><a href="#cb29-6" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>generate_figure <span class="ot">&lt;-</span> <span class="cf">function</span>(data){</span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(data, ggplot2<span class="sc">::</span><span class="fu">aes</span>(group,value)) <span class="sc">+</span></span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_col</span>()</span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h3>
 <p>See a very simple example below. This generates a table.</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>generate_table <span class="ot">&lt;-</span> <span class="cf">function</span>(data){</span>
-<span id="cb30-2"><a href="#cb30-2" tabindex="-1"></a></span>
-<span id="cb30-3"><a href="#cb30-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(data, <span class="at">mean_value =</span> <span class="fu">mean</span>(value))</span>
-<span id="cb30-4"><a href="#cb30-4" tabindex="-1"></a></span>
-<span id="cb30-5"><a href="#cb30-5" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" tabindex="-1"></a>generate_table <span class="ot">&lt;-</span> <span class="cf">function</span>(data){</span>
+<span id="cb27-2"><a href="#cb27-2" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(data, <span class="at">mean_value =</span> <span class="fu">mean</span>(value))</span>
+<span id="cb27-4"><a href="#cb27-4" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" tabindex="-1"></a>}</span></code></pre></div>
 <p>This allows the the <code>package</code> to automatically: - download the dataset(s) - loads all dependencies - sources the replication script - runs the function</p>
 </div>
 </div>
@@ -381,11 +335,11 @@ flowchart LR
 <h2 id="developer-workflow">Developer Workflow<a class="anchor" aria-label="anchor" href="#developer-workflow"></a>
 </h2>
 <p>Start by cloning the repository. Look at the steps below for starter. After including features or making changes to the package, make sure to submit a <a href="https://github.com/replicate-anything/replicateEverything/pulls" class="external-link">pull request</a> so as to merge it with the updated version of the software.</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" tabindex="-1"></a>git clone https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>replicate<span class="sc">-</span>anything<span class="sc">/</span>replicateEverything</span></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" tabindex="-1"></a>git clone https<span class="sc">:</span><span class="er">//</span>github.com<span class="sc">/</span>replicate<span class="sc">-</span>anything<span class="sc">/</span>replicateEverything</span></code></pre></div>
 <p>Install the dependencies:</p>
-<div class="sourceCode" id="cb32"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install</span>()</span></code></pre></div>
 <p>Run package checks:</p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="report-bugs">Report Bugs<a class="anchor" aria-label="anchor" href="#report-bugs"></a>
@@ -394,10 +348,7 @@ flowchart LR
 </div>
 </div>
 
-  </div>
-
-  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
-    <div class="links">
+  </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
 <li><a href="https://github.com/replicate-anything/replicateEverything/" class="external-link">Browse source code</a></li>
@@ -431,23 +382,20 @@ flowchart LR
 
 
 
-  </div>
+  </aside>
 </div>
 
 
-      <footer><div class="copyright">
-  <p></p>
-<p>Developed by Macartan Humphreys, Vermon Washington.</p>
+    <footer><div class="pkgdown-footer-left">
+  <p>Developed by Macartan Humphreys, Vermon Washington.</p>
 </div>
 
-<div class="pkgdown">
-  <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+<div class="pkgdown-footer-right">
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
-      </footer>
+    </footer>
 </div>
-
 
 
 

@@ -22,7 +22,8 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
-URL: https://github.com/replicate-anything/replicateEverything
+URL: https://github.com/replicate-anything/replicateEverything, https://replicate-anything.github.io/replicateEverything/
 BugReports: https://github.com/replicate-anything/replicateEverything/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+VignetteBuilder: knitr

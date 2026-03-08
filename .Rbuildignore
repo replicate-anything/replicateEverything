@@ -7,3 +7,8 @@
 ^10\..*$
 ^README\.qmd$
 ^README_files$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^doc$
+^Meta$
