@@ -232,7 +232,6 @@ Every replication repository **MUST** follows a standardized structure.
 All data must be store in `processed` folder. All code must be stored in
 the `code` folder.
 
-    #| include: false
 
     papers/
        DOI/
