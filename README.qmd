@@ -79,7 +79,7 @@ find_repo("10.1177/00491241211036161")
 
 
 ### List Repository 
-The `list_replications` function allows you to look up **structures** in an uploaded repository. It also allows you to see some important **$id* that are subsequently used in key replication functions in the package, for example `fig_1`.
+The `list_replications` function allows you to look up **structures** in an uploaded repository. It also allows you to see some important **$id** that are subsequently used in key replication functions in the package, for example `fig_1`.
 ```{r}
 list_replications("10.1177/00491241211036161")
 ```
