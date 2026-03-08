@@ -2,7 +2,7 @@ Package: replicateEverything
 Title: Tools to Replicate Empirical Research Papers
 Version: 0.1.0
 Authors@R: c(
-    person("Macartan", "Humphreys", email = "macartan.humphreys@wzb.eu", role = ("aut")),
+    person("Macartan", "Humphreys", email = "macartan.humphreys@wzb.eu", role = c("aut")),
     person("Vermon", "Washington", email = "vermon.washington@wzb.eu", role = c("aut", "cre")))
 Description: Provides tools for discovering and running computational replications of 
     empirical research papers. The package connects to a replication registry, retrieves 
@@ -20,13 +20,9 @@ Imports:
 Suggests:
     ggplot2,
     testthat (>= 3.0.0),
-    knitr,
-    rmarkdown,
     quarto
 URL: https://github.com/replicate-anything/replicateEverything, https://replicate-anything.github.io/replicateEverything/
 BugReports: https://github.com/replicate-anything/replicateEverything/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-VignetteBuilder: 
-      knitr, 
-      quarto
+VignetteBuilder: quarto
