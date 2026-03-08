@@ -1,36 +1,65 @@
-#' replicateEverything: Replication Infrastructure for Empirical Research
+#' replicateEverything: Reproduce Empirical Research Results
 #'
-#' The \code{replicateEverything} package provides tools for discovering
-#' and running computational replications of empirical research papers.
-#' It connects to a replication registry that stores metadata,
-#' replication code, and processed datasets for published studies.
+#' The `replicateEverything` package provides tools for discovering and
+#' executing computational replications of empirical research papers.
+#' It connects to a public replication registry containing metadata,
+#' replication scripts, and processed datasets required to reproduce
+#' figures and tables from published studies.
 #'
-#' Users can search for replicated papers, list available replications
-#' (such as figures or tables), and reproduce results directly from R.
+#' @section Workflow:
 #'
-#' @section Core functions:
+#' A typical workflow using the package is:
 #'
-#' \describe{
-#'   \item{\code{get_doi_metadata()}}{Obtain the title, author's name, year, journal info from a DOI}
-#'   \item{\code{search_papers()}}{Search the registry for replicated papers}
-#'   \item{\code{create_replication_template()}}{Create a template folder on your local machine}
-#'   \item{\code{list_replications()}}{List figures and tables available for a paper}
-#'   \item{\code{run_replication()}}{Run a specific replication (figure or table)}
-#'   \item{\code{replicate_paper()}}{Run all replications for a paper}
+#' 1. Retrieve metadata for a paper using \code{get_doi_metadata()}.
+#' 2. Search the replication registry using \code{search_papers()}.
+#' 3. Create a template for contributing a replication using
+#'    \code{create_replication_template()}.
+#' 4. Inspect available replications using \code{list_replications()}.
+#' 5. Run a single replication using \code{run_replication()}.
+#' 6. Reproduce all results from a paper using \code{replicate_paper()}.
+#'
+#' @section Examples:
+#'
+#' Retrieve metadata for a paper:
+#'
+#' \donttest{
+#' get_doi_metadata("10.1177/00491241211036161")
+#' }
+#'
+#' Search the replication registry:
+#'
+#' \donttest{
+#' search_papers("causal")
+#' }
+#'
+#' Create a template for contributing a replication:
+#'
+#' \donttest{
+#' create_replication_template("10.1177/00491241211036161")
+#' }
+#'
+#' List available replications:
+#'
+#' \donttest{
+#' list_replications("10.1177/00491241211036161")
+#' }
+#'
+#' Run a single replication:
+#'
+#' \donttest{
+#' run_replication("10.1177/00491241211036161", "fig_1")
+#' }
+#'
+#' Replicate all results from a paper:
+#'
+#' \donttest{
+#' replicate_paper("10.1177/00491241211036161")
 #' }
 #'
 #' @section Registry:
 #'
-#' Replications are stored in a public registry repository that contains
-#' metadata files (\code{replication.yml}), replication scripts, and
-#' processed datasets required to reproduce results.
+#' Replication metadata and materials are stored in the public registry:
+#' \url{https://github.com/replicate-anything/registry}.
 #'
-#' @section Example:
-#'
-#' \dontrun{
-#' replicate_paper("10.1177/00491241211036161")
-#' }
-#'
-#' @docType package
-#' @name replicateEverything
-NULL
+#' @keywords internal
+"_PACKAGE"
