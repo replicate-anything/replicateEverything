@@ -62,10 +62,15 @@ run_replication <- function(doi, what){
   message("Using repository: ", repo)
   message("Replication type: ", rep$type)
 
+  # ---- Load data ----
   data_files <- rep$data
 
-  # ---- Load data ----
-  data_files <- unlist(rep$data)
+  # convert YAML list → character vector
+  if(is.list(data_files)){
+    data_files <- unlist(data_files, use.names = FALSE)
+  }
+
+  data_files <- as.character(data_files)
 
   if(length(data_files) == 1){
 
@@ -85,6 +90,7 @@ run_replication <- function(doi, what){
 
     names(data) <- tools::file_path_sans_ext(basename(data_files))
   }
+
   # ---- Download replication script ----
   code_url <- paste0(base_url, "/", rep$code)
 
