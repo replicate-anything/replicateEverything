@@ -65,6 +65,8 @@ run_replication <- function(doi, what){
   data_files <- rep$data
 
   # ---- Load data ----
+  data_files <- unlist(rep$data)
+
   if(length(data_files) == 1){
 
     data_url <- paste0(base_url, "/", data_files)
@@ -83,7 +85,6 @@ run_replication <- function(doi, what){
 
     names(data) <- tools::file_path_sans_ext(basename(data_files))
   }
-
   # ---- Download replication script ----
   code_url <- paste0(base_url, "/", rep$code)
 
