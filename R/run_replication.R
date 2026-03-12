@@ -21,8 +21,7 @@ run_replication <- function(doi, what){
   )
 
   if(is.null(repo)){
-    message("Using local replication folder")
-    base_path <- gsub("/", "_", doi)
+    stop("Replication repository not found")
   }
 
   doi_path <- gsub("/", "_", doi)
@@ -37,7 +36,7 @@ run_replication <- function(doi, what){
 
   tmp_meta <- tempfile(fileext = ".yml")
 
-  download.file(meta_url, tmp_meta, quiet = TRUE)
+  utils::download.file(meta_url, tmp_meta, quiet = TRUE)
 
   meta <- yaml::read_yaml(tmp_meta)
 
@@ -60,33 +59,53 @@ run_replication <- function(doi, what){
     doi_path
   )
 
-  data_url <- paste0(base_url,"/",rep$data)
-  code_url <- paste0(base_url,"/",rep$code)
-
   message("Using repository: ", repo)
   message("Replication type: ", rep$type)
 
-  data <- read.csv(data_url)
+  data_files <- rep$data
 
-  tmp <- tempfile()
+  # ---- Load data ----
+  if(length(data_files) == 1){
 
-  download.file(code_url,tmp)
+    data_url <- paste0(base_url, "/", data_files)
 
-  source(tmp)
+    data <- utils::read.csv(data_url)
 
+  } else {
+
+    data <- lapply(data_files, function(f){
+
+      url <- paste0(base_url, "/", f)
+
+      utils::read.csv(url)
+
+    })
+
+    names(data) <- tools::file_path_sans_ext(basename(data_files))
+  }
+
+  # ---- Download replication script ----
+  code_url <- paste0(base_url, "/", rep$code)
+
+  tmp_code <- tempfile(fileext = ".R")
+
+  utils::download.file(code_url, tmp_code, quiet = TRUE)
+
+  source(tmp_code)
+
+  # ---- Run replication ----
   if(rep$type == "figure"){
 
     result <- generate_figure(data)
     print(result)
+    invisible(result)
 
   }
 
   if(rep$type == "table"){
 
     result <- generate_table(data)
-
     print(result)
-
     invisible(result)
 
   }
