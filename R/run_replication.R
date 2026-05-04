@@ -2,7 +2,7 @@
 #'
 #' Executes a specific replication (figure or table) for a paper.
 #'
-#' @param doi Character. DOI of the paper.
+#' @param doi Character. DOI of the paper or file path to paper in local registry.
 #' @param what Character. Replication identifier (e.g., "fig_1").
 #'
 #' @return A plot or table produced by the replication code.
@@ -10,6 +10,7 @@
 #' @examples
 #' \dontrun{
 #' run_replication("10.1177/00491241211036161", "fig_1")
+#' run_replication(path, "fig_1")
 #' }
 #'
 #' @export
@@ -21,24 +22,39 @@ run_replication <- function(doi, what){
   )
 
   if(is.null(repo)){
-    stop("Replication repository not found")
-  }
+
+    # treat `doi` as local base path
+    base_url <- doi
+
+    meta_path <- file.path(base_url, "replication.yml")
+
+    if(!file.exists(meta_path)){
+      stop("Local replication.yml not found")}
+
+    meta <- yaml::read_yaml(meta_path)
+
+    }
+
+  else {
 
   doi_path <- gsub("/", "_", doi)
 
-  meta_url <- paste0(
+  base_url <- paste0(
     "https://raw.githubusercontent.com/",
     repo,
     "/main/papers/",
-    doi_path,
-    "/replication.yml"
+    doi_path
   )
+
+  meta_url <- paste0(base_url, "/replication.yml")
 
   tmp_meta <- tempfile(fileext = ".yml")
 
   utils::download.file(meta_url, tmp_meta, quiet = TRUE)
 
   meta <- yaml::read_yaml(tmp_meta)
+
+  }
 
   print(sapply(meta$replications, function(x) x$id))
 
@@ -51,13 +67,6 @@ run_replication <- function(doi, what){
   }
 
   rep <- matches[[1]]
-
-  base_url <- paste0(
-    "https://raw.githubusercontent.com/",
-    repo,
-    "/main/papers/",
-    doi_path
-  )
 
   message("Using repository: ", repo)
   message("Replication type: ", rep$type)
@@ -92,7 +101,15 @@ run_replication <- function(doi, what){
   }
 
   # ---- Download replication script ----
-  code_url <- paste0(base_url, "/", rep$code)
+  if(is.null(repo)){
+
+    code_url <- paste0("file://", base_url, "/", rep$code)
+
+  } else {
+
+    code_url <- paste0(base_url, "/", rep$code)
+
+  }
 
   tmp_code <- tempfile(fileext = ".R")
 
