@@ -16,7 +16,10 @@ Imports:
     jsonlite,
     yaml,
     httr,
-    utils
+    utils,
+    readxl, 
+    haven, 
+    curl
 Suggests:
     ggplot2,
     testthat (>= 3.0.0),
