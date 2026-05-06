@@ -33,26 +33,26 @@ run_replication <- function(doi, what){
 
     meta <- yaml::read_yaml(meta_path)
 
-    }
+  }
 
   else {
 
-  doi_path <- gsub("/", "_", doi)
+    doi_path <- gsub("/", "_", doi)
 
-  base_url <- paste0(
-    "https://raw.githubusercontent.com/",
-    repo,
-    "/main/papers/",
-    doi_path
-  )
+    base_url <- paste0(
+      "https://raw.githubusercontent.com/",
+      repo,
+      "/main/papers/",
+      doi_path
+    )
 
-  meta_url <- paste0(base_url, "/replication.yml")
+    meta_url <- paste0(base_url, "/replication.yml")
 
-  tmp_meta <- tempfile(fileext = ".yml")
+    tmp_meta <- tempfile(fileext = ".yml")
 
-  utils::download.file(meta_url, tmp_meta, quiet = TRUE)
+    utils::download.file(meta_url, tmp_meta, quiet = TRUE)
 
-  meta <- yaml::read_yaml(tmp_meta)
+    meta <- yaml::read_yaml(tmp_meta)
 
   }
 
@@ -81,11 +81,72 @@ run_replication <- function(doi, what){
 
   data_files <- as.character(data_files)
 
+  read_data_from_url <- function(url) {
+    ext <- tolower(tools::file_ext(url))
+
+    if (ext == "") {
+      stop("Cannot determine file type from URL (no extension).")
+    }
+
+    tmp <- tempfile(fileext = paste0(".", ext))
+    on.exit(unlink(tmp), add = TRUE)
+
+    curl::curl_download(url, tmp)
+
+    switch(ext,
+           "csv"  = utils::read.csv(tmp),
+           "xlsx" = readxl::read_excel(tmp),
+           "xls"  = readxl::read_excel(tmp),
+           "rds"  = readRDS(tmp),
+           "rdata" = ,
+           "rda" = {
+             e <- new.env()
+             load(tmp, envir = e)
+             as.list(e)
+           },
+           "dta"  = haven::read_dta(tmp),
+
+           stop(paste("Unsupported file type:", ext))
+    )
+  }
+
+  read_data_local <- function(url){
+    ext <- tolower(tools::file_ext(url))
+
+    if (ext == "") {
+      stop("Cannot determine file type from URL (no extension).")
+    }
+    # = if its a local path
+    switch(ext,
+           "csv"  = utils::read.csv(url),
+           "rds"  = readRDS(url),
+           "rdata" = ,
+           "rda" = {
+             e <- new.env()
+             load(url, envir = e)
+             as.list(e)
+           },
+           "xlsx" = readxl::read_excel(url),
+           "xls"  = readxl::read_excel(url),
+           "dta"  = haven::read_dta(url),
+
+           stop(paste("Unsupported file type:", ext))
+    )
+  }
+
   if(length(data_files) == 1){
 
     data_url <- paste0(base_url, "/", data_files)
 
-    data <- utils::read.csv(data_url)
+    if(is.null(repo)){en
+
+      data <- read_data_local(data_url)
+
+    } else {
+
+      data <- read_data_from_url(data_url)
+
+    }
 
   } else {
 
@@ -93,11 +154,20 @@ run_replication <- function(doi, what){
 
       url <- paste0(base_url, "/", f)
 
-      utils::read.csv(url)
+      if(is.null(repo)){
+
+        read_data_local(url)
+
+      } else {
+
+        read_data_from_url(url)
+
+      }
 
     })
 
     names(data) <- tools::file_path_sans_ext(basename(data_files))
+
   }
 
   # ---- Download replication script ----
