@@ -138,7 +138,7 @@ run_replication <- function(doi, what){
 
     data_url <- paste0(base_url, "/", data_files)
 
-    if(is.null(repo)){en
+    if(is.null(repo)){
 
       data <- read_data_local(data_url)
 
