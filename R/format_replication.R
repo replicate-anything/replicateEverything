@@ -93,6 +93,14 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
     return(object)
   }
 
+  if (inherits(object, "ggplot")) {
+    return(object)
+  }
+
+  if (is.null(object)) {
+    return(NULL)
+  }
+
   ensure_replication_dependencies(
     rep,
     paper_meta = meta$paper,
