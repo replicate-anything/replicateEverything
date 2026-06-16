@@ -26,7 +26,7 @@ find_repo <- function(doi){
     stop("DOI not found in replication index")
   }
 
-  repo <- row$repo[1]
+  repo <- row$folder[1]
 
   repo
 }
