@@ -15,9 +15,9 @@
 #' @export
 load_index <- function(){
 
-  index_url <- "https://raw.githubusercontent.com/replicate-anything/registry/main/index.json"
+  index_url <- "https://raw.githubusercontent.com/replicate-anything/registry/main/index.csv"
 
-  jsonlite::fromJSON(index_url)
+  utils::read.csv(index_url)
 
 }
 
