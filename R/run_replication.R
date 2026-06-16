@@ -72,11 +72,22 @@ run_replication <- function(doi, what){
 
   data_files <- as.character(data_files)
 
+  read_data_file <- function(url, fname) {
+    ext <- tolower(tools::file_ext(fname))
+    if (ext == "rds") {
+      tmp <- tempfile(fileext = ".rds")
+      utils::download.file(url, tmp, quiet = TRUE, mode = "wb")
+      readRDS(tmp)
+    } else {
+      utils::read.csv(url)
+    }
+  }
+
   if(length(data_files) == 1){
 
     data_url <- paste0(base_url, "/", data_files)
 
-    data <- utils::read.csv(data_url)
+    data <- read_data_file(data_url, data_files)
 
   } else {
 
@@ -84,7 +95,7 @@ run_replication <- function(doi, what){
 
       url <- paste0(base_url, "/", f)
 
-      utils::read.csv(url)
+      read_data_file(url, f)
 
     })
 
@@ -118,3 +129,7 @@ run_replication <- function(doi, what){
   }
 
 }
+
+
+
+
