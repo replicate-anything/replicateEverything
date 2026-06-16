@@ -2,7 +2,7 @@
 #'
 #' Executes a specific replication (figure or table) for a paper.
 #'
-#' @param doi Character. DOI of the paper.
+#' @param doi Character. DOI of the paper or file path to paper in local registry.
 #' @param what Character. Replication identifier (e.g., "fig_1").
 #'
 #' @return A plot or table produced by the replication code.
@@ -10,6 +10,7 @@
 #' @examples
 #' \dontrun{
 #' run_replication("10.1177/00491241211036161", "fig_1")
+#' run_replication(path, "fig_1")
 #' }
 #'
 #' @export
@@ -21,24 +22,39 @@ run_replication <- function(doi, what){
   )
 
   if(is.null(repo)){
-    stop("Replication repository not found")
+
+    # treat `doi` as local base path
+    base_url <- doi
+
+    meta_path <- file.path(base_url, "replication.yml")
+
+    if(!file.exists(meta_path)){
+      stop("Local replication.yml not found")}
+
+    meta <- yaml::read_yaml(meta_path)
+
   }
 
-  doi_path <- gsub("/", "_", doi)
+  else {
 
-  meta_url <- paste0(
-    "https://raw.githubusercontent.com/",
-    repo,
-    "/main/papers/",
-    doi_path,
-    "/replication.yml"
-  )
+    doi_path <- gsub("/", "_", doi)
 
-  tmp_meta <- tempfile(fileext = ".yml")
+    base_url <- paste0(
+      "https://raw.githubusercontent.com/",
+      repo,
+      "/main/papers/",
+      doi_path
+    )
 
-  utils::download.file(meta_url, tmp_meta, quiet = TRUE)
+    meta_url <- paste0(base_url, "/replication.yml")
 
-  meta <- yaml::read_yaml(tmp_meta)
+    tmp_meta <- tempfile(fileext = ".yml")
+
+    utils::download.file(meta_url, tmp_meta, quiet = TRUE)
+
+    meta <- yaml::read_yaml(tmp_meta)
+
+  }
 
   print(sapply(meta$replications, function(x) x$id))
 
@@ -51,13 +67,6 @@ run_replication <- function(doi, what){
   }
 
   rep <- matches[[1]]
-
-  base_url <- paste0(
-    "https://raw.githubusercontent.com/",
-    repo,
-    "/main/papers/",
-    doi_path
-  )
 
   message("Using repository: ", repo)
   message("Replication type: ", rep$type)
@@ -72,11 +81,72 @@ run_replication <- function(doi, what){
 
   data_files <- as.character(data_files)
 
+  read_data_from_url <- function(url) {
+    ext <- tolower(tools::file_ext(url))
+
+    if (ext == "") {
+      stop("Cannot determine file type from URL (no extension).")
+    }
+
+    tmp <- tempfile(fileext = paste0(".", ext))
+    on.exit(unlink(tmp), add = TRUE)
+
+    curl::curl_download(url, tmp)
+
+    switch(ext,
+           "csv"  = utils::read.csv(tmp),
+           "xlsx" = readxl::read_excel(tmp),
+           "xls"  = readxl::read_excel(tmp),
+           "rds"  = readRDS(tmp),
+           "rdata" = ,
+           "rda" = {
+             e <- new.env()
+             load(tmp, envir = e)
+             as.list(e)
+           },
+           "dta"  = haven::read_dta(tmp),
+
+           stop(paste("Unsupported file type:", ext))
+    )
+  }
+
+  read_data_local <- function(url){
+    ext <- tolower(tools::file_ext(url))
+
+    if (ext == "") {
+      stop("Cannot determine file type from URL (no extension).")
+    }
+    # = if its a local path
+    switch(ext,
+           "csv"  = utils::read.csv(url),
+           "rds"  = readRDS(url),
+           "rdata" = ,
+           "rda" = {
+             e <- new.env()
+             load(url, envir = e)
+             as.list(e)
+           },
+           "xlsx" = readxl::read_excel(url),
+           "xls"  = readxl::read_excel(url),
+           "dta"  = haven::read_dta(url),
+
+           stop(paste("Unsupported file type:", ext))
+    )
+  }
+
   if(length(data_files) == 1){
 
     data_url <- paste0(base_url, "/", data_files)
 
-    data <- utils::read.csv(data_url)
+    if(is.null(repo)){
+
+      data <- read_data_local(data_url)
+
+    } else {
+
+      data <- read_data_from_url(data_url)
+
+    }
 
   } else {
 
@@ -84,15 +154,32 @@ run_replication <- function(doi, what){
 
       url <- paste0(base_url, "/", f)
 
-      utils::read.csv(url)
+      if(is.null(repo)){
+
+        read_data_local(url)
+
+      } else {
+
+        read_data_from_url(url)
+
+      }
 
     })
 
     names(data) <- tools::file_path_sans_ext(basename(data_files))
+
   }
 
   # ---- Download replication script ----
-  code_url <- paste0(base_url, "/", rep$code)
+  if(is.null(repo)){
+
+    code_url <- paste0("file://", base_url, "/", rep$code)
+
+  } else {
+
+    code_url <- paste0(base_url, "/", rep$code)
+
+  }
 
   tmp_code <- tempfile(fileext = ".R")
 
