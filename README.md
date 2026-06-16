@@ -137,7 +137,7 @@ list_replications("10.1177/00491241211036161")
     [1] "Example figure"
 
     [[1]]$data
-    [1] "processed/fig_1.csv"
+    [1] "data/fig_1.csv"
 
     [[1]]$code
     [1] "code/fig_1.R"
@@ -188,7 +188,7 @@ the `code` folder.
     papers/
        DOI/
           replication.yml
-          processed/
+          data/
              fig_1.csv
              tab_1.csv
           code/
@@ -205,7 +205,7 @@ the data and code as seen below.
     papers/
        10.1177/00491241211036161/
           replication.yml
-          processed/
+          data/
              fig_1.csv
           code/
              fig_1.R
@@ -235,13 +235,13 @@ Ideally, make sure to include if a table has `dependencies`.
       - id: fig_1
         type: figure
         description: Example figure
-        data: processed/fig_1.csv
+        data: data/fig_1.csv
         code: code/fig_1.R
 
       - id: tab_1
         type: table
         description: Example table
-        data: processed/tab_1.csv
+        data: data/tab_1.csv
         code: code/tab_1.R
         dependencies:
           - dplyr

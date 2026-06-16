@@ -1,43 +1,31 @@
 #' Retrieve replication code for a paper
 #'
-#' Downloads and returns the replication script associated with a
-#' specific figure or table from the replication registry.
+#' Returns the analysis script and, when defined, the format script.
 #'
 #' @param doi Character. DOI of the paper.
 #' @param what Character. Replication identifier (e.g., \code{"fig_1"}).
-#'
-#' @return A character vector containing the lines of R code from the
-#' replication script.
-#'
-#' @details
-#' The function locates the appropriate replication repository using
-#' \code{find_repo()}, constructs the URL to the replication script,
-#' and downloads the script from the registry.
-#'
-#' @examples
-#' \dontrun{
-#' get_code("10.1177/00491241211036161", "fig_1")
-#' }
-#'
-#' @keywords internal
+#' @return A character vector containing the lines of the replication script(s).
 #' @export
-get_code <- function(doi, what){
+get_code <- function(doi, what) {
+  meta <- get_replication_meta(doi)
+  rep <- find_replication_entry(meta, what)
+  ctx <- paper_context(doi)
 
-  repo <- find_repo(doi)
+  read_code_file <- function(path) {
+    if (!is.null(ctx$local_root)) {
+      local_code <- file.path(ctx$local_root, path)
+      if (file.exists(local_code)) {
+        return(readLines(local_code, warn = FALSE))
+      }
+    }
+    code_url <- paste0(ctx$base_url, "/", path)
+    suppressWarnings(readLines(code_url, warn = FALSE))
+  }
 
-  doi_path <- gsub("/", "_", doi)
-
-  code_url <- paste0(
-    "https://raw.githubusercontent.com/",
-    repo,
-    "/main/papers/",
-    doi_path,
-    "/code/",
-    what,
-    ".R"
-  )
-
-  suppressWarnings (readLines(code_url))
-
+  lines <- read_code_file(rep$code)
+  fmt_path <- format_script_path(rep)
+  if (!is.null(fmt_path) && fmt_path != rep$code) {
+    lines <- c(lines, "", read_code_file(fmt_path))
+  }
+  lines
 }
-

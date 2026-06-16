@@ -9,17 +9,6 @@ create_replication_template(doi)
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 }
-\value{
-Creates a folder containing replication scaffolding.
-}
 \description{
-Generates a local folder structure for contributing a new replication
-to the replication registry. The template includes metadata,
-example data, and example scripts.
-}
-\examples{
-\dontrun{
-create_replication_template("10.1177/00491241211036161")
-}
-
+Create a replication template
 }

@@ -4,22 +4,19 @@
 \alias{run_replication}
 \title{Run a single replication}
 \usage{
-run_replication(doi, what)
+run_replication(doi, what, install_deps = FALSE)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
 \item{what}{Character. Replication identifier (e.g., "fig_1").}
+
+\item{install_deps}{Logical. Install missing CRAN dependencies when
+\code{TRUE}. Defaults to \code{FALSE}.}
 }
 \value{
-A plot or table produced by the replication code.
+The underlying replication object.
 }
 \description{
 Executes a specific replication (figure or table) for a paper.
-}
-\examples{
-\dontrun{
-run_replication("10.1177/00491241211036161", "fig_1")
-}
-
 }

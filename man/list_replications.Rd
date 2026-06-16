@@ -10,15 +10,8 @@ list_replications(doi)
 \item{doi}{Character. DOI of the paper.}
 }
 \value{
-A list of replication identifiers.
+A list of replication entries from \code{replication.yml}.
 }
 \description{
-Retrieves the replication metadata for a paper and lists all
-available figures and tables that can be reproduced.
-}
-\examples{
-\dontrun{
-list_replications("10.1177/00491241211036161")
-}
-
+List available replications for a paper
 }

@@ -4,22 +4,17 @@
 \alias{replicate_paper}
 \title{Replicate all results from a paper}
 \usage{
-replicate_paper(doi)
+replicate_paper(doi, install_deps = FALSE)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
+
+\item{install_deps}{Logical. Install missing CRAN dependencies when
+\code{TRUE}. Defaults to \code{FALSE}.}
+}
+\value{
+A named list of replication result envelopes.
 }
 \description{
 Runs all registered replications (figures and tables) for a given paper.
-}
-\details{
-The function retrieves replication metadata from the registry,
-downloads required data and scripts, and executes each replication
-sequentially.
-}
-\examples{
-\dontrun{
-replicate_paper("10.1177/00491241211036161")
-}
-
 }

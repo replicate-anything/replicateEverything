@@ -7,17 +7,8 @@
 load_index()
 }
 \value{
-A data frame containing replication metadata including DOI,
-title, authors, journal, and repository location.
+A data frame containing replication metadata.
 }
 \description{
-Downloads and reads the replication registry index file, which contains
-metadata about all available paper replications.
+Load the replication registry index
 }
-\examples{
-\dontrun{
-load_index()
-}
-
-}
-\keyword{internal}

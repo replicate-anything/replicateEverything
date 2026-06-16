@@ -122,7 +122,7 @@ Every replication repository **MUST** follows a standardized structure. All data
 papers/
    DOI/
       replication.yml
-      processed/
+      data/
          fig_1.csv
          tab_1.csv
       code/
@@ -137,7 +137,7 @@ See the example below for structure of a repo for a single figure. This should s
 papers/
    10.1177/00491241211036161/
       replication.yml
-      processed/
+      data/
          fig_1.csv
       code/
          fig_1.R
@@ -169,13 +169,13 @@ replications:
   - id: fig_1
     type: figure
     description: Example figure
-    data: processed/fig_1.csv
+    data: data/fig_1.csv
     code: code/fig_1.R
 
   - id: tab_1
     type: table
     description: Example table
-    data: processed/tab_1.csv
+    data: data/tab_1.csv
     code: code/tab_1.R
     dependencies:
       - dplyr
