@@ -20,7 +20,9 @@ find_repo <- function(doi){
 
   index <- load_index()
 
-  row <- index[index$doi == doi, ]
+  normalized_folders <- sapply(index$doi, normalize_doi)
+
+  row <- index[normalized_folders == doi, ]
 
   if(nrow(row) == 0){
     stop("DOI not found in replication index")
