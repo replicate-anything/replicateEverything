@@ -34,7 +34,7 @@ Humphreys](https://macartan.github.io), Director of the [Institutions
 and Political Inequality](https://wzb-ipi.github.io/) Research Group at
 [WZB](https://www.wzb.eu) in a
 [talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2)
-he gave to a $Lab^{2}$ audience in 2024. The project is under active
+he gave to a $`Lab^2`$ audience in 2024. The project is under active
 development at the moment. All feedback are welcome. Feel free to [email
 me](mailto:vermon.washington@wzb.eu) or
 [Macartan](mailto:macartan.humphreys@zwb.eu).
@@ -60,6 +60,7 @@ devtools::install_github("replicate-anything/replicateEverything")
 Load the package in your environment.
 
 ``` r
+
 library(replicateEverything)
 ```
 
@@ -68,6 +69,7 @@ library(replicateEverything)
 ### Retrieve metadata for a paper
 
 ``` r
+
 get_doi_metadata("10.1177/00491241211036161")
 ```
 
@@ -88,6 +90,7 @@ $authors
 ### Find Replication Repository
 
 ``` r
+
 # find repo
 find_repo("10.1177/00491241211036161")
 ```
@@ -106,6 +109,7 @@ registry.
 ### Search the replication registry
 
 ``` r
+
 search_papers("causes")
 ```
 
@@ -125,11 +129,12 @@ already in the registry.
 ### List available replication options
 
 The `list_replications` function allows you to look up **structures** in
-an uploaded repository. It also allows you to see some important $id$
+an uploaded repository. It also allows you to see some important $`id`$
 that are subsequently used in key replication functions in the package,
 for example `fig_1`.
 
 ``` r
+
 list_replications("10.1177/00491241211036161")
 ```
 
@@ -273,6 +278,7 @@ replications:
 ### Retrieve DOI metadata
 
 ``` r
+
 get_doi_metadata("10.1177/00491241211036161")
 ```
 
@@ -298,6 +304,7 @@ code in their exact areas. Read the `Writing Scripts` section below for
 how to include the `generate` function into your code.
 
 ``` r
+
 #create a local folder 
 create_replication_template("10.1177/00491241211036161")
 ```
