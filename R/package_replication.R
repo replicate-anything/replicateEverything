@@ -151,24 +151,24 @@ sibling_monorepo_root <- function() {
 
 #' Load or install a study replication package
 #'
-#' Tries, in order: already loaded namespace, local sibling package, then
-#' GitHub install from \code{package_repo_slug()}.
+#' Tries, in order: local sibling package (when configured), already loaded
+#' namespace, then GitHub install from \code{package_repo_slug()}.
 #'
 #' @param package R package name.
 #' @param meta Parsed replication.yml contents.
 #' @param ctx Paper context from \code{paper_context()}.
 #' @keywords internal
 ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
-  if (requireNamespace(package, quietly = TRUE)) {
-    return(invisible(TRUE))
-  }
-
   local_path <- resolve_replication_package_path(package, meta, ctx)
   if (!is.null(local_path)) {
     load_replication_package_path(local_path, package)
     if (requireNamespace(package, quietly = TRUE)) {
       return(invisible(TRUE))
     }
+  }
+
+  if (requireNamespace(package, quietly = TRUE)) {
+    return(invisible(TRUE))
   }
 
   if (is.null(meta) || is.null(ctx)) {

@@ -10,8 +10,15 @@
 #' @export
 get_code <- function(doi, what, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
-  rep <- find_replication_entry(meta, what)
   ctx <- paper_context(doi, repo = repo, folder = folder)
+
+  if (is_package_replication(meta)) {
+    pkg <- as.character(meta$paper$package[[1]])
+    ensure_replication_package(pkg, meta = meta, ctx = ctx)
+    return(call_replication_package(pkg, "get_code", what))
+  }
+
+  rep <- find_replication_entry(meta, what)
 
   read_code_file <- function(path) {
     if (!is.null(ctx$local_root)) {
