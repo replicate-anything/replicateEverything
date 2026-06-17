@@ -5,7 +5,7 @@ Executes a specific replication (figure or table) for a paper.
 ## Usage
 
 ``` r
-run_replication(doi, what)
+run_replication(doi, what, install_deps = FALSE)
 ```
 
 ## Arguments
@@ -18,14 +18,11 @@ run_replication(doi, what)
 
   Character. Replication identifier (e.g., "fig_1").
 
+- install_deps:
+
+  Logical. Install missing CRAN dependencies when `TRUE`. Defaults to
+  `FALSE`.
+
 ## Value
 
-A plot or table produced by the replication code.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-run_replication("10.1177/00491241211036161", "fig_1")
-} # }
-```
+The underlying replication object.

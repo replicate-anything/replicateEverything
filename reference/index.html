@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,9 +43,9 @@
     </div>
 
     <div class="section level2">
-      <h2 id="main-functions">Main Functions<a class="anchor" aria-label="anchor" href="#main-functions"></a></h2>
+      <h2 id="discovery">Discovery<a class="anchor" aria-label="anchor" href="#discovery"></a></h2>
 
-
+      <div class="section-desc"><p>Find papers and inspect replication metadata.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -68,10 +68,24 @@
 
         <dt>
 
-          <code><a href="create_replication_template.html">create_replication_template()</a></code>
+          <code><a href="normalize_doi.html">normalize_doi()</a></code>
 
         </dt>
-        <dd>Create a replication template</dd>
+        <dd>Normalize a DOI</dd>
+
+        <dt>
+
+          <code><a href="load_index.html">load_index()</a></code>
+
+        </dt>
+        <dd>Load the replication registry index</dd>
+
+        <dt>
+
+          <code><a href="find_repo.html">find_repo()</a></code>
+
+        </dt>
+        <dd>Find the repository for a paper replication</dd>
 
         <dt>
 
@@ -79,6 +93,36 @@
 
         </dt>
         <dd>List available replications for a paper</dd>
+
+        <dt>
+
+          <code><a href="get_code.html">get_code()</a></code>
+
+        </dt>
+        <dd>Retrieve replication code for a paper</dd>
+      </dl></div><div class="section level2">
+      <h2 id="run-replications">Run replications<a class="anchor" aria-label="anchor" href="#run-replications"></a></h2>
+
+      <div class="section-desc"><p>Render tables and figures from registry scripts.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="render_replication.html">render_replication()</a></code>
+
+        </dt>
+        <dd>Render a single replication</dd>
+
+        <dt>
+
+          <code><a href="render_for_display.html">render_for_display()</a></code>
+
+        </dt>
+        <dd>Render a replication and apply formatting for display</dd>
 
         <dt>
 
@@ -93,8 +137,132 @@
 
         </dt>
         <dd>Replicate all results from a paper</dd>
+
+        <dt>
+
+          <code><a href="validate_replication.html">validate_replication()</a></code>
+
+        </dt>
+        <dd>Validate that a replication can be rendered</dd>
+
+        <dt>
+
+          <code><a href="create_replication_template.html">create_replication_template()</a></code>
+
+        </dt>
+        <dd>Create a replication template</dd>
+
+        <dt>
+
+          <code><a href="self_run.html">self_run()</a></code>
+
+        </dt>
+        <dd>Run a replication script footer when executed directly</dd>
+
+        <dt>
+
+          <code><a href="load_local_replication_data.html">load_local_replication_data()</a></code>
+
+        </dt>
+        <dd>Load replication data from local paths (for self-contained scripts)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="artifacts">Artifacts<a class="anchor" aria-label="anchor" href="#artifacts"></a></h2>
+
+      <div class="section-desc"><p>Precomputed outputs for Display in the Shiny app.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="get_artifact_path.html">get_artifact_path()</a></code>
+
+        </dt>
+        <dd>Get artifact URL or local path for a replication</dd>
+
+        <dt>
+
+          <code><a href="load_artifact.html">load_artifact()</a></code>
+
+        </dt>
+        <dd>Load a precomputed artifact for a replication</dd>
+
+        <dt>
+
+          <code><a href="save_artifact.html">save_artifact()</a></code>
+
+        </dt>
+        <dd>Save a replication result as an artifact file</dd>
+
+        <dt>
+
+          <code><a href="artifact_available.html">artifact_available()</a></code>
+
+        </dt>
+        <dd>Check whether a precomputed artifact is available</dd>
+
+        <dt>
+
+          <code><a href="validate_artifact.html">validate_artifact()</a></code>
+
+        </dt>
+        <dd>Validate that a precomputed artifact exists</dd>
+
+        <dt>
+
+          <code><a href="validate_paper_artifacts.html">validate_paper_artifacts()</a></code>
+
+        </dt>
+        <dd>Validate all artifacts for a paper</dd>
+      </dl></div><div class="section level2">
+      <h2 id="display-helpers">Display helpers<a class="anchor" aria-label="anchor" href="#display-helpers"></a></h2>
+
+      <div class="section-desc"><p>Format analysis output for HTML tables and plots.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="format_for_display.html">format_for_display()</a></code>
+
+        </dt>
+        <dd>Apply an optional format function to an analysis object</dd>
+
+        <dt>
+
+          <code><a href="normalize_html_table.html">normalize_html_table()</a></code>
+
+        </dt>
+        <dd>Decode HTML entities in kableExtra / modelsummary table output</dd>
+
+        <dt>
+
+          <code><a href="replication_object.html">replication_object()</a></code>
+
+        </dt>
+        <dd>Extract a plain object from a replication result envelope</dd>
+
+        <dt>
+
+          <code><a href="replication_error_message.html">replication_error_message()</a></code>
+
+        </dt>
+        <dd>Format a replication error for user-facing display</dd>
+
+        <dt>
+
+          <code><a href="try_render_for_display.html">try_render_for_display()</a></code>
+
+        </dt>
+        <dd>Run a replication and return a result or error object</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

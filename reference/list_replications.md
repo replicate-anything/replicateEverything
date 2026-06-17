@@ -1,12 +1,11 @@
 # List available replications for a paper
 
-Retrieves the replication metadata for a paper and lists all available
-figures and tables that can be reproduced.
+List available replications for a paper
 
 ## Usage
 
 ``` r
-list_replications(doi)
+list_replications(doi, repo = NULL, folder = NULL)
 ```
 
 ## Arguments
@@ -15,14 +14,14 @@ list_replications(doi)
 
   Character. DOI of the paper.
 
+- repo:
+
+  Optional repository slug.
+
+- folder:
+
+  Optional registry folder name from `index.csv`.
+
 ## Value
 
-A list of replication identifiers.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-list_replications("10.1177/00491241211036161")
-} # }
-```
+A list of replication entries from `replication.yml`.

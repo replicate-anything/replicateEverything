@@ -152,7 +152,7 @@ list_replications("10.1177/00491241211036161")
 [1] "Example figure"
 
 [[1]]$data
-[1] "processed/fig_1.csv"
+[1] "data/fig_1.csv"
 
 [[1]]$code
 [1] "code/fig_1.R"
@@ -209,7 +209,7 @@ the `code` folder.
 papers/
    DOI/
       replication.yml
-      processed/
+      data/
          fig_1.csv
          tab_1.csv
       code/
@@ -227,7 +227,7 @@ the data and code as seen below.
 papers/
    10.1177/00491241211036161/
       replication.yml
-      processed/
+      data/
          fig_1.csv
       code/
          fig_1.R
@@ -260,18 +260,68 @@ replications:
   - id: fig_1
     type: figure
     description: Example figure
-    data: processed/fig_1.csv
+    data: data/fig_1.csv
     code: code/fig_1.R
 
   - id: tab_1
     type: table
     description: Example table
-    data: processed/tab_1.csv
+    data: data/tab_1.csv
     code: code/tab_1.R
     dependencies:
       - dplyr
       - gt
 ```
+
+### Link with package option
+
+For studies maintained as standalone replication packages (instead of
+`registry/papers/<folder>/code` and `data`), keep a paper folder in the
+registry with a `replication.yml` that links to the package:
+
+``` R
+paper:
+  doi: https://doi.org/10.1371/journal.pone.0278337
+  title: "Public support for global vaccine sharing in the COVID-19 pandemic: Evidence from Germany"
+  package: rep1371journalpone0278337
+  package_folder: rep_10.1371_journal.pone.0278337
+  package_repo: replicate-anything/rep_10.1371_journal.pone.0278337
+  package_ref: main
+repo: replicate-anything/rep_10.1371_journal.pone.0278337
+```
+
+**Local development (monorepo):** keep the study package as a sibling
+folder (e.g. next to `registry/`). `replicateEverything` looks for
+`package_folder` under the monorepo root or under
+`options(replicateEverything.replication_packages_root)` and loads it
+with `devtools::load_all()`.
+
+**Online / published:** once the package is on GitHub, set
+`package_repo` (and top-level `repo`) to the GitHub slug. No YAML
+changes are needed beyond removing or ignoring `package_folder` —
+install falls back to `remotes::install_github()` when no sibling is
+found.
+
+Optional overrides:
+
+- `paper.package_path`: absolute or relative path to the package root
+- `options(replicateEverything.replication_packages = list(pkgname = "/path"))`
+- `options(replicateEverything.replication_packages_root = "/path/to/monorepo")`
+
+How this works:
+
+- the registry still indexes the study using its DOI and metadata
+- `replicateEverything` reads `replication.yml` from the registry folder
+- if `paper.package` is present, `replicateEverything` loads the sibling
+  package locally or installs from `package_repo` on GitHub
+- Shiny continues calling `replicateEverything` in the same way; the
+  package-backed routing is handled in the package layer
+
+Required package API for linked studies:
+
+- [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+- `run_replication(id, install_deps = FALSE)`
+- `load_artifact(id)`
 
 ## Contributor’s Workflow
 

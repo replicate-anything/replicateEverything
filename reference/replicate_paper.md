@@ -5,7 +5,7 @@ Runs all registered replications (figures and tables) for a given paper.
 ## Usage
 
 ``` r
-replicate_paper(doi)
+replicate_paper(doi, install_deps = FALSE)
 ```
 
 ## Arguments
@@ -14,15 +14,11 @@ replicate_paper(doi)
 
   Character. DOI of the paper.
 
-## Details
+- install_deps:
 
-The function retrieves replication metadata from the registry, downloads
-required data and scripts, and executes each replication sequentially.
+  Logical. Install missing CRAN dependencies when `TRUE`. Defaults to
+  `FALSE`.
 
-## Examples
+## Value
 
-``` r
-if (FALSE) { # \dontrun{
-replicate_paper("10.1177/00491241211036161")
-} # }
-```
+A named list of replication result envelopes.

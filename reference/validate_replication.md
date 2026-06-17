@@ -1,0 +1,28 @@
+# Validate that a replication can be rendered
+
+Validate that a replication can be rendered
+
+## Usage
+
+``` r
+validate_replication(doi, what, install_deps = FALSE)
+```
+
+## Arguments
+
+- doi:
+
+  Character. DOI of the paper.
+
+- what:
+
+  Replication identifier.
+
+- install_deps:
+
+  Logical. Passed to
+  [`render_replication()`](https://replicate-anything.github.io/replicateEverything/reference/render_replication.md).
+
+## Value
+
+Invisibly `TRUE` on success.

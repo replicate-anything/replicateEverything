@@ -1,7 +1,6 @@
 # Load the replication registry index
 
-Downloads and reads the replication registry index file, which contains
-metadata about all available paper replications.
+Load the replication registry index
 
 ## Usage
 
@@ -11,13 +10,4 @@ load_index()
 
 ## Value
 
-A data frame containing replication metadata including DOI, title,
-authors, journal, and repository location.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-load_index()
-} # }
-```
+A data frame containing replication metadata.
