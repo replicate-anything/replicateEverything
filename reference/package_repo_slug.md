@@ -1,6 +1,8 @@
 # Resolve GitHub repo slug for a package-backed replication
 
-Resolve GitHub repo slug for a package-backed replication
+Used when no local sibling package is found. Set `paper.package_repo` or
+top-level `repo` in `replication.yml` (GitHub slug, e.g.
+`replicate-anything/rep_10.1371_journal.pone.0278337`).
 
 ## Usage
 
