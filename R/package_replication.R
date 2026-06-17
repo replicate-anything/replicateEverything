@@ -116,6 +116,78 @@ download_registry_file <- function(url) {
   tmp
 }
 
+#' Raw GitHub URLs for a study package \code{replication.yml}
+#'
+#' @param repo GitHub slug \code{org/repo}.
+#' @param ref Branch or tag.
+#' @return Character vector of raw URLs (tried in order).
+#' @keywords internal
+package_replication_yaml_urls <- function(repo, ref = "main") {
+  unique(c(
+    sprintf("https://raw.githubusercontent.com/%s/%s/replication.yml", repo, ref),
+    sprintf("https://raw.githubusercontent.com/%s/%s/inst/replication.yml", repo, ref)
+  ))
+}
+
+#' Convert a raw GitHub URL to a browseable \code{/blob/} link
+#'
+#' @param url Raw \code{raw.githubusercontent.com} URL.
+#' @return Browse URL or original \code{url}.
+#' @keywords internal
+raw_to_github_browse <- function(url) {
+  if (length(url) != 1L || !nzchar(url) || !grepl("^https://raw\\.githubusercontent\\.com/", url)) {
+    return(url)
+  }
+  rest <- sub("^https://raw\\.githubusercontent\\.com/", "", url)
+  parts <- strsplit(rest, "/", fixed = TRUE)[[1]]
+  if (length(parts) < 4L) {
+    return(url)
+  }
+  paste0(
+    "https://github.com/", parts[[1]], "/", parts[[2]],
+    "/blob/", parts[[3]], "/",
+    paste(parts[-(1:3)], collapse = "/")
+  )
+}
+
+#' Probe a yaml URL and return a short status string
+#'
+#' @param url Local path or HTTP(S) URL.
+#' @keywords internal
+yaml_url_status <- function(url) {
+  if (length(url) != 1L || !nzchar(url)) {
+    return("empty url")
+  }
+  if (!grepl("^https?://", url, ignore.case = TRUE)) {
+    if (!file.exists(url)) {
+      return("missing (local file)")
+    }
+    parsed <- tryCatch(yaml::read_yaml(url), error = function(e) NULL)
+    if (is.null(parsed)) {
+      return("local file exists but yaml parse failed")
+    }
+    n <- length(parsed$replications %||% list())
+    return(paste0("ok (local file, ", n, " replications)"))
+  }
+  resp <- tryCatch(
+    httr::GET(url, httr::user_agent("replicateEverything"), httr::timeout(15)),
+    error = function(e) paste0("error: ", conditionMessage(e))
+  )
+  if (is.character(resp)) {
+    return(resp)
+  }
+  sc <- httr::status_code(resp)
+  if (sc >= 400L) {
+    return(paste0("HTTP ", sc))
+  }
+  parsed <- read_yaml_url(url)
+  if (is.null(parsed)) {
+    return(paste0("HTTP ", sc, " but yaml parse failed"))
+  }
+  n <- length(parsed$replications %||% list())
+  paste0("ok (HTTP ", sc, ", ", n, " replications)")
+}
+
 #' Fetch \code{replication.yml} from a study package GitHub repo
 #'
 #' Lets the app list tables/figures without installing the package.
@@ -133,17 +205,105 @@ fetch_package_replication_yaml <- function(meta, ctx) {
     return(NULL)
   }
   ref <- package_repo_ref(meta)
-  urls <- unique(c(
-    sprintf("https://raw.githubusercontent.com/%s/%s/replication.yml", repo, ref),
-    sprintf("https://raw.githubusercontent.com/%s/%s/inst/replication.yml", repo, ref)
-  ))
-  for (meta_url in urls) {
+  for (meta_url in package_replication_yaml_urls(repo, ref)) {
     parsed <- read_yaml_url(meta_url)
     if (!is.null(parsed)) {
       return(parsed)
     }
   }
   NULL
+}
+
+#' Report where the replication index was sought (for debugging Shiny)
+#'
+#' When a package-backed study lists no tables/figures, this shows which
+#' \code{replication.yml} URLs were checked. The study index should come from
+#' the package repo (e.g.
+#' \code{replicate-anything/rep_10.1371_journal.pone.0278337}), not only the
+#' registry stub under \code{papers/<folder>/}.
+#'
+#' @param doi Character DOI.
+#' @param repo Optional registry repo slug from \code{index.csv}.
+#' @param folder Optional registry folder name.
+#' @return A list with \code{registry_sources}, \code{package_sources}, etc.
+#' @export
+replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
+  doi <- normalize_doi(doi)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
+
+  source_entry <- function(label, url) {
+    list(
+      label = label,
+      url = url,
+      browse_url = if (grepl("^https?://", url)) raw_to_github_browse(url) else url,
+      status = yaml_url_status(url)
+    )
+  }
+
+  registry_sources <- list()
+  if (!is.null(ctx$local_root)) {
+    registry_sources[[length(registry_sources) + 1L]] <- source_entry(
+      "local registry stub",
+      file.path(ctx$local_root, "replication.yml")
+    )
+  }
+  registry_raw <- paste0(ctx$base_url, "/replication.yml")
+  registry_sources[[length(registry_sources) + 1L]] <- source_entry(
+    "registry stub (GitHub)",
+    registry_raw
+  )
+
+  stub <- NULL
+  for (src in registry_sources) {
+    if (grepl("^ok", src$status)) {
+      if (grepl("^https?://", src$url)) {
+        stub <- read_yaml_url(src$url)
+      } else if (file.exists(src$url)) {
+        stub <- tryCatch(yaml::read_yaml(src$url), error = function(e) NULL)
+      }
+      if (!is.null(stub)) {
+        break
+      }
+    }
+  }
+  if (is.null(stub)) {
+    stub <- read_yaml_url(registry_raw)
+  }
+
+  package_sources <- list()
+  package_repo <- NULL
+  package_ref <- "main"
+  replications_found <- 0L
+  is_package_study <- !is.null(stub) && is_package_replication(stub)
+
+  if (is_package_study) {
+    package_repo <- package_repo_slug(stub, ctx)
+    package_ref <- package_repo_ref(stub)
+    for (pkg_url in package_replication_yaml_urls(package_repo, package_ref)) {
+      package_sources[[length(package_sources) + 1L]] <- source_entry(
+        "study package replication.yml",
+        pkg_url
+      )
+    }
+    pkg_meta <- fetch_package_replication_yaml(stub, ctx)
+    if (!is.null(pkg_meta)) {
+      replications_found <- length(pkg_meta$replications %||% list())
+    }
+  } else if (!is.null(stub)) {
+    replications_found <- length(stub$replications %||% list())
+  }
+
+  list(
+    doi = doi,
+    folder = ctx$folder,
+    registry_repo = ctx$repo,
+    package_repo = package_repo,
+    package_ref = package_ref,
+    is_package_study = is_package_study,
+    replications_found = replications_found,
+    registry_sources = registry_sources,
+    package_sources = package_sources
+  )
 }
 
 #' Folder names to check when locating a sibling replication package
