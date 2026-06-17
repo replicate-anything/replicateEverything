@@ -4,7 +4,14 @@
 \alias{format_for_display}
 \title{Apply an optional format function to an analysis object}
 \usage{
-format_for_display(object, doi, what, install_deps = FALSE, repo = NULL)
+format_for_display(
+  object,
+  doi,
+  what,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+)
 }
 \arguments{
 \item{object}{Analysis output to format.}
@@ -16,6 +23,8 @@ format_for_display(object, doi, what, install_deps = FALSE, repo = NULL)
 \item{install_deps}{Logical. Install missing dependencies when \code{TRUE}.}
 
 \item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 Object suitable for display (often an HTML string or ggplot).

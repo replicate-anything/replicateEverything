@@ -4,7 +4,7 @@
 \alias{render_replication}
 \title{Render a single replication}
 \usage{
-render_replication(doi, what, install_deps = FALSE, repo = NULL)
+render_replication(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
@@ -15,6 +15,8 @@ render_replication(doi, what, install_deps = FALSE, repo = NULL)
 \code{TRUE}. Defaults to \code{FALSE}.}
 
 \item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 A list with \code{id}, \code{type}, \code{object}, and \code{format}.

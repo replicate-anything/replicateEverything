@@ -4,12 +4,14 @@
 #'
 #' @param doi Character. DOI of the paper.
 #' @param what Character. Replication identifier (e.g., \code{"fig_1"}).
+#' @param repo Optional repository slug.
+#' @param folder Optional registry folder name from \code{index.csv}.
 #' @return A character vector containing the lines of the replication script(s).
 #' @export
-get_code <- function(doi, what) {
-  meta <- get_replication_meta(doi)
+get_code <- function(doi, what, repo = NULL, folder = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
   rep <- find_replication_entry(meta, what)
-  ctx <- paper_context(doi)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
 
   read_code_file <- function(path) {
     if (!is.null(ctx$local_root)) {

@@ -28,6 +28,49 @@ test_that("resolve_paper_path uses index folder when available", {
   )
 })
 
+test_that("resolve_paper_path uses Fearon folder from index", {
+  local_index <- data.frame(
+    folder = "10.1017S0003055403000534",
+    doi = "https://doi.org/10.1017/S0003055403000534",
+    title = "Ethnicity, Insurgency, and Civil War",
+    journal = "APSR",
+    year = 2003,
+    authors = "Fearon, Laitin",
+    repo = "replicate-anything/registry",
+    stringsAsFactors = FALSE
+  )
+
+  withr::with_options(
+    list(replicateEverything.index = local_index),
+    {
+      expect_equal(
+        resolve_paper_path("10.1017/S0003055403000534"),
+        "10.1017S0003055403000534"
+      )
+      expect_equal(
+        paper_context("10.1017/S0003055403000534")$base_url,
+        paste0(
+          "https://raw.githubusercontent.com/replicate-anything/registry/main/papers/",
+          "10.1017S0003055403000534"
+        )
+      )
+    }
+  )
+})
+
+test_that("resolve_paper_path fallback differs from Fearon folder", {
+  expect_equal(
+    gsub("/", "_", normalize_doi("10.1017/S0003055403000534")),
+    "10.1017_s0003055403000534"
+  )
+  expect_false(
+    identical(
+      gsub("/", "_", normalize_doi("10.1017/S0003055403000534")),
+      "10.1017S0003055403000534"
+    )
+  )
+})
+
 test_that("read_data_path handles csv and rds", {
   tmp_csv <- tempfile(fileext = ".csv")
   write.csv(data.frame(x = 1:2, y = 3:4), tmp_csv, row.names = FALSE)

@@ -82,11 +82,12 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
 #' @param what Replication identifier.
 #' @param install_deps Logical. Install missing dependencies when \code{TRUE}.
 #' @param repo Optional repository slug.
+#' @param folder Optional registry folder name from \code{index.csv}.
 #' @return Object suitable for display (often an HTML string or ggplot).
 #' @export
-format_for_display <- function(object, doi, what, install_deps = FALSE, repo = NULL) {
+format_for_display <- function(object, doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
   doi <- normalize_doi(doi)
-  meta <- get_replication_meta(doi, repo = repo)
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
   rep <- find_replication_entry(meta, what)
 
   if (!format_specified(rep)) {
@@ -107,7 +108,7 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
     install_missing = install_deps
   )
 
-  ctx <- paper_context(doi, repo = repo)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
   env <- new.env(parent = globalenv())
   source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = TRUE)
 
@@ -132,14 +133,21 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
 #'
 #' @inheritParams render_replication
 #' @export
-render_for_display <- function(doi, what, install_deps = FALSE, repo = NULL) {
-  result <- render_replication(doi, what, install_deps = install_deps, repo = repo)
+render_for_display <- function(doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
+  result <- render_replication(
+    doi,
+    what,
+    install_deps = install_deps,
+    repo = repo,
+    folder = folder
+  )
   display <- format_for_display(
     replication_object(result),
     doi,
     what,
     install_deps = install_deps,
-    repo = repo
+    repo = repo,
+    folder = folder
   )
   result$display <- display
   result$display_format <- infer_result_format(display, result$type)

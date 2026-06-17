@@ -4,10 +4,14 @@
 \alias{list_replications}
 \title{List available replications for a paper}
 \usage{
-list_replications(doi)
+list_replications(doi, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
+
+\item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 A list of replication entries from \code{replication.yml}.

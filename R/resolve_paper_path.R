@@ -27,16 +27,22 @@ resolve_paper_path <- function(doi) {
 #'
 #' @param doi Character. DOI of the paper.
 #' @param repo Optional repository slug. Defaults to \code{find_repo(doi)}.
+#' @param folder Optional registry folder name from \code{index.csv}.
 #'
 #' @return A list with \code{repo}, \code{folder}, \code{base_url}, and
 #'   optional \code{local_root}.
 #' @keywords internal
-paper_context <- function(doi, repo = NULL) {
+paper_context <- function(doi, repo = NULL, folder = NULL) {
   doi <- normalize_doi(doi)
-  folder <- resolve_paper_path(doi)
+  if (is.null(folder) || !nzchar(folder)) {
+    folder <- resolve_paper_path(doi)
+  }
 
-  if (is.null(repo)) {
-    repo <- find_repo(doi)
+  if (is.null(repo) || !nzchar(repo)) {
+    repo <- tryCatch(
+      find_repo(doi),
+      error = function(e) "replicate-anything/registry"
+    )
   }
 
   registry_root <- getOption("replicateEverything.registry_root", NULL)

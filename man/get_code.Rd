@@ -4,12 +4,16 @@
 \alias{get_code}
 \title{Retrieve replication code for a paper}
 \usage{
-get_code(doi, what)
+get_code(doi, what, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
 \item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+
+\item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 A character vector containing the lines of the replication script(s).

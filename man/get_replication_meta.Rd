@@ -4,12 +4,14 @@
 \alias{get_replication_meta}
 \title{Fetch replication metadata for a paper}
 \usage{
-get_replication_meta(doi, repo = NULL)
+get_replication_meta(doi, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
 \item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 Parsed \code{replication.yml} contents.

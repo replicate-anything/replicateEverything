@@ -4,7 +4,7 @@
 \alias{get_artifact_path}
 \title{Get artifact URL or local path for a replication}
 \usage{
-get_artifact_path(doi, what, repo = NULL)
+get_artifact_path(doi, what, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
@@ -12,6 +12,8 @@ get_artifact_path(doi, what, repo = NULL)
 \item{what}{Replication identifier.}
 
 \item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 Character path or URL, or \code{NULL} if no artifact is registered.

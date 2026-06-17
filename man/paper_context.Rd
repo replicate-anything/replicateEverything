@@ -4,12 +4,14 @@
 \alias{paper_context}
 \title{Build base URLs and paths for a paper in the registry}
 \usage{
-paper_context(doi, repo = NULL)
+paper_context(doi, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
 \item{repo}{Optional repository slug. Defaults to \code{find_repo(doi)}.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 A list with \code{repo}, \code{folder}, \code{base_url}, and

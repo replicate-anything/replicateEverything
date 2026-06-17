@@ -4,7 +4,7 @@
 \alias{render_for_display}
 \title{Render a replication and apply formatting for display}
 \usage{
-render_for_display(doi, what, install_deps = FALSE, repo = NULL)
+render_for_display(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
@@ -15,6 +15,8 @@ render_for_display(doi, what, install_deps = FALSE, repo = NULL)
 \code{TRUE}. Defaults to \code{FALSE}.}
 
 \item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \description{
 Render a replication and apply formatting for display

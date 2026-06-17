@@ -2,11 +2,12 @@
 #'
 #' @param doi Character. DOI of the paper.
 #' @param repo Optional repository slug.
+#' @param folder Optional registry folder name from \code{index.csv}.
 #'
 #' @return Parsed \code{replication.yml} contents.
 #' @keywords internal
-get_replication_meta <- function(doi, repo = NULL) {
-  ctx <- paper_context(doi, repo = repo)
+get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
+  ctx <- paper_context(doi, repo = repo, folder = folder)
 
   if (!is.null(ctx$local_root)) {
     local_yml <- file.path(ctx$local_root, "replication.yml")
@@ -15,8 +16,24 @@ get_replication_meta <- function(doi, repo = NULL) {
     }
   }
 
-  meta_url <- paste0(ctx$base_url, "/replication.yml")
-  yaml::read_yaml(meta_url)
+  urls <- unique(c(
+    paste0(ctx$base_url, "/replication.yml"),
+    paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/replication.yml"),
+    paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/inst/replication.yml")
+  ))
+
+  for (meta_url in urls) {
+    meta <- tryCatch({
+      tmp <- download_registry_file(meta_url)
+      on.exit(unlink(tmp), add = TRUE)
+      yaml::read_yaml(tmp)
+    }, error = function(e) NULL)
+    if (!is.null(meta)) {
+      return(meta)
+    }
+  }
+
+  stop("Could not load replication.yml for ", doi, call. = FALSE)
 }
 
 #' Find a single replication entry by id
@@ -47,14 +64,41 @@ find_replication_entry <- function(meta, what) {
 #' @param install_deps Logical. Install missing CRAN dependencies when
 #'   \code{TRUE}. Defaults to \code{FALSE}.
 #' @param repo Optional repository slug.
+#' @param folder Optional registry folder name from \code{index.csv}.
 #'
 #' @return A list with \code{id}, \code{type}, \code{object}, and \code{format}.
 #' @export
-render_replication <- function(doi, what, install_deps = FALSE, repo = NULL) {
+render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
   doi <- normalize_doi(doi)
-  meta <- get_replication_meta(doi, repo = repo)
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
+
+  if (is_package_replication(meta)) {
+    pkg <- as.character(meta$paper$package[[1]])
+    ensure_replication_package(pkg, meta = meta, ctx = ctx)
+    obj <- call_replication_package(pkg, "run_replication", what, install_deps = install_deps)
+    entries <- c(meta$prep %||% list(), meta$replications %||% list())
+    rep_matches <- entries[vapply(entries, function(x) identical(x$id, what), logical(1))]
+    rep <- if (length(rep_matches) > 0) {
+      rep_matches[[1]]
+    } else {
+      list(id = what, type = "unknown", description = "Package-backed replication")
+    }
+    return(structure(
+      list(
+        id = what,
+        type = rep$type %||% "unknown",
+        object = obj,
+        format = infer_result_format(obj, rep$type %||% "unknown"),
+        has_format = TRUE,
+        meta = rep,
+        source = "package"
+      ),
+      class = "replication_result"
+    ))
+  }
+
   rep <- find_replication_entry(meta, what)
-  ctx <- paper_context(doi, repo = repo)
 
   ensure_replication_dependencies(
     rep,
@@ -102,11 +146,12 @@ download_registry_file <- function(url) {
 #' @param doi Character. DOI of the paper.
 #' @param what Replication identifier.
 #' @param repo Optional repository slug.
+#' @param folder Optional registry folder name from \code{index.csv}.
 #'
 #' @return Character path or URL, or \code{NULL} if no artifact is registered.
 #' @export
-get_artifact_path <- function(doi, what, repo = NULL) {
-  meta <- get_replication_meta(doi, repo = repo)
+get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
   rep <- find_replication_entry(meta, what)
   artifact <- rep$artifact
   if (is.null(artifact) || !nzchar(artifact)) {
@@ -117,7 +162,7 @@ get_artifact_path <- function(doi, what, repo = NULL) {
     return(NULL)
   }
 
-  ctx <- paper_context(doi, repo = repo)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
 
   if (!is.null(ctx$local_root)) {
     local_artifact <- file.path(ctx$local_root, artifact)
@@ -134,8 +179,16 @@ get_artifact_path <- function(doi, what, repo = NULL) {
 #' @inheritParams render_replication
 #' @return Artifact contents suitable for display, or \code{NULL}.
 #' @export
-load_artifact <- function(doi, what, repo = NULL) {
-  path <- get_artifact_path(doi, what, repo = repo)
+load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  if (is_package_replication(meta)) {
+    pkg <- as.character(meta$paper$package[[1]])
+    ctx <- paper_context(doi, repo = repo, folder = folder)
+    ensure_replication_package(pkg, meta = meta, ctx = ctx)
+    return(call_replication_package(pkg, "load_artifact", what))
+  }
+
+  path <- get_artifact_path(doi, what, repo = repo, folder = folder)
   if (is.null(path)) {
     return(NULL)
   }
