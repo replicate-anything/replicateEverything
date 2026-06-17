@@ -41,6 +41,111 @@ package_repo_ref <- function(meta) {
   as.character(ref[[1]])
 }
 
+#' Whether to resolve study packages from sibling monorepo folders
+#'
+#' Off by default on servers; enable via \code{local.R} or
+#' \code{replicateEverything.use_sibling_packages}.
+#'
+#' @keywords internal
+sibling_packages_enabled <- function() {
+  isTRUE(getOption("replicateEverything.use_sibling_packages", FALSE)) ||
+    isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))
+}
+
+#' Read yaml from an HTTP(S) URL without writing a temp file
+#'
+#' Avoids \code{download.file()} temp-path failures on some Shiny servers.
+#'
+#' @param url Character URL.
+#' @return Parsed yaml list or \code{NULL}.
+#' @keywords internal
+read_yaml_url <- function(url) {
+  if (length(url) != 1L || is.na(url) || !nzchar(url)) {
+    return(NULL)
+  }
+  resp <- tryCatch(
+    httr::GET(
+      url,
+      httr::user_agent("replicateEverything"),
+      httr::timeout(20)
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(resp) || httr::status_code(resp) >= 400L) {
+    return(NULL)
+  }
+  txt <- httr::content(resp, as = "text", encoding = "UTF-8")
+  if (length(txt) != 1L || !nzchar(trimws(txt))) {
+    return(NULL)
+  }
+  tryCatch(yaml::read_yaml(text = txt), error = function(e) NULL)
+}
+
+#' Download a registry or package file to a temp path
+#'
+#' Uses \code{httr} for HTTP(S) URLs to avoid \code{download.file()} temp-path
+#' failures on some Shiny servers.
+#'
+#' @param url HTTP(S) URL or local path.
+#' @return Character path to temp file.
+#' @keywords internal
+download_registry_file <- function(url) {
+  if (length(url) != 1L || is.na(url) || !nzchar(url)) {
+    stop("Invalid download URL.", call. = FALSE)
+  }
+  ext <- tools::file_ext(sub(".*\\.", "", basename(url)))
+  if (!nzchar(ext)) {
+    ext <- "txt"
+  }
+  tmp <- tempfile(fileext = paste0(".", ext))
+  if (grepl("^https?://", url, ignore.case = TRUE)) {
+    resp <- tryCatch(
+      httr::GET(
+        url,
+        httr::user_agent("replicateEverything"),
+        httr::timeout(20)
+      ),
+      error = function(e) NULL
+    )
+    if (!is.null(resp) && httr::status_code(resp) < 400L) {
+      writeBin(httr::content(resp, as = "raw"), tmp)
+      return(tmp)
+    }
+  }
+  utils::download.file(url, tmp, quiet = TRUE, mode = "wb")
+  tmp
+}
+
+#' Fetch \code{replication.yml} from a study package GitHub repo
+#'
+#' Lets the app list tables/figures without installing the package.
+#'
+#' @param meta Parsed registry stub or package metadata.
+#' @param ctx Paper context from \code{paper_context()}.
+#' @return Parsed yaml list or \code{NULL}.
+#' @keywords internal
+fetch_package_replication_yaml <- function(meta, ctx) {
+  repo <- package_repo_slug(meta, ctx)
+  if (length(repo) != 1L || is.na(repo) || !nzchar(repo)) {
+    return(NULL)
+  }
+  if (identical(repo, "replicate-anything/registry")) {
+    return(NULL)
+  }
+  ref <- package_repo_ref(meta)
+  urls <- unique(c(
+    sprintf("https://raw.githubusercontent.com/%s/%s/replication.yml", repo, ref),
+    sprintf("https://raw.githubusercontent.com/%s/%s/inst/replication.yml", repo, ref)
+  ))
+  for (meta_url in urls) {
+    parsed <- read_yaml_url(meta_url)
+    if (!is.null(parsed)) {
+      return(parsed)
+    }
+  }
+  NULL
+}
+
 #' Folder names to check when locating a sibling replication package
 #'
 #' @param package R package name.
@@ -102,6 +207,10 @@ resolve_replication_package_path <- function(package, meta, ctx) {
     }
   }
 
+  if (!sibling_packages_enabled()) {
+    return(NULL)
+  }
+
   roots <- c(
     getOption("replicateEverything.replication_packages_root", NULL),
     sibling_monorepo_root()
@@ -158,7 +267,13 @@ installed_package_remote_sha <- function(package) {
   if (!requireNamespace(package, quietly = TRUE)) {
     return(NA_character_)
   }
-  desc <- utils::packageDescription(package)
+  desc <- tryCatch(
+    utils::packageDescription(package),
+    error = function(e) NULL
+  )
+  if (is.null(desc)) {
+    return(NA_character_)
+  }
   sha <- desc$RemoteSha %||% NA_character_
   if (length(sha) != 1L || !nzchar(sha)) {
     return(NA_character_)
@@ -168,16 +283,55 @@ installed_package_remote_sha <- function(package) {
 
 #' Latest commit SHA for a GitHub repo ref
 #'
+#' Uses the GitHub REST API (not \code{remotes}) so version checks work on
+#' servers where \code{remotes::remote_sha()} fails on temp paths.
+#'
 #' @param repo GitHub slug \code{org/repo}.
 #' @param ref Branch, tag, or commit.
 #' @keywords internal
 github_remote_sha <- function(repo, ref = "main") {
-  if (!requireNamespace("remotes", quietly = TRUE)) {
-    stop("Package remotes is required to check GitHub versions.", call. = FALSE)
+  if (length(repo) != 1L || is.na(repo) || !nzchar(repo)) {
+    return(NA_character_)
   }
-  remote <- remotes::github_remote(paste0(repo, "@", ref))
-  remotes::remote_sha(remote)
+  if (length(ref) != 1L || is.na(ref) || !nzchar(ref)) {
+    ref <- "main"
+  }
+  cache_key <- paste(repo, ref, sep = "@")
+  if (exists(cache_key, envir = .github_remote_sha_cache, inherits = FALSE)) {
+    return(get(cache_key, envir = .github_remote_sha_cache))
+  }
+  repo <- gsub("^/", "", as.character(repo))
+  ref <- as.character(ref)
+  url <- sprintf(
+    "https://api.github.com/repos/%s/commits/%s",
+    repo,
+    utils::URLencode(ref, reserved = TRUE)
+  )
+  resp <- tryCatch(
+    httr::GET(
+      url,
+      httr::user_agent("replicateEverything"),
+      httr::timeout(15)
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(resp) || httr::status_code(resp) >= 400L) {
+    return(NA_character_)
+  }
+  parsed <- tryCatch(
+    httr::content(resp, as = "parsed", type = "application/json"),
+    error = function(e) NULL
+  )
+  if (is.null(parsed) || is.null(parsed$sha) || !nzchar(parsed$sha)) {
+    return(NA_character_)
+  }
+  sha <- as.character(parsed$sha)
+  assign(cache_key, sha, envir = .github_remote_sha_cache)
+  sha
 }
+
+#' @keywords internal
+.github_remote_sha_cache <- new.env(parent = emptyenv())
 
 #' Whether an installed package lags the GitHub ref
 #'
@@ -186,21 +340,27 @@ github_remote_sha <- function(repo, ref = "main") {
 #' @param ref Branch, tag, or commit.
 #' @keywords internal
 github_package_outdated <- function(package, repo, ref = "main") {
-  if (!requireNamespace(package, quietly = TRUE)) {
-    return(TRUE)
-  }
-  local_sha <- installed_package_remote_sha(package)
-  if (is.na(local_sha)) {
-    return(TRUE)
-  }
-  remote_sha <- tryCatch(
-    github_remote_sha(repo, ref),
-    error = function(e) NA_character_
-  )
-  if (is.na(remote_sha) || !nzchar(remote_sha)) {
-    return(FALSE)
-  }
-  !identical(local_sha, remote_sha)
+  tryCatch({
+    if (!requireNamespace(package, quietly = TRUE)) {
+      return(TRUE)
+    }
+    local_sha <- installed_package_remote_sha(package)
+    if (is.na(local_sha)) {
+      return(TRUE)
+    }
+    remote_sha <- github_remote_sha(repo, ref)
+    if (is.na(remote_sha) || !nzchar(remote_sha)) {
+      return(FALSE)
+    }
+    !identical(local_sha, remote_sha)
+  }, error = function(e) {
+    warning(
+      "Could not compare installed ", package, " with GitHub (", repo, "@", ref, "): ",
+      conditionMessage(e),
+      call. = FALSE
+    )
+    FALSE
+  })
 }
 
 #' Install or upgrade a study package from GitHub
@@ -219,7 +379,31 @@ install_replication_package_github <- function(package, repo, ref = "main") {
   }
   spec <- paste0(repo, "@", ref)
   message("Installing ", package, " from GitHub (", spec, ") ...")
-  remotes::install_github(spec, upgrade = "always", quiet = TRUE)
+  remotes::install_github(
+    spec,
+    upgrade = "always",
+    quiet = TRUE,
+    args = "--no-test-load"
+  )
+  invisible(TRUE)
+}
+
+#' @keywords internal
+try_install_replication_package_github <- function(package, repo, ref = "main") {
+  tryCatch(
+    {
+      install_replication_package_github(package, repo, ref)
+      requireNamespace(package, quietly = TRUE)
+    },
+    error = function(e) {
+      warning(
+        "Could not install ", package, " from GitHub (", repo, "@", ref, "): ",
+        conditionMessage(e),
+        call. = FALSE
+      )
+      FALSE
+    }
+  )
 }
 
 #' Load or install a study replication package
@@ -233,10 +417,35 @@ install_replication_package_github <- function(package, repo, ref = "main") {
 #' @param ctx Paper context from \code{paper_context()}.
 #' @keywords internal
 ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
+  if (requireNamespace(package, quietly = TRUE)) {
+    if (!is.null(meta) && !is.null(ctx)) {
+      repo <- package_repo_slug(meta, ctx)
+      ref <- package_repo_ref(meta)
+      if (github_package_outdated(package, repo, ref)) {
+        ok <- try_install_replication_package_github(package, repo, ref)
+        return(invisible(isTRUE(ok) || requireNamespace(package, quietly = TRUE)))
+      }
+    }
+    return(invisible(TRUE))
+  }
+
   local_path <- resolve_replication_package_path(package, meta, ctx)
   if (!is.null(local_path)) {
-    load_replication_package_path(local_path, package)
-    if (requireNamespace(package, quietly = TRUE)) {
+    ok <- tryCatch(
+      {
+        load_replication_package_path(local_path, package)
+        requireNamespace(package, quietly = TRUE)
+      },
+      error = function(e) {
+        warning(
+          "Could not load local replication package at ", local_path, ": ",
+          conditionMessage(e),
+          call. = FALSE
+        )
+        FALSE
+      }
+    )
+    if (isTRUE(ok)) {
       return(invisible(TRUE))
     }
   }
@@ -244,37 +453,38 @@ ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
   if (!is.null(meta) && !is.null(ctx)) {
     repo <- package_repo_slug(meta, ctx)
     ref <- package_repo_ref(meta)
-    needs_install <- !requireNamespace(package, quietly = TRUE)
-    needs_update <- !needs_install && github_package_outdated(package, repo, ref)
-    if (needs_install || needs_update) {
-      install_replication_package_github(package, repo, ref)
+    needs_update <- github_package_outdated(package, repo, ref)
+    if (needs_update) {
+      ok <- try_install_replication_package_github(package, repo, ref)
+      if (isTRUE(ok)) {
+        return(invisible(TRUE))
+      }
     }
-    if (requireNamespace(package, quietly = TRUE)) {
-      return(invisible(TRUE))
-    }
-  } else if (requireNamespace(package, quietly = TRUE)) {
+  }
+
+  if (requireNamespace(package, quietly = TRUE)) {
     return(invisible(TRUE))
   }
 
   if (is.null(meta) || is.null(ctx)) {
-    stop(
+    warning(
       "Replication package ", package,
       " is not installed and no local sibling was found.",
       call. = FALSE
     )
+    return(invisible(FALSE))
   }
 
   repo <- package_repo_slug(meta, ctx)
   ref <- package_repo_ref(meta)
-  install_replication_package_github(package, repo, ref)
-  if (!requireNamespace(package, quietly = TRUE)) {
-    stop(
+  ok <- try_install_replication_package_github(package, repo, ref)
+  if (!isTRUE(ok) && !requireNamespace(package, quietly = TRUE)) {
+    warning(
       "Could not install replication package ", package,
       " from ", repo, " (ref: ", ref, ").",
-      " For local development, keep the package as a sibling folder or set ",
-      "paper.package_folder in replication.yml.",
       call. = FALSE
     )
+    return(invisible(FALSE))
   }
   invisible(TRUE)
 }
@@ -285,12 +495,20 @@ ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
 #' @param package Expected package name.
 #' @keywords internal
 load_replication_package_path <- function(path, package) {
+  if (length(path) != 1L || is.na(path) || !nzchar(path) || !dir.exists(path)) {
+    stop("Invalid replication package path.", call. = FALSE)
+  }
   if (requireNamespace("devtools", quietly = TRUE)) {
     devtools::load_all(path, quiet = TRUE)
     return(invisible(TRUE))
   }
   if (requireNamespace("remotes", quietly = TRUE)) {
-    remotes::install_local(path, upgrade = "never", quiet = TRUE)
+    remotes::install_local(
+      path,
+      upgrade = "never",
+      quiet = TRUE,
+      args = "--no-test-load"
+    )
     return(invisible(TRUE))
   }
   stop(

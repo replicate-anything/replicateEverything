@@ -13,15 +13,28 @@ enrich_package_replication_meta <- function(meta, ctx) {
     return(meta)
   }
 
-  pkg <- as.character(meta$paper$package[[1]])
-  tryCatch({
-    ensure_replication_package(pkg, meta = meta, ctx = ctx)
-    pkg_meta <- get("replication_meta", envir = asNamespace(pkg))()
+  pkg_meta <- fetch_package_replication_yaml(meta, ctx)
+  if (!is.null(pkg_meta)) {
     meta$replications <- pkg_meta$replications %||% list()
     if (length(meta$prep %||% list()) == 0) {
       meta$prep <- pkg_meta$prep %||% list()
     }
-  }, error = function(e) meta)
+    return(meta)
+  }
+
+  pkg <- as.character(meta$paper$package[[1]])
+  if (requireNamespace(pkg, quietly = TRUE)) {
+    pkg_meta <- tryCatch(
+      get("replication_meta", envir = asNamespace(pkg))(),
+      error = function(e) NULL
+    )
+    if (!is.null(pkg_meta)) {
+      meta$replications <- pkg_meta$replications %||% list()
+      if (length(meta$prep %||% list()) == 0) {
+        meta$prep <- pkg_meta$prep %||% list()
+      }
+    }
+  }
   meta
 }
 
@@ -50,11 +63,7 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   ))
 
   for (meta_url in urls) {
-    meta <- tryCatch({
-      tmp <- download_registry_file(meta_url)
-      on.exit(unlink(tmp), add = TRUE)
-      yaml::read_yaml(tmp)
-    }, error = function(e) NULL)
+    meta <- read_yaml_url(meta_url)
     if (!is.null(meta)) {
       return(enrich_package_replication_meta(meta, ctx))
     }
@@ -64,7 +73,162 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
 }
 
 get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
-  get_replication_meta_impl(doi, repo = repo, folder = folder)
+  key <- paste(
+    normalize_doi(doi),
+    repo %||% "",
+    folder %||% "",
+    sep = "\x1f"
+  )
+  if (!exists(key, envir = .replication_meta_cache, inherits = FALSE)) {
+    assign(
+      key,
+      get_replication_meta_impl(doi, repo = repo, folder = folder),
+      envir = .replication_meta_cache
+    )
+  }
+  get(key, envir = .replication_meta_cache)
+}
+
+#' @keywords internal
+.replication_meta_cache <- new.env(parent = emptyenv())
+
+#' @keywords internal
+.artifact_path_cache <- new.env(parent = emptyenv())
+
+#' Relative artifact paths to try under registry \code{papers/<folder>/}
+#'
+#' @param what Replication id.
+#' @param rep Optional replication entry.
+#' @keywords internal
+registry_artifact_rel_paths <- function(what, rep = NULL) {
+  paths <- character(0)
+  if (!is.null(rep) && !is.null(rep$artifact) && nzchar(rep$artifact)) {
+    art <- as.character(rep$artifact)
+    paths <- c(
+      paths,
+      art,
+      sub("^inst/report/", "", art),
+      sub("^inst/", "", art)
+    )
+  }
+  for (ext in c("png", "html", "rds", "svg")) {
+    paths <- c(paths, paste0("artifacts/", what, ".", ext))
+  }
+  unique(paths[nzchar(paths)])
+}
+
+#' @keywords internal
+url_exists <- function(url) {
+  resp <- tryCatch(
+    httr::HEAD(
+      url,
+      httr::user_agent("replicateEverything"),
+      httr::timeout(10)
+    ),
+    error = function(e) NULL
+  )
+  !is.null(resp) && httr::status_code(resp) < 400L
+}
+
+#' Resolve a precomputed artifact under the registry paper folder
+#'
+#' Package-backed studies may ship display artifacts in \code{registry/papers/.../artifacts/}
+#' even when code lives in the study package.
+#'
+#' @param what Replication id.
+#' @param ctx Paper context.
+#' @param rep Optional replication entry.
+#' @param doi Optional DOI for caching.
+#' @keywords internal
+resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
+  cache_key <- paste(doi %||% ctx$folder %||% "", what, sep = "|")
+  if (exists(cache_key, envir = .artifact_path_cache, inherits = FALSE)) {
+    cached <- get(cache_key, envir = .artifact_path_cache)
+    return(if (is.na(cached)) NULL else cached)
+  }
+
+  result <- NULL
+  rel_paths <- registry_artifact_rel_paths(what, rep)
+  for (rel in rel_paths) {
+    if (!is.null(ctx$local_root)) {
+      local <- file.path(ctx$local_root, rel)
+      if (file.exists(local)) {
+        result <- local
+        break
+      }
+    }
+  }
+  if (is.null(result)) {
+    for (rel in rel_paths) {
+      url <- paste0(ctx$base_url, "/", rel)
+      if (url_exists(url)) {
+        result <- url
+        break
+      }
+    }
+  }
+
+  assign(cache_key, result %||% NA_character_, envir = .artifact_path_cache)
+  result
+}
+
+#' @keywords internal
+package_installed_artifact_path <- function(what, pkg) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    return(NULL)
+  }
+  for (ext in c("png", "html", "rds", "svg")) {
+    path <- system.file(
+      "report", "artifacts", paste0(what, ".", ext),
+      package = pkg
+    )
+    if (nzchar(path) && file.exists(path)) {
+      return(path)
+    }
+  }
+  NULL
+}
+
+#' @keywords internal
+artifact_content_missing <- function(x) {
+  is.null(x) || (is.character(x) && length(x) == 1L && !nzchar(x))
+}
+
+#' Load artifact bytes from a local path or registry URL
+#'
+#' @param path Local path or HTTP(S) URL.
+#' @keywords internal
+load_artifact_file_path <- function(path) {
+  if (artifact_content_missing(path)) {
+    return(NULL)
+  }
+  if (grepl("^https?://", path, ignore.case = TRUE)) {
+    ext <- tolower(tools::file_ext(path))
+    resp <- tryCatch(
+      httr::GET(
+        path,
+        httr::user_agent("replicateEverything"),
+        httr::timeout(20)
+      ),
+      error = function(e) NULL
+    )
+    if (is.null(resp) || httr::status_code(resp) >= 400L) {
+      return(NULL)
+    }
+    if (ext %in% c("png", "svg", "jpg", "jpeg")) {
+      tmp <- tempfile(fileext = paste0(".", ext))
+      writeBin(httr::content(resp, as = "raw"), tmp)
+      return(tmp)
+    }
+    txt <- httr::content(resp, as = "text", encoding = "UTF-8")
+    if (ext == "html") {
+      return(normalize_html_table(paste(txt, collapse = "\n")))
+    }
+  }
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+  read_artifact_file(path, tolower(tools::file_ext(path)))
 }
 
 #' Replication entries from a study package when the registry stub omits them
@@ -192,17 +356,6 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
   )
 }
 
-#' @keywords internal
-download_registry_file <- function(url) {
-  ext <- tools::file_ext(sub(".*\\.", "", basename(url)))
-  if (!nzchar(ext)) {
-    ext <- "txt"
-  }
-  tmp <- tempfile(fileext = paste0(".", ext))
-  utils::download.file(url, tmp, quiet = TRUE, mode = "wb")
-  tmp
-}
-
 #' Get artifact URL or local path for a replication
 #'
 #' @param doi Character. DOI of the paper.
@@ -214,23 +367,19 @@ download_registry_file <- function(url) {
 #' @export
 get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
+  rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
-    ctx <- paper_context(doi, repo = repo, folder = folder)
-    ensure_replication_package(pkg, meta = meta, ctx = ctx)
-    for (ext in c("png", "html", "rds")) {
-      path <- system.file(
-        "report", "artifacts", paste0(what, ".", ext),
-        package = pkg
-      )
-      if (nzchar(path) && file.exists(path)) {
-        return(path)
-      }
+    path <- package_installed_artifact_path(what, pkg)
+    if (!is.null(path)) {
+      return(path)
     }
-    return(NULL)
+    return(resolve_registry_artifact_path(what, ctx, rep, doi = doi))
   }
 
-  rep <- find_replication_entry(meta, what)
+  rep <- rep %||% find_replication_entry(meta, what)
   artifact <- rep$artifact
   if (is.null(artifact) || !nzchar(artifact)) {
     artifact <- default_artifact_path(rep, what)
@@ -259,39 +408,29 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
 #' @export
 load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
+  rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
-    ctx <- paper_context(doi, repo = repo, folder = folder)
-    ensure_replication_package(pkg, meta = meta, ctx = ctx)
-    return(call_replication_package(pkg, "load_artifact", what))
+    if (requireNamespace(pkg, quietly = TRUE)) {
+      result <- tryCatch(
+        call_replication_package(pkg, "load_artifact", what),
+        error = function(e) NULL
+      )
+      if (!artifact_content_missing(result)) {
+        return(result)
+      }
+    }
+    path <- resolve_registry_artifact_path(what, ctx, rep, doi = doi)
+    return(load_artifact_file_path(path))
   }
 
   path <- get_artifact_path(doi, what, repo = repo, folder = folder)
   if (is.null(path)) {
     return(NULL)
   }
-
-  if (grepl("^https?://", path)) {
-    ext <- tolower(tools::file_ext(path))
-    tmp <- tempfile(fileext = paste0(".", ext))
-    ok <- tryCatch({
-      utils::download.file(path, tmp, quiet = TRUE, mode = "wb")
-      file.exists(tmp) && file.info(tmp)$size > 0
-    }, error = function(e) FALSE)
-    if (!ok) {
-      return(NULL)
-    }
-    if (ext %in% c("png", "svg", "jpg", "jpeg")) {
-      dest <- tempfile(fileext = paste0(".", ext))
-      file.copy(tmp, dest, overwrite = TRUE)
-      unlink(tmp)
-      return(dest)
-    }
-    on.exit(unlink(tmp), add = TRUE)
-    return(read_artifact_file(tmp, ext))
-  }
-
-  read_artifact_file(path, tolower(tools::file_ext(path)))
+  load_artifact_file_path(path)
 }
 
 #' @keywords internal

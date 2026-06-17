@@ -16,7 +16,10 @@ test_that("resolve_replication_package_path finds sibling study package", {
   ctx <- list(folder = "10.1371_journal.pone.0278337")
 
   withr::with_options(
-    list(replicateEverything.replication_packages_root = monorepo_root),
+    list(
+      replicateEverything.replication_packages_root = monorepo_root,
+      replicateEverything.use_sibling_packages = TRUE
+    ),
     {
       resolved <- resolve_replication_package_path(
         "rep1371journalpone0278337",
@@ -37,9 +40,103 @@ test_that("package_repo_slug prefers yaml repo over index ctx", {
   expect_equal(package_repo_slug(meta, ctx), "replicate-anything/rep_10.1371_journal.pone.0278337")
 })
 
-test_that("is_package_replication detects package field", {
-  expect_true(is_package_replication(list(paper = list(package = "foo"))))
-  expect_false(is_package_replication(list(paper = list(title = "bar"))))
+test_that("github_remote_sha returns NA for invalid repo", {
+  expect_equal(
+    github_remote_sha("replicate-anything/nonexistent-repo-xyz", "main"),
+    NA_character_
+  )
+})
+
+test_that("installed_package_remote_sha returns NA for missing package", {
+  expect_equal(
+    installed_package_remote_sha("nonexistent_package_xyz_123"),
+    NA_character_
+  )
+})
+
+test_that("read_yaml_url loads vaccine study package replication.yml", {
+  skip_on_cran()
+  url <- paste0(
+    "https://raw.githubusercontent.com/",
+    "replicate-anything/rep_10.1371_journal.pone.0278337/main/inst/replication.yml"
+  )
+  meta <- read_yaml_url(url)
+  skip_if(is.null(meta), "could not reach GitHub")
+  expect_gt(length(meta$replications %||% list()), 0)
+})
+
+test_that("list_replications lists figures without installing study package", {
+  skip_on_cran()
+  if (requireNamespace("rep1371journalpone0278337", quietly = TRUE)) {
+    try(detach(paste0("package:", "rep1371journalpone0278337"), unload = TRUE), silent = TRUE)
+  }
+  reps <- list_replications(
+    "10.1371/journal.pone.0278337",
+    folder = "10.1371_journal.pone.0278337"
+  )
+  types <- vapply(reps, function(x) as.character(x$type %||% ""), character(1))
+  expect_true(any(types == "figure"))
+  expect_true(any(types == "table"))
+})
+
+test_that("fetch_package_replication_yaml loads study metadata without install", {
+  skip_on_cran()
+  meta <- list(
+    repo = "replicate-anything/rep_10.1371_journal.pone.0278337",
+    paper = list(
+      package = "rep1371journalpone0278337",
+      package_ref = "main"
+    )
+  )
+  ctx <- list(folder = "10.1371_journal.pone.0278337", repo = "replicate-anything/registry")
+  pkg_meta <- fetch_package_replication_yaml(meta, ctx)
+  skip_if(is.null(pkg_meta), "could not reach GitHub")
+  expect_gt(length(pkg_meta$replications %||% list()), 0)
+})
+
+test_that("enrich_package_replication_meta merges remote package yaml", {
+  skip_on_cran()
+  stub <- list(
+    repo = "replicate-anything/rep_10.1371_journal.pone.0278337",
+    paper = list(
+      package = "rep1371journalpone0278337",
+      package_ref = "main"
+    )
+  )
+  ctx <- list(folder = "10.1371_journal.pone.0278337", repo = "replicate-anything/registry")
+  enriched <- enrich_package_replication_meta(stub, ctx)
+  skip_if(length(enriched$replications %||% list()) == 0, "could not reach GitHub")
+  expect_true(any(vapply(enriched$replications, function(x) identical(x$id, "fig_1"), logical(1))))
+})
+
+test_that("load_artifact reads registry html for package-backed study", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  registry_root <- file.path(monorepo_root, "registry")
+  tab <- file.path(
+    registry_root,
+    "papers",
+    "10.1371_journal.pone.0278337",
+    "artifacts",
+    "tab_1.html"
+  )
+  skip_if_not(file.exists(tab), "registry tab_1 artifact missing")
+
+  withr::with_options(
+    list(replicateEverything.registry_root = registry_root),
+    {
+      html <- load_artifact(
+        "10.1371/journal.pone.0278337",
+        "tab_1",
+        folder = "10.1371_journal.pone.0278337"
+      )
+      expect_true(is.character(html))
+      expect_true(grepl("<table", html, ignore.case = TRUE))
+    }
+  )
 })
 
 test_that("format_for_display passes through package-backed output", {
@@ -58,7 +155,8 @@ test_that("format_for_display passes through package-backed output", {
   withr::with_options(
     list(
       replicateEverything.registry_root = file.path(monorepo_root, "registry"),
-      replicateEverything.replication_packages_root = monorepo_root
+      replicateEverything.replication_packages_root = monorepo_root,
+      replicateEverything.use_sibling_packages = TRUE
     ),
     {
       result <- render_replication(
@@ -98,7 +196,10 @@ test_that("find_replication_entry reads package yaml when registry stub is minim
   )
 
   withr::with_options(
-    list(replicateEverything.replication_packages_root = monorepo_root),
+    list(
+      replicateEverything.replication_packages_root = monorepo_root,
+      replicateEverything.use_sibling_packages = TRUE
+    ),
     {
       devtools::load_all(
         file.path(monorepo_root, "rep_10.1371_journal.pone.0278337"),
@@ -128,7 +229,8 @@ test_that("get_code dispatches to package-backed study", {
   withr::with_options(
     list(
       replicateEverything.registry_root = file.path(monorepo_root, "registry"),
-      replicateEverything.replication_packages_root = monorepo_root
+      replicateEverything.replication_packages_root = monorepo_root,
+      replicateEverything.use_sibling_packages = TRUE
     ),
     {
       lines <- get_code(
