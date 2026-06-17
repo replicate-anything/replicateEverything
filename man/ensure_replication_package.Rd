@@ -2,16 +2,20 @@
 % Please edit documentation in R/package_replication.R
 \name{ensure_replication_package}
 \alias{ensure_replication_package}
-\title{Ensure a study replication package is installed}
+\title{Load or install a study replication package}
 \usage{
-ensure_replication_package(package, repo)
+ensure_replication_package(package, meta = NULL, ctx = NULL)
 }
 \arguments{
 \item{package}{R package name.}
 
-\item{repo}{GitHub slug \code{org/repo}.}
+\item{meta}{Parsed replication.yml contents.}
+
+\item{ctx}{Paper context from \code{paper_context()}.}
 }
 \description{
-Ensure a study replication package is installed
+Tries, in order: local sibling package (when configured), installed package
+(upgrade from GitHub when outdated), then fresh GitHub install from
+\code{package_repo_slug()}.
 }
 \keyword{internal}

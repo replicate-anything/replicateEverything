@@ -1,3 +1,30 @@
+#' Merge replication entries from the study package into registry stub metadata
+#'
+#' @param meta Parsed replication metadata.
+#' @param ctx Paper context from \code{paper_context()}.
+#' @return Updated metadata list.
+#' @keywords internal
+enrich_package_replication_meta <- function(meta, ctx) {
+  if (!is_package_replication(meta)) {
+    return(meta)
+  }
+  reps <- meta$replications %||% list()
+  if (length(reps) > 0) {
+    return(meta)
+  }
+
+  pkg <- as.character(meta$paper$package[[1]])
+  tryCatch({
+    ensure_replication_package(pkg, meta = meta, ctx = ctx)
+    pkg_meta <- get("replication_meta", envir = asNamespace(pkg))()
+    meta$replications <- pkg_meta$replications %||% list()
+    if (length(meta$prep %||% list()) == 0) {
+      meta$prep <- pkg_meta$prep %||% list()
+    }
+  }, error = function(e) meta)
+  meta
+}
+
 #' Fetch replication metadata for a paper
 #'
 #' @param doi Character. DOI of the paper.
@@ -6,13 +33,13 @@
 #'
 #' @return Parsed \code{replication.yml} contents.
 #' @keywords internal
-get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
+get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
   if (!is.null(ctx$local_root)) {
     local_yml <- file.path(ctx$local_root, "replication.yml")
     if (file.exists(local_yml)) {
-      return(yaml::read_yaml(local_yml))
+      return(enrich_package_replication_meta(yaml::read_yaml(local_yml), ctx))
     }
   }
 
@@ -29,11 +56,38 @@ get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
       yaml::read_yaml(tmp)
     }, error = function(e) NULL)
     if (!is.null(meta)) {
-      return(meta)
+      return(enrich_package_replication_meta(meta, ctx))
     }
   }
 
   stop("Could not load replication.yml for ", doi, call. = FALSE)
+}
+
+get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
+  get_replication_meta_impl(doi, repo = repo, folder = folder)
+}
+
+#' Replication entries from a study package when the registry stub omits them
+#'
+#' @param meta Parsed replication metadata.
+#' @return List of replication/prep entries.
+#' @keywords internal
+package_replication_entries <- function(meta) {
+  if (!is_package_replication(meta)) {
+    return(list())
+  }
+  pkg <- as.character(meta$paper$package[[1]])
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    return(list())
+  }
+  pkg_meta <- tryCatch(
+    get("replication_meta", envir = asNamespace(pkg))(),
+    error = function(e) NULL
+  )
+  if (is.null(pkg_meta)) {
+    return(list())
+  }
+  c(pkg_meta$prep %||% list(), pkg_meta$replications %||% list())
 }
 
 #' Find a single replication entry by id
@@ -43,9 +97,17 @@ get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
 #'
 #' @keywords internal
 find_replication_entry <- function(meta, what) {
-  matches <- meta$replications[
-    vapply(meta$replications, function(x) identical(x$id, what), logical(1))
+  entries <- meta$replications %||% list()
+  matches <- entries[
+    vapply(entries, function(x) identical(x$id, what), logical(1))
   ]
+
+  if (length(matches) == 0 && is_package_replication(meta)) {
+    entries <- package_replication_entries(meta)
+    matches <- entries[
+      vapply(entries, function(x) identical(x$id, what), logical(1))
+    ]
+  }
 
   if (length(matches) == 0) {
     stop("Replication ", what, " not found in metadata")
@@ -152,6 +214,22 @@ download_registry_file <- function(url) {
 #' @export
 get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  if (is_package_replication(meta)) {
+    pkg <- as.character(meta$paper$package[[1]])
+    ctx <- paper_context(doi, repo = repo, folder = folder)
+    ensure_replication_package(pkg, meta = meta, ctx = ctx)
+    for (ext in c("png", "html", "rds")) {
+      path <- system.file(
+        "report", "artifacts", paste0(what, ".", ext),
+        package = pkg
+      )
+      if (nzchar(path) && file.exists(path)) {
+        return(path)
+      }
+    }
+    return(NULL)
+  }
+
   rep <- find_replication_entry(meta, what)
   artifact <- rep$artifact
   if (is.null(artifact) || !nzchar(artifact)) {

@@ -16,8 +16,8 @@ is_package_replication <- function(meta) {
 #' Resolve GitHub repo slug for a package-backed replication
 #'
 #' Used when no local sibling package is found. Set \code{paper.package_repo}
-#' or top-level \code{repo} in \code{replication.yml} before the package is
-#' published; until then, local development uses \code{package_folder}.
+#' or top-level \code{repo} in \code{replication.yml} (GitHub slug, e.g.
+#' \code{replicate-anything/rep_10.1371_journal.pone.0278337}).
 #'
 #' @param meta Parsed replication.yml contents.
 #' @param ctx Paper context from \code{paper_context()}.
@@ -149,10 +149,84 @@ sibling_monorepo_root <- function() {
   normalizePath(file.path(registry_root, ".."), winslash = "/", mustWork = FALSE)
 }
 
+#' SHA recorded for a package installed from GitHub
+#'
+#' @param package Installed package name.
+#' @return Character SHA or \code{NA_character_}.
+#' @keywords internal
+installed_package_remote_sha <- function(package) {
+  if (!requireNamespace(package, quietly = TRUE)) {
+    return(NA_character_)
+  }
+  desc <- utils::packageDescription(package)
+  sha <- desc$RemoteSha %||% NA_character_
+  if (length(sha) != 1L || !nzchar(sha)) {
+    return(NA_character_)
+  }
+  as.character(sha)
+}
+
+#' Latest commit SHA for a GitHub repo ref
+#'
+#' @param repo GitHub slug \code{org/repo}.
+#' @param ref Branch, tag, or commit.
+#' @keywords internal
+github_remote_sha <- function(repo, ref = "main") {
+  if (!requireNamespace("remotes", quietly = TRUE)) {
+    stop("Package remotes is required to check GitHub versions.", call. = FALSE)
+  }
+  remote <- remotes::github_remote(paste0(repo, "@", ref))
+  remotes::remote_sha(remote)
+}
+
+#' Whether an installed package lags the GitHub ref
+#'
+#' @param package Installed package name.
+#' @param repo GitHub slug \code{org/repo}.
+#' @param ref Branch, tag, or commit.
+#' @keywords internal
+github_package_outdated <- function(package, repo, ref = "main") {
+  if (!requireNamespace(package, quietly = TRUE)) {
+    return(TRUE)
+  }
+  local_sha <- installed_package_remote_sha(package)
+  if (is.na(local_sha)) {
+    return(TRUE)
+  }
+  remote_sha <- tryCatch(
+    github_remote_sha(repo, ref),
+    error = function(e) NA_character_
+  )
+  if (is.na(remote_sha) || !nzchar(remote_sha)) {
+    return(FALSE)
+  }
+  !identical(local_sha, remote_sha)
+}
+
+#' Install or upgrade a study package from GitHub
+#'
+#' @param package R package name.
+#' @param repo GitHub slug.
+#' @param ref Git ref.
+#' @keywords internal
+install_replication_package_github <- function(package, repo, ref = "main") {
+  if (!requireNamespace("remotes", quietly = TRUE)) {
+    stop(
+      "Package remotes is required to install ", package,
+      " from GitHub (", repo, ").",
+      call. = FALSE
+    )
+  }
+  spec <- paste0(repo, "@", ref)
+  message("Installing ", package, " from GitHub (", spec, ") ...")
+  remotes::install_github(spec, upgrade = "always", quiet = TRUE)
+}
+
 #' Load or install a study replication package
 #'
-#' Tries, in order: local sibling package (when configured), already loaded
-#' namespace, then GitHub install from \code{package_repo_slug()}.
+#' Tries, in order: local sibling package (when configured), installed package
+#' (upgrade from GitHub when outdated), then fresh GitHub install from
+#' \code{package_repo_slug()}.
 #'
 #' @param package R package name.
 #' @param meta Parsed replication.yml contents.
@@ -167,7 +241,18 @@ ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
     }
   }
 
-  if (requireNamespace(package, quietly = TRUE)) {
+  if (!is.null(meta) && !is.null(ctx)) {
+    repo <- package_repo_slug(meta, ctx)
+    ref <- package_repo_ref(meta)
+    needs_install <- !requireNamespace(package, quietly = TRUE)
+    needs_update <- !needs_install && github_package_outdated(package, repo, ref)
+    if (needs_install || needs_update) {
+      install_replication_package_github(package, repo, ref)
+    }
+    if (requireNamespace(package, quietly = TRUE)) {
+      return(invisible(TRUE))
+    }
+  } else if (requireNamespace(package, quietly = TRUE)) {
     return(invisible(TRUE))
   }
 
@@ -179,22 +264,9 @@ ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
     )
   }
 
-  if (!requireNamespace("remotes", quietly = TRUE)) {
-    stop(
-      "Package ", package, " is required. Install remotes, add a local sibling ",
-      "(package_folder), or install ", package, " manually.",
-      call. = FALSE
-    )
-  }
-
   repo <- package_repo_slug(meta, ctx)
   ref <- package_repo_ref(meta)
-  remotes::install_github(
-    repo,
-    ref = ref,
-    upgrade = "ask",
-    quiet = TRUE
-  )
+  install_replication_package_github(package, repo, ref)
   if (!requireNamespace(package, quietly = TRUE)) {
     stop(
       "Could not install replication package ", package,

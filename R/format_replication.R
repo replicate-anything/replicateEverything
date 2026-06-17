@@ -88,6 +88,13 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
 format_for_display <- function(object, doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
   doi <- normalize_doi(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
+
+  # Package run_replication() already applies format_* ; registry stub yaml
+  # may not list individual replications.
+  if (is_package_replication(meta)) {
+    return(object)
+  }
+
   rep <- find_replication_entry(meta, what)
 
   if (!format_specified(rep)) {

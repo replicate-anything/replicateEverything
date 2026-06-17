@@ -15,6 +15,8 @@ package_repo_slug(meta, ctx)
 Character repo slug.
 }
 \description{
-Resolve GitHub repo slug for a package-backed replication
+Used when no local sibling package is found. Set \code{paper.package_repo}
+or top-level \code{repo} in \code{replication.yml} (GitHub slug, e.g.
+\code{replicate-anything/rep_10.1371_journal.pone.0278337}).
 }
 \keyword{internal}
