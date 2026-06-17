@@ -123,18 +123,18 @@ resolve_replication_package_path <- function(package, meta, ctx) {
 }
 
 #' @keywords internal
-package_desc_matches <- function(path, package) {
+package_desc_matches <- function(path, pkg_name) {
   desc_path <- file.path(path, "DESCRIPTION")
   if (!file.exists(desc_path)) {
     return(FALSE)
   }
   desc <- tryCatch(
-    utils::read.dcf(desc_path),
+    read.dcf(desc_path),
     error = function(e) NULL
   )
   !is.null(desc) &&
     nrow(desc) >= 1 &&
-    identical(as.character(desc[1, "Package"]), package)
+    identical(as.character(desc[1, "Package"]), pkg_name)
 }
 
 #' Parent directory of the registry when developing in a monorepo
