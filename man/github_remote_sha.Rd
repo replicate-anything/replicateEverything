@@ -12,6 +12,7 @@ github_remote_sha(repo, ref = "main")
 \item{ref}{Branch, tag, or commit.}
 }
 \description{
-Latest commit SHA for a GitHub repo ref
+Uses the GitHub REST API (not \code{remotes}) so version checks work on
+servers where \code{remotes::remote_sha()} fails on temp paths.
 }
 \keyword{internal}
