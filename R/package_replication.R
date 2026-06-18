@@ -81,6 +81,210 @@ read_yaml_url <- function(url) {
   tryCatch(yaml::read_yaml(text = txt), error = function(e) NULL)
 }
 
+#' Read text lines from a local path or HTTP(S) URL
+#'
+#' @param url Character URL or file path.
+#' @return Character vector of lines, or empty if not found.
+#' @keywords internal
+read_lines_url <- function(url) {
+  if (length(url) != 1L || is.na(url) || !nzchar(url)) {
+    return(character(0))
+  }
+  if (!grepl("^https?://", url, ignore.case = TRUE)) {
+    if (!file.exists(url)) {
+      return(character(0))
+    }
+    return(readLines(url, warn = FALSE))
+  }
+  resp <- tryCatch(
+    httr::GET(
+      url,
+      httr::user_agent("replicateEverything"),
+      httr::timeout(20)
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(resp) || httr::status_code(resp) >= 400L) {
+    return(character(0))
+  }
+  txt <- httr::content(resp, as = "text", encoding = "UTF-8")
+  if (length(txt) != 1L || !nzchar(txt)) {
+    return(character(0))
+  }
+  strsplit(txt, "\n", fixed = TRUE)[[1]]
+}
+
+#' Raw GitHub URLs for a study package R source file
+#'
+#' @param name Base name without \code{.R} (e.g. \code{make_figure_1}).
+#' @param repo GitHub slug.
+#' @param ref Git ref.
+#' @keywords internal
+package_replication_code_urls <- function(name, repo, ref = "main") {
+  vapply(
+    c(
+      paste0("inst/replication_code/", name, ".R"),
+      paste0("R/", name, ".R")
+    ),
+    function(rel) {
+      sprintf("https://raw.githubusercontent.com/%s/%s/%s", repo, ref, rel)
+    },
+    character(1)
+  )
+}
+
+#' Read study package source from GitHub (no install required)
+#'
+#' @inheritParams package_replication_code_urls
+#' @return Character lines or empty.
+#' @keywords internal
+read_package_repo_source <- function(name, repo, ref = "main") {
+  for (url in package_replication_code_urls(name, repo, ref)) {
+    lines <- read_lines_url(url)
+    if (length(lines)) {
+      return(lines)
+    }
+  }
+  character(0)
+}
+
+#' Drop roxygen and export-alias lines from replication source for display
+#'
+#' @param lines Character vector.
+#' @keywords internal
+clean_replication_source_lines <- function(lines) {
+  if (!length(lines)) {
+    return(lines)
+  }
+  is_roxygen <- grepl("^\\s*#'", lines)
+  is_alias <- grepl(
+    "^\\s*(make_fig_|make_tab_|format_fig_|format_tab_)\\d+\\s*<-\\s*",
+    lines
+  )
+  lines[!is_roxygen & !is_alias]
+}
+
+#' @keywords internal
+is_package_dataset_name <- function(name) {
+  is.character(name) &&
+    length(name) == 1L &&
+    nzchar(name) &&
+    !grepl("[/\\\\]", name) &&
+    !grepl("\\.[a-zA-Z0-9]+$", name)
+}
+
+#' Build get_code output for a package-backed study from remote source
+#'
+#' @param meta Parsed replication metadata (with replications list).
+#' @param ctx Paper context.
+#' @param what Replication id.
+#' @param package R package name.
+#' @keywords internal
+get_code_from_package_repo <- function(meta, ctx, what, package) {
+  entry <- find_replication_entry(meta, what)
+  source_name <- entry$make %||% entry$code
+  if (is.null(source_name) || !nzchar(source_name)) {
+    stop("Replication ", what, " has no make/code entry.", call. = FALSE)
+  }
+
+  repo <- package_repo_slug(meta, ctx)
+  ref <- package_repo_ref(meta)
+  source_lines <- clean_replication_source_lines(
+    read_package_repo_source(source_name, repo, ref)
+  )
+  if (!length(source_lines)) {
+    stop(
+      "Could not read ", source_name, " from package repo ",
+      repo, " (ref: ", ref, "). Tried inst/replication_code/ and R/.",
+      call. = FALSE
+    )
+  }
+
+  header <- c(
+    paste0("# Replication: ", what),
+    if (!is.null(entry$label) && nzchar(entry$label)) paste0("# ", entry$label) else NULL,
+    if (!is.null(entry$description) && nzchar(entry$description)) {
+      paste0("# ", entry$description)
+    } else {
+      NULL
+    },
+    ""
+  )
+  header <- header[!vapply(header, is.null, logical(1))]
+
+  deps <- meta$paper$dependencies %||% list()
+  dep_lines <- vapply(deps, function(x) {
+    pkg <- as.character(x)
+    if (length(pkg) != 1L || !nzchar(pkg)) return("")
+    paste0("library(", pkg, ")")
+  }, character(1))
+  dep_lines <- dep_lines[nzchar(dep_lines)]
+
+  setup_lines <- c(
+    paste0(
+      "library(", package, ")",
+      "  # make_*, format_*, helpers, and packaged data"
+    ),
+    dep_lines,
+    ""
+  )
+
+  data_names <- entry$data
+  data_lines <- character(0)
+  if (!is.null(data_names)) {
+    if (length(data_names) == 1L && is_package_dataset_name(data_names[[1]])) {
+      nm <- data_names[[1]]
+      data_lines <- c(paste0(nm, " <- ", package, "::", nm), "")
+    } else if (length(data_names) == 1L) {
+      data_lines <- c(paste0("# data: ", data_names[[1]]), "")
+    } else {
+      arg_names <- if (identical(entry$make, "make_table_2")) {
+        c("survey", "labels")
+      } else {
+        as.character(data_names)
+      }
+      for (i in seq_along(data_names)) {
+        data_lines <- c(
+          data_lines,
+          paste0(arg_names[[i]], " <- ", package, "::", data_names[[i]])
+        )
+      }
+      data_lines <- c(data_lines, "")
+    }
+  }
+
+  make_fn <- entry$make %||% entry$code
+  fmt <- entry$format %||% NULL
+  call_line <- if (is.null(data_names)) {
+    paste0(make_fn, "()")
+  } else if (length(data_names) == 1L && is_package_dataset_name(data_names[[1]])) {
+    paste0(make_fn, "(", data_names[[1]], ")")
+  } else if (identical(make_fn, "make_table_2")) {
+    paste0(
+      make_fn,
+      "(survey = ", data_names[[1]], ", labels = ", data_names[[2]], ")"
+    )
+  } else {
+    paste0(make_fn, "(", paste(data_names, collapse = ", "), ")")
+  }
+  run_lines <- c(paste0("obj <- ", call_line))
+  if (!is.null(fmt) && nzchar(fmt)) {
+    run_lines <- c(run_lines, paste0("obj <- ", fmt, "(obj)"))
+  }
+  run_lines <- c(run_lines, "obj")
+
+  c(
+    header,
+    setup_lines,
+    data_lines,
+    paste0("# --- ", source_name, ".R (from ", repo, ") ---"),
+    source_lines,
+    "",
+    "# --- run (from replication.yml) ---",
+    run_lines
+  )
+}
+
 #' Download a registry or package file to a temp path
 #'
 #' Uses \code{httr} for HTTP(S) URLs to avoid \code{download.file()} temp-path

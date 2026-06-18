@@ -2,6 +2,10 @@
 #'
 #' Returns the analysis script and, when defined, the format script.
 #'
+#' For package-backed studies, reads \code{inst/replication_code/*.R} from the
+#' study package GitHub repo when the package is not installed (same idea as
+#' reading \code{code/*.R} from the registry repo).
+#'
 #' @param doi Character. DOI of the paper.
 #' @param what Character. Replication identifier (e.g., \code{"fig_1"}).
 #' @param repo Optional repository slug.
@@ -14,8 +18,10 @@ get_code <- function(doi, what, repo = NULL, folder = NULL) {
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
-    ensure_replication_package(pkg, meta = meta, ctx = ctx)
-    return(call_replication_package(pkg, "get_code", what))
+    if (requireNamespace(pkg, quietly = TRUE)) {
+      return(call_replication_package(pkg, "get_code", what))
+    }
+    return(get_code_from_package_repo(meta, ctx, what, pkg))
   }
 
   rep <- find_replication_entry(meta, what)
@@ -28,7 +34,7 @@ get_code <- function(doi, what, repo = NULL, folder = NULL) {
       }
     }
     code_url <- paste0(ctx$base_url, "/", path)
-    suppressWarnings(readLines(code_url, warn = FALSE))
+    read_lines_url(code_url)
   }
 
   lines <- read_code_file(rep$code)

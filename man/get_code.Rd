@@ -21,3 +21,8 @@ A character vector containing the lines of the replication script(s).
 \description{
 Returns the analysis script and, when defined, the format script.
 }
+\details{
+For package-backed studies, reads \code{inst/replication_code/*.R} from the
+study package GitHub repo when the package is not installed (same idea as
+reading \code{code/*.R} from the registry repo).
+}
