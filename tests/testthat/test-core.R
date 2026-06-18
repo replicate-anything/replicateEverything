@@ -139,20 +139,37 @@ test_that("save_artifact writes html for tables", {
   expect_true(grepl("<table", readLines(path, n = 1)))
 })
 
-test_that("save_artifact writes rds when format step is registered", {
+test_that("save_artifact writes html when format step is registered", {
   tmp <- tempfile()
   dir.create(tmp)
-  result <- structure(
-    list(
-      id = "tab_1",
-      type = "table",
-      object = list(m1 = lm(mpg ~ wt, mtcars)),
-      format = "rds",
-      meta = list(id = "tab_1", format = "format_tab_1")
-    ),
-    class = "replication_result"
+  skip_if_not_installed("modelsummary")
+  skip_if_not_installed("kableExtra")
+
+  registry_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", "..", "registry"),
+    winslash = "/",
+    mustWork = FALSE
   )
-  path <- save_artifact(result, tmp)
-  expect_true(file.exists(path))
-  expect_equal(tools::file_ext(path), "rds")
+  skip_if_not(dir.exists(registry_root), "registry missing")
+
+  withr::with_options(
+    list(replicateEverything.registry_root = registry_root),
+    {
+      result <- render_replication(
+        "10.1017/s0003055403000534",
+        "tab_1",
+        folder = "10.1017S0003055403000534",
+        install_deps = FALSE
+      )
+      path <- save_artifact(
+        result,
+        tmp,
+        doi = "10.1017/s0003055403000534",
+        folder = "10.1017S0003055403000534"
+      )
+      expect_true(file.exists(path))
+      expect_equal(tools::file_ext(path), "html")
+      expect_true(grepl("<table", readLines(path, n = 1), ignore.case = TRUE))
+    }
+  )
 })

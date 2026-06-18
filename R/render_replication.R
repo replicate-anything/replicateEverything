@@ -99,9 +99,13 @@ get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
 #'
 #' @param what Replication id.
 #' @param rep Optional replication entry.
+#' @param ctx Optional paper context (for \code{manifest.json}).
 #' @keywords internal
-registry_artifact_rel_paths <- function(what, rep = NULL) {
+registry_artifact_rel_paths <- function(what, rep = NULL, ctx = NULL) {
   paths <- character(0)
+  if (!is.null(ctx)) {
+    paths <- c(paths, manifest_artifact_paths(what, ctx))
+  }
   if (!is.null(rep) && !is.null(rep$artifact) && nzchar(rep$artifact)) {
     art <- as.character(rep$artifact)
     paths <- c(
@@ -111,9 +115,62 @@ registry_artifact_rel_paths <- function(what, rep = NULL) {
       sub("^inst/", "", art)
     )
   }
-  for (ext in c("png", "html", "rds", "svg")) {
+  for (ext in c("html", "png", "rds", "svg")) {
     paths <- c(paths, paste0("artifacts/", what, ".", ext))
   }
+  unique(paths[nzchar(paths)])
+}
+
+#' Artifact paths recorded in \code{artifacts/manifest.json}
+#'
+#' @param what Replication id.
+#' @param ctx Paper context.
+#' @keywords internal
+manifest_artifact_paths <- function(what, ctx) {
+  read_manifest <- function(manifest) {
+    if (is.null(manifest) || is.null(manifest$replications)) {
+      return(character(0))
+    }
+    reps <- manifest$replications
+    entry <- reps[[what]] %||% NULL
+    if (is.null(entry) || is.null(entry$artifact) || !nzchar(entry$artifact)) {
+      return(character(0))
+    }
+    as.character(entry$artifact)
+  }
+
+  paths <- character(0)
+  if (!is.null(ctx$local_root)) {
+    local_manifest <- file.path(ctx$local_root, "artifacts", "manifest.json")
+    if (file.exists(local_manifest)) {
+      manifest <- tryCatch(
+        jsonlite::fromJSON(local_manifest, simplifyVector = FALSE),
+        error = function(e) NULL
+      )
+      paths <- c(paths, read_manifest(manifest))
+    }
+  }
+
+  manifest_url <- paste0(ctx$base_url, "/artifacts/manifest.json")
+  resp <- tryCatch(
+    httr::GET(
+      manifest_url,
+      httr::user_agent("replicateEverything"),
+      httr::timeout(15)
+    ),
+    error = function(e) NULL
+  )
+  if (!is.null(resp) && httr::status_code(resp) < 400L) {
+    manifest <- tryCatch(
+      jsonlite::fromJSON(
+        httr::content(resp, as = "text", encoding = "UTF-8"),
+        simplifyVector = FALSE
+      ),
+      error = function(e) NULL
+    )
+    paths <- c(paths, read_manifest(manifest))
+  }
+
   unique(paths[nzchar(paths)])
 }
 
@@ -148,7 +205,7 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
   }
 
   result <- NULL
-  rel_paths <- registry_artifact_rel_paths(what, rep)
+  rel_paths <- registry_artifact_rel_paths(what, rep, ctx)
   for (rel in rel_paths) {
     if (!is.null(ctx$local_root)) {
       local <- file.path(ctx$local_root, rel)
@@ -379,26 +436,10 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
     return(resolve_registry_artifact_path(what, ctx, rep, doi = doi))
   }
 
-  rep <- rep %||% find_replication_entry(meta, what)
-  artifact <- rep$artifact
-  if (is.null(artifact) || !nzchar(artifact)) {
-    artifact <- default_artifact_path(rep, what)
+  if (is.null(rep)) {
+    rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
   }
-
-  if (is.null(artifact) || !nzchar(artifact)) {
-    return(NULL)
-  }
-
-  ctx <- paper_context(doi, repo = repo, folder = folder)
-
-  if (!is.null(ctx$local_root)) {
-    local_artifact <- file.path(ctx$local_root, artifact)
-    if (file.exists(local_artifact)) {
-      return(local_artifact)
-    }
-  }
-
-  paste0(ctx$base_url, "/", artifact)
+  resolve_registry_artifact_path(what, ctx, rep, doi = doi)
 }
 
 #' Load a precomputed artifact for a replication
@@ -433,6 +474,26 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
   load_artifact_file_path(path)
 }
 
+#' Human-readable list of artifact URLs/paths tried for a replication
+#'
+#' @inheritParams get_artifact_path
+#' @keywords internal
+artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
+  rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+  rel <- registry_artifact_rel_paths(what, rep, ctx)
+  vapply(rel, function(r) {
+    if (!is.null(ctx$local_root)) {
+      local <- file.path(ctx$local_root, r)
+      if (file.exists(local)) {
+        return(local)
+      }
+    }
+    paste0(ctx$base_url, "/", r)
+  }, character(1))
+}
+
 #' @keywords internal
 read_artifact_file <- function(path, ext) {
   switch(
@@ -450,39 +511,62 @@ read_artifact_file <- function(path, ext) {
 #' @param result A replication result envelope from \code{render_replication()}.
 #' @param output_dir Directory in which to write the artifact.
 #'
+#' @param output_dir Directory in which to write the artifact.
+#' @param doi Optional DOI; required to apply a registered \code{format_*} step.
+#' @param repo Optional repository slug.
+#' @param folder Optional registry folder name.
+#' @param install_deps Logical; passed to \code{format_for_display()}.
+#'
 #' @return Invisibly the output file path.
 #' @export
-save_artifact <- function(result, output_dir) {
+save_artifact <- function(
+  result,
+  output_dir,
+  doi = NULL,
+  repo = NULL,
+  folder = NULL,
+  install_deps = FALSE
+) {
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
 
+  rep <- result$meta %||% list()
   object <- replication_object(result)
-  save_analysis <- format_specified(result$meta %||% list())
+  format_type <- result$format
 
-  ext <- if (save_analysis) {
-    "rds"
-  } else {
-    switch(
-      result$format,
-      ggplot = "png",
-      html = "html",
-      `data.frame` = "html",
-      plot = "png",
-      "rds"
+  if (format_specified(rep)) {
+    if (is.null(doi) || !nzchar(doi)) {
+      stop("doi is required to save display artifacts when format is specified.", call. = FALSE)
+    }
+    object <- format_for_display(
+      object,
+      doi,
+      result$id,
+      install_deps = install_deps,
+      repo = repo,
+      folder = folder
     )
+    format_type <- infer_result_format(object, result$type)
   }
+
+  ext <- switch(
+    format_type,
+    ggplot = "png",
+    html = "html",
+    `data.frame` = "html",
+    plot = "png",
+    "rds"
+  )
 
   out_path <- file.path(output_dir, paste0(result$id, ".", ext))
 
-  if (save_analysis) {
-    saveRDS(object, out_path)
-  } else if (result$format == "ggplot") {
+  if (format_type == "ggplot") {
     if (!requireNamespace("ggplot2", quietly = TRUE)) {
       stop("Saving ggplot artifacts requires the 'ggplot2' package.")
     }
     ggplot2::ggsave(out_path, plot = object, width = 8, height = 6, dpi = 150)
-  } else if (result$format == "html") {
+  } else if (format_type == "html") {
     html <- if (inherits(object, "html")) {
       as.character(object)
     } else {
@@ -490,14 +574,14 @@ save_artifact <- function(result, output_dir) {
     }
     html <- normalize_html_table(html)
     writeLines(html, out_path, useBytes = TRUE)
-  } else if (result$format == "data.frame") {
+  } else if (format_type == "data.frame") {
     html <- paste0(
       "<table class=\"table table-striped table-bordered\">",
       .df_to_html(object),
       "</table>"
     )
     writeLines(html, out_path, useBytes = TRUE)
-  } else if (result$format == "plot" && !is.null(object)) {
+  } else if (format_type == "plot" && !is.null(object)) {
     png(out_path, width = 800, height = 600)
     on.exit(dev.off(), add = TRUE)
     print(object)

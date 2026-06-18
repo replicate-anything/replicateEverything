@@ -4,9 +4,6 @@
 #' @param what Replication identifier.
 #' @keywords internal
 default_artifact_path <- function(rep, what) {
-  if (format_specified(rep)) {
-    return(paste0("artifacts/", what, ".rds"))
-  }
   if (identical(rep$type, "figure")) {
     return(paste0("artifacts/", what, ".png"))
   }
