@@ -51,21 +51,21 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   ctx <- paper_context(doi, repo = repo, folder = folder)
   meta <- NULL
 
-  registry_local <- ctx$registry_local_root
-  if (!is.null(registry_local)) {
-    stub_path <- file.path(registry_local, "replication.yml")
-    if (file.exists(stub_path)) {
-      meta <- yaml::read_yaml(stub_path)
-    }
+  stub_path <- ctx$registry_stub_path %||% NULL
+  if (!is.null(stub_path) && file.exists(stub_path)) {
+    meta <- tryCatch(yaml::read_yaml(stub_path), error = function(e) NULL)
   }
 
   if (is.null(meta)) {
-    stub_url <- sprintf(
+    meta <- read_yaml_url(registry_paper_yaml_url(ctx$folder))
+  }
+  if (is.null(meta)) {
+    legacy_url <- sprintf(
       "https://raw.githubusercontent.com/%s/main/papers/%s/replication.yml",
       DEFAULT_REGISTRY_REPO,
       ctx$folder
     )
-    meta <- read_yaml_url(stub_url)
+    meta <- read_yaml_url(legacy_url)
   }
 
   if (is.null(meta) && isTRUE(ctx$is_folder_study)) {

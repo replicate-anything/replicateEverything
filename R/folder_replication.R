@@ -219,7 +219,47 @@ resolve_study_folder_path <- function(meta, ctx = NULL) {
   NULL
 }
 
-#' Read the registry stub \code{replication.yml} for a paper folder
+#' Path to a registry paper stub yaml file
+#'
+#' Prefers \code{papers/<folder>.yml}; falls back to legacy
+#' \code{papers/<folder>/replication.yml} when present.
+#'
+#' @param registry_root Registry checkout root.
+#' @param folder Registry folder name.
+#' @return Character path (flat layout path even when missing).
+#' @keywords internal
+registry_paper_yaml_path <- function(registry_root, folder) {
+  flat <- file.path(registry_root, "papers", paste0(folder, ".yml"))
+  legacy <- file.path(registry_root, "papers", folder, "replication.yml")
+  if (file.exists(flat)) {
+    return(flat)
+  }
+  if (file.exists(legacy)) {
+    return(legacy)
+  }
+  flat
+}
+
+#' GitHub raw URL for a registry paper stub yaml
+#'
+#' @param folder Registry folder name.
+#' @param registry_repo Registry repository slug.
+#' @param ref Git ref.
+#' @keywords internal
+registry_paper_yaml_url <- function(
+  folder,
+  registry_repo = DEFAULT_REGISTRY_REPO,
+  ref = "main"
+) {
+  sprintf(
+    "https://raw.githubusercontent.com/%s/%s/papers/%s.yml",
+    registry_repo,
+    ref,
+    folder
+  )
+}
+
+#' Read the registry stub yaml for a paper folder
 #'
 #' @param folder Registry folder name.
 #' @param registry_root Optional registry checkout root.
@@ -229,15 +269,19 @@ read_registry_stub_yaml <- function(folder, registry_root = NULL) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
   }
   if (!is.null(registry_root)) {
-    path <- file.path(registry_root, "papers", folder, "replication.yml")
+    path <- registry_paper_yaml_path(registry_root, folder)
     if (file.exists(path)) {
       return(tryCatch(yaml::read_yaml(path), error = function(e) NULL))
     }
   }
-  url <- sprintf(
+  meta <- read_yaml_url(registry_paper_yaml_url(folder))
+  if (!is.null(meta)) {
+    return(meta)
+  }
+  legacy_url <- sprintf(
     "https://raw.githubusercontent.com/%s/main/papers/%s/replication.yml",
     DEFAULT_REGISTRY_REPO,
     folder
   )
-  read_yaml_url(url)
+  read_yaml_url(legacy_url)
 }

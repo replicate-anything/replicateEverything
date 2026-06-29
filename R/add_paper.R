@@ -1,7 +1,7 @@
 #' Add a package-backed study to the replication registry
 #'
 #' Validates a study replication package with [check_package_replication()],
-#' then writes a lightweight registry stub (`papers/<folder>/replication.yml`)
+#' then writes a lightweight registry stub (`papers/<folder>.yml`)
 #' and updates `index.csv`.
 #'
 #' Package-backed studies do **not** copy code, data, or artifacts into the
@@ -62,10 +62,20 @@ add_paper <- function(
   package_folder <- basename(result$package_path)
   stub <- registry_stub_from_package_meta(meta, package_folder = package_folder)
 
-  papers_dir <- file.path(registry_root, "papers", folder)
+  papers_dir <- file.path(registry_root, "papers")
   dir.create(papers_dir, recursive = TRUE, showWarnings = FALSE)
-  stub_path <- file.path(papers_dir, "replication.yml")
-  yaml::write_yaml(stub, stub_path)
+  stub_path <- file.path(papers_dir, paste0(folder, ".yml"))
+  stub_yaml <- yaml::as.yaml(stub)
+  header <- c(
+    "# Lightweight registry stub for a package-backed study.",
+    paste0("# Registry folder: ", folder),
+    ""
+  )
+  writeLines(c(header, stub_yaml), stub_path, useBytes = TRUE)
+  legacy_dir <- file.path(papers_dir, folder)
+  if (dir.exists(legacy_dir)) {
+    unlink(legacy_dir, recursive = TRUE)
+  }
 
   index_path <- file.path(registry_root, "index.csv")
   authors <- paper$authors %||% ""

@@ -133,7 +133,7 @@ test_that("load_artifact reads package html when study package is loaded", {
       replicateEverything.use_sibling_packages = TRUE
     ),
     {
-      html <- load_artifact(
+      html <- replicateEverything::load_artifact(
         "10.1371/journal.pone.0278337",
         "tab_1",
         folder = "10.1371_journal.pone.0278337"
@@ -238,7 +238,7 @@ test_that("get_code dispatches to package-backed study", {
       replicateEverything.use_sibling_packages = TRUE
     ),
     {
-      lines <- get_code(
+      lines <- replicateEverything::get_code(
         "10.1371/journal.pone.0278337",
         "fig_1",
         folder = "10.1371_journal.pone.0278337"

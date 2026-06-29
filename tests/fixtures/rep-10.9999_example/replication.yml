@@ -1,0 +1,25 @@
+paper:
+  doi: https://doi.org/10.9999/example
+  title: Fixture Paper
+  journal: Test Journal
+  year: 2025
+  authors: Test Author
+
+replications:
+  - id: tab_1
+    type: table
+    label: Table 1
+    description: Example table
+    data: data/example.csv
+    code: code/tab_1.R
+    artifact: artifacts/tab_1.html
+
+  - id: fig_1
+    type: figure
+    label: Figure 1
+    description: Example figure
+    data: data/example.csv
+    code: code/fig_1.R
+    artifact: artifacts/fig_1.png
+    dependencies:
+      - ggplot2

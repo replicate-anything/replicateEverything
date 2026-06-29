@@ -135,14 +135,22 @@ test_that("render_replication works against local fixture", {
     journal = "Test Journal",
     year = 2025,
     authors = "Test Author",
-    repo = "replicate-anything/registry",
+    repo = "replicate-anything/rep-10.9999_example",
     stringsAsFactors = FALSE
+  )
+
+  fixtures_root <- normalizePath(
+    file.path(testthat::test_path(".."), "fixtures"),
+    winslash = "/",
+    mustWork = FALSE
   )
 
   withr::with_options(
     list(
       replicateEverything.registry_root = fixture_root,
-      replicateEverything.index = local_index
+      replicateEverything.index = local_index,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.study_folders_root = fixtures_root
     ),
     {
       result <- render_replication("10.9999/example", "tab_1")
@@ -213,7 +221,7 @@ test_that("run_replication can apply format when requested", {
     ),
     {
       invisible(suppressMessages(capture.output({
-        raw <- run_replication(
+        raw <- replicateEverything::run_replication(
           "10.1017/s0003055403000534",
           "tab_1",
           folder = "10.1017S0003055403000534",
@@ -223,7 +231,7 @@ test_that("run_replication can apply format when requested", {
       expect_type(raw, "list")
 
       invisible(suppressMessages(capture.output({
-        formatted <- run_replication(
+        formatted <- replicateEverything::run_replication(
           "10.1017/s0003055403000534",
           "tab_1",
           folder = "10.1017S0003055403000534",

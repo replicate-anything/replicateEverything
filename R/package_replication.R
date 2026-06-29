@@ -452,18 +452,14 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
   }
 
   registry_sources <- list()
-  registry_local <- ctx$registry_local_root %||% ctx$local_root
-  if (!is.null(registry_local)) {
+  stub_path <- ctx$registry_stub_path %||% NULL
+  if (!is.null(stub_path) && file.exists(stub_path)) {
     registry_sources[[length(registry_sources) + 1L]] <- source_entry(
       "local registry stub",
-      file.path(registry_local, "replication.yml")
+      stub_path
     )
   }
-  registry_raw <- sprintf(
-    "https://raw.githubusercontent.com/%s/main/papers/%s/replication.yml",
-    DEFAULT_REGISTRY_REPO,
-    ctx$folder
-  )
+  registry_raw <- registry_paper_yaml_url(ctx$folder)
   registry_sources[[length(registry_sources) + 1L]] <- source_entry(
     "registry stub (GitHub)",
     registry_raw

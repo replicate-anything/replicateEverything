@@ -9,8 +9,43 @@
 #' @keywords internal
 source_replication_functions <- function(path, env, install_deps = FALSE) {
   exprs <- parse(path, keep.source = FALSE)
+  code_dir <- dirname(normalizePath(path, winslash = "/", mustWork = FALSE))
 
   for (expr in exprs) {
+    if (is.call(expr)) {
+      fn <- expr[[1]]
+      fn_name <- if (is.name(fn)) {
+        as.character(fn)
+      } else if (is.character(fn)) {
+        fn[[1]]
+      } else {
+        ""
+      }
+
+      if (fn_name %in% c("library", "require", "requireNamespace")) {
+        retry_with_missing_package(
+          eval(expr, envir = globalenv()),
+          install_missing = install_deps
+        )
+        next
+      }
+
+      if (identical(fn, quote(source)) && length(expr) >= 2L) {
+        src_arg <- expr[[2]]
+        if (is.character(src_arg)) {
+          src_path <- if (!grepl("^[A-Za-z]:[/\\\\]|^/", src_arg)) {
+            file.path(code_dir, src_arg)
+          } else {
+            src_arg
+          }
+          if (file.exists(src_path)) {
+            source_replication_functions(src_path, env, install_deps = install_deps)
+          }
+        }
+        next
+      }
+    }
+
     if (!is.call(expr) || !identical(expr[[1]], quote(`<-`)) || length(expr) < 3) {
       next
     }

@@ -60,46 +60,39 @@ For a worked example with output, see the [replication vignette](https://replica
 
 ## How it works
 
-Replication materials live in the [registry](https://github.com/replicate-anything/registry). Each paper has a folder under `papers/` with a `replication.yml` manifest, plus `data/`, `code/`, and optionally `artifacts/`.
+The [registry](https://github.com/replicate-anything/registry) indexes studies via lightweight stub files in `papers/<folder>.yml`. **Folder-backed** studies keep code, data, and artifacts in a dedicated study repository; **package-backed** studies keep them in an R package. `replicateEverything` reads the stub, loads the full `replication.yml` from the study repo or package, and runs the registered scripts.
 
 ```
-Registry
-  └── papers/<folder>/
-        replication.yml
-        data/
-        code/
-        artifacts/   (optional precomputed outputs)
+Registry                         Study repo or package
+  papers/<folder>.yml  ───────►  replication.yml
+  index.csv                      data/  code/  artifacts/
               ↓
       replicateEverything
               ↓
       figures & tables in your R session
 ```
 
-The package reads `replication.yml`, downloads the listed data and scripts, sources the analysis functions, and returns typed result objects suitable for printing, saving, or display in a Shiny app.
-
 ### Registry layout
 
-Every replication repository follows a standard structure:
+Each indexed paper has one stub file:
 
 ```
 papers/
-  <folder>/
-    replication.yml
-    data/
-      fig_1.csv
-      tab_1.csv
-    code/
-      fig_1.R
-      tab_1.R
-    artifacts/          # optional
-      fig_1.png
-      tab_1.html
-      manifest.json
+  10.1177_00491241211036161.yml
+  10.1371_journal.pone.0278337.yml
 ```
 
-Package-backed studies use a **lightweight stub** in `papers/<folder>/` (metadata and
-GitHub coordinates only). Code, data, and display artifacts live in the study R package.
-See [Package-backed replications](#package-backed-replications) below.
+Folder-backed study repositories follow:
+
+```
+replication.yml
+data/
+code/
+artifacts/
+tests/testthat/
+```
+
+Package-backed study packages follow the layout in [Package-backed replications](#package-backed-replications) below.
 
 The `<folder>` name comes from the registry `index.csv` (for example `10.1177_00491241211036161` or `10.1017S0003055403000534`).
 
@@ -181,7 +174,7 @@ if (sys.nframe() == 0) {
 
 ## Folder-backed replications
 
-Studies maintained as a **simple Git repository** (`code/`, `data/`, `artifacts/`) can be linked from the registry. Keep a stub in `papers/<folder>/replication.yml` only:
+Studies maintained as a **simple Git repository** (`code/`, `data/`, `artifacts/`) can be linked from the registry. Keep a stub in `papers/<folder>.yml` only:
 
 ```yaml
 paper:
@@ -212,18 +205,21 @@ build_study_artifacts(location = ".", install_deps = TRUE)
 # 2. Run tests
 testthat::test_dir("tests/testthat")
 
-# 3. Validate checklist
-check_folder_replication(".", registry_root = "../registry")
+# 3. Check + write registry/replication.yml and registry/index.csv
+prepare_folder_paper(".", build_artifacts = FALSE, registry_root = "../registry")
 
-# 4. Register stub + index.csv
-add_folder_paper(".", registry_root = "../registry")
+# 4. Sync stub files into registry checkout (or copy manually)
+sync_folder_paper(".", registry_root = "../registry")
+
+# One-step alternative when registry is local:
+# add_folder_paper(".", registry_root = "../registry")
 ```
 
 See `vignette("folder-replication-checklist", package = "replicateEverything")` for the full workflow.
 
 ## Package-backed replications
 
-Studies maintained as standalone R packages can be linked from the registry. Keep a paper folder in the registry with a `replication.yml` stub that points to the package (no `code/`, `data/`, or `artifacts/` in the registry):
+Studies maintained as standalone R packages can be linked from the registry. Keep a stub file `papers/<folder>.yml` that points to the package (no materials in the registry):
 
 ```yaml
 paper:
@@ -284,7 +280,9 @@ and `build_report()`.
 | Precomputed outputs | `load_artifact()`, `save_artifact()`, `artifact_available()` |
 | Validate | `validate_replication()`, `validate_artifact()` |
 | Build folder study artifacts | `build_study_artifacts()` |
-| Validate folder study | `check_folder_replication()`, `add_folder_paper()` |
+| Prepare folder study | `prepare_folder_paper()`, `write_folder_registry_stub()` |
+| Sync folder study to registry | `sync_folder_paper()`, `add_folder_paper()` |
+| Validate folder study | `check_folder_replication()` |
 | Validate package study | `check_package_replication()`, `add_paper()` |
 | Contribute | `create_replication_template()` |
 
@@ -307,7 +305,7 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 4. **Test locally** — run scripts in the R console or with `run_replication()`
 5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `papers/`, and open a pull request
 
-For **folder-backed** studies, use `add_folder_paper()` after `build_study_artifacts()`, tests, and `check_folder_replication()` pass.
+For **folder-backed** studies, run `prepare_folder_paper()` to build artifacts, validate, and write `registry/replication.yml` + `registry/index.csv` in the study repo; then `sync_folder_paper()` or copy those files into the registry.
 
 For **package-backed** studies, use `add_paper()` after `check_package_replication()` passes instead of copying code and data into the registry.
 

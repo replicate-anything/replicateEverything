@@ -8,7 +8,9 @@ add_folder_paper(
   location = ".",
   full_replication = FALSE,
   registry_root = NULL,
-  dry_run = FALSE
+  dry_run = FALSE,
+  build_artifacts = FALSE,
+  install_deps = TRUE
 )
 }
 \arguments{
@@ -20,17 +22,22 @@ add_folder_paper(
 \code{getOption("replicateEverything.registry_root")}.}
 
 \item{dry_run}{If \code{TRUE}, run checks only; do not write registry files.}
+
+\item{build_artifacts}{If \code{TRUE}, run \code{\link[=build_study_artifacts]{build_study_artifacts()}} before checks.}
+
+\item{install_deps}{Passed to \code{\link[=build_study_artifacts]{build_study_artifacts()}}.}
 }
 \value{
 Invisibly, the result of \code{\link[=check_folder_replication]{check_folder_replication()}}, with
 \code{stub_path} and \code{index_updated} when registration succeeds.
 }
 \description{
-Validates a folder-backed study repository with \code{\link[=check_folder_replication]{check_folder_replication()}},
-then writes a lightweight registry stub (\verb{papers/<folder>/replication.yml})
-and updates \code{index.csv}.
+Validates a folder-backed study with \code{\link[=check_folder_replication]{check_folder_replication()}}, writes
+or reuses \code{registry/replication.yml} and \code{registry/index.csv} in the study
+repo, then copies them into the registry checkout via \code{\link[=sync_folder_paper]{sync_folder_paper()}}.
 }
 \details{
-Code, data, and display artifacts stay in the study repository under
-\verb{artifacts/} (from \code{\link[=build_study_artifacts]{build_study_artifacts()}}).
+Equivalent to \code{\link[=prepare_folder_paper]{prepare_folder_paper()}} followed by \code{\link[=sync_folder_paper]{sync_folder_paper()}} when
+you already have a local registry checkout. If you only need the stub files,
+use \code{\link[=prepare_folder_paper]{prepare_folder_paper()}} and copy them manually.
 }

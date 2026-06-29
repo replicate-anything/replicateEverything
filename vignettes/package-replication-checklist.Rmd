@@ -11,12 +11,12 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-## Two ways to contribute
+## Two models
 
-| Model | Registry folder | Materials |
-|-------|-----------------|-----------|
-| **Registry paper** | `papers/<folder>/` with `code/`, `data/`, `artifacts/` | All in the registry repo |
-| **Package-backed** | `papers/<folder>/replication.yml` stub only | Study R package on GitHub |
+| Model | Registry | Materials |
+|-------|----------|-----------|
+| **Folder-backed** | `papers/<folder>.yml` stub only | Study repo: `code/`, `data/`, `artifacts/` |
+| **Package-backed** | `papers/<folder>.yml` stub only | Study R package on GitHub |
 
 This checklist covers **package-backed** studies (recommended for multi-table papers).
 
@@ -125,7 +125,7 @@ add_paper(
 )
 ```
 
-`add_paper()` writes `papers/<doi-folder>/replication.yml` and updates `index.csv`.
+`add_paper()` writes `papers/<doi-folder>.yml` and updates `index.csv`.
 
 ## Reference implementation
 

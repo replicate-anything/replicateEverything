@@ -136,9 +136,12 @@ folder_study_run_options <- function(study_root, meta, registry_root = NULL) {
 #' @keywords internal
 folder_display_replications <- function(meta) {
   reps <- meta$replications %||% list()
-  reps[vapply(reps, function(x) {
+  reps <- reps[vapply(reps, function(x) {
     identical(as.character(x$type %||% ""), "figure") ||
       identical(as.character(x$type %||% ""), "table")
+  }, logical(1))]
+  reps[vapply(reps, function(x) {
+    !isTRUE(x$incomplete %||% FALSE)
   }, logical(1))]
 }
 

@@ -4,6 +4,8 @@
 
 * `build_study_artifacts()` — run replications and write `artifacts/` + `manifest.json` from a study repo.
 * `check_folder_replication()` — pre-merge checklist (layout, yaml, code/data paths, artifacts, tests).
+* `prepare_folder_paper()` — build artifacts, validate, write `registry/replication.yml` + `registry/index.csv` in study repo.
+* `sync_folder_paper()` — copy prepared stub files into a registry checkout.
 * `add_folder_paper()` — validate and register a folder-backed study stub in the registry.
 * Vignette: "Folder replication checklist".
 * Improved artifact error hints for folder-backed studies.

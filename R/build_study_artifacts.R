@@ -96,7 +96,7 @@ build_study_artifacts <- function(
       if (!file.exists(out_file)) {
         stop("Artifact file was not created: ", out_file)
       }
-      validate_artifact(doi, rep_id, folder = folder)
+      validate_artifact(doi, rep_id)
       list(
         status = "ok",
         artifact = file.path("artifacts", basename(out)),

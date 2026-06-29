@@ -25,7 +25,7 @@ resolve_paper_path <- function(doi) {
 
 #' Build base URLs and paths for a paper in the registry
 #'
-#' For classic registry papers, materials live under \code{papers/<folder>/}.
+#' Registry stubs live as \code{papers/<folder>.yml} files.
 #' For folder-backed external studies, materials live at the study repo root.
 #' For package-backed studies, the registry stub path is still exposed but
 #' materials are resolved via the study package API.
@@ -53,8 +53,13 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
   }
 
   registry_root <- getOption("replicateEverything.registry_root", NULL)
+  registry_stub_path <- if (!is.null(registry_root)) {
+    registry_paper_yaml_path(registry_root, folder)
+  } else {
+    NULL
+  }
   registry_local_root <- if (!is.null(registry_root)) {
-    file.path(registry_root, "papers", folder)
+    file.path(registry_root, "papers")
   } else {
     NULL
   }
@@ -81,17 +86,23 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
       study_ref,
       "/"
     )
+  } else if (is_package_study) {
+    pkg_repo <- as.character((stub$repo %||% stub$paper$package_repo %||% index_repo)[[1]])
+    ref <- as.character((stub$paper$package_ref %||% stub$package_ref %||% "main")[[1]])
+    local_root <- NULL
+    base_url <- paste0(
+      "https://raw.githubusercontent.com/",
+      pkg_repo,
+      "/",
+      ref,
+      "/"
+    )
   } else {
-    local_root <- if (!is.null(registry_local_root) && dir.exists(registry_local_root)) {
-      registry_local_root
-    } else {
-      NULL
-    }
+    local_root <- NULL
     base_url <- paste0(
       "https://raw.githubusercontent.com/",
       DEFAULT_REGISTRY_REPO,
-      "/main/papers/",
-      folder
+      "/main/papers/"
     )
   }
 
@@ -101,6 +112,7 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     folder = folder,
     base_url = base_url,
     local_root = local_root,
+    registry_stub_path = registry_stub_path,
     registry_local_root = registry_local_root,
     materials_repo = materials_repo,
     is_folder_study = is_folder_study,

@@ -11,16 +11,18 @@
 create_replication_template <- function(doi) {
   meta <- get_doi_metadata(doi)
   doi_clean <- normalize_doi(doi)
-  doi_path <- resolve_paper_path(doi_clean)
+  registry_folder <- resolve_paper_path(doi_clean)
+  study_folder <- paste0("rep-", gsub("_", "-", registry_folder))
   authors <- paste(meta$authors, collapse = ", ")
   github_url <- paste0(
-    "https://github.com/replicate-anything/registry/tree/main/papers/", doi_path
+    "https://github.com/replicate-anything/", study_folder
   )
 
-  dir.create(doi_path, showWarnings = FALSE)
-  dir.create(file.path(doi_path, "code"), recursive = TRUE, showWarnings = FALSE)
-  dir.create(file.path(doi_path, "data"), recursive = TRUE, showWarnings = FALSE)
-  dir.create(file.path(doi_path, "artifacts"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(study_folder, showWarnings = FALSE)
+  dir.create(file.path(study_folder, "code"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(study_folder, "data"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(study_folder, "artifacts"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(study_folder, "tests", "testthat"), recursive = TRUE, showWarnings = FALSE)
 
   yaml <- paste0(
     "paper:
@@ -57,15 +59,15 @@ replications:
 "
   )
 
-  writeLines(yaml, file.path(doi_path, "replication.yml"))
+  writeLines(yaml, file.path(study_folder, "replication.yml"))
 
   example_data <- data.frame(x = 1:5, y = c(2, 4, 3, 5, 6))
-  write.csv(example_data, file.path(doi_path, "data", "example.csv"), row.names = FALSE)
+  write.csv(example_data, file.path(study_folder, "data", "example.csv"), row.names = FALSE)
 
   writeLines(
     c(
       "# Figure 1 - ", meta$title,
-      "# Paper folder: ", github_url,
+      "# Study repo: ", github_url,
       "# Run from the paper's code/ folder: Rscript fig_1.R",
       "",
       "library(ggplot2)",
@@ -78,13 +80,13 @@ replications:
       "",
       "make_fig_1(utils::read.csv(\"../data/example.csv\", stringsAsFactors = FALSE))"
     ),
-    file.path(doi_path, "code", "fig_1.R")
+    file.path(study_folder, "code", "fig_1.R")
   )
 
   writeLines(
     c(
       "# Table 1 - ", meta$title,
-      "# Paper folder: ", github_url,
+      "# Study repo: ", github_url,
       "# Run from the paper's code/ folder: Rscript tab_1.R",
       "# Requires the data/ folder alongside code/ (see replication.yml).",
       "",
@@ -100,8 +102,9 @@ replications:
       "",
       "make_tab_1(utils::read.csv(\"../data/example.csv\", stringsAsFactors = FALSE)) |> format_tab_1()"
     ),
-    file.path(doi_path, "code", "tab_1.R")
+    file.path(study_folder, "code", "tab_1.R")
   )
 
-  message("Replication template created at: ", doi_path)
+  message("Folder-backed study template created at: ", study_folder)
+  message("Register with prepare_folder_paper() then sync to registry/papers/", registry_folder, ".yml")
 }

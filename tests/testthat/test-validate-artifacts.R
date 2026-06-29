@@ -13,10 +13,10 @@ test_that("default artifact path uses html for legacy tables", {
   expect_equal(default_artifact_path(rep, "tab_1"), "artifacts/tab_1.html")
 })
 
-test_that("get_artifact_path resolves figure png under local registry", {
+test_that("get_artifact_path resolves figure png under local folder-backed study", {
   local_root <- withr::local_tempdir()
-  paper_dir <- file.path(local_root, "papers", "10.5555_test")
-  dir.create(file.path(paper_dir, "artifacts"), recursive = TRUE)
+  study_dir <- file.path(local_root, "rep-10.5555_test")
+  dir.create(file.path(study_dir, "artifacts"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
@@ -24,18 +24,49 @@ test_that("get_artifact_path resolves figure png under local registry", {
       "replications:",
       "  - id: fig_1",
       "    type: figure",
-      "    script: code/fig_1.R"
+      "    code: code/fig_1.R"
     ),
-    file.path(paper_dir, "replication.yml")
+    file.path(study_dir, "replication.yml")
   )
-  png_path <- file.path(paper_dir, "artifacts", "fig_1.png")
+  dir.create(file.path(local_root, "papers"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/test",
+      "  materials: folder",
+      "  study_repo: replicate-anything/rep-10.5555_test",
+      "  study_folder: rep-10.5555_test",
+      "repo: replicate-anything/rep-10.5555_test"
+    ),
+    file.path(local_root, "papers", "10.5555_test.yml")
+  )
+  png_path <- file.path(study_dir, "artifacts", "fig_1.png")
   writeBin(as.raw(0), png_path)
 
+  local_index <- data.frame(
+    folder = "10.5555_test",
+    doi = "10.5555/test",
+    title = "Test",
+    journal = "",
+    year = 2026,
+    authors = "A",
+    repo = "replicate-anything/rep-10.5555_test",
+    stringsAsFactors = FALSE
+  )
+
   withr::with_options(
-    list(replicateEverything.registry_root = local_root),
+    list(
+      replicateEverything.registry_root = local_root,
+      replicateEverything.study_folders_root = local_root,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.index = local_index
+    ),
     {
       path <- get_artifact_path("10.5555/test", "fig_1")
-      expect_equal(path, png_path)
+      expect_equal(
+        normalizePath(path, winslash = "/", mustWork = FALSE),
+        normalizePath(png_path, winslash = "/", mustWork = FALSE)
+      )
       expect_true(artifact_available("10.5555/test", "fig_1"))
       expect_silent(validate_artifact("10.5555/test", "fig_1"))
     }
@@ -44,8 +75,8 @@ test_that("get_artifact_path resolves figure png under local registry", {
 
 test_that("validate_artifact fails when file is missing", {
   local_root <- withr::local_tempdir()
-  paper_dir <- file.path(local_root, "papers", "10.5555_missing")
-  dir.create(file.path(paper_dir, "artifacts"), recursive = TRUE)
+  study_dir <- file.path(local_root, "rep-10.5555_missing")
+  dir.create(file.path(study_dir, "artifacts"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
@@ -53,13 +84,41 @@ test_that("validate_artifact fails when file is missing", {
       "replications:",
       "  - id: fig_1",
       "    type: figure",
-      "    script: code/fig_1.R"
+      "    code: code/fig_1.R"
     ),
-    file.path(paper_dir, "replication.yml")
+    file.path(study_dir, "replication.yml")
+  )
+  dir.create(file.path(local_root, "papers"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/missing",
+      "  materials: folder",
+      "  study_repo: replicate-anything/rep-10.5555_missing",
+      "  study_folder: rep-10.5555_missing",
+      "repo: replicate-anything/rep-10.5555_missing"
+    ),
+    file.path(local_root, "papers", "10.5555_missing.yml")
+  )
+
+  local_index <- data.frame(
+    folder = "10.5555_missing",
+    doi = "10.5555/missing",
+    title = "Test",
+    journal = "",
+    year = 2026,
+    authors = "A",
+    repo = "replicate-anything/rep-10.5555_missing",
+    stringsAsFactors = FALSE
   )
 
   withr::with_options(
-    list(replicateEverything.registry_root = local_root),
+    list(
+      replicateEverything.registry_root = local_root,
+      replicateEverything.study_folders_root = local_root,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.index = local_index
+    ),
     {
       expect_false(artifact_available("10.5555/missing", "fig_1"))
       expect_error(

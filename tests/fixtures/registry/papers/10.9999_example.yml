@@ -1,0 +1,12 @@
+# Lightweight registry stub for a folder-backed study (test fixture).
+paper:
+  doi: https://doi.org/10.9999/example
+  title: Fixture Paper
+  journal: Test Journal
+  year: 2025
+  authors: Test Author
+  materials: folder
+  study_repo: replicate-anything/rep-10.9999_example
+  study_folder: rep-10.9999_example
+  study_ref: main
+repo: replicate-anything/rep-10.9999_example
