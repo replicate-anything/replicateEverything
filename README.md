@@ -179,6 +179,48 @@ if (sys.nframe() == 0) {
 }
 ```
 
+## Folder-backed replications
+
+Studies maintained as a **simple Git repository** (`code/`, `data/`, `artifacts/`) can be linked from the registry. Keep a stub in `papers/<folder>/replication.yml` only:
+
+```yaml
+paper:
+  doi: https://doi.org/10.1177/00491241211036161
+  title: Bounding Causes of Effects With Mediators
+  materials: folder
+  study_repo: replicate-anything/rep-10.1177-00491241211036161
+  study_folder: rep-10.1177-00491241211036161
+  study_ref: main
+repo: replicate-anything/rep-10.1177-00491241211036161
+```
+
+The full `replications:` list lives in the study repo's `replication.yml`. Display artifacts live in `artifacts/` (from `build_study_artifacts()`).
+
+**From the study repository root:**
+
+```r
+library(replicateEverything)
+
+options(
+  replicateEverything.registry_root = "../registry",
+  replicateEverything.use_sibling_packages = TRUE
+)
+
+# 1. Build artifacts/manifest.json
+build_study_artifacts(location = ".", install_deps = TRUE)
+
+# 2. Run tests
+testthat::test_dir("tests/testthat")
+
+# 3. Validate checklist
+check_folder_replication(".", registry_root = "../registry")
+
+# 4. Register stub + index.csv
+add_folder_paper(".", registry_root = "../registry")
+```
+
+See `vignette("folder-replication-checklist", package = "replicateEverything")` for the full workflow.
+
 ## Package-backed replications
 
 Studies maintained as standalone R packages can be linked from the registry. Keep a paper folder in the registry with a `replication.yml` stub that points to the package (no `code/`, `data/`, or `artifacts/` in the registry):
@@ -188,10 +230,10 @@ paper:
   doi: https://doi.org/10.1371/journal.pone.0278337
   title: "Public support for global vaccine sharing in the COVID-19 pandemic"
   package: rep1371journalpone0278337
-  package_folder: rep_10.1371_journal.pone.0278337
-  package_repo: replicate-anything/rep_10.1371_journal.pone.0278337
+  package_folder: rep-10.1371_journal.pone.0278337
+  package_repo: replicate-anything/rep-10.1371_journal.pone.0278337
   package_ref: main
-repo: replicate-anything/rep_10.1371_journal.pone.0278337
+repo: replicate-anything/rep-10.1371_journal.pone.0278337
 ```
 
 `replicateEverything` merges the full `replications:` list from the study package
@@ -241,6 +283,8 @@ and `build_report()`.
 | Format for display | `format_for_display()`, `render_for_display()` |
 | Precomputed outputs | `load_artifact()`, `save_artifact()`, `artifact_available()` |
 | Validate | `validate_replication()`, `validate_artifact()` |
+| Build folder study artifacts | `build_study_artifacts()` |
+| Validate folder study | `check_folder_replication()`, `add_folder_paper()` |
 | Validate package study | `check_package_replication()`, `add_paper()` |
 | Contribute | `create_replication_template()` |
 
@@ -262,6 +306,8 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 3. **Add your data and code** — place processed data in `data/` and scripts in `code/`
 4. **Test locally** — run scripts in the R console or with `run_replication()`
 5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `papers/`, and open a pull request
+
+For **folder-backed** studies, use `add_folder_paper()` after `build_study_artifacts()`, tests, and `check_folder_replication()` pass.
 
 For **package-backed** studies, use `add_paper()` after `check_package_replication()` passes instead of copying code and data into the registry.
 

@@ -1,38 +1,40 @@
-#' Add a package-backed study to the replication registry
+#' Add a folder-backed study to the replication registry
 #'
-#' Validates a study replication package with [check_package_replication()],
+#' Validates a folder-backed study repository with [check_folder_replication()],
 #' then writes a lightweight registry stub (`papers/<folder>/replication.yml`)
 #' and updates `index.csv`.
 #'
-#' Package-backed studies do **not** copy code, data, or artifacts into the
-#' registry. Those live in the study package (`inst/report/artifacts/` from
-#' [build_report()]).
+#' Code, data, and display artifacts stay in the study repository under
+#' `artifacts/` (from [build_study_artifacts()]).
 #'
-#' @param location Local package path or GitHub address (`org/repo` or URL).
+#' @param location Local study path or GitHub address. Defaults to `"."`.
 #' @param full_replication If `TRUE`, also run every table and figure live.
-#' @param registry_root Path to the registry repository root (contains
-#'   `papers/` and `index.csv`). Defaults to
+#' @param registry_root Path to the registry repository root. Defaults to
 #'   `getOption("replicateEverything.registry_root")`.
 #' @param dry_run If `TRUE`, run checks only; do not write registry files.
-#' @return Invisibly, the result of [check_package_replication()], with
+#' @return Invisibly, the result of [check_folder_replication()], with
 #'   `stub_path` and `index_updated` when registration succeeds.
 #' @export
-add_paper <- function(
-  location,
+add_folder_paper <- function(
+  location = ".",
   full_replication = FALSE,
   registry_root = NULL,
   dry_run = FALSE
 ) {
-  result <- check_package_replication(location, full_replication = full_replication)
+  result <- check_folder_replication(
+    location,
+    full_replication = full_replication,
+    registry_root = registry_root
+  )
 
   if (!isTRUE(result$ok)) {
-    message("Package validation failed:")
+    message("Folder study validation failed:")
     failed <- result$checks[!result$checks$passed, , drop = FALSE]
     for (i in seq_len(nrow(failed))) {
       message("  [FAIL] ", failed$check[i], ": ", failed$message[i])
     }
     message(
-      "\nSee vignette('package-replication-checklist', package = 'replicateEverything') ",
+      "\nSee vignette('folder-replication-checklist', package = 'replicateEverything') ",
       "for requirements."
     )
     return(invisible(result))
@@ -59,8 +61,12 @@ add_paper <- function(
   meta <- result$meta
   paper <- meta$paper
   folder <- doi_to_registry_folder(paper$doi)
-  package_folder <- basename(result$package_path)
-  stub <- registry_stub_from_package_meta(meta, package_folder = package_folder)
+  study_folder <- basename(result$study_path)
+  stub <- registry_stub_from_folder_meta(
+    meta,
+    study_folder = study_folder,
+    study_root = result$study_path
+  )
 
   papers_dir <- file.path(registry_root, "papers", folder)
   dir.create(papers_dir, recursive = TRUE, showWarnings = FALSE)
@@ -81,7 +87,7 @@ add_paper <- function(
     journal = as.character(paper$journal %||% ""),
     year = as.integer(paper$year %||% NA_integer_),
     authors = authors,
-    repo = as.character((meta$repo %||% paper$package_repo)[[1]]),
+    repo = infer_study_repo_slug(result$study_path, meta),
     stringsAsFactors = FALSE
   )
   if (file.exists(index_path)) {
@@ -99,49 +105,5 @@ add_paper <- function(
   result$stub_path <- stub_path
   result$index_updated <- index_path
   result$folder <- folder
-  invisible(structure(result, class = c("package_replication_check", "list")))
-}
-
-#' Print a replication checklist result
-#'
-#' @param x Result from [check_package_replication()], [check_folder_replication()],
-#'   [add_paper()], or [add_folder_paper()].
-#' @param ... Ignored.
-#' @export
-print.package_replication_check <- function(x, ...) {
-  print_replication_check(x, label = "package")
-  invisible(x)
-}
-
-#' @rdname print.package_replication_check
-#' @export
-print.folder_replication_check <- function(x, ...) {
-  print_replication_check(x, label = "folder")
-  invisible(x)
-}
-
-#' @rdname print.package_replication_check
-#' @export
-print.replication_check <- function(x, ...) {
-  label <- if (inherits(x, "folder_replication_check")) "folder" else "package"
-  print_replication_check(x, label = label)
-  invisible(x)
-}
-
-#' @keywords internal
-print_replication_check <- function(x, label = "study") {
-  if (!is.data.frame(x$checks)) {
-    print(unclass(x))
-    return(invisible(x))
-  }
-  cat(if (isTRUE(x$ok)) "PASS" else "FAIL", " — ", label, " replication checklist\n", sep = "")
-  path <- x$study_path %||% x$package_path %||% NA_character_
-  if (!is.null(path) && length(path) == 1L && !is.na(path) && nzchar(path)) {
-    cat("Location:", path, "\n")
-  }
-  for (i in seq_len(nrow(x$checks))) {
-    mark <- if (isTRUE(x$checks$passed[i])) "[ok]" else "[x]"
-    cat(" ", mark, " ", x$checks$check[i], ": ", x$checks$message[i], "\n", sep = "")
-  }
-  invisible(x)
+  invisible(structure(result, class = c("folder_replication_check", "replication_check", "list")))
 }

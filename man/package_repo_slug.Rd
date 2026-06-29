@@ -17,6 +17,6 @@ Character repo slug.
 \description{
 Used when no local sibling package is found. Set \code{paper.package_repo}
 or top-level \code{repo} in \code{replication.yml} (GitHub slug, e.g.
-\code{replicate-anything/rep_10.1371_journal.pone.0278337}).
+\code{replicate-anything/rep-10.1371_journal.pone.0278337}).
 }
 \keyword{internal}

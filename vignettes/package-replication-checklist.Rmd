@@ -108,19 +108,19 @@ library(replicateEverything)
 
 # Quick validation (artifacts + API; no live fits)
 check_package_replication(
-  "../rep_10.1371_journal.pone.0278337"
+  "../rep-10.1371_journal.pone.0278337"
 )
 
 # Full validation (also runs every table/figure)
 check_package_replication(
-  "../rep_10.1371_journal.pone.0278337",
+  "../rep-10.1371_journal.pone.0278337",
   full_replication = TRUE
 )
 
 # Add to registry after checks pass
 options(replicateEverything.registry_root = "../registry")
 add_paper(
-  "../rep_10.1371_journal.pone.0278337",
+  "../rep-10.1371_journal.pone.0278337",
   full_replication = FALSE
 )
 ```
@@ -129,4 +129,4 @@ add_paper(
 
 ## Reference implementation
 
-See [rep_10.1371_journal.pone.0278337](https://github.com/replicate-anything/rep_10.1371_journal.pone.0278337) (vaccine solidarity paper).
+See [rep-10.1371_journal.pone.0278337](https://github.com/replicate-anything/rep-10.1371_journal.pone.0278337) (vaccine solidarity paper).

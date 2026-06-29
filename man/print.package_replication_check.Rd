@@ -2,15 +2,22 @@
 % Please edit documentation in R/add_paper.R
 \name{print.package_replication_check}
 \alias{print.package_replication_check}
-\title{Print a package replication checklist result}
+\alias{print.folder_replication_check}
+\alias{print.replication_check}
+\title{Print a replication checklist result}
 \usage{
 \method{print}{package_replication_check}(x, ...)
+
+\method{print}{folder_replication_check}(x, ...)
+
+\method{print}{replication_check}(x, ...)
 }
 \arguments{
-\item{x}{Result from \code{\link[=check_package_replication]{check_package_replication()}} or \code{\link[=add_paper]{add_paper()}}.}
+\item{x}{Result from \code{\link[=check_package_replication]{check_package_replication()}}, \code{\link[=check_folder_replication]{check_folder_replication()}},
+\code{\link[=add_paper]{add_paper()}}, or \code{\link[=add_folder_paper]{add_folder_paper()}}.}
 
 \item{...}{Ignored.}
 }
 \description{
-Print a package replication checklist result
+Print a replication checklist result
 }

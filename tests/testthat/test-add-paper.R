@@ -4,7 +4,7 @@ test_that("check_package_replication validates vaccine package structure", {
     winslash = "/",
     mustWork = FALSE
   )
-  pkg_dir <- file.path(monorepo_root, "rep_10.1371_journal.pone.0278337")
+  pkg_dir <- file.path(monorepo_root, "rep-10.1371_journal.pone.0278337")
   skip_if_not(dir.exists(pkg_dir), "vaccine solidarity rep package missing")
   skip_if_not(
     requireNamespace("devtools", quietly = TRUE),

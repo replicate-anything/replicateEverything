@@ -95,9 +95,15 @@ validate_artifact <- function(doi, what, repo = NULL) {
 
   local_path <- local_artifact_path(doi, what, repo = repo)
   if (!is.null(local_path) && !file.exists(local_path)) {
+    ctx <- tryCatch(paper_context(doi, repo = repo), error = function(e) NULL)
+    hint <- if (!is.null(ctx) && isTRUE(ctx$is_folder_study)) {
+      ". Run build_study_artifacts() in the study repository."
+    } else {
+      ". Run scripts/build_artifacts.R in the registry."
+    }
     stop(
       "Missing artifact file: ", local_path,
-      ". Run scripts/build_artifacts.R in the registry.",
+      hint,
       call. = FALSE
     )
   }

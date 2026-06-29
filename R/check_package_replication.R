@@ -341,5 +341,5 @@ check_package_replication <- function(location, full_replication = FALSE) {
     package_path = pkg_root,
     package = pkg_name,
     meta = meta
-  ) |> structure(class = c("package_replication_check", "list"))
+  ) |> structure(class = c("package_replication_check", "replication_check", "list"))
 }

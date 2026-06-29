@@ -1,0 +1,134 @@
+---
+title: "Folder replication checklist"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Folder replication checklist}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Two ways to contribute
+
+| Model | Registry folder | Materials |
+|-------|-----------------|-----------|
+| **Registry paper** | `papers/<folder>/` with `code/`, `data/`, `artifacts/` | All in the registry repo |
+| **Folder-backed** | `papers/<folder>/replication.yml` stub only | Study repo: `code/`, `data/`, `artifacts/` |
+
+This checklist covers **folder-backed** studies (simple Git repo, not an R package).
+
+## Study repo layout
+
+```
+rep-<doi-slug>/
+  replication.yml
+  README.md
+  code/                 # one script per table/figure
+  data/                 # optional
+  artifacts/            # display outputs + manifest.json
+  tests/
+    testthat.R
+    testthat/
+      test-<id>.R
+```
+
+## Required `replication.yml` fields
+
+**Paper metadata**
+
+- `paper.doi` — full DOI URL
+- `paper.title`
+- `repo` or `paper.study_repo` — GitHub slug (`org/repo`); inferred from folder name when it starts with `rep-`
+
+**Each figure or table**
+
+```yaml
+replications:
+  - id: fig_1
+    type: figure
+    code: code/fig_1.R
+    format: format_fig_1          # when display differs from analysis
+    artifact: artifacts/fig_1.png
+  - id: tab_1
+    type: table
+    code: code/tab_1.R
+    format: format_tab_1
+    data: data/myfile.dta
+    artifact: artifacts/tab_1.html
+```
+
+## Workflow from the study repo
+
+### 1. Build display artifacts
+
+Run from the study repository root (or pass its path):
+
+```{r, eval = FALSE}
+library(replicateEverything)
+
+options(
+  replicateEverything.registry_root = "../registry",
+  replicateEverything.use_sibling_packages = TRUE
+)
+
+build_study_artifacts(
+  location = ".",
+  install_deps = TRUE
+)
+```
+
+This runs every replication, saves PNG/HTML (or RDS) under `artifacts/`, and writes `artifacts/manifest.json`.
+
+### 2. Add tests
+
+Each `tests/testthat/test-<id>.R` should:
+
+- call `replicateEverything::run_replication(doi, id)` (analysis object)
+- call `run_replication(..., format = TRUE)` when `format:` is set in yaml
+- compare formatted output to the committed artifact (HTML normalize or PNG md5)
+
+Run:
+
+```{r, eval = FALSE}
+testthat::test_dir("tests/testthat")
+```
+
+### 3. Validate before opening a PR
+
+```{r, eval = FALSE}
+check_folder_replication(
+  location = ".",
+  full_replication = FALSE,
+  registry_root = "../registry"
+)
+
+# optional: also run every table/figure live
+check_folder_replication(".", full_replication = TRUE, registry_root = "../registry")
+```
+
+### 4. Register with the registry
+
+After checks pass, write the registry stub and update `index.csv`:
+
+```{r, eval = FALSE}
+options(replicateEverything.registry_root = "../registry")
+
+add_folder_paper(
+  location = ".",
+  full_replication = FALSE
+)
+```
+
+Remove any leftover `code/`, `data/`, or `artifacts/` under `registry/papers/<folder>/` — the registry keeps the stub only.
+
+## Reference implementations
+
+- [rep-10.1017-S0003055403000534](https://github.com/replicate-anything/rep-10.1017-S0003055403000534) (Fearon & Laitin)
+- [rep-10.1177-00491241211036161](https://github.com/replicate-anything/rep-10.1177-00491241211036161) (Bounding Causes)
+
+## Package-backed studies
+
+For studies maintained as R packages, see `vignette("package-replication-checklist", package = "replicateEverything")` and `check_package_replication()` / `add_paper()`.

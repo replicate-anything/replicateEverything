@@ -1,3 +1,13 @@
+# replicateEverything 0.3.0
+
+## Folder-backed study workflow
+
+* `build_study_artifacts()` — run replications and write `artifacts/` + `manifest.json` from a study repo.
+* `check_folder_replication()` — pre-merge checklist (layout, yaml, code/data paths, artifacts, tests).
+* `add_folder_paper()` — validate and register a folder-backed study stub in the registry.
+* Vignette: "Folder replication checklist".
+* Improved artifact error hints for folder-backed studies.
+
 # replicateEverything 0.2.0
 
 ## Major features
