@@ -1,416 +1,280 @@
-# Overview of the replicateEverything Package
-
-
 # replicateEverything
 
-A package for **reproducing academic research results programmatically
-and simply**.
+<!-- badges: start -->
+<!-- badges: end -->
 
-The package allows users to reproduce figures and tables from academic
-papers using a standardized way by structuring the replication
-repository in special way and adding it to a registry.
+<img src="man/figures/logo.png" align="right" height="139" alt="replicateEverything logo" />
 
-The goal is to make research **transparent, modular, and easily
-reproducible**.
+**Tools to discover, run, and contribute computational replications of empirical research papers.**
 
-------------------------------------------------------------------------
+`replicateEverything` connects to a public [replication registry](https://github.com/replicate-anything/registry), retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The goal is to make research **transparent, modular, and easily reproducible**.
 
-## Overview
+## Key features
 
-`replicateEverything` provides a simple interface to:
+- **Discovery** — search the registry, look up papers by DOI, and inspect available replications
+- **One-line replication** — run a single figure or table, or reproduce an entire paper with `replicate_paper()`
+- **Registry-backed materials** — fetch data and code from GitHub without manual downloads
+- **Package-backed studies** — link standalone R packages as replication backends (local monorepo or GitHub install)
+- **Artifacts** — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display
+- **Display pipeline** — optional `format_*` steps turn analysis objects into HTML tables and ggplot figures
+- **Contributor tooling** — scaffold a new replication folder with `create_replication_template()`
 
-- search replication-ready papers
-- retrieve replication repositories
-- reproduce figures and tables
-- run full paper replications
+## Project status
 
-The system is built around a **registry architecture** where replication
-repositories are indexed and accessed dynamically, making it easier for
-academics papers to be **replicated in one line of code.**
-
-## Project Status
-
-The inspiration to create this package came from an idea by [Macartan
-Humphreys](https://macartan.github.io), Director of the [Institutions
-and Political Inequality](https://wzb-ipi.github.io/) Research Group at
-[WZB](https://www.wzb.eu) in a
-[talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2)
-he gave to a $Lab^2$ audience in 2024. The project is under active
-development at the moment. All feedback are welcome. Feel free to [email
-me](mailto:vermon.washington@wzb.eu) or
-[Macartan](mailto:macartan.humphreys@zwb.eu).
+The inspiration for this package came from an idea by [Macartan Humphreys](https://macartan.github.io), Director of the [Institutions and Political Inequality](https://wzb-ipi.github.io/) Research Group at [WZB](https://www.wzb.eu), in a [2024 talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2) to a Lab² audience. The project is under active development. Feedback is welcome — contact [Vermon Washington](mailto:vermon.washington@wzb.eu) or [Macartan Humphreys](mailto:macartan.humphreys@wzb.eu).
 
 ## Installation
 
-Install the package from GitHub by using `remotes` and `devtools`.
+Install from GitHub with `remotes` or `devtools`:
 
-### Usings Remotes
+```r
+remotes::install_github("replicate-anything/replicateEverything")
+# or
+devtools::install_github("replicate-anything/replicateEverything")
+```
 
-    remotes::install_github("replicate-anything/replicateEverything")
+Requires R (>= 4.1.0).
 
-### Usings Devtools
+## Quick start
 
-    devtools::install_github("replicate-anything/replicateEverything")
-
-# Load Package
-
-Load the package in your environment.
-
-``` r
+```r
 library(replicateEverything)
-```
 
-## Quick Start
-
-### Retrieve metadata for a paper
-
-``` r
+# Look up bibliographic metadata
 get_doi_metadata("10.1177/00491241211036161")
-```
 
-    $title
-    [1] "Bounding Causes of Effects With Mediators"
-
-    $journal
-    [1] "Sociological Methods &amp; Research"
-
-    $year
-    [1] 2022
-
-    $authors
-    [1] "Philip Dawid"       "Macartan Humphreys" "Monica Musio"      
-
-### Find Replication Repository
-
-``` r
-# find repo
-find_repo("10.1177/00491241211036161")
-```
-
-    [1] "replicate-anything/registry"
-
-The way the package is set up now, researchers will have to outline
-their Github repository is an aligned way to allows it to be merge into
-the [Registry](https://github.com/replicate-anything/registry). More
-details on this later. However, you can use the `find_repo` function and
-the paper’s `DOI` to located and look up a paper’s repository from the
-registry.
-
-### Search the replication registry
-
-``` r
+# Search the registry by title keyword
 search_papers("causes")
-```
 
-                            doi                                     title
-    1 10.1177/00491241211036161 Bounding Causes of Effects With Mediators
-                 authors year                             journal
-    1 Macartan Humphreys 2022 Sociological Methods &amp; Research
-                             repo
-    1 replicate-anything/registry
-
-If the paper is in `"replicate-anything/registry"`, you can use many
-**key words** to search from the **title** of a paper to see if it is
-already in the registry.
-
-### List available replication options
-
-The `list_replications` function allows you to look up **structures** in
-an uploaded repository. It also allows you to see some important $id$
-that are subsequently used in key replication functions in the package,
-for example `fig_1`.
-
-``` r
+# See what can be replicated for a paper
 list_replications("10.1177/00491241211036161")
+
+# Run one figure or table
+run_replication("10.1177/00491241211036161", "fig_1")
+
+# Reproduce every registered result
+replicate_paper("10.1177/00491241211036161")
 ```
 
-    [1] "https://raw.githubusercontent.com/replicate-anything/registry/main/papers/10.1177_00491241211036161/replication.yml"
+For a worked example with output, see the [replication vignette](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
 
-    [[1]]
-    [[1]]$id
-    [1] "fig_1"
+## How it works
 
-    [[1]]$type
-    [1] "figure"
+Replication materials live in the [registry](https://github.com/replicate-anything/registry). Each paper has a folder under `papers/` with a `replication.yml` manifest, plus `data/`, `code/`, and optionally `artifacts/`.
 
-    [[1]]$description
-    [1] "Example figure"
+```
+Registry
+  └── papers/<folder>/
+        replication.yml
+        data/
+        code/
+        artifacts/   (optional precomputed outputs)
+              ↓
+      replicateEverything
+              ↓
+      figures & tables in your R session
+```
 
-    [[1]]$data
-    [1] "data/fig_1.csv"
+The package reads `replication.yml`, downloads the listed data and scripts, sources the analysis functions, and returns typed result objects suitable for printing, saving, or display in a Shiny app.
 
-    [[1]]$code
-    [1] "code/fig_1.R"
+### Registry layout
 
-### Run a single replication
+Every replication repository follows a standard structure:
 
-The `run_replication` function allows you to run **single** replication
-for a specific table or figure. This must have already be specified in
-the root directory on Github. More details on this later when discussing
-`contribution` below. See the output in this
-[article](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
-
-    run_replication(
-      "10.1177/00491241211036161",
-      "fig_1"
-    )
-
-### Replicate the entire paper
-
-This is the **single most important function** in this
-`replicateEverything` package. It allows you to replicate an entire
-paper. With a single line of code, you can be able to generate all
-figures at one go. See the output in this
-[article](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
-
-    replicate_paper("10.1177/00491241211036161")
-
-### Registry
-
-The [registry](https://github.com/replicate-anything/registry) indexes
-all replication repositories. See an example entry:
-
-
-        "doi": "10.1257/aer.20221688",
-        "title": "Market Design and Moral Behavior",
-        "authors": ["Bartling", "Fehr"],
-        "year": 2024,
-        "journal": "American Economic Review",
-        "repo": "replicate-anything/aer-replications"
-
-### Repositories Structures
-
-Every replication repository **MUST** follows a standardized structure.
-All data must be store in `processed` folder. All code must be stored in
-the `code` folder.
-
-
-    papers/
-       DOI/
-          replication.yml
-          data/
-             fig_1.csv
-             tab_1.csv
-          code/
-             fig_1.R
-             tab_1.R
-
-#### Example
-
-See the example below for structure of a repo for a single figure. This
-should similarly work for a single table as well. The repo should have
-the data and code as seen below.
-
-
-    papers/
-       10.1177/00491241211036161/
-          replication.yml
-          data/
-             fig_1.csv
-          code/
-             fig_1.R
-
-## Metadata Specification
-
-Each paper must include a metadata file.
-
+```
+papers/
+  <folder>/
     replication.yml
-
-### Example
-
-Ideally, make sure to include if a table has `dependencies`.
-
-
-    paper:
-      title: Market Design and Moral Behavior
-      authors:
-        - Bartling, Björn
-        - Fehr, Ernst
-      year: 2024
-      doi: 10.1257/aer.20221688
-      journal: American Economic Review
-
-    replications:
-
-      - id: fig_1
-        type: figure
-        description: Example figure
-        data: data/fig_1.csv
-        code: code/fig_1.R
-
-      - id: tab_1
-        type: table
-        description: Example table
-        data: data/tab_1.csv
-        code: code/tab_1.R
-        dependencies:
-          - dplyr
-          - gt
-
-### Link with package option
-
-For studies maintained as standalone replication packages (instead of
-`registry/papers/<folder>/code` and `data`), keep a paper folder in the
-registry with a `replication.yml` that links to the package:
-
-    paper:
-      doi: https://doi.org/10.1371/journal.pone.0278337
-      title: "Public support for global vaccine sharing in the COVID-19 pandemic: Evidence from Germany"
-      package: rep1371journalpone0278337
-      package_folder: rep_10.1371_journal.pone.0278337
-      package_repo: replicate-anything/rep_10.1371_journal.pone.0278337
-      package_ref: main
-    repo: replicate-anything/rep_10.1371_journal.pone.0278337
-
-**Local development (monorepo):** keep the study package as a sibling folder
-(e.g. next to `registry/`). `replicateEverything` looks for
-`package_folder` under the monorepo root or under
-`options(replicateEverything.replication_packages_root)` and loads it with
-`devtools::load_all()`.
-
-**Online / published:** once the package is on GitHub, set `package_repo`
-(and top-level `repo`) to the GitHub slug. No YAML changes are needed beyond
-removing or ignoring `package_folder` — install falls back to
-`remotes::install_github()` when no sibling is found.
-
-Optional overrides:
-
-- `paper.package_path`: absolute or relative path to the package root
-- `options(replicateEverything.replication_packages = list(pkgname = "/path"))`
-- `options(replicateEverything.replication_packages_root = "/path/to/monorepo")`
-
-How this works:
-
-- the registry still indexes the study using its DOI and metadata
-- `replicateEverything` reads `replication.yml` from the registry folder
-- if `paper.package` is present, `replicateEverything` loads the sibling
-  package locally or installs from `package_repo` on GitHub
-- Shiny continues calling `replicateEverything` in the same way; the
-  package-backed routing is handled in the package layer
-
-Required package API for linked studies:
-
-- `list_replications()`
-- `run_replication(id, install_deps = FALSE)`
-- `load_artifact(id)`
-
-## Contributor’s Workflow
-
-### Retrieve DOI metadata
-
-``` r
-get_doi_metadata("10.1177/00491241211036161")
+    data/
+      fig_1.csv
+      tab_1.csv
+    code/
+      fig_1.R
+      tab_1.R
+    artifacts/          # optional
+      fig_1.png
+      tab_1.html
+      manifest.json
 ```
 
-    $title
-    [1] "Bounding Causes of Effects With Mediators"
+The `<folder>` name comes from the registry `index.csv` (for example `10.1177_00491241211036161` or `10.1017S0003055403000534`).
 
-    $journal
-    [1] "Sociological Methods &amp; Research"
+### Example `replication.yml`
 
-    $year
-    [1] 2022
+```yaml
+paper:
+  title: Market Design and Moral Behavior
+  authors:
+    - Bartling, Björn
+    - Fehr, Ernst
+  year: 2024
+  doi: 10.1257/aer.20221688
+  journal: American Economic Review
 
-    $authors
-    [1] "Philip Dawid"       "Macartan Humphreys" "Monica Musio"      
+replications:
+  - id: fig_1
+    type: figure
+    label: Figure 1
+    description: Example figure
+    data: data/fig_1.csv
+    code: code/fig_1.R
+    artifact: artifacts/fig_1.png
+    dependencies:
+      - ggplot2
 
-### Create a replication template
-
-This create a folder on your local machine. Now, you will have to upload
-the final processed data used for generating the figure as well as the
-code in their exact areas. Read the `Writing Scripts` section below for
-how to include the `generate` function into your code.
-
-``` r
-#create a local folder 
-create_replication_template("10.1177/00491241211036161")
+  - id: tab_1
+    type: table
+    label: Table 1
+    description: Example table
+    data: data/tab_1.csv
+    code: code/tab_1.R
+    format: format_tab_1
+    artifact: artifacts/tab_1.html
+    dependencies:
+      - dplyr
+      - gt
 ```
 
-    Replication template created at: 10.1177_00491241211036161
+## Writing replication scripts
 
-### Clone the registry repository from Github
-
-Now, clone the Git repo:
-
-    git clone https://github.com/replicate-anything/registry
-
-### Add the replication folder to Registry on Github
-
-At this point, you would have added your data and code to the folder on
-your local machine. A good test would be to make sure that you ensure
-that the code runs in your `R console`. See example code below on using
-command line to move this to the `registry`. You can also just copy and
-paste the final folder with your code in the clone repo as well. Use
-what methods works well for you.
-
-    # seen how to use command line example below 
-    mv 10.1257_app.20230717 registry/papers/
-
-### Commit and Push
-
-Commit your changes in the folder and then push them to remotes.
-
-    git add .
-    git commit -m "Add replication for 10.1257/app.20230717"
-    git push
-
-### Open a Pull Request.
-
-Submit the replication to the registry on Github. *That’s it!* Thank you
-for embracing a **transparent, modular, and easily reproducible**
-research culture.
-
-## Writing Replication Scripts
-
-Replications Scripts **must** define the `generate` function. For
-figure, use `generate_figure` and for table, use `generate_table`.
+Replication scripts define an analysis function named `make_<id>()` (for example `make_fig_1()`). The legacy names `generate_figure()` and `generate_table()` are still supported.
 
 ### Figures
 
-See a very simple example below. This generates a figure.
-
-
-    generate_figure <- function(data){
-
-      ggplot2::ggplot(data, ggplot2::aes(group,value)) +
-        ggplot2::geom_col()
-
-    }
+```r
+make_fig_1 <- function(data) {
+  ggplot2::ggplot(data, ggplot2::aes(group, value)) +
+    ggplot2::geom_col()
+}
+```
 
 ### Tables
 
-See a very simple example below. This generates a table.
+```r
+make_tab_1 <- function(data) {
+  dplyr::summarise(data, mean_value = mean(value))
+}
 
+format_tab_1 <- function(object) {
+  # optional: convert the analysis object to HTML for display
+  as.character(object)
+}
+```
 
-    generate_table <- function(data){
+When `replication.yml` lists a `format` field, the package passes the analysis output through the corresponding `format_*` function before display or artifact export.
 
-      dplyr::summarise(data, mean_value = mean(value))
+### Self-contained scripts
 
-    }
+Scripts can also be run directly from the paper folder. Use `self_run()` at the bottom of a script so the package can source only the function definitions:
 
-This allows the the `package` to automatically: - download the
-dataset(s) - loads all dependencies - sources the replication script -
-runs the function
+```r
+if (sys.nframe() == 0) {
+  self_run(make_fig_1, "data/fig_1.csv")
+} else {
+  generate_figure <- make_fig_1
+}
+```
 
-## Developer Workflow
+## Package-backed replications
 
-Start by cloning the repository. Look at the steps below for starter.
-After including features or making changes to the package, make sure to
-submit a [pull
-request](https://github.com/replicate-anything/replicateEverything/pulls)
-so as to merge it with the updated version of the software.
+Studies maintained as standalone R packages can be linked from the registry. Keep a paper folder in the registry with a `replication.yml` that points to the package:
 
-    git clone https://github.com/replicate-anything/replicateEverything
+```yaml
+paper:
+  doi: https://doi.org/10.1371/journal.pone.0278337
+  title: "Public support for global vaccine sharing in the COVID-19 pandemic"
+  package: rep1371journalpone0278337
+  package_folder: rep_10.1371_journal.pone.0278337
+  package_repo: replicate-anything/rep_10.1371_journal.pone.0278337
+  package_ref: main
+repo: replicate-anything/rep_10.1371_journal.pone.0278337
+```
 
-Install the dependencies:
+**Local development (monorepo):** place the study package as a sibling folder next to `registry/`. Enable sibling resolution with:
 
-    devtools::install()
+```r
+options(replicateEverything.use_sibling_packages = TRUE)
+options(replicateEverything.replication_packages_root = "/path/to/monorepo")
+```
 
-Run package checks:
+**Published packages:** set `package_repo` (and top-level `repo`) to the GitHub slug. The package installs via `remotes::install_github()` when no local sibling is found.
 
-    devtools::check()
+Optional overrides:
 
-## Report Bugs
+- `paper.package_path` — absolute or relative path to the package root
+- `options(replicateEverything.replication_packages = list(pkgname = "/path"))`
 
-To report bugs or fixes, please create an issues
-[here](https://github.com/replicate-anything/replicateEverything/issues).
+Linked study packages should export: `list_replications()`, `run_replication(id, install_deps = FALSE)`, and `load_artifact(id)`.
+
+## API overview
+
+| Task | Function |
+|------|----------|
+| Search registry | `search_papers()`, `load_index()` |
+| DOI metadata | `get_doi_metadata()`, `normalize_doi()` |
+| Find repository | `find_repo()` |
+| List replications | `list_replications()` |
+| View source code | `get_code()` |
+| Run one replication | `run_replication()`, `render_replication()` |
+| Replicate full paper | `replicate_paper()` |
+| Format for display | `format_for_display()`, `render_for_display()` |
+| Precomputed outputs | `load_artifact()`, `save_artifact()`, `artifact_available()` |
+| Validate | `validate_replication()`, `validate_artifact()` |
+| Contribute | `create_replication_template()` |
+
+Set `install_deps = TRUE` on run functions to install missing CRAN dependencies automatically.
+
+### Local registry development
+
+Point the package at a local clone of the registry:
+
+```r
+options(replicateEverything.registry_root = "/path/to/registry")
+options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
+```
+
+## Contributor workflow
+
+1. **Fetch metadata** — `get_doi_metadata("10.1177/00491241211036161")`
+2. **Scaffold a folder** — `create_replication_template("10.1177/00491241211036161")`
+3. **Add your data and code** — place processed data in `data/` and scripts in `code/`
+4. **Test locally** — run scripts in the R console or with `run_replication()`
+5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `papers/`, and open a pull request
+
+```bash
+git clone https://github.com/replicate-anything/registry
+mv 10.1177_00491241211036161 registry/papers/
+cd registry
+git add .
+git commit -m "Add replication for 10.1177/00491241211036161"
+git push
+```
+
+## Developer workflow
+
+```bash
+git clone https://github.com/replicate-anything/replicateEverything
+cd replicateEverything
+```
+
+```r
+devtools::install()
+devtools::test()
+devtools::check()
+```
+
+Documentation site: [replicate-anything.github.io/replicateEverything](https://replicate-anything.github.io/replicateEverything/)
+
+## Links
+
+- **Package:** [github.com/replicate-anything/replicateEverything](https://github.com/replicate-anything/replicateEverything)
+- **Registry:** [github.com/replicate-anything/registry](https://github.com/replicate-anything/registry)
+- **Documentation:** [replicate-anything.github.io/replicateEverything](https://replicate-anything.github.io/replicateEverything/)
+
+## Report bugs
+
+Open an issue at [github.com/replicate-anything/replicateEverything/issues](https://github.com/replicate-anything/replicateEverything/issues).
+
+## License
+
+MIT

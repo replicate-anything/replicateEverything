@@ -13,3 +13,5 @@
 ^doc$
 ^Meta$
 ^vignettes/\.quarto$
+^\.positai$
+^\.claude$
