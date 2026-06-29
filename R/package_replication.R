@@ -452,13 +452,18 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
   }
 
   registry_sources <- list()
-  if (!is.null(ctx$local_root)) {
+  registry_local <- ctx$registry_local_root %||% ctx$local_root
+  if (!is.null(registry_local)) {
     registry_sources[[length(registry_sources) + 1L]] <- source_entry(
       "local registry stub",
-      file.path(ctx$local_root, "replication.yml")
+      file.path(registry_local, "replication.yml")
     )
   }
-  registry_raw <- paste0(ctx$base_url, "/replication.yml")
+  registry_raw <- sprintf(
+    "https://raw.githubusercontent.com/%s/main/papers/%s/replication.yml",
+    DEFAULT_REGISTRY_REPO,
+    ctx$folder
+  )
   registry_sources[[length(registry_sources) + 1L]] <- source_entry(
     "registry stub (GitHub)",
     registry_raw
@@ -482,10 +487,14 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
   }
 
   package_sources <- list()
+  study_sources <- list()
   package_repo <- NULL
   package_ref <- "main"
+  study_repo <- NULL
+  study_ref <- "main"
   replications_found <- 0L
   is_package_study <- !is.null(stub) && is_package_replication(stub)
+  is_folder_study <- !is.null(stub) && is_folder_study_replication(stub, ctx)
 
   if (is_package_study) {
     package_repo <- package_repo_slug(stub, ctx)
@@ -500,6 +509,21 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
     if (!is.null(pkg_meta)) {
       replications_found <- length(pkg_meta$replications %||% list())
     }
+  } else if (is_folder_study) {
+    study_repo <- study_repo_slug(stub, ctx)
+    study_ref <- study_repo_ref(stub)
+    for (study_url in folder_study_yaml_urls(study_repo, study_ref)) {
+      study_sources[[length(study_sources) + 1L]] <- source_entry(
+        "study repo replication.yml",
+        study_url
+      )
+    }
+    study_meta <- fetch_folder_study_replication_yaml(stub, ctx)
+    if (!is.null(study_meta)) {
+      replications_found <- length(study_meta$replications %||% list())
+    } else if (!is.null(stub)) {
+      replications_found <- length(stub$replications %||% list())
+    }
   } else if (!is.null(stub)) {
     replications_found <- length(stub$replications %||% list())
   }
@@ -507,13 +531,17 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
   list(
     doi = doi,
     folder = ctx$folder,
-    registry_repo = ctx$repo,
+    registry_repo = DEFAULT_REGISTRY_REPO,
     package_repo = package_repo,
     package_ref = package_ref,
+    study_repo = study_repo,
+    study_ref = study_ref,
     is_package_study = is_package_study,
+    is_folder_study = is_folder_study,
     replications_found = replications_found,
     registry_sources = registry_sources,
-    package_sources = package_sources
+    package_sources = package_sources,
+    study_sources = study_sources
   )
 }
 
@@ -788,21 +816,12 @@ try_install_replication_package_github <- function(package, repo, ref = "main") 
 #' @param ctx Paper context from \code{paper_context()}.
 #' @keywords internal
 ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
-  if (requireNamespace(package, quietly = TRUE)) {
-    if (!is.null(meta) && !is.null(ctx)) {
-      repo <- package_repo_slug(meta, ctx)
-      ref <- package_repo_ref(meta)
-      if (github_package_outdated(package, repo, ref)) {
-        ok <- try_install_replication_package_github(package, repo, ref)
-        return(invisible(isTRUE(ok) || requireNamespace(package, quietly = TRUE)))
-      }
+  try_load_local <- function() {
+    local_path <- resolve_replication_package_path(package, meta, ctx)
+    if (is.null(local_path)) {
+      return(FALSE)
     }
-    return(invisible(TRUE))
-  }
-
-  local_path <- resolve_replication_package_path(package, meta, ctx)
-  if (!is.null(local_path)) {
-    ok <- tryCatch(
+    tryCatch(
       {
         load_replication_package_path(local_path, package)
         requireNamespace(package, quietly = TRUE)
@@ -816,9 +835,28 @@ ensure_replication_package <- function(package, meta = NULL, ctx = NULL) {
         FALSE
       }
     )
-    if (isTRUE(ok)) {
-      return(invisible(TRUE))
+  }
+
+  # Prefer a sibling monorepo package over a (possibly stale) library install.
+  if (isTRUE(try_load_local()) && replication_package_usable(package)) {
+    return(invisible(TRUE))
+  }
+
+  if (requireNamespace(package, quietly = TRUE) && replication_package_usable(package)) {
+    if (!is.null(meta) && !is.null(ctx)) {
+      repo <- package_repo_slug(meta, ctx)
+      ref <- package_repo_ref(meta)
+      if (github_package_outdated(package, repo, ref)) {
+        ok <- try_install_replication_package_github(package, repo, ref)
+        return(invisible(isTRUE(ok) || requireNamespace(package, quietly = TRUE)))
+      }
     }
+    return(invisible(TRUE))
+  }
+
+  unload_replication_package(package)
+  if (isTRUE(try_load_local()) && replication_package_usable(package)) {
+    return(invisible(TRUE))
   }
 
   if (!is.null(meta) && !is.null(ctx)) {
@@ -869,6 +907,7 @@ load_replication_package_path <- function(path, package) {
   if (length(path) != 1L || is.na(path) || !nzchar(path) || !dir.exists(path)) {
     stop("Invalid replication package path.", call. = FALSE)
   }
+  unload_replication_package(package)
   if (requireNamespace("devtools", quietly = TRUE)) {
     devtools::load_all(path, quiet = TRUE)
     return(invisible(TRUE))
@@ -889,6 +928,193 @@ load_replication_package_path <- function(path, package) {
   )
 }
 
+#' Whether a study replication package namespace can be used
+#'
+#' @param package Installed or dev-loaded package name.
+#' @keywords internal
+replication_package_usable <- function(package) {
+  if (!requireNamespace(package, quietly = TRUE)) {
+    return(FALSE)
+  }
+  tryCatch(
+    {
+      ns <- asNamespace(package)
+      get("list_replications", envir = ns, inherits = FALSE, mode = "function")
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+}
+
+#' Unload a study replication package namespace if loaded
+#'
+#' @param package Package name.
+#' @keywords internal
+unload_replication_package <- function(package) {
+  if (package %in% loadedNamespaces()) {
+    tryCatch(unloadNamespace(package), error = function(e) NULL)
+  }
+  invisible(TRUE)
+}
+
+#' Ensure a package-backed study is loaded and callable
+#'
+#' @param package R package name.
+#' @param meta Parsed replication metadata.
+#' @param ctx Paper context.
+#' @keywords internal
+prepare_package_replication <- function(package, meta, ctx) {
+  ensure_replication_package(package, meta = meta, ctx = ctx)
+  if (!replication_package_usable(package)) {
+    stop(study_package_error(package, meta, ctx))
+  }
+  invisible(TRUE)
+}
+
+#' @keywords internal
+study_package_sibling_path <- function(package, meta, ctx) {
+  path <- resolve_replication_package_path(package, meta, ctx)
+  if (!is.null(path)) {
+    return(path)
+  }
+  folder <- meta$paper$package_folder %||% NULL
+  root <- getOption("replicateEverything.replication_packages_root", NULL)
+  if (is.null(folder) || is.null(root) || !dir.exists(root)) {
+    return(NULL)
+  }
+  candidate <- file.path(root, as.character(folder[[1]]))
+  if (package_desc_matches(candidate, package)) {
+    return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+  }
+  NULL
+}
+
+#' Install instructions for a package-backed study
+#'
+#' @param meta Parsed replication metadata (registry stub or package yaml).
+#' @param ctx Paper context from [paper_context()].
+#' @return A list with `package`, `repo`, `ref`, `github_url`, `install_github`,
+#'   and optional `sibling_path` / `load_local`.
+#' @export
+study_package_install_info <- function(meta, ctx) {
+  package <- as.character(meta$paper$package[[1]])
+  repo <- package_repo_slug(meta, ctx)
+  ref <- package_repo_ref(meta)
+  sibling <- study_package_sibling_path(package, meta, ctx)
+  github_url <- if (nzchar(repo)) {
+    paste0("https://github.com/", repo)
+  } else {
+    NA_character_
+  }
+  install_github <- if (nzchar(repo)) {
+    paste0("remotes::install_github(\"", repo, "@", ref, "\")")
+  } else {
+    NA_character_
+  }
+  load_local <- if (!is.null(sibling)) {
+    paste0("devtools::load_all(\"", sibling, "\")")
+  } else {
+    NA_character_
+  }
+  list(
+    package = package,
+    repo = repo,
+    ref = ref,
+    github_url = github_url,
+    install_github = install_github,
+    sibling_path = sibling,
+    load_local = load_local
+  )
+}
+
+#' User-facing message for installing a study replication package
+#'
+#' @inheritParams study_package_install_info
+#' @return Character string.
+#' @export
+study_package_install_message <- function(meta, ctx) {
+  info <- study_package_install_info(meta, ctx)
+  lines <- c(
+    "To replicate this study, install the replication package first.",
+    paste0("Package: ", info$package)
+  )
+  if (!is.na(info$github_url)) {
+    lines <- c(
+      lines,
+      paste0("GitHub: ", info$github_url, " (ref: ", info$ref, ")"),
+      paste0("Install: ", info$install_github)
+    )
+  }
+  if (!is.null(info$sibling_path) && nzchar(info$sibling_path)) {
+    lines <- c(
+      lines,
+      paste0("Local package found at: ", info$sibling_path),
+      paste0("Or run: ", info$load_local)
+    )
+  }
+  paste(lines, collapse = "\n")
+}
+
+#' Error condition when a study replication package is not available
+#'
+#' @param package R package name.
+#' @param meta Parsed replication metadata.
+#' @param ctx Paper context.
+#' @keywords internal
+study_package_error <- function(package, meta, ctx) {
+  structure(
+    list(
+      message = study_package_install_message(meta, ctx),
+      call = sys.call(-1),
+      package = package,
+      meta = meta,
+      ctx = ctx
+    ),
+    class = c("study_package_error", "error", "condition")
+  )
+}
+
+#' Whether an error is a missing study replication package
+#'
+#' @param x Object to test.
+#' @return Logical.
+#' @export
+is_study_package_error <- function(x) {
+  inherits(x, "study_package_error")
+}
+
+#' Load all sibling replication packages under a monorepo root
+#'
+#' @param root Directory containing \code{rep_*} package folders.
+#' @keywords internal
+load_sibling_replication_packages <- function(root) {
+  if (length(root) != 1L || !dir.exists(root)) {
+    return(invisible(FALSE))
+  }
+  if (!requireNamespace("devtools", quietly = TRUE)) {
+    return(invisible(FALSE))
+  }
+  dirs <- list.dirs(root, full.names = TRUE, recursive = FALSE)
+  rep_dirs <- dirs[grepl("^rep_", basename(dirs), ignore.case = TRUE)]
+  for (path in rep_dirs) {
+    if (!file.exists(file.path(path, "DESCRIPTION"))) {
+      next
+    }
+    desc <- tryCatch(read.dcf(file.path(path, "DESCRIPTION")), error = function(e) NULL)
+    if (is.null(desc) || nrow(desc) < 1) {
+      next
+    }
+    pkg <- as.character(desc[1, "Package"])
+    tryCatch(
+      load_replication_package_path(path, pkg),
+      error = function(e) {
+        warning("Could not load sibling package at ", path, ": ", conditionMessage(e), call. = FALSE)
+      }
+    )
+  }
+  invisible(TRUE)
+}
+
 #' Call a function from a study replication package
 #'
 #' @param package Package name.
@@ -896,9 +1122,9 @@ load_replication_package_path <- function(path, package) {
 #' @param ... Arguments passed to the function.
 #' @keywords internal
 call_replication_package <- function(package, fn, ...) {
-  if (!requireNamespace(package, quietly = TRUE)) {
+  if (!replication_package_usable(package)) {
     stop("Replication package ", package, " is not installed.", call. = FALSE)
   }
-  fun <- get(fn, envir = asNamespace(package))
+  fun <- get(fn, envir = asNamespace(package), inherits = FALSE)
   fun(...)
 }

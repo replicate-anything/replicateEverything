@@ -23,7 +23,8 @@ enrich_package_replication_meta <- function(meta, ctx) {
   }
 
   pkg <- as.character(meta$paper$package[[1]])
-  if (requireNamespace(pkg, quietly = TRUE)) {
+  ensure_replication_package(pkg, meta = meta, ctx = ctx)
+  if (replication_package_usable(pkg)) {
     pkg_meta <- tryCatch(
       get("replication_meta", envir = asNamespace(pkg))(),
       error = function(e) NULL
@@ -48,28 +49,59 @@ enrich_package_replication_meta <- function(meta, ctx) {
 #' @keywords internal
 get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   ctx <- paper_context(doi, repo = repo, folder = folder)
+  meta <- NULL
 
-  if (!is.null(ctx$local_root)) {
+  registry_local <- ctx$registry_local_root
+  if (!is.null(registry_local)) {
+    stub_path <- file.path(registry_local, "replication.yml")
+    if (file.exists(stub_path)) {
+      meta <- yaml::read_yaml(stub_path)
+    }
+  }
+
+  if (is.null(meta)) {
+    stub_url <- sprintf(
+      "https://raw.githubusercontent.com/%s/main/papers/%s/replication.yml",
+      DEFAULT_REGISTRY_REPO,
+      ctx$folder
+    )
+    meta <- read_yaml_url(stub_url)
+  }
+
+  if (is.null(meta) && isTRUE(ctx$is_folder_study)) {
+    meta <- fetch_folder_study_replication_yaml(
+      list(repo = ctx$materials_repo),
+      ctx
+    )
+  }
+
+  if (is.null(meta) && !is.null(ctx$local_root)) {
     local_yml <- file.path(ctx$local_root, "replication.yml")
     if (file.exists(local_yml)) {
-      return(enrich_package_replication_meta(yaml::read_yaml(local_yml), ctx))
+      meta <- yaml::read_yaml(local_yml)
     }
   }
 
-  urls <- unique(c(
-    paste0(ctx$base_url, "/replication.yml"),
-    paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/replication.yml"),
-    paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/inst/replication.yml")
-  ))
-
-  for (meta_url in urls) {
-    meta <- read_yaml_url(meta_url)
-    if (!is.null(meta)) {
-      return(enrich_package_replication_meta(meta, ctx))
+  if (is.null(meta)) {
+    urls <- unique(c(
+      paste0(ctx$base_url, "replication.yml"),
+      paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/replication.yml"),
+      paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/inst/replication.yml")
+    ))
+    for (meta_url in urls) {
+      meta <- read_yaml_url(meta_url)
+      if (!is.null(meta)) {
+        break
+      }
     }
   }
 
-  stop("Could not load replication.yml for ", doi, call. = FALSE)
+  if (is.null(meta)) {
+    stop("Could not load replication.yml for ", doi, call. = FALSE)
+  }
+
+  meta <- enrich_package_replication_meta(meta, ctx)
+  enrich_folder_study_replication_meta(meta, ctx)
 }
 
 get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
@@ -230,8 +262,19 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
 }
 
 #' @keywords internal
-package_installed_artifact_path <- function(what, pkg) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
+package_installed_artifact_path <- function(what, pkg, meta = NULL, ctx = NULL) {
+  if (!is.null(meta) && !is.null(ctx)) {
+    local_root <- resolve_replication_package_path(pkg, meta, ctx)
+    if (!is.null(local_root)) {
+      for (ext in c("png", "html", "rds", "svg")) {
+        path <- file.path(local_root, "inst", "report", "artifacts", paste0(what, ".", ext))
+        if (file.exists(path)) {
+          return(normalizePath(path, winslash = "/", mustWork = FALSE))
+        }
+      }
+    }
+  }
+  if (!replication_package_usable(pkg)) {
     return(NULL)
   }
   for (ext in c("png", "html", "rds", "svg")) {
@@ -322,6 +365,20 @@ find_replication_entry <- function(meta, what) {
   matches <- entries[
     vapply(entries, function(x) identical(x$id, what), logical(1))
   ]
+
+  if (length(matches) == 0 && is_folder_study_replication(meta)) {
+    ctx <- list(
+      repo = study_repo_slug(meta, NULL),
+      folder = meta$paper$study_folder %||% NULL
+    )
+    study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
+    if (!is.null(study_meta)) {
+      entries <- c(study_meta$prep %||% list(), study_meta$replications %||% list())
+      matches <- entries[
+        vapply(entries, function(x) identical(x$id, what), logical(1))
+      ]
+    }
+  }
 
   if (length(matches) == 0 && is_package_replication(meta)) {
     entries <- package_replication_entries(meta)
@@ -441,7 +498,11 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
-    if (requireNamespace(pkg, quietly = TRUE)) {
+    tryCatch(
+      prepare_package_replication(pkg, meta, ctx),
+      error = function(e) NULL
+    )
+    if (replication_package_usable(pkg)) {
       path <- tryCatch(
         call_replication_package(pkg, "artifact_file", what),
         error = function(e) NULL
@@ -450,7 +511,7 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
         return(path)
       }
     }
-    return(package_installed_artifact_path(what, pkg))
+    return(package_installed_artifact_path(what, pkg, meta = meta, ctx = ctx))
   }
 
   if (is.null(rep)) {
@@ -477,7 +538,11 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
-    if (requireNamespace(pkg, quietly = TRUE)) {
+    tryCatch(
+      prepare_package_replication(pkg, meta, ctx),
+      error = function(e) NULL
+    )
+    if (replication_package_usable(pkg)) {
       result <- tryCatch(
         call_replication_package(pkg, "load_artifact", what),
         error = function(e) NULL
@@ -485,6 +550,10 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
       if (!artifact_content_missing(result)) {
         return(result)
       }
+    }
+    path <- package_installed_artifact_path(what, pkg, meta = meta, ctx = ctx)
+    if (!is.null(path)) {
+      return(load_artifact_file_path(path))
     }
     return(NULL)
   }
@@ -507,7 +576,11 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL) {
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
     paths <- character(0)
-    if (requireNamespace(pkg, quietly = TRUE)) {
+    tryCatch(
+      prepare_package_replication(pkg, meta, ctx),
+      error = function(e) NULL
+    )
+    if (replication_package_usable(pkg)) {
       path <- tryCatch(
         call_replication_package(pkg, "artifact_file", what),
         error = function(e) NULL
@@ -516,7 +589,7 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL) {
         paths <- c(paths, path)
       }
     }
-    installed <- package_installed_artifact_path(what, pkg)
+    installed <- package_installed_artifact_path(what, pkg, meta = meta, ctx = ctx)
     if (!is.null(installed)) {
       paths <- c(paths, installed)
     }

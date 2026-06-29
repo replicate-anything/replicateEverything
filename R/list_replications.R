@@ -29,8 +29,15 @@ list_replications <- function(doi, repo = NULL, folder = NULL) {
     }
     pkg <- as.character(meta$paper$package[[1]])
     ensure_replication_package(pkg, meta = meta, ctx = ctx)
-    if (requireNamespace(pkg, quietly = TRUE)) {
+    if (replication_package_usable(pkg)) {
       return(call_replication_package(pkg, "list_replications"))
+    }
+  }
+  if (is_folder_study_replication(meta)) {
+    ctx <- paper_context(doi, repo = repo, folder = folder)
+    study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
+    if (!is.null(study_meta)) {
+      return(c(study_meta$prep %||% list(), study_meta$replications %||% list()))
     }
   }
   reps

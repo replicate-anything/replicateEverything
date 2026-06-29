@@ -24,7 +24,11 @@ get_code <- function(doi, what, repo = NULL, folder = NULL) {
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
-    if (requireNamespace(pkg, quietly = TRUE)) {
+    tryCatch(
+      prepare_package_replication(pkg, meta, ctx),
+      error = function(e) NULL
+    )
+    if (replication_package_usable(pkg)) {
       return(call_replication_package(pkg, "get_code", what))
     }
     return(get_code_from_package_repo(meta, ctx, what, pkg))

@@ -25,12 +25,18 @@ resolve_paper_path <- function(doi) {
 
 #' Build base URLs and paths for a paper in the registry
 #'
+#' For classic registry papers, materials live under \code{papers/<folder>/}.
+#' For folder-backed external studies, materials live at the study repo root.
+#' For package-backed studies, the registry stub path is still exposed but
+#' materials are resolved via the study package API.
+#'
 #' @param doi Character. DOI of the paper.
 #' @param repo Optional repository slug. Defaults to \code{find_repo(doi)}.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #'
-#' @return A list with \code{repo}, \code{folder}, \code{base_url}, and
-#'   optional \code{local_root}.
+#' @return A list with \code{repo}, \code{folder}, \code{base_url},
+#'   \code{registry_local_root}, \code{local_root}, \code{materials_repo},
+#'   \code{is_folder_study}, and related fields.
 #' @keywords internal
 paper_context <- function(doi, repo = NULL, folder = NULL) {
   doi <- normalize_doi(doi)
@@ -38,32 +44,66 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     folder <- resolve_paper_path(doi)
   }
 
-  if (is.null(repo) || !nzchar(repo)) {
-    repo <- tryCatch(
+  index_repo <- repo
+  if (is.null(index_repo) || !nzchar(index_repo)) {
+    index_repo <- tryCatch(
       find_repo(doi),
-      error = function(e) "replicate-anything/registry"
+      error = function(e) DEFAULT_REGISTRY_REPO
     )
   }
 
   registry_root <- getOption("replicateEverything.registry_root", NULL)
-  local_root <- if (!is.null(registry_root)) {
+  registry_local_root <- if (!is.null(registry_root)) {
     file.path(registry_root, "papers", folder)
   } else {
     NULL
   }
 
-  base_url <- paste0(
-    "https://raw.githubusercontent.com/",
-    repo,
-    "/main/papers/",
-    folder
-  )
+  stub <- read_registry_stub_yaml(folder, registry_root = registry_root)
+  ctx_stub <- list(repo = index_repo, folder = folder)
+
+  is_folder_study <- !is.null(stub) && is_folder_study_replication(stub, ctx_stub)
+  is_package_study <- !is.null(stub) && is_package_replication(stub)
+
+  materials_repo <- if (is_folder_study) {
+    study_repo_slug(stub, ctx_stub)
+  } else {
+    DEFAULT_REGISTRY_REPO
+  }
+
+  if (is_folder_study) {
+    study_ref <- study_repo_ref(stub)
+    local_root <- resolve_study_folder_path(stub, ctx_stub)
+    base_url <- paste0(
+      "https://raw.githubusercontent.com/",
+      materials_repo,
+      "/",
+      study_ref,
+      "/"
+    )
+  } else {
+    local_root <- if (!is.null(registry_local_root) && dir.exists(registry_local_root)) {
+      registry_local_root
+    } else {
+      NULL
+    }
+    base_url <- paste0(
+      "https://raw.githubusercontent.com/",
+      DEFAULT_REGISTRY_REPO,
+      "/main/papers/",
+      folder
+    )
+  }
 
   list(
     doi = doi,
-    repo = repo,
+    repo = index_repo,
     folder = folder,
     base_url = base_url,
-    local_root = local_root
+    local_root = local_root,
+    registry_local_root = registry_local_root,
+    materials_repo = materials_repo,
+    is_folder_study = is_folder_study,
+    is_package_study = is_package_study
   )
 }

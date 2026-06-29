@@ -47,12 +47,44 @@ test_that("resolve_paper_path uses Fearon folder from index", {
         resolve_paper_path("10.1017/S0003055403000534"),
         "10.1017S0003055403000534"
       )
+    }
+  )
+})
+
+test_that("paper_context routes folder-backed studies to study repo root", {
+  registry_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", "..", "registry"),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  skip_if_not(dir.exists(registry_root), "registry missing")
+
+  local_index <- data.frame(
+    folder = "10.1017S0003055403000534",
+    doi = "https://doi.org/10.1017/S0003055403000534",
+    title = "Ethnicity, Insurgency, and Civil War",
+    journal = "APSR",
+    year = 2003,
+    authors = "Fearon, Laitin",
+    repo = "replicate-anything/rep-10.1017-S0003055403000534",
+    stringsAsFactors = FALSE
+  )
+
+  withr::with_options(
+    list(
+      replicateEverything.index = local_index,
+      replicateEverything.registry_root = registry_root
+    ),
+    {
+      ctx <- paper_context("10.1017/S0003055403000534")
+      expect_true(isTRUE(ctx$is_folder_study))
       expect_equal(
-        paper_context("10.1017/S0003055403000534")$base_url,
-        paste0(
-          "https://raw.githubusercontent.com/replicate-anything/registry/main/papers/",
-          "10.1017S0003055403000534"
-        )
+        ctx$base_url,
+        "https://raw.githubusercontent.com/replicate-anything/rep-10.1017-S0003055403000534/main/"
+      )
+      expect_equal(
+        ctx$materials_repo,
+        "replicate-anything/rep-10.1017-S0003055403000534"
       )
     }
   )
@@ -152,8 +184,35 @@ test_that("save_artifact writes html when format step is registered", {
   )
   skip_if_not(dir.exists(registry_root), "registry missing")
 
+  monorepo_root <- normalizePath(
+    file.path(registry_root, ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_root <- file.path(monorepo_root, "rep-10.1017-S0003055403000534")
+  skip_if_not(
+    dir.exists(study_root) && file.exists(file.path(study_root, "replication.yml")),
+    "folder-backed Fearon study repo missing"
+  )
+
+  local_index <- data.frame(
+    folder = "10.1017S0003055403000534",
+    doi = "https://doi.org/10.1017/S0003055403000534",
+    title = "Ethnicity, Insurgency, and Civil War",
+    journal = "APSR",
+    year = 2003,
+    authors = "Fearon, Laitin",
+    repo = "replicate-anything/rep-10.1017-S0003055403000534",
+    stringsAsFactors = FALSE
+  )
+
   withr::with_options(
-    list(replicateEverything.registry_root = registry_root),
+    list(
+      replicateEverything.registry_root = registry_root,
+      replicateEverything.index = local_index,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.study_folders_root = monorepo_root
+    ),
     {
       result <- render_replication(
         "10.1017/s0003055403000534",

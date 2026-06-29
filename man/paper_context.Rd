@@ -14,10 +14,14 @@ paper_context(doi, repo = NULL, folder = NULL)
 \item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
-A list with \code{repo}, \code{folder}, \code{base_url}, and
-optional \code{local_root}.
+A list with \code{repo}, \code{folder}, \code{base_url},
+\code{registry_local_root}, \code{local_root}, \code{materials_repo},
+\code{is_folder_study}, and related fields.
 }
 \description{
-Build base URLs and paths for a paper in the registry
+For classic registry papers, materials live under \code{papers/<folder>/}.
+For folder-backed external studies, materials live at the study repo root.
+For package-backed studies, the registry stub path is still exposed but
+materials are resolved via the study package API.
 }
 \keyword{internal}

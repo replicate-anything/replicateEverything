@@ -12,6 +12,9 @@
 #'
 #' @export
 replication_error_message <- function(x) {
+  if (inherits(x, "study_package_error")) {
+    return(conditionMessage(x))
+  }
   if (is.character(x)) {
     return(paste(x, collapse = "\n"))
   }
