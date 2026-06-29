@@ -1,8 +1,3 @@
-#' Package-backed replication helpers
-#'
-#' @keywords internal
-NULL
-
 #' Whether replication metadata refers to an installed R package
 #'
 #' @param meta Parsed replication.yml contents.

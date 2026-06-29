@@ -4,12 +4,27 @@
 \alias{save_artifact}
 \title{Save a replication result as an artifact file}
 \usage{
-save_artifact(result, output_dir)
+save_artifact(
+  result,
+  output_dir,
+  doi = NULL,
+  repo = NULL,
+  folder = NULL,
+  install_deps = FALSE
+)
 }
 \arguments{
 \item{result}{A replication result envelope from \code{render_replication()}.}
 
 \item{output_dir}{Directory in which to write the artifact.}
+
+\item{doi}{Optional DOI; required to apply a registered \code{format_*} step.}
+
+\item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name.}
+
+\item{install_deps}{Logical; passed to \code{format_for_display()}.}
 }
 \value{
 Invisibly the output file path.

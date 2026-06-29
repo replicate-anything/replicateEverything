@@ -24,6 +24,7 @@ reference:
   - find_repo
   - list_replications
   - get_code
+  - replication_index_diagnostics
 - title: Run replications
   desc: Render tables and figures from registry scripts.
   contents:

@@ -58,7 +58,7 @@ replications:
 
   writeLines(
     c(
-      "# Figure 1 — ", meta$title,
+      "# Figure 1 - ", meta$title,
       "# Paper folder: ", github_url,
       "# Run from the paper's code/ folder: Rscript fig_1.R",
       "",
@@ -77,7 +77,7 @@ replications:
 
   writeLines(
     c(
-      "# Table 1 — ", meta$title,
+      "# Table 1 - ", meta$title,
       "# Paper folder: ", github_url,
       "# Run from the paper's code/ folder: Rscript tab_1.R",
       "# Requires the data/ folder alongside code/ (see replication.yml).",

@@ -7,6 +7,9 @@ default_artifact_path <- function(rep, what) {
   if (identical(rep$type, "figure")) {
     return(paste0("artifacts/", what, ".png"))
   }
+  if (format_specified(rep)) {
+    return(paste0("artifacts/", what, ".rds"))
+  }
   paste0("artifacts/", what, ".html")
 }
 

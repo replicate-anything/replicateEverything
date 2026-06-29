@@ -99,7 +99,7 @@ get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
 #'
 #' @param what Replication id.
 #' @param rep Optional replication entry.
-#' @param ctx Optional paper context (for \code{manifest.json}).
+#' @param ctx Optional paper context (for `manifest.json`).
 #' @keywords internal
 registry_artifact_rel_paths <- function(what, rep = NULL, ctx = NULL) {
   paths <- character(0)
@@ -510,12 +510,12 @@ read_artifact_file <- function(path, ext) {
 #'
 #' @param result A replication result envelope from \code{render_replication()}.
 #' @param output_dir Directory in which to write the artifact.
-#'
-#' @param output_dir Directory in which to write the artifact.
 #' @param doi Optional DOI; required to apply a registered \code{format_*} step.
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name.
 #' @param install_deps Logical; passed to \code{format_for_display()}.
+#'
+#' @importFrom grDevices dev.off png
 #'
 #' @return Invisibly the output file path.
 #' @export

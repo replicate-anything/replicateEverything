@@ -4,12 +4,14 @@
 \alias{registry_artifact_rel_paths}
 \title{Relative artifact paths to try under registry \code{papers/<folder>/}}
 \usage{
-registry_artifact_rel_paths(what, rep = NULL)
+registry_artifact_rel_paths(what, rep = NULL, ctx = NULL)
 }
 \arguments{
 \item{what}{Replication id.}
 
 \item{rep}{Optional replication entry.}
+
+\item{ctx}{Optional paper context (for \code{manifest.json}).}
 }
 \description{
 Relative artifact paths to try under registry \code{papers/<folder>/}

@@ -4,6 +4,8 @@
 #' @param paper_meta Optional paper-level metadata list.
 #' @param install_missing Logical. Install missing CRAN packages when \code{TRUE}.
 #'
+#' @importFrom stats na.omit
+#'
 #' @return Invisibly \code{TRUE}.
 #' @keywords internal
 ensure_replication_dependencies <- function(
@@ -112,8 +114,8 @@ retry_with_missing_package <- function(
 extract_missing_package <- function(error) {
   message_text <- conditionMessage(error)
   patterns <- c(
-    "there is no package called [‘']([^’']+)[’']",
-    "package [‘']([^’']+)[’'] not found",
+    "there is no package called [\u2018']([^\u2019']+)[\u2019']",
+    "package [\u2018']([^\u2019']+)[\u2019'] not found",
     "there is no package called \"([^\"]+)\"",
     "there is no package called '([^']+)'"
   )
