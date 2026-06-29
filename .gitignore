@@ -5,8 +5,7 @@
 .DS_Store
 10.*/
 docs
-inst/doc
-/doc/
-/Meta/
 .positai
 Rplots.pdf
+/doc/
+/Meta/

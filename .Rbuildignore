@@ -10,9 +10,10 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
-^doc$
-^Meta$
 ^vignettes/\.quarto$
 ^\.positai$
 ^\.claude$
 ^Rplots\.pdf$
+^cran-comments\.md$
+^doc$
+^Meta$

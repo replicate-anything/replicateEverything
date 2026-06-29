@@ -1,0 +1,641 @@
+pkgname <- "replicateEverything"
+source(file.path(R.home("share"), "R", "examples-header.R"))
+options(warn = 1)
+base::assign(".ExTimings", "replicateEverything-Ex.timings", pos = 'CheckExEnv')
+base::cat("name\tuser\tsystem\telapsed\n", file=base::get(".ExTimings", pos = 'CheckExEnv'))
+base::assign(".format_ptime",
+function(x) {
+  if(!is.na(x[4L])) x[1L] <- x[1L] + x[4L]
+  if(!is.na(x[5L])) x[2L] <- x[2L] + x[5L]
+  options(OutDec = '.')
+  format(x[1L:3L], digits = 7L)
+},
+pos = 'CheckExEnv')
+
+### * </HEADER>
+library('replicateEverything')
+
+base::assign(".oldSearch", base::search(), pos = 'CheckExEnv')
+base::assign(".old_wd", base::getwd(), pos = 'CheckExEnv')
+cleanEx()
+nameEx("artifact_available")
+### * artifact_available
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: artifact_available
+### Title: Check whether a precomputed artifact is available
+### Aliases: artifact_available
+
+### ** Examples
+
+## Not run: 
+##D artifact_available("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("artifact_available", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("create_replication_template")
+### * create_replication_template
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: create_replication_template
+### Title: Create a replication template
+### Aliases: create_replication_template
+
+### ** Examples
+
+## Not run: 
+##D create_replication_template("10.1177/00491241211036161")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("create_replication_template", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("find_repo")
+### * find_repo
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: find_repo
+### Title: Find the repository for a paper replication
+### Aliases: find_repo
+### Keywords: internal
+
+### ** Examples
+
+## Not run: 
+##D find_repo("10.1177/00491241211036161")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("find_repo", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("format_for_display")
+### * format_for_display
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: format_for_display
+### Title: Apply an optional format function to an analysis object
+### Aliases: format_for_display
+
+### ** Examples
+
+## Not run: 
+##D result <- render_replication("10.1177/00491241211036161", "fig_1")
+##D format_for_display(replication_object(result), "10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("format_for_display", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("get_artifact_path")
+### * get_artifact_path
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: get_artifact_path
+### Title: Get artifact URL or local path for a replication
+### Aliases: get_artifact_path
+
+### ** Examples
+
+## Not run: 
+##D get_artifact_path("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("get_artifact_path", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("get_code")
+### * get_code
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: get_code
+### Title: Retrieve replication code for a paper
+### Aliases: get_code
+
+### ** Examples
+
+## Not run: 
+##D head(get_code("10.1177/00491241211036161", "fig_1"))
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("get_code", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("get_doi_metadata")
+### * get_doi_metadata
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: get_doi_metadata
+### Title: Retrieve metadata for a DOI
+### Aliases: get_doi_metadata
+
+### ** Examples
+
+## Not run: 
+##D get_doi_metadata("10.1177/00491241211036161")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("get_doi_metadata", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("list_replications")
+### * list_replications
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: list_replications
+### Title: List available replications for a paper
+### Aliases: list_replications
+
+### ** Examples
+
+## Not run: 
+##D list_replications("10.1177/00491241211036161")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("list_replications", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("load_artifact")
+### * load_artifact
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: load_artifact
+### Title: Load a precomputed artifact for a replication
+### Aliases: load_artifact
+
+### ** Examples
+
+## Not run: 
+##D load_artifact("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("load_artifact", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("load_index")
+### * load_index
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: load_index
+### Title: Load the replication registry index
+### Aliases: load_index
+
+### ** Examples
+
+## Not run: 
+##D head(load_index())
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("load_index", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("load_local_replication_data")
+### * load_local_replication_data
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: load_local_replication_data
+### Title: Load replication data from local paths (for self-contained
+###   scripts)
+### Aliases: load_local_replication_data
+
+### ** Examples
+
+tmp <- tempfile()
+dir.create(tmp)
+dir.create(file.path(tmp, "data"))
+write.csv(
+  data.frame(x = 1:3, y = 4:6),
+  file.path(tmp, "data", "example.csv"),
+  row.names = FALSE
+)
+load_local_replication_data("data/example.csv", paper_dir = tmp)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("load_local_replication_data", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("normalize_doi")
+### * normalize_doi
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: normalize_doi
+### Title: Normalize a DOI
+### Aliases: normalize_doi
+### Keywords: internal
+
+### ** Examples
+
+normalize_doi("https://doi.org/10.1177/00491241211036161")
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("normalize_doi", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("normalize_html_table")
+### * normalize_html_table
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: normalize_html_table
+### Title: Decode HTML entities in kableExtra / modelsummary table output
+### Aliases: normalize_html_table
+
+### ** Examples
+
+normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("normalize_html_table", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("render_for_display")
+### * render_for_display
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: render_for_display
+### Title: Render a replication and apply formatting for display
+### Aliases: render_for_display
+
+### ** Examples
+
+## Not run: 
+##D render_for_display("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("render_for_display", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("render_replication")
+### * render_replication
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: render_replication
+### Title: Render a single replication
+### Aliases: render_replication
+
+### ** Examples
+
+## Not run: 
+##D render_replication("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("render_replication", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("replicate_paper")
+### * replicate_paper
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: replicate_paper
+### Title: Replicate all results from a paper
+### Aliases: replicate_paper
+
+### ** Examples
+
+## Not run: 
+##D replicate_paper("10.1177/00491241211036161")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("replicate_paper", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("replication_error_message")
+### * replication_error_message
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: replication_error_message
+### Title: Format a replication error for user-facing display
+### Aliases: replication_error_message
+
+### ** Examples
+
+err <- simpleError("Replication failed", call = quote(run_replication()))
+replication_error_message(err)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("replication_error_message", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("replication_index_diagnostics")
+### * replication_index_diagnostics
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: replication_index_diagnostics
+### Title: Report where the replication index was sought (for debugging
+###   Shiny)
+### Aliases: replication_index_diagnostics
+
+### ** Examples
+
+## Not run: 
+##D replication_index_diagnostics("10.1177/00491241211036161")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("replication_index_diagnostics", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("replication_object")
+### * replication_object
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: replication_object
+### Title: Extract a plain object from a replication result envelope
+### Aliases: replication_object
+
+### ** Examples
+
+result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_result")
+replication_object(result)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("replication_object", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("run_replication")
+### * run_replication
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: run_replication
+### Title: Run a single replication
+### Aliases: run_replication
+
+### ** Examples
+
+## Not run: 
+##D run_replication("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("run_replication", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("save_artifact")
+### * save_artifact
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: save_artifact
+### Title: Save a replication result as an artifact file
+### Aliases: save_artifact
+
+### ** Examples
+
+tmp <- tempfile()
+dir.create(tmp)
+result <- structure(
+  list(
+    id = "tab_1",
+    type = "table",
+    object = data.frame(x = 1:2, y = 3:4),
+    format = "data.frame",
+    meta = list(id = "tab_1")
+  ),
+  class = "replication_result"
+)
+save_artifact(result, tmp)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("save_artifact", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("search_papers")
+### * search_papers
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: search_papers
+### Title: Search replicated papers
+### Aliases: search_papers
+
+### ** Examples
+
+## Not run: 
+##D search_papers("causal")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("search_papers", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("self_run")
+### * self_run
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: self_run
+### Title: Run a replication script footer when executed directly
+### Aliases: self_run
+
+### ** Examples
+
+## Not run: 
+##D # At the bottom of a replication script in code/:
+##D # self_run(make_fig_1, "data/fig_1.csv")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("self_run", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("try_render_for_display")
+### * try_render_for_display
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: try_render_for_display
+### Title: Run a replication and return a result or error object
+### Aliases: try_render_for_display
+
+### ** Examples
+
+## Not run: 
+##D try_render_for_display("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("try_render_for_display", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("validate_artifact")
+### * validate_artifact
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: validate_artifact
+### Title: Validate that a precomputed artifact exists
+### Aliases: validate_artifact
+
+### ** Examples
+
+## Not run: 
+##D validate_artifact("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("validate_artifact", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("validate_paper_artifacts")
+### * validate_paper_artifacts
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: validate_paper_artifacts
+### Title: Validate all artifacts for a paper
+### Aliases: validate_paper_artifacts
+
+### ** Examples
+
+## Not run: 
+##D validate_paper_artifacts("10.1177/00491241211036161")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("validate_paper_artifacts", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
+nameEx("validate_replication")
+### * validate_replication
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: validate_replication
+### Title: Validate that a replication can be rendered
+### Aliases: validate_replication
+
+### ** Examples
+
+## Not run: 
+##D validate_replication("10.1177/00491241211036161", "fig_1")
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("validate_replication", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+### * <FOOTER>
+###
+cleanEx()
+options(digits = 7L)
+base::cat("Time elapsed: ", proc.time() - base::get("ptime", pos = 'CheckExEnv'),"\n")
+grDevices::dev.off()
+###
+### Local variables: ***
+### mode: outline-minor ***
+### outline-regexp: "\\(> \\)?### [*]+" ***
+### End: ***
+quit('no')
