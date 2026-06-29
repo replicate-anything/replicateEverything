@@ -171,6 +171,71 @@ test_that("save_artifact writes html for tables", {
   expect_true(grepl("<table", readLines(path, n = 1)))
 })
 
+test_that("run_replication can apply format when requested", {
+  testthat::skip_if_not_installed("modelsummary")
+  testthat::skip_if_not_installed("kableExtra")
+
+  registry_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", "..", "registry"),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  skip_if_not(dir.exists(registry_root), "registry missing")
+
+  monorepo_root <- normalizePath(
+    file.path(registry_root, ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_root <- file.path(monorepo_root, "rep-10.1017-S0003055403000534")
+  skip_if_not(
+    dir.exists(study_root) && file.exists(file.path(study_root, "replication.yml")),
+    "folder-backed Fearon study repo missing"
+  )
+
+  local_index <- data.frame(
+    folder = "10.1017S0003055403000534",
+    doi = "https://doi.org/10.1017/S0003055403000534",
+    title = "Ethnicity, Insurgency, and Civil War",
+    journal = "APSR",
+    year = 2003,
+    authors = "Fearon, Laitin",
+    repo = "replicate-anything/rep-10.1017-S0003055403000534",
+    stringsAsFactors = FALSE
+  )
+
+  withr::with_options(
+    list(
+      replicateEverything.registry_root = registry_root,
+      replicateEverything.index = local_index,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.study_folders_root = monorepo_root
+    ),
+    {
+      invisible(suppressMessages(capture.output({
+        raw <- run_replication(
+          "10.1017/s0003055403000534",
+          "tab_1",
+          folder = "10.1017S0003055403000534",
+          format = FALSE
+        )
+      })))
+      expect_type(raw, "list")
+
+      invisible(suppressMessages(capture.output({
+        formatted <- run_replication(
+          "10.1017/s0003055403000534",
+          "tab_1",
+          folder = "10.1017S0003055403000534",
+          format = TRUE
+        )
+      })))
+      expect_true(is.character(formatted))
+      expect_true(grepl("<table", formatted, ignore.case = TRUE))
+    }
+  )
+})
+
 test_that("save_artifact writes html when format step is registered", {
   tmp <- tempfile()
   dir.create(tmp)

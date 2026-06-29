@@ -4,7 +4,14 @@
 \alias{run_replication}
 \title{Run a single replication}
 \usage{
-run_replication(doi, what, install_deps = FALSE)
+run_replication(
+  doi,
+  what,
+  install_deps = FALSE,
+  format = FALSE,
+  repo = NULL,
+  folder = NULL
+)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
@@ -13,16 +20,31 @@ run_replication(doi, what, install_deps = FALSE)
 
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}
+
+\item{format}{Logical or \code{"if_available"}. When \code{TRUE} or
+\code{"if_available"}, apply formatting when the replication entry defines
+a \code{format} step. Defaults to \code{FALSE}.}
+
+\item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
-The underlying replication object.
+The replication object (analysis output or formatted display).
 }
 \description{
 Executes a specific replication (figure or table) for a paper.
 }
+\details{
+By default returns the raw analysis object (e.g. a \code{glm} or \code{ggplot}).
+Set \code{format = TRUE} or \code{format = "if_available"} to apply the
+registered \code{format_*} step when \code{replication.yml} defines one
+(same step used for display artifacts and Shiny).
+}
 \examples{
 \dontrun{
 run_replication("10.1177/00491241211036161", "fig_1")
+run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 }
 
 }
