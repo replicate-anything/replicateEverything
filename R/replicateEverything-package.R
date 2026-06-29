@@ -49,5 +49,5 @@
 #' Replication metadata and materials are stored in the public registry:
 #' \url{https://github.com/replicate-anything/registry}.
 #'
-#' @keywords internal
+#' @keywords package
 "_PACKAGE"
