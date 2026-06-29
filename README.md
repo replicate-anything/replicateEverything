@@ -97,6 +97,10 @@ papers/
       manifest.json
 ```
 
+Package-backed studies use a **lightweight stub** in `papers/<folder>/` (metadata and
+GitHub coordinates only). Code, data, and display artifacts live in the study R package.
+See [Package-backed replications](#package-backed-replications) below.
+
 The `<folder>` name comes from the registry `index.csv` (for example `10.1177_00491241211036161` or `10.1017S0003055403000534`).
 
 ### Example `replication.yml`
@@ -177,7 +181,7 @@ if (sys.nframe() == 0) {
 
 ## Package-backed replications
 
-Studies maintained as standalone R packages can be linked from the registry. Keep a paper folder in the registry with a `replication.yml` that points to the package:
+Studies maintained as standalone R packages can be linked from the registry. Keep a paper folder in the registry with a `replication.yml` stub that points to the package (no `code/`, `data/`, or `artifacts/` in the registry):
 
 ```yaml
 paper:
@@ -189,6 +193,21 @@ paper:
   package_ref: main
 repo: replicate-anything/rep_10.1371_journal.pone.0278337
 ```
+
+`replicateEverything` merges the full `replications:` list from the study package
+`replication.yml` when the registry stub omits it. Display artifacts live in the
+study package at `inst/report/artifacts/` (from `build_report()`).
+
+Validate and register a package-backed study:
+
+```r
+options(replicateEverything.registry_root = "/path/to/registry")
+
+check_package_replication("/path/to/rep_package")
+add_paper("/path/to/rep_package", full_replication = FALSE)
+```
+
+See `vignette("package-replication-checklist", package = "replicateEverything")` for requirements.
 
 **Local development (monorepo):** place the study package as a sibling folder next to `registry/`. Enable sibling resolution with:
 
@@ -204,7 +223,9 @@ Optional overrides:
 - `paper.package_path` — absolute or relative path to the package root
 - `options(replicateEverything.replication_packages = list(pkgname = "/path"))`
 
-Linked study packages should export: `list_replications()`, `run_replication(id, install_deps = FALSE)`, and `load_artifact(id)`.
+Linked study packages should export: `list_replications()`, `replication_meta()`,
+`run_replication(id)`, `load_artifact(id)`, `artifact_file(id)`, `get_code(id)`,
+and `build_report()`.
 
 ## API overview
 
@@ -220,6 +241,7 @@ Linked study packages should export: `list_replications()`, `run_replication(id,
 | Format for display | `format_for_display()`, `render_for_display()` |
 | Precomputed outputs | `load_artifact()`, `save_artifact()`, `artifact_available()` |
 | Validate | `validate_replication()`, `validate_artifact()` |
+| Validate package study | `check_package_replication()`, `add_paper()` |
 | Contribute | `create_replication_template()` |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN dependencies automatically.
@@ -240,6 +262,8 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 3. **Add your data and code** — place processed data in `data/` and scripts in `code/`
 4. **Test locally** — run scripts in the R console or with `run_replication()`
 5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `papers/`, and open a pull request
+
+For **package-backed** studies, use `add_paper()` after `check_package_replication()` passes instead of copying code and data into the registry.
 
 ```bash
 git clone https://github.com/replicate-anything/registry

@@ -1,8 +1,14 @@
+#' Package-backed replication helpers
+#'
+#' @name package_replication
+#' @keywords internal
+NULL
+
 #' Whether replication metadata refers to an installed R package
 #'
 #' @param meta Parsed replication.yml contents.
 #' @return Logical.
-#' @keywords internal
+#' @export
 is_package_replication <- function(meta) {
   pkg <- meta$paper$package %||% NULL
   !is.null(pkg) && nzchar(as.character(pkg[[1]]))

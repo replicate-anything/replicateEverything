@@ -20,6 +20,10 @@ default_artifact_path <- function(rep, what) {
 #' @keywords internal
 local_artifact_path <- function(doi, what, repo = NULL) {
   meta <- get_replication_meta(doi, repo = repo)
+  if (is_package_replication(meta)) {
+    return(NULL)
+  }
+
   rep <- find_replication_entry(meta, what)
   ctx <- paper_context(doi, repo = repo)
 
@@ -75,6 +79,20 @@ artifact_available <- function(doi, what, repo = NULL) {
 #'
 #' @export
 validate_artifact <- function(doi, what, repo = NULL) {
+  meta <- get_replication_meta(doi, repo = repo)
+
+  if (is_package_replication(meta)) {
+    if (!artifact_available(doi, what, repo = repo)) {
+      pkg <- as.character(meta$paper$package[[1]])
+      stop(
+        "Artifact not available for replication ", what,
+        ". Run ", pkg, "::build_report() in the study package.",
+        call. = FALSE
+      )
+    }
+    return(invisible(TRUE))
+  }
+
   local_path <- local_artifact_path(doi, what, repo = repo)
   if (!is.null(local_path) && !file.exists(local_path)) {
     stop(

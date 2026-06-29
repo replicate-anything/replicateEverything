@@ -16,7 +16,7 @@ resolve_registry_artifact_path(what, ctx, rep = NULL, doi = NULL)
 \item{doi}{Optional DOI for caching.}
 }
 \description{
-Package-backed studies may ship display artifacts in \code{registry/papers/.../artifacts/}
-even when code lives in the study package.
+Package-backed studies may ship display artifacts in \code{inst/report/artifacts/}
+on the study package (not under the registry paper folder).
 }
 \keyword{internal}

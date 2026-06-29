@@ -36,3 +36,4 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 8.0.0
 VignetteBuilder: knitr
 Config/Needs/website: pkgdown
+Config/roxygen2/version: 8.0.0

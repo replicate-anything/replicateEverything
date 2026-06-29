@@ -18,6 +18,12 @@ reference:
   desc: Package overview and help search entry point.
   contents:
   - replicateEverything-package
+- title: Registry
+  desc: Add and validate package-backed studies.
+  contents:
+  - check_package_replication
+  - add_paper
+  - is_package_replication
 - title: Discovery
   desc: Find papers and inspect replication metadata.
   contents:
@@ -61,7 +67,9 @@ build:
   readme: yes
 articles:
 - title: Articles
-  contents: replication-example
+  contents:
+  - replication-example
+  - package-replication-checklist
 
 
 

@@ -189,8 +189,8 @@ url_exists <- function(url) {
 
 #' Resolve a precomputed artifact under the registry paper folder
 #'
-#' Package-backed studies may ship display artifacts in \code{registry/papers/.../artifacts/}
-#' even when code lives in the study package.
+#' Package-backed studies may ship display artifacts in \code{inst/report/artifacts/}
+#' on the study package (not under the registry paper folder).
 #'
 #' @param what Replication id.
 #' @param ctx Paper context.
@@ -441,11 +441,16 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
-    path <- package_installed_artifact_path(what, pkg)
-    if (!is.null(path)) {
-      return(path)
+    if (requireNamespace(pkg, quietly = TRUE)) {
+      path <- tryCatch(
+        call_replication_package(pkg, "artifact_file", what),
+        error = function(e) NULL
+      )
+      if (!is.null(path) && nzchar(path) && file.exists(path)) {
+        return(path)
+      }
     }
-    return(resolve_registry_artifact_path(what, ctx, rep, doi = doi))
+    return(package_installed_artifact_path(what, pkg))
   }
 
   if (is.null(rep)) {
@@ -481,8 +486,7 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
         return(result)
       }
     }
-    path <- resolve_registry_artifact_path(what, ctx, rep, doi = doi)
-    return(load_artifact_file_path(path))
+    return(NULL)
   }
 
   path <- get_artifact_path(doi, what, repo = repo, folder = folder)
@@ -499,6 +503,26 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
 artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
+
+  if (is_package_replication(meta)) {
+    pkg <- as.character(meta$paper$package[[1]])
+    paths <- character(0)
+    if (requireNamespace(pkg, quietly = TRUE)) {
+      path <- tryCatch(
+        call_replication_package(pkg, "artifact_file", what),
+        error = function(e) NULL
+      )
+      if (!is.null(path) && nzchar(path)) {
+        paths <- c(paths, path)
+      }
+    }
+    installed <- package_installed_artifact_path(what, pkg)
+    if (!is.null(installed)) {
+      paths <- c(paths, installed)
+    }
+    return(unique(paths[nzchar(paths)]))
+  }
+
   rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
   rel <- registry_artifact_rel_paths(what, rep, ctx)
   vapply(rel, function(r) {

@@ -109,24 +109,29 @@ test_that("enrich_package_replication_meta merges remote package yaml", {
   expect_true(any(vapply(enriched$replications, function(x) identical(x$id, "fig_1"), logical(1))))
 })
 
-test_that("load_artifact reads registry html for package-backed study", {
+test_that("load_artifact reads package html when study package is loaded", {
+  skip_if_not_installed("rep1371journalpone0278337")
+
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),
     winslash = "/",
     mustWork = FALSE
   )
-  registry_root <- file.path(monorepo_root, "registry")
-  tab <- file.path(
-    registry_root,
-    "papers",
-    "10.1371_journal.pone.0278337",
-    "artifacts",
-    "tab_1.html"
+  pkg_dir <- file.path(monorepo_root, "rep_10.1371_journal.pone.0278337")
+  skip_if_not(dir.exists(pkg_dir), "vaccine solidarity rep package missing")
+  skip_if_not(
+    requireNamespace("devtools", quietly = TRUE),
+    "devtools required to load sibling study package"
   )
-  skip_if_not(file.exists(tab), "registry tab_1 artifact missing")
+
+  tab <- file.path(pkg_dir, "inst", "report", "artifacts", "tab_1.html")
+  skip_if_not(file.exists(tab), "package tab_1 artifact missing; run build_report()")
 
   withr::with_options(
-    list(replicateEverything.registry_root = registry_root),
+    list(
+      replicateEverything.replication_packages_root = monorepo_root,
+      replicateEverything.use_sibling_packages = TRUE
+    ),
     {
       html <- load_artifact(
         "10.1371/journal.pone.0278337",
