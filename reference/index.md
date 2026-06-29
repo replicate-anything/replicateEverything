@@ -18,6 +18,8 @@ Find papers and inspect replication metadata.
   : List available replications for a paper
 - [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
   : Retrieve replication code for a paper
+- [`replication_index_diagnostics()`](https://replicate-anything.github.io/replicateEverything/reference/replication_index_diagnostics.md)
+  : Report where the replication index was sought (for debugging Shiny)
 
 ## Run replications
 

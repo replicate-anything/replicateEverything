@@ -1,6 +1,7 @@
 # Git ref for `remotes::install_github()`
 
-Git ref for `remotes::install_github()`
+Git ref for
+[`remotes::install_github()`](https://remotes.r-lib.org/reference/install_github.html)
 
 ## Usage
 

@@ -29,3 +29,9 @@ get_code(doi, what, repo = NULL, folder = NULL)
 ## Value
 
 A character vector containing the lines of the replication script(s).
+
+## Details
+
+For package-backed studies, reads `inst/replication_code/*.R` from the
+study package GitHub repo when the package is not installed (same idea
+as reading `code/*.R` from the registry repo).
