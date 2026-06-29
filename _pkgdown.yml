@@ -14,6 +14,10 @@ navbar:
     - articles
     right: github
 reference:
+- title: Package
+  desc: Package overview and help search entry point.
+  contents:
+  - replicateEverything-package
 - title: Discovery
   desc: Find papers and inspect replication metadata.
   contents:
