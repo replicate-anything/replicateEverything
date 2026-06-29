@@ -18,3 +18,11 @@ replication_error_message(x)
 ## Value
 
 A single character string suitable for logs or UI.
+
+## Examples
+
+``` r
+err <- simpleError("Replication failed", call = quote(run_replication()))
+replication_error_message(err)
+#> [1] "Replication failed\n\nCall: run_replication()"
+```

@@ -29,3 +29,11 @@ replication_index_diagnostics(doi, repo = NULL, folder = NULL)
 ## Value
 
 A list with `registry_sources`, `package_sources`, etc.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+replication_index_diagnostics("10.1177/00491241211036161")
+} # }
+```

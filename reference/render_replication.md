@@ -35,3 +35,11 @@ render_replication(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
 ## Value
 
 A list with `id`, `type`, `object`, and `format`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+render_replication("10.1177/00491241211036161", "fig_1")
+} # }
+```

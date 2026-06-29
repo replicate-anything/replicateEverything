@@ -35,3 +35,11 @@ A character vector containing the lines of the replication script(s).
 For package-backed studies, reads `inst/replication_code/*.R` from the
 study package GitHub repo when the package is not installed (same idea
 as reading `code/*.R` from the registry repo).
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+head(get_code("10.1177/00491241211036161", "fig_1"))
+} # }
+```

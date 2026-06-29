@@ -46,3 +46,21 @@ save_artifact(
 ## Value
 
 Invisibly the output file path.
+
+## Examples
+
+``` r
+tmp <- tempfile()
+dir.create(tmp)
+result <- structure(
+  list(
+    id = "tab_1",
+    type = "table",
+    object = data.frame(x = 1:2, y = 3:4),
+    format = "data.frame",
+    meta = list(id = "tab_1")
+  ),
+  class = "replication_result"
+)
+save_artifact(result, tmp)
+```

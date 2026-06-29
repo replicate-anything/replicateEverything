@@ -23,3 +23,12 @@ self_run(make_fn, data_paths, paper_dir = getwd())
 - paper_dir:
 
   Paper root directory.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# At the bottom of a replication script in code/:
+# self_run(make_fig_1, "data/fig_1.csv")
+} # }
+```

@@ -22,3 +22,11 @@ replicate_paper(doi, install_deps = FALSE)
 ## Value
 
 A named list of replication result envelopes.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+replicate_paper("10.1177/00491241211036161")
+} # }
+```

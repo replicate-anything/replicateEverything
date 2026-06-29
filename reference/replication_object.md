@@ -17,3 +17,12 @@ replication_object(x)
 ## Value
 
 The underlying replication object.
+
+## Examples
+
+``` r
+result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_result")
+replication_object(result)
+#>   x
+#> 1 1
+```

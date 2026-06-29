@@ -29,3 +29,11 @@ load_artifact(doi, what, repo = NULL, folder = NULL)
 ## Value
 
 Artifact contents suitable for display, or `NULL`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+load_artifact("10.1177/00491241211036161", "fig_1")
+} # }
+```

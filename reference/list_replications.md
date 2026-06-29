@@ -25,3 +25,11 @@ list_replications(doi, repo = NULL, folder = NULL)
 ## Value
 
 A list of replication entries from `replication.yml`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+list_replications("10.1177/00491241211036161")
+} # }
+```

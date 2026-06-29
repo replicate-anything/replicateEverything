@@ -25,3 +25,11 @@ validate_artifact(doi, what, repo = NULL)
 ## Value
 
 Invisibly `TRUE` on success.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+validate_artifact("10.1177/00491241211036161", "fig_1")
+} # }
+```

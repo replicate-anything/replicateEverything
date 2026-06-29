@@ -26,3 +26,11 @@ run_replication(doi, what, install_deps = FALSE)
 ## Value
 
 The underlying replication object.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+run_replication("10.1177/00491241211036161", "fig_1")
+} # }
+```

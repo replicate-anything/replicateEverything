@@ -30,3 +30,11 @@ render_for_display(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
 - folder:
 
   Optional registry folder name from `index.csv`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+render_for_display("10.1177/00491241211036161", "fig_1")
+} # }
+```

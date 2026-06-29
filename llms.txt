@@ -35,7 +35,7 @@ easily reproducible**.
 The inspiration for this package came from an idea by [Macartan
 Humphreys](https://macartan.github.io), Director of the [Institutions
 and Political Inequality](https://wzb-ipi.github.io/) Research Group at
-[WZB](https://www.wzb.eu), in a [2024
+[WZB](https://www.wzb.eu/de), in a [2024
 talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2)
 to a Lab² audience. The project is under active development. Feedback is
 welcome — contact [Vermon Washington](mailto:vermon.washington@wzb.eu)
@@ -43,7 +43,9 @@ or [Macartan Humphreys](mailto:macartan.humphreys@wzb.eu).
 
 ## Installation
 
-Install from GitHub with `remotes` or `devtools`:
+Once accepted on CRAN, install with
+`install.packages("replicateEverything")`. Until then, install from
+GitHub with `remotes` or `devtools`:
 
 ``` r
 
@@ -335,6 +337,14 @@ Open an issue at
 MIT
 
 # Package index
+
+## Package
+
+Package overview and help search entry point.
+
+- [`replicateEverything`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
+  [`replicateEverything-package`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
+  : replicateEverything: Reproduce Empirical Research Results
 
 ## Discovery
 

@@ -17,3 +17,10 @@ normalize_html_table(html)
 ## Value
 
 Character HTML with common entities decoded for browser display.
+
+## Examples
+
+``` r
+normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
+#> [1] "<table> data</table>"
+```

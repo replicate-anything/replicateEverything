@@ -1,5 +1,13 @@
 # Package index
 
+## Package
+
+Package overview and help search entry point.
+
+- [`replicateEverything`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
+  [`replicateEverything-package`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
+  : replicateEverything: Reproduce Empirical Research Results
+
 ## Discovery
 
 Find papers and inspect replication metadata.

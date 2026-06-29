@@ -29,3 +29,11 @@ get_artifact_path(doi, what, repo = NULL, folder = NULL)
 ## Value
 
 Character path or URL, or `NULL` if no artifact is registered.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+get_artifact_path("10.1177/00491241211036161", "fig_1")
+} # }
+```

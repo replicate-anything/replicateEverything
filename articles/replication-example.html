@@ -62,9 +62,8 @@
 
 
 
-<link href="replication-example_files/htmltools-fill-0.5.9/fill.css" rel="stylesheet">
-<script src="replication-example_files/htmlwidgets-1.6.4/htmlwidgets.js"></script><script src="replication-example_files/viz-1.8.2/viz.js"></script><link href="replication-example_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet">
-<script src="replication-example_files/grViz-binding-1.0.12/grViz.js"></script><div class="row">
+
+<div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Replication Examples Using Code</h1>
             
@@ -84,8 +83,6 @@
 is a registry that host all the repositories for past studies. Then, the
 <code>replicateEverything</code> package interact with the repositories
 and then works the magic.</p>
-<div class="grViz html-widget html-fill-item" id="htmlwidget-ac96cb3ee4656e2e9ec3" style="width:70%;height:600px;"></div>
-<script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"diagram":"\ndigraph {\n  Registry -> \"Replication Repositories\"\n  \"Replication Repositories\" -> replicateEverything\n}\n","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 <div class="section level2">
 <h2 id="run-single-replication">Run single replication<a class="anchor" aria-label="anchor" href="#run-single-replication"></a>
@@ -95,113 +92,12 @@ and then works the magic.</p>
 <span>  <span class="st">"10.1177/00491241211036161"</span>,</span>
 <span>  <span class="st">"fig_1"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">##                          L         H  rho  tau          label</span></span>
-<span><span class="co">## simple           0.3333333 1.0000000 -0.5  0.1         simple</span></span>
-<span><span class="co">## unobserved       0.3333333 0.3333333 -0.5  0.1     unobserved</span></span>
-<span><span class="co">## monotone         0.3333333 0.3333333 -0.5  0.1       monotone</span></span>
-<span><span class="co">## two_step_homog   0.4562255 1.0000000 -0.5  0.1 two_step_homog</span></span>
-<span><span class="co">## inifinte_homog   0.1405457 1.0000000 -0.5  0.1 inifinte_homog</span></span>
-<span><span class="co">## best_lower       0.8000000 0.8000000 -0.5  0.1     best_lower</span></span>
-<span><span class="co">## best_cov_un      1.0000000 1.0000000 -0.5  0.1    best_cov_un</span></span>
-<span><span class="co">## best_cov_ob      1.0000000 1.0000000 -0.5  0.1    best_cov_ob</span></span>
-<span><span class="co">## simple1          0.6666667 1.0000000 -0.5 0.25         simple</span></span>
-<span><span class="co">## unobserved1      0.6666667 0.6666667 -0.5 0.25     unobserved</span></span>
-<span><span class="co">## monotone1        0.6666667 0.6666667 -0.5 0.25       monotone</span></span>
-<span><span class="co">## two_step_homog1  0.7346939 1.0000000 -0.5 0.25 two_step_homog</span></span>
-<span><span class="co">## inifinte_homog1  0.1666667 1.0000000 -0.5 0.25 inifinte_homog</span></span>
-<span><span class="co">## best_lower1      0.8750000 0.8750000 -0.5 0.25     best_lower</span></span>
-<span><span class="co">## best_cov_un1     1.0000000 1.0000000 -0.5 0.25    best_cov_un</span></span>
-<span><span class="co">## best_cov_ob1     1.0000000 1.0000000 -0.5 0.25    best_cov_ob</span></span>
-<span><span class="co">## simple2          0.1818182 1.0000000    0  0.1         simple</span></span>
-<span><span class="co">## unobserved2      0.1818182 0.1818182    0  0.1     unobserved</span></span>
-<span><span class="co">## monotone2        0.1818182 0.1818182    0  0.1       monotone</span></span>
-<span><span class="co">## two_step_homog2  0.2308862 1.0000000    0  0.1 two_step_homog</span></span>
-<span><span class="co">## inifinte_homog2  0.3162278 1.0000000    0  0.1 inifinte_homog</span></span>
-<span><span class="co">## best_lower2      0.5500000 0.5500000    0  0.1     best_lower</span></span>
-<span><span class="co">## best_cov_un2     1.0000000 1.0000000    0  0.1    best_cov_un</span></span>
-<span><span class="co">## best_cov_ob2     1.0000000 1.0000000    0  0.1    best_cov_ob</span></span>
-<span><span class="co">## simple11         0.4000000 1.0000000    0 0.25         simple</span></span>
-<span><span class="co">## unobserved11     0.4000000 0.4000000    0 0.25     unobserved</span></span>
-<span><span class="co">## monotone11       0.4000000 0.4000000    0 0.25       monotone</span></span>
-<span><span class="co">## two_step_homog11 0.4444444 1.0000000    0 0.25 two_step_homog</span></span>
-<span><span class="co">## inifinte_homog11 0.5000000 1.0000000    0 0.25 inifinte_homog</span></span>
-<span><span class="co">## best_lower11     0.6250000 0.6250000    0 0.25     best_lower</span></span>
-<span><span class="co">## best_cov_un11    1.0000000 1.0000000    0 0.25    best_cov_un</span></span>
-<span><span class="co">## best_cov_ob11    1.0000000 1.0000000    0 0.25    best_cov_ob</span></span>
-<span><span class="co">## simple3          0.1250000 0.3750000  0.5  0.1         simple</span></span>
-<span><span class="co">## unobserved3      0.1250000 0.1250000  0.5  0.1     unobserved</span></span>
-<span><span class="co">## monotone3        0.1250000 0.1250000  0.5  0.1       monotone</span></span>
-<span><span class="co">## two_step_homog3  0.1390453 0.3047733  0.5  0.1 two_step_homog</span></span>
-<span><span class="co">## inifinte_homog3  0.4919099 0.2782559  0.5  0.1 inifinte_homog</span></span>
-<span><span class="co">## best_lower3      0.3000000 0.3000000  0.5  0.1     best_lower</span></span>
-<span><span class="co">## best_cov_un3     0.3750000 0.3750000  0.5  0.1    best_cov_un</span></span>
-<span><span class="co">## best_cov_ob3     1.0000000 1.0000000  0.5  0.1    best_cov_ob</span></span>
-<span><span class="co">## simple12         0.2857143 0.4285714  0.5 0.25         simple</span></span>
-<span><span class="co">## unobserved12     0.2857143 0.2857143  0.5 0.25     unobserved</span></span>
-<span><span class="co">## monotone12       0.2857143 0.2857143  0.5 0.25       monotone</span></span>
-<span><span class="co">## two_step_homog12 0.2975207 0.4049587  0.5 0.25 two_step_homog</span></span>
-<span><span class="co">## inifinte_homog12 0.8333333 0.3968503  0.5 0.25 inifinte_homog</span></span>
-<span><span class="co">## best_lower12     0.3750000 0.3750000  0.5 0.25     best_lower</span></span>
-<span><span class="co">## best_cov_un12    0.4285714 0.4285714  0.5 0.25    best_cov_un</span></span>
-<span><span class="co">## best_cov_ob12    1.0000000 1.0000000  0.5 0.25    best_cov_ob</span></span>
-<span><span class="co">##                                        names</span></span>
-<span><span class="co">## simple                         Simple bounds</span></span>
-<span><span class="co">## unobserved              Unobserved mediators</span></span>
-<span><span class="co">## monotone                           Monotonic</span></span>
-<span><span class="co">## two_step_homog          Two step homogeneous</span></span>
-<span><span class="co">## inifinte_homog     Infinite step homogeneous</span></span>
-<span><span class="co">## best_lower          Best (positive) mediator</span></span>
-<span><span class="co">## best_cov_un      Best (unobserved) covariate</span></span>
-<span><span class="co">## best_cov_ob        Best (observed) covariate</span></span>
-<span><span class="co">## simple1                        Simple bounds</span></span>
-<span><span class="co">## unobserved1             Unobserved mediators</span></span>
-<span><span class="co">## monotone1                          Monotonic</span></span>
-<span><span class="co">## two_step_homog1         Two step homogeneous</span></span>
-<span><span class="co">## inifinte_homog1    Infinite step homogeneous</span></span>
-<span><span class="co">## best_lower1         Best (positive) mediator</span></span>
-<span><span class="co">## best_cov_un1     Best (unobserved) covariate</span></span>
-<span><span class="co">## best_cov_ob1       Best (observed) covariate</span></span>
-<span><span class="co">## simple2                        Simple bounds</span></span>
-<span><span class="co">## unobserved2             Unobserved mediators</span></span>
-<span><span class="co">## monotone2                          Monotonic</span></span>
-<span><span class="co">## two_step_homog2         Two step homogeneous</span></span>
-<span><span class="co">## inifinte_homog2    Infinite step homogeneous</span></span>
-<span><span class="co">## best_lower2         Best (positive) mediator</span></span>
-<span><span class="co">## best_cov_un2     Best (unobserved) covariate</span></span>
-<span><span class="co">## best_cov_ob2       Best (observed) covariate</span></span>
-<span><span class="co">## simple11                       Simple bounds</span></span>
-<span><span class="co">## unobserved11            Unobserved mediators</span></span>
-<span><span class="co">## monotone11                         Monotonic</span></span>
-<span><span class="co">## two_step_homog11        Two step homogeneous</span></span>
-<span><span class="co">## inifinte_homog11   Infinite step homogeneous</span></span>
-<span><span class="co">## best_lower11        Best (positive) mediator</span></span>
-<span><span class="co">## best_cov_un11    Best (unobserved) covariate</span></span>
-<span><span class="co">## best_cov_ob11      Best (observed) covariate</span></span>
-<span><span class="co">## simple3                        Simple bounds</span></span>
-<span><span class="co">## unobserved3             Unobserved mediators</span></span>
-<span><span class="co">## monotone3                          Monotonic</span></span>
-<span><span class="co">## two_step_homog3         Two step homogeneous</span></span>
-<span><span class="co">## inifinte_homog3    Infinite step homogeneous</span></span>
-<span><span class="co">## best_lower3         Best (positive) mediator</span></span>
-<span><span class="co">## best_cov_un3     Best (unobserved) covariate</span></span>
-<span><span class="co">## best_cov_ob3       Best (observed) covariate</span></span>
-<span><span class="co">## simple12                       Simple bounds</span></span>
-<span><span class="co">## unobserved12            Unobserved mediators</span></span>
-<span><span class="co">## monotone12                         Monotonic</span></span>
-<span><span class="co">## two_step_homog12        Two step homogeneous</span></span>
-<span><span class="co">## inifinte_homog12   Infinite step homogeneous</span></span>
-<span><span class="co">## best_lower12        Best (positive) mediator</span></span>
-<span><span class="co">## best_cov_un12    Best (unobserved) covariate</span></span>
-<span><span class="co">## best_cov_ob12      Best (observed) covariate</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="replicate-an-entire-paper">Replicate an entire paper<a class="anchor" aria-label="anchor" href="#replicate-an-entire-paper"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Replicating: Bounding Causes of Effects With Mediators</span></span></code></pre>
-<pre><code><span><span class="co">## </span></span></code></pre>
-<pre><code><span><span class="co">## Running: fig_1</span></span></code></pre>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

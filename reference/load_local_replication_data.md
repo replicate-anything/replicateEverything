@@ -22,3 +22,21 @@ load_local_replication_data(data_paths, paper_dir = getwd())
 ## Value
 
 A data frame, list, or other object.
+
+## Examples
+
+``` r
+tmp <- tempfile()
+dir.create(tmp)
+dir.create(file.path(tmp, "data"))
+write.csv(
+  data.frame(x = 1:3, y = 4:6),
+  file.path(tmp, "data", "example.csv"),
+  row.names = FALSE
+)
+load_local_replication_data("data/example.csv", paper_dir = tmp)
+#>   x y
+#> 1 1 4
+#> 2 2 5
+#> 3 3 6
+```

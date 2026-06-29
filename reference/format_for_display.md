@@ -46,3 +46,12 @@ format_for_display(
 ## Value
 
 Object suitable for display (often an HTML string or ggplot).
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+result <- render_replication("10.1177/00491241211036161", "fig_1")
+format_for_display(replication_object(result), "10.1177/00491241211036161", "fig_1")
+} # }
+```
