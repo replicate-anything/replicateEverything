@@ -24,9 +24,9 @@ RoxygenNote: 8.0.0
 VignetteBuilder: knitr
 Config/Needs/website: pkgdown
 NeedsCompilation: no
-Packaged: 2026-06-29 13:32:44 UTC; verwash
+Packaged: 2026-06-29 13:40:27 UTC; verwash
 Author: Macartan Humphreys [aut],
   Cord Masche [aut],
   Vermon Washington [aut, cre]
 Maintainer: Vermon Washington <vermon.washington@wzb.eu>
-Built: R 4.6.0; ; 2026-06-29 13:32:51 UTC; unix
+Built: R 4.6.0; ; 2026-06-29 13:40:43 UTC; unix

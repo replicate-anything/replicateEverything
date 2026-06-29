@@ -38,4 +38,4 @@ Loading required package: replicateEverything
 > 
 > proc.time()
    user  system elapsed 
-  0.782   0.158   4.574 
+  0.792   0.139   4.284 
