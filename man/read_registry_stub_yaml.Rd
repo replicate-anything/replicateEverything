@@ -2,7 +2,7 @@
 % Please edit documentation in R/folder_replication.R
 \name{read_registry_stub_yaml}
 \alias{read_registry_stub_yaml}
-\title{Read the registry stub \code{replication.yml} for a paper folder}
+\title{Read the registry stub yaml for a paper folder}
 \usage{
 read_registry_stub_yaml(folder, registry_root = NULL)
 }
@@ -12,6 +12,6 @@ read_registry_stub_yaml(folder, registry_root = NULL)
 \item{registry_root}{Optional registry checkout root.}
 }
 \description{
-Read the registry stub \code{replication.yml} for a paper folder
+Read the registry stub yaml for a paper folder
 }
 \keyword{internal}

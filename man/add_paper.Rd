@@ -28,7 +28,7 @@ Invisibly, the result of \code{\link[=check_package_replication]{check_package_r
 }
 \description{
 Validates a study replication package with \code{\link[=check_package_replication]{check_package_replication()}},
-then writes a lightweight registry stub (\verb{papers/<folder>/replication.yml})
+then writes a lightweight registry stub (\verb{papers/<folder>.yml})
 and updates \code{index.csv}.
 }
 \details{

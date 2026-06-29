@@ -21,7 +21,7 @@ study repo. After \code{\link[=check_folder_replication]{check_folder_replicatio
 }
 \details{
 \itemize{
-\item \code{registry/replication.yml} → \verb{papers/<folder>/replication.yml}
+\item \code{registry/replication.yml} → \verb{papers/<folder>.yml}
 \item merge \code{registry/index.csv} into \code{index.csv}
 }
 }
