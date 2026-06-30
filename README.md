@@ -333,6 +333,18 @@ devtools::check()
 
 Documentation site: [replicate-anything.github.io/replicateEverything](https://replicate-anything.github.io/replicateEverything/)
 
+## Shiny demo app
+
+The package bundles a Shiny demo in `inst/shiny/`. Run it interactively or copy it for Shiny Server:
+
+```r
+library(replicateEverything)
+run_shiny_app()                              # run from installed package
+save_local_shiny("/path/to/shiny/replicate") # materialize app.R + www/ for serving
+```
+
+See `vignette("shiny-app", package = "replicateEverything")` for server update workflows and `local.R` configuration.
+
 ## Links
 
 - **Package:** [github.com/replicate-anything/replicateEverything](https://github.com/replicate-anything/replicateEverything)

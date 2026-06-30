@@ -1,0 +1,43 @@
+# Copy to local.R (gitignored) for local development or server overrides.
+# save_local_shiny() never overwrites an existing local.R.
+
+# --- Monorepo development (sibling registry/ and replicateEverything/) ---
+registry_root <- normalizePath("../registry", winslash = "/", mustWork = FALSE)
+package_root <- normalizePath("../replicateEverything", winslash = "/", mustWork = FALSE)
+packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
+
+# --- Shiny Server example (uncomment and edit) ---
+# registry_root <- "/srv/registry"
+# packages_root <- NULL
+
+if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
+  options(
+    replicateEverything.registry_root = registry_root,
+    replicateEverything.index = utils::read.csv(
+      file.path(registry_root, "index.csv"),
+      stringsAsFactors = FALSE
+    )
+  )
+}
+
+options(
+  replicate_shiny.auto_update_replicate_everything = FALSE,
+  replicate_shiny.auto_install_study_packages = FALSE
+)
+
+if (!is.null(packages_root) && dir.exists(packages_root)) {
+  options(
+    replicateEverything.replication_packages_root = packages_root,
+    replicateEverything.use_sibling_packages = TRUE
+  )
+}
+
+if (dir.exists(package_root) && requireNamespace("devtools", quietly = TRUE)) {
+  devtools::load_all(package_root, quiet = TRUE)
+  options(replicate_shiny.use_local_replicate_everything = TRUE)
+  if (exists("load_sibling_replication_packages", envir = asNamespace("replicateEverything"), inherits = FALSE)) {
+    get("load_sibling_replication_packages", envir = asNamespace("replicateEverything"))(packages_root)
+  }
+}
+
+message("local.R loaded")
