@@ -1,5 +1,25 @@
 # Changelog
 
+## replicateEverything 0.3.0
+
+### Folder-backed study workflow
+
+- [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
+  — run replications and write `artifacts/` + `manifest.json` from a
+  study repo.
+- [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
+  — pre-merge checklist (layout, yaml, code/data paths, artifacts,
+  tests).
+- [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+  — build artifacts, validate, write `registry/replication.yml` +
+  `registry/index.csv` in study repo.
+- [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+  — copy prepared stub files into a registry checkout.
+- [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
+  — validate and register a folder-backed study stub in the registry.
+- Vignette: “Folder replication checklist”.
+- Improved artifact error hints for folder-backed studies.
+
 ## replicateEverything 0.2.0
 
 ### Major features

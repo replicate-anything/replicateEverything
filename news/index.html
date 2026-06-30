@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,24 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.0" id="replicateeverything-030">replicateEverything 0.3.0<a class="anchor" aria-label="anchor" href="#replicateeverything-030"></a></h2>
+<div class="section level3">
+<h3 id="folder-backed-study-workflow-0-3-0">Folder-backed study workflow<a class="anchor" aria-label="anchor" href="#folder-backed-study-workflow-0-3-0"></a></h3>
+<ul><li>
+<code><a href="../reference/build_study_artifacts.html">build_study_artifacts()</a></code> — run replications and write <code>artifacts/</code> + <code>manifest.json</code> from a study repo.</li>
+<li>
+<code><a href="../reference/check_folder_replication.html">check_folder_replication()</a></code> — pre-merge checklist (layout, yaml, code/data paths, artifacts, tests).</li>
+<li>
+<code><a href="../reference/prepare_folder_paper.html">prepare_folder_paper()</a></code> — build artifacts, validate, write <code>registry/replication.yml</code> + <code>registry/index.csv</code> in study repo.</li>
+<li>
+<code><a href="../reference/sync_folder_paper.html">sync_folder_paper()</a></code> — copy prepared stub files into a registry checkout.</li>
+<li>
+<code><a href="../reference/add_folder_paper.html">add_folder_paper()</a></code> — validate and register a folder-backed study stub in the registry.</li>
+<li>Vignette: “Folder replication checklist”.</li>
+<li>Improved artifact error hints for folder-backed studies.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="replicateeverything-020">replicateEverything 0.2.0<a class="anchor" aria-label="anchor" href="#replicateeverything-020"></a></h2>
 <div class="section level3">

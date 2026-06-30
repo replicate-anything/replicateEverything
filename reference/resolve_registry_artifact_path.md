@@ -1,8 +1,8 @@
 # Resolve a precomputed artifact under the registry paper folder
 
 Package-backed studies may ship display artifacts in
-`registry/papers/.../artifacts/` even when code lives in the study
-package.
+`inst/report/artifacts/` on the study package (not under the registry
+paper folder).
 
 ## Usage
 

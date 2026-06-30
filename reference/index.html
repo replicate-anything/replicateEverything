@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -58,6 +58,94 @@
 
         </dt>
         <dd>replicateEverything: Reproduce Empirical Research Results</dd>
+      </dl></div><div class="section level2">
+      <h2 id="shiny-demo">Shiny demo<a class="anchor" aria-label="anchor" href="#shiny-demo"></a></h2>
+
+      <div class="section-desc"><p>Browse studies and run replications interactively.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="run_shiny_app.html">run_shiny_app()</a></code>
+
+        </dt>
+        <dd>Run the bundled Shiny demo app</dd>
+
+        <dt>
+
+          <code><a href="save_local_shiny.html">save_local_shiny()</a></code>
+
+        </dt>
+        <dd>Copy the bundled Shiny app into a deploy directory</dd>
+      </dl></div><div class="section level2">
+      <h2 id="registry">Registry<a class="anchor" aria-label="anchor" href="#registry"></a></h2>
+
+      <div class="section-desc"><p>Add and validate package-backed studies.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="check_package_replication.html">check_package_replication()</a></code>
+
+        </dt>
+        <dd>Validate a package-backed replication study</dd>
+
+        <dt>
+
+          <code><a href="add_paper.html">add_paper()</a></code>
+
+        </dt>
+        <dd>Add a package-backed study to the replication registry</dd>
+
+        <dt>
+
+          <code><a href="is_package_replication.html">is_package_replication()</a></code>
+
+        </dt>
+        <dd>Whether replication metadata refers to an installed R package</dd>
+
+        <dt>
+
+          <code><a href="is_folder_study_replication.html">is_folder_study_replication()</a></code>
+
+        </dt>
+        <dd>Whether replication metadata refers to a folder-backed external study repo</dd>
+
+        <dt>
+
+          <code><a href="is_study_package_error.html">is_study_package_error()</a></code>
+
+        </dt>
+        <dd>Whether an error is a missing study replication package</dd>
+
+        <dt>
+
+          <code><a href="print.package_replication_check.html">print(<i>&lt;package_replication_check&gt;</i>)</a></code> <code><a href="print.package_replication_check.html">print(<i>&lt;folder_replication_check&gt;</i>)</a></code> <code><a href="print.package_replication_check.html">print(<i>&lt;replication_check&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a replication checklist result</dd>
+
+        <dt>
+
+          <code><a href="study_package_install_info.html">study_package_install_info()</a></code>
+
+        </dt>
+        <dd>Install instructions for a package-backed study</dd>
+
+        <dt>
+
+          <code><a href="study_package_install_message.html">study_package_install_message()</a></code>
+
+        </dt>
+        <dd>User-facing message for installing a study replication package</dd>
       </dl></div><div class="section level2">
       <h2 id="discovery">Discovery<a class="anchor" aria-label="anchor" href="#discovery"></a></h2>
 
@@ -188,6 +276,57 @@
 
         </dt>
         <dd>Load replication data from local paths (for self-contained scripts)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="folder-backed-studies">Folder-backed studies<a class="anchor" aria-label="anchor" href="#folder-backed-studies"></a></h2>
+
+      <div class="section-desc"><p>Build artifacts and sync folder-backed study repos.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="build_study_artifacts.html">build_study_artifacts()</a></code>
+
+        </dt>
+        <dd>Build display artifacts for a folder-backed study</dd>
+
+        <dt>
+
+          <code><a href="check_folder_replication.html">check_folder_replication()</a></code>
+
+        </dt>
+        <dd>Validate a folder-backed replication study</dd>
+
+        <dt>
+
+          <code><a href="prepare_folder_paper.html">prepare_folder_paper()</a></code>
+
+        </dt>
+        <dd>Prepare a folder-backed study for registry sync</dd>
+
+        <dt>
+
+          <code><a href="sync_folder_paper.html">sync_folder_paper()</a></code>
+
+        </dt>
+        <dd>Copy prepared registry files into the registry repository</dd>
+
+        <dt>
+
+          <code><a href="add_folder_paper.html">add_folder_paper()</a></code>
+
+        </dt>
+        <dd>Add a folder-backed study to the replication registry</dd>
+
+        <dt>
+
+          <code><a href="write_folder_registry_stub.html">write_folder_registry_stub()</a></code>
+
+        </dt>
+        <dd>Write registry stub files into a study repository</dd>
       </dl></div><div class="section level2">
       <h2 id="artifacts">Artifacts<a class="anchor" aria-label="anchor" href="#artifacts"></a></h2>
 

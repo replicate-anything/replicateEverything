@@ -29,7 +29,7 @@ figures and tables from published studies."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,6 +73,8 @@ figures and tables from published studies.</p>
 <li><p>Inspect available replications using <code><a href="list_replications.html">list_replications()</a></code>.</p></li>
 <li><p>Run a single replication using <code><a href="run_replication.html">run_replication()</a></code>.</p></li>
 <li><p>Reproduce all results from a paper using <code><a href="replicate_paper.html">replicate_paper()</a></code>.</p></li>
+<li><p>Launch the bundled Shiny demo with <code><a href="run_shiny_app.html">run_shiny_app()</a></code>, or deploy it
+with <code><a href="save_local_shiny.html">save_local_shiny()</a></code>.</p></li>
 </ol></div>
     <div class="section level2">
     <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a></h2>
@@ -91,6 +93,19 @@ figures and tables from published studies.</p>
 <p>run_replication("10.1177/00491241211036161","fig_1")</p>
 <p>Replicate an entire paper:</p>
 <p>replicate_paper("10.1177/00491241211036161")</p>
+<p>Launch the Shiny demo:</p>
+<p>run_shiny_app()</p>
+    </div>
+    <div class="section level2">
+    <h2 id="shiny-demo">Shiny demo<a class="anchor" aria-label="anchor" href="#shiny-demo"></a></h2>
+
+
+
+<p>A live instance runs at <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">https://shiny2.wzb.eu/ipi/replicate/</a>. The
+package ships a demo app in <code>inst/shiny/</code>. Use
+<code><a href="run_shiny_app.html">run_shiny_app()</a></code> to launch it from an installed
+build, or <code><a href="save_local_shiny.html">save_local_shiny()</a></code> to copy
+<code>app.R</code> and <code>www/</code> into a Shiny Server directory.</p>
     </div>
     <div class="section level2">
     <h2 id="registry">Registry<a class="anchor" aria-label="anchor" href="#registry"></a></h2>

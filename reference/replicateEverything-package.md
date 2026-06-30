@@ -28,6 +28,11 @@ A typical workflow using the package is:
 6.  Reproduce all results from a paper using
     [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md).
 
+7.  Launch the bundled Shiny demo with
+    [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md),
+    or deploy it with
+    [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md).
+
 ## Examples
 
 Retrieve metadata for a paper:
@@ -53,6 +58,19 @@ run_replication("10.1177/00491241211036161","fig_1")
 Replicate an entire paper:
 
 replicate_paper("10.1177/00491241211036161")
+
+Launch the Shiny demo:
+
+run_shiny_app()
+
+## Shiny demo
+
+A live instance runs at <https://shiny2.wzb.eu/ipi/replicate/>. The
+package ships a demo app in `inst/shiny/`. Use
+[`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+to launch it from an installed build, or
+[`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+to copy `app.R` and `www/` into a Shiny Server directory.
 
 ## Registry
 

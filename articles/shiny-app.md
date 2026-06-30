@@ -1,0 +1,102 @@
+# Shiny demo app
+
+The **replicateEverything** package includes a Shiny demo in
+`inst/shiny/` (`app.R` plus `www/` assets). A live instance runs at
+<https://shiny2.wzb.eu/ipi/replicate/>. You can also run the app from an
+installed package, or copy it into a Shiny Server directory.
+
+## Install
+
+``` r
+
+# install.packages("remotes")
+remotes::install_github("replicate-anything/replicateEverything")
+```
+
+Suggested packages for the app: `shiny`, `bslib`, and optionally
+`shinyWidgets`.
+
+``` r
+
+install.packages(c("shiny", "bslib", "shinyWidgets"))
+```
+
+## Option 1: Run from the package
+
+``` r
+
+library(replicateEverything)
+run_shiny_app()
+```
+
+This launches `inst/shiny` inside the installed package. The app uses
+the installed `replicateEverything` version and does not try to
+reinstall itself from GitHub.
+
+For local monorepo development (sibling `registry/` and study packages),
+copy `inst/shiny/local.R.example` to `local.R` in your working directory
+before calling
+[`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md),
+or set options manually:
+
+``` r
+
+options(
+  replicateEverything.registry_root = "/path/to/registry",
+  replicate_shiny.auto_update_replicate_everything = FALSE
+)
+```
+
+## Option 2: Copy for Shiny Server
+
+Many servers expect a directory with `app.R` (for example
+`shiny/replicate/`). After installing or updating the package,
+materialize the bundled app:
+
+``` r
+
+library(replicateEverything)
+save_local_shiny("/srv/shiny/replicate")
+```
+
+This writes:
+
+- `app.R`
+- `www/` (logo and favicons)
+- `local.R.example` (template only)
+
+**`local.R` is never overwritten**, so server-specific settings survive
+updates.
+
+### Server update workflow
+
+``` r
+
+remotes::install_github("replicate-anything/replicateEverything")
+library(replicateEverything)
+save_local_shiny("/srv/shiny/replicate")
+```
+
+Restart the app on your host if required.
+
+### Server configuration
+
+On a shared server, create `local.R` once (from `local.R.example`):
+
+``` r
+
+options(
+  replicateEverything.registry_root = "/path/to/registry",
+  replicate_shiny.auto_update_replicate_everything = FALSE,
+  replicate_shiny.auto_install_study_packages = FALSE
+)
+```
+
+If you rely on the public GitHub registry, you do not need a local
+`registry/` checkout; omit `replicateEverything.registry_root`.
+
+## Former standalone repository
+
+The app previously lived in a separate **replicate-shiny** repository
+beside **replicateEverything**. That repository is deprecated; use the
+functions above.

@@ -8,6 +8,39 @@ Package overview and help search entry point.
   [`replicateEverything-package`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
   : replicateEverything: Reproduce Empirical Research Results
 
+## Shiny demo
+
+Browse studies and run replications interactively.
+
+- [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+  : Run the bundled Shiny demo app
+- [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+  : Copy the bundled Shiny app into a deploy directory
+
+## Registry
+
+Add and validate package-backed studies.
+
+- [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
+  : Validate a package-backed replication study
+- [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
+  : Add a package-backed study to the replication registry
+- [`is_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/is_package_replication.md)
+  : Whether replication metadata refers to an installed R package
+- [`is_folder_study_replication()`](https://replicate-anything.github.io/replicateEverything/reference/is_folder_study_replication.md)
+  : Whether replication metadata refers to a folder-backed external
+  study repo
+- [`is_study_package_error()`](https://replicate-anything.github.io/replicateEverything/reference/is_study_package_error.md)
+  : Whether an error is a missing study replication package
+- [`print(`*`<package_replication_check>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.md)
+  [`print(`*`<folder_replication_check>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.md)
+  [`print(`*`<replication_check>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.md)
+  : Print a replication checklist result
+- [`study_package_install_info()`](https://replicate-anything.github.io/replicateEverything/reference/study_package_install_info.md)
+  : Install instructions for a package-backed study
+- [`study_package_install_message()`](https://replicate-anything.github.io/replicateEverything/reference/study_package_install_message.md)
+  : User-facing message for installing a study replication package
+
 ## Discovery
 
 Find papers and inspect replication metadata.
@@ -49,6 +82,23 @@ Render tables and figures from registry scripts.
   : Run a replication script footer when executed directly
 - [`load_local_replication_data()`](https://replicate-anything.github.io/replicateEverything/reference/load_local_replication_data.md)
   : Load replication data from local paths (for self-contained scripts)
+
+## Folder-backed studies
+
+Build artifacts and sync folder-backed study repos.
+
+- [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
+  : Build display artifacts for a folder-backed study
+- [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
+  : Validate a folder-backed replication study
+- [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+  : Prepare a folder-backed study for registry sync
+- [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+  : Copy prepared registry files into the registry repository
+- [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
+  : Add a folder-backed study to the replication registry
+- [`write_folder_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_folder_registry_stub.md)
+  : Write registry stub files into a study repository
 
 ## Artifacts
 

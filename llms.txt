@@ -9,8 +9,9 @@ empirical research papers.**
 registry](https://github.com/replicate-anything/registry), retrieves
 replication materials (metadata, processed data, and analysis code), and
 reproduces figures and tables from published studies in a standardized
-workflow. The goal is to make research **transparent, modular, and
-easily reproducible**.
+workflow. The package also bundles a **Shiny demo app** for browsing
+studies and running replications interactively — try the [live
+demo](https://shiny2.wzb.eu/ipi/replicate/).
 
 ## Key features
 
@@ -21,31 +22,31 @@ easily reproducible**.
   [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
 - **Registry-backed materials** — fetch data and code from GitHub
   without manual downloads
-- **Package-backed studies** — link standalone R packages as replication
-  backends (local monorepo or GitHub install)
+- **Folder-backed studies** — dedicated study repositories with `code/`,
+  `data/`, and `artifacts/`
+- **Package-backed studies** — standalone R packages linked from
+  lightweight registry stubs
 - **Artifacts** — load, validate, and save precomputed outputs (PNG,
   HTML, RDS) for fast display
 - **Display pipeline** — optional `format_*` steps turn analysis objects
   into HTML tables and ggplot figures
+- **Shiny demo** — [live app](https://shiny2.wzb.eu/ipi/replicate/);
+  [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+  locally;
+  [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+  to deploy on Shiny Server
 - **Contributor tooling** — scaffold a new replication folder with
   [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
 
 ## Project status
 
-The inspiration for this package came from an idea by [Macartan
-Humphreys](https://macartan.github.io), Director of the [Institutions
-and Political Inequality](https://wzb-ipi.github.io/) Research Group at
-[WZB](https://www.wzb.eu/de), in a [2024
-talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2)
-to a Lab² audience. The project is under active development. Feedback is
-welcome — contact [Vermon Washington](mailto:vermon.washington@wzb.eu)
-or [Macartan Humphreys](mailto:macartan.humphreys@wzb.eu).
+The project is under active development. Feedback is welcome — contact
+[Vermon Washington](mailto:vermon.washington@wzb.eu) or [Macartan
+Humphreys](mailto:macartan.humphreys@wzb.eu).
 
 ## Installation
 
-Once accepted on CRAN, install with
-`install.packages("replicateEverything")`. Until then, install from
-GitHub with `remotes` or `devtools`:
+Install from GitHub with `remotes` or `devtools`:
 
 ``` r
 
@@ -83,43 +84,39 @@ vignette](https://replicate-anything.github.io/replicateEverything/articles/repl
 
 ## How it works
 
-Replication materials live in the
-[registry](https://github.com/replicate-anything/registry). Each paper
-has a folder under `papers/` with a `replication.yml` manifest, plus
-`data/`, `code/`, and optionally `artifacts/`.
+The [registry](https://github.com/replicate-anything/registry) indexes
+studies via lightweight stub files in `papers/<folder>.yml`.
+**Folder-backed** studies keep code, data, and artifacts in a dedicated
+study repository; **package-backed** studies keep them in an R package.
+`replicateEverything` reads the stub, loads the full `replication.yml`
+from the study repo or package, and runs the registered scripts.
 
-    Registry
-      └── papers/<folder>/
-            replication.yml
-            data/
-            code/
-            artifacts/   (optional precomputed outputs)
+    Registry                         Study repo or package
+      papers/<folder>.yml  ───────►  replication.yml
+      index.csv                      data/  code/  artifacts/
                   ↓
           replicateEverything
                   ↓
           figures & tables in your R session
 
-The package reads `replication.yml`, downloads the listed data and
-scripts, sources the analysis functions, and returns typed result
-objects suitable for printing, saving, or display in a Shiny app.
-
 ### Registry layout
 
-Every replication repository follows a standard structure:
+Each indexed paper has one stub file:
 
     papers/
-      <folder>/
-        replication.yml
-        data/
-          fig_1.csv
-          tab_1.csv
-        code/
-          fig_1.R
-          tab_1.R
-        artifacts/          # optional
-          fig_1.png
-          tab_1.html
-          manifest.json
+      10.1177_00491241211036161.yml
+      10.1371_journal.pone.0278337.yml
+
+Folder-backed study repositories follow:
+
+    replication.yml
+    data/
+    code/
+    artifacts/
+    tests/testthat/
+
+Package-backed study packages follow the layout in [Package-backed
+replications](#package-backed-replications) below.
 
 The `<folder>` name comes from the registry `index.csv` (for example
 `10.1177_00491241211036161` or `10.1017S0003055403000534`).
@@ -210,22 +207,93 @@ if (sys.nframe() == 0) {
 }
 ```
 
+## Folder-backed replications
+
+Studies maintained as a **simple Git repository** (`code/`, `data/`,
+`artifacts/`) can be linked from the registry. Keep a stub in
+`papers/<folder>.yml` only:
+
+``` yaml
+paper:
+  doi: https://doi.org/10.1177/00491241211036161
+  title: Bounding Causes of Effects With Mediators
+  materials: folder
+  study_repo: replicate-anything/rep-10.1177-00491241211036161
+  study_folder: rep-10.1177-00491241211036161
+  study_ref: main
+repo: replicate-anything/rep-10.1177-00491241211036161
+```
+
+The full `replications:` list lives in the study repo’s
+`replication.yml`. Display artifacts live in `artifacts/` (from
+[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)).
+
+**From the study repository root:**
+
+``` r
+
+library(replicateEverything)
+
+options(
+  replicateEverything.registry_root = "../registry",
+  replicateEverything.use_sibling_packages = TRUE
+)
+
+# 1. Build artifacts/manifest.json
+build_study_artifacts(location = ".", install_deps = TRUE)
+
+# 2. Run tests
+testthat::test_dir("tests/testthat")
+
+# 3. Check + write registry/replication.yml and registry/index.csv
+prepare_folder_paper(".", build_artifacts = FALSE, registry_root = "../registry")
+
+# 4. Sync stub files into registry checkout (or copy manually)
+sync_folder_paper(".", registry_root = "../registry")
+
+# One-step alternative when registry is local:
+# add_folder_paper(".", registry_root = "../registry")
+```
+
+See
+[`vignette("folder-replication-checklist", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md)
+for the full workflow.
+
 ## Package-backed replications
 
 Studies maintained as standalone R packages can be linked from the
-registry. Keep a paper folder in the registry with a `replication.yml`
-that points to the package:
+registry. Keep a stub file `papers/<folder>.yml` that points to the
+package (no materials in the registry):
 
 ``` yaml
 paper:
   doi: https://doi.org/10.1371/journal.pone.0278337
   title: "Public support for global vaccine sharing in the COVID-19 pandemic"
   package: rep1371journalpone0278337
-  package_folder: rep_10.1371_journal.pone.0278337
-  package_repo: replicate-anything/rep_10.1371_journal.pone.0278337
+  package_folder: rep-10.1371_journal.pone.0278337
+  package_repo: replicate-anything/rep-10.1371_journal.pone.0278337
   package_ref: main
-repo: replicate-anything/rep_10.1371_journal.pone.0278337
+repo: replicate-anything/rep-10.1371_journal.pone.0278337
 ```
+
+`replicateEverything` merges the full `replications:` list from the
+study package `replication.yml` when the registry stub omits it. Display
+artifacts live in the study package at `inst/report/artifacts/` (from
+`build_report()`).
+
+Validate and register a package-backed study:
+
+``` r
+
+options(replicateEverything.registry_root = "/path/to/registry")
+
+check_package_replication("/path/to/rep_package")
+add_paper("/path/to/rep_package", full_replication = FALSE)
+```
+
+See
+[`vignette("package-replication-checklist", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md)
+for requirements.
 
 **Local development (monorepo):** place the study package as a sibling
 folder next to `registry/`. Enable sibling resolution with:
@@ -248,7 +316,8 @@ Optional overrides:
 
 Linked study packages should export:
 [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md),
-`run_replication(id, install_deps = FALSE)`, and `load_artifact(id)`.
+`replication_meta()`, `run_replication(id)`, `load_artifact(id)`,
+`artifact_file(id)`, `get_code(id)`, and `build_report()`.
 
 ## API overview
 
@@ -264,6 +333,12 @@ Linked study packages should export:
 | Format for display | [`format_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/format_for_display.md), [`render_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/render_for_display.md) |
 | Precomputed outputs | [`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md), [`save_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/save_artifact.md), [`artifact_available()`](https://replicate-anything.github.io/replicateEverything/reference/artifact_available.md) |
 | Validate | [`validate_replication()`](https://replicate-anything.github.io/replicateEverything/reference/validate_replication.md), [`validate_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/validate_artifact.md) |
+| Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
+| Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md), [`write_folder_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_folder_registry_stub.md) |
+| Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md), [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md) |
+| Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
+| Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md), [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md) |
+| Shiny demo | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
 | Contribute | [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md) |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN
@@ -292,6 +367,19 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
     [replicate-anything/registry](https://github.com/replicate-anything/registry),
     move your paper folder into `papers/`, and open a pull request
 
+For **folder-backed** studies, run
+[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+to build artifacts, validate, and write `registry/replication.yml` +
+`registry/index.csv` in the study repo; then
+[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+or copy those files into the registry.
+
+For **package-backed** studies, use
+[`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
+after
+[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
+passes instead of copying code and data into the registry.
+
 ``` bash
 git clone https://github.com/replicate-anything/registry
 mv 10.1177_00491241211036161 registry/papers/
@@ -317,6 +405,22 @@ devtools::check()
 
 Documentation site:
 [replicate-anything.github.io/replicateEverything](https://replicate-anything.github.io/replicateEverything/)
+
+## Shiny demo app
+
+Try the [live demo](https://shiny2.wzb.eu/ipi/replicate/) at WZB, or run
+the bundled app from an installed package:
+
+``` r
+
+library(replicateEverything)
+run_shiny_app()                              # run from installed package
+save_local_shiny("/path/to/shiny/replicate") # materialize app.R + www/ for serving
+```
+
+See
+[`vignette("shiny-app", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/shiny-app.md)
+for server update workflows and `local.R` configuration.
 
 ## Links
 
@@ -345,6 +449,39 @@ Package overview and help search entry point.
 - [`replicateEverything`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
   [`replicateEverything-package`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
   : replicateEverything: Reproduce Empirical Research Results
+
+## Shiny demo
+
+Browse studies and run replications interactively.
+
+- [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+  : Run the bundled Shiny demo app
+- [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+  : Copy the bundled Shiny app into a deploy directory
+
+## Registry
+
+Add and validate package-backed studies.
+
+- [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
+  : Validate a package-backed replication study
+- [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
+  : Add a package-backed study to the replication registry
+- [`is_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/is_package_replication.md)
+  : Whether replication metadata refers to an installed R package
+- [`is_folder_study_replication()`](https://replicate-anything.github.io/replicateEverything/reference/is_folder_study_replication.md)
+  : Whether replication metadata refers to a folder-backed external
+  study repo
+- [`is_study_package_error()`](https://replicate-anything.github.io/replicateEverything/reference/is_study_package_error.md)
+  : Whether an error is a missing study replication package
+- [`print(`*`<package_replication_check>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.md)
+  [`print(`*`<folder_replication_check>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.md)
+  [`print(`*`<replication_check>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.md)
+  : Print a replication checklist result
+- [`study_package_install_info()`](https://replicate-anything.github.io/replicateEverything/reference/study_package_install_info.md)
+  : Install instructions for a package-backed study
+- [`study_package_install_message()`](https://replicate-anything.github.io/replicateEverything/reference/study_package_install_message.md)
+  : User-facing message for installing a study replication package
 
 ## Discovery
 
@@ -388,6 +525,23 @@ Render tables and figures from registry scripts.
 - [`load_local_replication_data()`](https://replicate-anything.github.io/replicateEverything/reference/load_local_replication_data.md)
   : Load replication data from local paths (for self-contained scripts)
 
+## Folder-backed studies
+
+Build artifacts and sync folder-backed study repos.
+
+- [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
+  : Build display artifacts for a folder-backed study
+- [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
+  : Validate a folder-backed replication study
+- [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+  : Prepare a folder-backed study for registry sync
+- [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+  : Copy prepared registry files into the registry repository
+- [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
+  : Add a folder-backed study to the replication registry
+- [`write_folder_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_folder_registry_stub.md)
+  : Write registry stub files into a study repository
+
 ## Artifacts
 
 Precomputed outputs for Display in the Shiny app.
@@ -426,3 +580,9 @@ Format analysis output for HTML tables and plots.
 
 - [Replication Examples Using
   Code](https://replicate-anything.github.io/replicateEverything/articles/replication-example.md):
+- [Shiny demo
+  app](https://replicate-anything.github.io/replicateEverything/articles/shiny-app.md):
+- [Folder replication
+  checklist](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md):
+- [Package replication
+  checklist](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md):

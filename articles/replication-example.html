@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,27 +76,97 @@
     
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="system-architecture">System Architecture<a class="anchor" aria-label="anchor" href="#system-architecture"></a>
-</h3>
-<p>This is the system architecture on which this package is built. There
-is a registry that host all the repositories for past studies. Then, the
-<code>replicateEverything</code> package interact with the repositories
-and then works the magic.</p>
-</div>
 <div class="section level2">
-<h2 id="run-single-replication">Run single replication<a class="anchor" aria-label="anchor" href="#run-single-replication"></a>
+<h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span></span>
-<span>  <span class="st">"10.1177/00491241211036161"</span>,</span>
-<span>  <span class="st">"fig_1"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># Look up bibliographic metadata</span></span>
+<span><span class="fu"><a href="../reference/get_doi_metadata.html">get_doi_metadata</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Search the registry by title keyword</span></span>
+<span><span class="fu"><a href="../reference/search_papers.html">search_papers</a></span><span class="op">(</span><span class="st">"causes"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># See what can be replicated for a paper</span></span>
+<span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Run one figure or table</span></span>
+<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Reproduce every registered result</span></span>
+<span><span class="fu"><a href="../reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
+</h2>
+<p>The <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a>
+indexes studies with lightweight stub files in
+<code>papers/&lt;folder&gt;.yml</code> and <code>index.csv</code>.
+<strong>Replication materials live in separate study
+repositories</strong>, not inside the registry.</p>
+<p><code>replicateEverything</code> reads the stub, fetches the full
+<code>replication.yml</code> from the study repo or package, loads data,
+sources analysis scripts, and returns typed result objects.</p>
+<pre><code>Registry (index only)              Study repository
+  papers/&lt;folder&gt;.yml  ───────►    replication.yml
+  index.csv                        data/
+                                   code/
+                                   artifacts/   (folder-backed)
+              ↓
+      replicateEverything
+              ↓
+      figures &amp; tables in your R session</code></pre>
+<div class="section level3">
+<h3 id="two-study-layouts">Two study layouts<a class="anchor" aria-label="anchor" href="#two-study-layouts"></a>
+</h3>
+<p><strong>Folder-backed</strong> studies use a simple Git
+repository:</p>
+<pre><code>rep-&lt;doi-slug&gt;/
+  replication.yml
+  data/
+  code/
+  artifacts/
+  tests/testthat/</code></pre>
+<p><strong>Package-backed</strong> studies use a standalone R
+package:</p>
+<pre><code>rep_&lt;doi_slug&gt;/
+  DESCRIPTION
+  R/
+  data/
+  replication.yml
+  inst/report/artifacts/</code></pre>
+<p>In both cases the registry holds only a <strong>stub</strong>
+(<code>papers/&lt;folder&gt;.yml</code>) pointing at the study repo. See
+the folder and package replication checklists for contributor
+workflows.</p>
+</div>
+<div class="section level3">
+<h3 id="shiny-demo">Shiny demo<a class="anchor" aria-label="anchor" href="#shiny-demo"></a>
+</h3>
+<p>A <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">live demo</a> runs
+at WZB. The package also bundles the app in
+<code>inst/shiny/</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/run_shiny_app.html">run_shiny_app</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/path/to/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
+<p>See
+<code><a href="../articles/shiny-app.html">vignette("shiny-app", package = "replicateEverything")</a></code> for
+deployment on Shiny Server.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="system-architecture">System architecture<a class="anchor" aria-label="anchor" href="#system-architecture"></a>
+</h2>
+</div>
+<div class="section level2">
+<h2 id="run-a-single-replication">Run a single replication<a class="anchor" aria-label="anchor" href="#run-a-single-replication"></a>
+</h2>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="replicate-an-entire-paper">Replicate an entire paper<a class="anchor" aria-label="anchor" href="#replicate-an-entire-paper"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
