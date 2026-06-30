@@ -6,7 +6,7 @@
 #'
 #' Package-backed studies do **not** copy code, data, or artifacts into the
 #' registry. Those live in the study package (`inst/report/artifacts/` from
-#' [build_report()]).
+#' `build_report()`).
 #'
 #' @param location Local package path or GitHub address (`org/repo` or URL).
 #' @param full_replication If `TRUE`, also run every table and figure live.
@@ -144,7 +144,7 @@ print_replication_check <- function(x, label = "study") {
     print(unclass(x))
     return(invisible(x))
   }
-  cat(if (isTRUE(x$ok)) "PASS" else "FAIL", " — ", label, " replication checklist\n", sep = "")
+  cat(if (isTRUE(x$ok)) "PASS" else "FAIL", " - ", label, " replication checklist\n", sep = "")
   path <- x$study_path %||% x$package_path %||% NA_character_
   if (!is.null(path) && length(path) == 1L && !is.na(path) && nzchar(path)) {
     cat("Location:", path, "\n")

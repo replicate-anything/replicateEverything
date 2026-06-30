@@ -26,7 +26,7 @@ folder_registry_index_row <- function(meta, study_root) {
 #' study repo. After [check_folder_replication()] passes, copy these into the
 #' [registry repository](https://github.com/replicate-anything/registry):
 #'
-#' - `registry/replication.yml` → `papers/<folder>.yml`
+#' - `registry/replication.yml` -> `papers/<folder>.yml`
 #' - merge `registry/index.csv` into `index.csv`
 #'
 #' @param location Study repo path. Defaults to `"."`.

@@ -20,7 +20,7 @@ This is the first CRAN submission of replicateEverything.
 The package is designed to fetch replication materials (metadata, data, code, and artifacts) from a public GitHub registry at runtime. Core functions such as `load_index()`, `list_replications()`, `run_replication()`, and `replicate_paper()` may access the network when users invoke them.
 
 * Package examples that require network access are wrapped in `\dontrun{}`.
-* The vignette builds offline (`eval = FALSE` for network and DiagrammeR chunks); pre-built HTML is included in `inst/doc/`.
+* The vignette sources live in `vignettes/`; pre-built HTML is shipped in `inst/doc/` for installs that skip vignette builds.
 * Tests that require network access or GitHub API calls use `skip_on_cran()`.
 * Tests that require a local registry fixture or sibling study packages also skip when those resources are unavailable.
 
