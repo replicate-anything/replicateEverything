@@ -5,10 +5,12 @@ Authors@R: c(
     person("Macartan", "Humphreys", email = "macartan.humphreys@wzb.eu", role = c("aut")),
     person("Cord", "Masche", email = "cord.masche@wzb.eu", role = c("aut")),
     person("Vermon", "Washington", email = "vermon.washington@wzb.eu", role = c("aut", "cre")))
-Description: Provides tools for discovering and running computational replications of 
-    empirical research papers. The package connects to a replication registry, retrieves 
-    replication materials (data, code, and metadata), and reproduces figures and tables 
-    from published studies in a standardized workflow.
+Description: Provides tools for discovering and running computational replications of
+    empirical research papers. The package connects to a replication registry, retrieves
+    replication materials (data, code, and metadata), and reproduces figures and tables
+    from published studies in a standardized workflow. Includes a bundled Shiny demo
+    app (live demo at https://shiny2.wzb.eu/ipi/replicate/; also
+    `run_shiny_app()`, `save_local_shiny()`).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: 

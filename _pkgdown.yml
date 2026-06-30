@@ -5,7 +5,7 @@ template:
     in_header: mermaid.html
 home:
   title: replicateEverything
-  description: Reproduce empirical research results programmatically
+  description: Discover, run, and contribute computational replications — with a bundled Shiny demo and live app at shiny2.wzb.eu/ipi/replicate/
 navbar:
   structure:
     left:
@@ -18,12 +18,22 @@ reference:
   desc: Package overview and help search entry point.
   contents:
   - replicateEverything-package
+- title: Shiny demo
+  desc: Browse studies and run replications interactively.
+  contents:
+  - run_shiny_app
+  - save_local_shiny
 - title: Registry
   desc: Add and validate package-backed studies.
   contents:
   - check_package_replication
   - add_paper
   - is_package_replication
+  - is_folder_study_replication
+  - is_study_package_error
+  - print.package_replication_check
+  - study_package_install_info
+  - study_package_install_message
 - title: Discovery
   desc: Find papers and inspect replication metadata.
   contents:
@@ -46,6 +56,15 @@ reference:
   - create_replication_template
   - self_run
   - load_local_replication_data
+- title: Folder-backed studies
+  desc: Build artifacts and sync folder-backed study repos.
+  contents:
+  - build_study_artifacts
+  - check_folder_replication
+  - prepare_folder_paper
+  - sync_folder_paper
+  - add_folder_paper
+  - write_folder_registry_stub
 - title: Artifacts
   desc: Precomputed outputs for Display in the Shiny app.
   contents:
@@ -69,7 +88,6 @@ articles:
 - title: Articles
   contents:
   - replication-example
+  - shiny-app
+  - folder-replication-checklist
   - package-replication-checklist
-
-
-

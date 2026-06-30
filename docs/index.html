@@ -12,19 +12,30 @@
 <link rel="icon" sizes="any" href="favicon.ico">
 <link rel="manifest" href="site.webmanifest">
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="replicateEverything">
-<meta name="description" content="Reproduce empirical research results programmatically">
-<meta property="og:description" content="Reproduce empirical research results programmatically">
+<meta name="description" content="Discover, run, and contribute computational replications — with a bundled Shiny demo">
+<meta property="og:description" content="Discover, run, and contribute computational replications — with a bundled Shiny demo">
 <meta property="og:image" content="https://replicate-anything.github.io/replicateEverything/logo.png">
 </head>
-<body>mermaid.html
+<body>
+<p>
+
+
+
+
+
+
+
+
+
+  mermaid.html
 
   
 
-  
+  </p>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -32,7 +43,7 @@
 
     <a class="navbar-brand me-2" href="index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +73,7 @@
 <!-- badges: end -->
 <p><img src="reference/figures/logo.png" align="right" height="139" alt="replicateEverything logo"></p>
 <p><strong>Tools to discover, run, and contribute computational replications of empirical research papers.</strong></p>
-<p><code>replicateEverything</code> connects to a public <a href="https://github.com/replicate-anything/registry" class="external-link">replication registry</a>, retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The goal is to make research <strong>transparent, modular, and easily reproducible</strong>.</p>
+<p><code>replicateEverything</code> connects to a public <a href="https://github.com/replicate-anything/registry" class="external-link">replication registry</a>, retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The package also bundles a <strong>Shiny demo app</strong> for browsing studies and running replications interactively.</p>
 <div class="section level2">
 <h2 id="key-features">Key features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
@@ -75,11 +86,16 @@
 <li>
 <strong>Registry-backed materials</strong> — fetch data and code from GitHub without manual downloads</li>
 <li>
-<strong>Package-backed studies</strong> — link standalone R packages as replication backends (local monorepo or GitHub install)</li>
+<strong>Folder-backed studies</strong> — dedicated study repositories with <code>code/</code>, <code>data/</code>, and <code>artifacts/</code>
+</li>
+<li>
+<strong>Package-backed studies</strong> — standalone R packages linked from lightweight registry stubs</li>
 <li>
 <strong>Artifacts</strong> — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display</li>
 <li>
 <strong>Display pipeline</strong> — optional <code>format_*</code> steps turn analysis objects into HTML tables and ggplot figures</li>
+<li>
+<strong>Shiny demo</strong> — <code><a href="reference/run_shiny_app.html">run_shiny_app()</a></code> to launch interactively; <code><a href="reference/save_local_shiny.html">save_local_shiny()</a></code> to deploy on Shiny Server</li>
 <li>
 <strong>Contributor tooling</strong> — scaffold a new replication folder with <code><a href="reference/create_replication_template.html">create_replication_template()</a></code>
 </li>
@@ -88,7 +104,7 @@
 <div class="section level2">
 <h2 id="project-status">Project status<a class="anchor" aria-label="anchor" href="#project-status"></a>
 </h2>
-<p>The inspiration for this package came from an idea by <a href="https://macartan.github.io" class="external-link">Macartan Humphreys</a>, Director of the <a href="https://wzb-ipi.github.io/" class="external-link">Institutions and Political Inequality</a> Research Group at <a href="https://www.wzb.eu" class="external-link">WZB</a>, in a <a href="https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2" class="external-link">2024 talk</a> to a Lab² audience. The project is under active development. Feedback is welcome — contact <a href="mailto:vermon.washington@wzb.eu">Vermon Washington</a> or <a href="mailto:macartan.humphreys@wzb.eu">Macartan Humphreys</a>.</p>
+<p>The project is under active development. Feedback is welcome — contact <a href="mailto:vermon.washington@wzb.eu">Vermon Washington</a> or <a href="mailto:macartan.humphreys@wzb.eu">Macartan Humphreys</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -125,72 +141,65 @@
 <div class="section level2">
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
-<p>Replication materials live in the <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a>. Each paper has a folder under <code>papers/</code> with a <code>replication.yml</code> manifest, plus <code>data/</code>, <code>code/</code>, and optionally <code>artifacts/</code>.</p>
-<pre><code>Registry
-  └── papers/&lt;folder&gt;/
-        replication.yml
-        data/
-        code/
-        artifacts/   (optional precomputed outputs)
+<p>The <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a> indexes studies via lightweight stub files in <code>papers/&lt;folder&gt;.yml</code>. <strong>Folder-backed</strong> studies keep code, data, and artifacts in a dedicated study repository; <strong>package-backed</strong> studies keep them in an R package. <code>replicateEverything</code> reads the stub, loads the full <code>replication.yml</code> from the study repo or package, and runs the registered scripts.</p>
+<pre><code>Registry                         Study repo or package
+  papers/&lt;folder&gt;.yml  ───────►  replication.yml
+  index.csv                      data/  code/  artifacts/
               ↓
       replicateEverything
               ↓
       figures &amp; tables in your R session</code></pre>
-<p>The package reads <code>replication.yml</code>, downloads the listed data and scripts, sources the analysis functions, and returns typed result objects suitable for printing, saving, or display in a Shiny app.</p>
 <div class="section level3">
 <h3 id="registry-layout">Registry layout<a class="anchor" aria-label="anchor" href="#registry-layout"></a>
 </h3>
-<p>Every replication repository follows a standard structure:</p>
+<p>Each indexed paper has one stub file:</p>
 <pre><code>papers/
-  &lt;folder&gt;/
-    replication.yml
-    data/
-      fig_1.csv
-      tab_1.csv
-    code/
-      fig_1.R
-      tab_1.R
-    artifacts/          # optional
-      fig_1.png
-      tab_1.html
-      manifest.json</code></pre>
+  10.1177_00491241211036161.yml
+  10.1371_journal.pone.0278337.yml</code></pre>
+<p>Folder-backed study repositories follow:</p>
+<pre><code>replication.yml
+data/
+code/
+artifacts/
+tests/testthat/</code></pre>
+<p>Package-backed study packages follow the layout in <a href="#package-backed-replications">Package-backed replications</a> below.</p>
 <p>The <code>&lt;folder&gt;</code> name comes from the registry <code>index.csv</code> (for example <code>10.1177_00491241211036161</code> or <code>10.1017S0003055403000534</code>).</p>
 </div>
 <div class="section level3">
 <h3 id="example-replicationyml">Example <code>replication.yml</code>
 <a class="anchor" aria-label="anchor" href="#example-replicationyml"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Market Design and Moral Behavior</span></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="at">  </span><span class="fu">authors</span><span class="kw">:</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Bartling, Björn</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Fehr, Ernst</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="at">  </span><span class="fu">year</span><span class="kw">:</span><span class="at"> </span><span class="dv">2024</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> 10.1257/aer.20221688</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="at">  </span><span class="fu">journal</span><span class="kw">:</span><span class="at"> American Economic Review</span></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">replications</span><span class="kw">:</span></span>
-<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
-<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Figure 1</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example figure</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/fig_1.csv</span></span>
-<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/fig_1.R</span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="at">    </span><span class="fu">artifact</span><span class="kw">:</span><span class="at"> artifacts/fig_1.png</span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="at">    </span><span class="fu">dependencies</span><span class="kw">:</span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ggplot2</span></span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
-<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
-<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Table 1</span></span>
-<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example table</span></span>
-<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/tab_1.csv</span></span>
-<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
-<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_tab_1</span></span>
-<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a><span class="at">    </span><span class="fu">artifact</span><span class="kw">:</span><span class="at"> artifacts/tab_1.html</span></span>
-<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="at">    </span><span class="fu">dependencies</span><span class="kw">:</span></span>
-<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> dplyr</span></span>
-<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> gt</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Market Design and Moral Behavior</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="at">  </span><span class="fu">authors</span><span class="kw">:</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Bartling, Björn</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> Fehr, Ernst</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="at">  </span><span class="fu">year</span><span class="kw">:</span><span class="at"> </span><span class="dv">2024</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> 10.1257/aer.20221688</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="at">  </span><span class="fu">journal</span><span class="kw">:</span><span class="at"> American Economic Review</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">replications</span><span class="kw">:</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Figure 1</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example figure</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/fig_1.csv</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/fig_1.R</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="at">    </span><span class="fu">artifact</span><span class="kw">:</span><span class="at"> artifacts/fig_1.png</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="at">    </span><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ggplot2</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Table 1</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example table</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/tab_1.csv</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_tab_1</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="at">    </span><span class="fu">artifact</span><span class="kw">:</span><span class="at"> artifacts/tab_1.html</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="at">    </span><span class="fu">dependencies</span><span class="kw">:</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> dplyr</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> gt</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -200,7 +209,7 @@
 <div class="section level3">
 <h3 id="figures">Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">make_fig_1</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">data</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">group</span>, <span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_bar.html" class="external-link">geom_col</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -209,7 +218,7 @@
 <div class="section level3">
 <h3 id="tables">Tables<a class="anchor" aria-label="anchor" href="#tables"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">make_tab_1</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">data</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span><span class="va">data</span>, mean_value <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
@@ -224,7 +233,7 @@
 <h3 id="self-contained-scripts">Self-contained scripts<a class="anchor" aria-label="anchor" href="#self-contained-scripts"></a>
 </h3>
 <p>Scripts can also be run directly from the paper folder. Use <code><a href="reference/self_run.html">self_run()</a></code> at the bottom of a script so the package can source only the function definitions:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">sys.nframe</a></span><span class="op">(</span><span class="op">)</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="reference/self_run.html">self_run</a></span><span class="op">(</span><span class="va">make_fig_1</span>, <span class="st">"data/fig_1.csv"</span><span class="op">)</span></span>
 <span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
@@ -233,19 +242,65 @@
 </div>
 </div>
 <div class="section level2">
+<h2 id="folder-backed-replications">Folder-backed replications<a class="anchor" aria-label="anchor" href="#folder-backed-replications"></a>
+</h2>
+<p>Studies maintained as a <strong>simple Git repository</strong> (<code>code/</code>, <code>data/</code>, <code>artifacts/</code>) can be linked from the registry. Keep a stub in <code>papers/&lt;folder&gt;.yml</code> only:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> https://doi.org/10.1177/00491241211036161</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Bounding Causes of Effects With Mediators</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="at">  </span><span class="fu">materials</span><span class="kw">:</span><span class="at"> folder</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="at">  </span><span class="fu">study_repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1177-00491241211036161</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="at">  </span><span class="fu">study_folder</span><span class="kw">:</span><span class="at"> rep-10.1177-00491241211036161</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="at">  </span><span class="fu">study_ref</span><span class="kw">:</span><span class="at"> main</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="fu">repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1177-00491241211036161</span></span></code></pre></div>
+<p>The full <code>replications:</code> list lives in the study repo’s <code>replication.yml</code>. Display artifacts live in <code>artifacts/</code> (from <code><a href="reference/build_study_artifacts.html">build_study_artifacts()</a></code>).</p>
+<p><strong>From the study repository root:</strong></p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
+<span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span>,</span>
+<span>  replicateEverything.use_sibling_packages <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 1. Build artifacts/manifest.json</span></span>
+<span><span class="fu"><a href="reference/build_study_artifacts.html">build_study_artifacts</a></span><span class="op">(</span>location <span class="op">=</span> <span class="st">"."</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2. Run tests</span></span>
+<span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_dir.html" class="external-link">test_dir</a></span><span class="op">(</span><span class="st">"tests/testthat"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 3. Check + write registry/replication.yml and registry/index.csv</span></span>
+<span><span class="fu"><a href="reference/prepare_folder_paper.html">prepare_folder_paper</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">FALSE</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 4. Sync stub files into registry checkout (or copy manually)</span></span>
+<span><span class="fu"><a href="reference/sync_folder_paper.html">sync_folder_paper</a></span><span class="op">(</span><span class="st">"."</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># One-step alternative when registry is local:</span></span>
+<span><span class="co"># add_folder_paper(".", registry_root = "../registry")</span></span></code></pre></div>
+<p>See <code><a href="articles/folder-replication-checklist.html">vignette("folder-replication-checklist", package = "replicateEverything")</a></code> for the full workflow.</p>
+</div>
+<div class="section level2">
 <h2 id="package-backed-replications">Package-backed replications<a class="anchor" aria-label="anchor" href="#package-backed-replications"></a>
 </h2>
-<p>Studies maintained as standalone R packages can be linked from the registry. Keep a paper folder in the registry with a <code>replication.yml</code> that points to the package:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> https://doi.org/10.1371/journal.pone.0278337</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> </span><span class="st">"Public support for global vaccine sharing in the COVID-19 pandemic"</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="at">  </span><span class="fu">package</span><span class="kw">:</span><span class="at"> rep1371journalpone0278337</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="at">  </span><span class="fu">package_folder</span><span class="kw">:</span><span class="at"> rep-10.1371_journal.pone.0278337</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="at">  </span><span class="fu">package_repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1371_journal.pone.0278337</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="at">  </span><span class="fu">package_ref</span><span class="kw">:</span><span class="at"> main</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1371_journal.pone.0278337</span></span></code></pre></div>
+<p>Studies maintained as standalone R packages can be linked from the registry. Keep a stub file <code>papers/&lt;folder&gt;.yml</code> that points to the package (no materials in the registry):</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> https://doi.org/10.1371/journal.pone.0278337</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> </span><span class="st">"Public support for global vaccine sharing in the COVID-19 pandemic"</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="at">  </span><span class="fu">package</span><span class="kw">:</span><span class="at"> rep1371journalpone0278337</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="at">  </span><span class="fu">package_folder</span><span class="kw">:</span><span class="at"> rep-10.1371_journal.pone.0278337</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="at">  </span><span class="fu">package_repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1371_journal.pone.0278337</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="at">  </span><span class="fu">package_ref</span><span class="kw">:</span><span class="at"> main</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="fu">repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1371_journal.pone.0278337</span></span></code></pre></div>
+<p><code>replicateEverything</code> merges the full <code>replications:</code> list from the study package <code>replication.yml</code> when the registry stub omits it. Display artifacts live in the study package at <code>inst/report/artifacts/</code> (from <code>build_report()</code>).</p>
+<p>Validate and register a package-backed study:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/registry"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span><span class="st">"/path/to/rep_package"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/add_paper.html">add_paper</a></span><span class="op">(</span><span class="st">"/path/to/rep_package"</span>, full_replication <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p>See <code><a href="articles/package-replication-checklist.html">vignette("package-replication-checklist", package = "replicateEverything")</a></code> for requirements.</p>
 <p><strong>Local development (monorepo):</strong> place the study package as a sibling folder next to <code>registry/</code>. Enable sibling resolution with:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.use_sibling_packages <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.replication_packages_root <span class="op">=</span> <span class="st">"/path/to/monorepo"</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Published packages:</strong> set <code>package_repo</code> (and top-level <code>repo</code>) to the GitHub slug. The package installs via <code><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">remotes::install_github()</a></code> when no local sibling is found.</p>
@@ -255,7 +310,7 @@
 <code>paper.package_path</code> — absolute or relative path to the package root</li>
 <li><code>options(replicateEverything.replication_packages = list(pkgname = "/path"))</code></li>
 </ul>
-<p>Linked study packages should export: <code><a href="reference/list_replications.html">list_replications()</a></code>, <code>run_replication(id, install_deps = FALSE)</code>, and <code>load_artifact(id)</code>.</p>
+<p>Linked study packages should export: <code><a href="reference/list_replications.html">list_replications()</a></code>, <code>replication_meta()</code>, <code>run_replication(id)</code>, <code>load_artifact(id)</code>, <code>artifact_file(id)</code>, <code>get_code(id)</code>, and <code>build_report()</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="api-overview">API overview<a class="anchor" aria-label="anchor" href="#api-overview"></a>
@@ -323,6 +378,38 @@
 </td>
 </tr>
 <tr>
+<td>Build folder study artifacts</td>
+<td><code><a href="reference/build_study_artifacts.html">build_study_artifacts()</a></code></td>
+</tr>
+<tr>
+<td>Prepare folder study</td>
+<td>
+<code><a href="reference/prepare_folder_paper.html">prepare_folder_paper()</a></code>, <code><a href="reference/write_folder_registry_stub.html">write_folder_registry_stub()</a></code>
+</td>
+</tr>
+<tr>
+<td>Sync folder study to registry</td>
+<td>
+<code><a href="reference/sync_folder_paper.html">sync_folder_paper()</a></code>, <code><a href="reference/add_folder_paper.html">add_folder_paper()</a></code>
+</td>
+</tr>
+<tr>
+<td>Validate folder study</td>
+<td><code><a href="reference/check_folder_replication.html">check_folder_replication()</a></code></td>
+</tr>
+<tr>
+<td>Validate package study</td>
+<td>
+<code><a href="reference/check_package_replication.html">check_package_replication()</a></code>, <code><a href="reference/add_paper.html">add_paper()</a></code>
+</td>
+</tr>
+<tr>
+<td>Shiny demo</td>
+<td>
+<code><a href="reference/run_shiny_app.html">run_shiny_app()</a></code>, <code><a href="reference/save_local_shiny.html">save_local_shiny()</a></code>
+</td>
+</tr>
+<tr>
 <td>Contribute</td>
 <td><code><a href="reference/create_replication_template.html">create_replication_template()</a></code></td>
 </tr>
@@ -333,7 +420,7 @@
 <h3 id="local-registry-development">Local registry development<a class="anchor" aria-label="anchor" href="#local-registry-development"></a>
 </h3>
 <p>Point the package at a local clone of the registry:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/registry"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"/path/to/registry/index.csv"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -357,23 +444,35 @@
 <li>
 <strong>Submit to the registry</strong> — clone <a href="https://github.com/replicate-anything/registry" class="external-link">replicate-anything/registry</a>, move your paper folder into <code>papers/</code>, and open a pull request</li>
 </ol>
-<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/registry</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">mv</span> 10.1177_00491241211036161 registry/papers/</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="bu">cd</span> registry</span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">git</span> add .</span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Add replication for 10.1177/00491241211036161"</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="fu">git</span> push</span></code></pre></div>
+<p>For <strong>folder-backed</strong> studies, run <code><a href="reference/prepare_folder_paper.html">prepare_folder_paper()</a></code> to build artifacts, validate, and write <code>registry/replication.yml</code> + <code>registry/index.csv</code> in the study repo; then <code><a href="reference/sync_folder_paper.html">sync_folder_paper()</a></code> or copy those files into the registry.</p>
+<p>For <strong>package-backed</strong> studies, use <code><a href="reference/add_paper.html">add_paper()</a></code> after <code><a href="reference/check_package_replication.html">check_package_replication()</a></code> passes instead of copying code and data into the registry.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/registry</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">mv</span> 10.1177_00491241211036161 registry/papers/</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="bu">cd</span> registry</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="fu">git</span> add .</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Add replication for 10.1177/00491241211036161"</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="fu">git</span> push</span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="developer-workflow">Developer workflow<a class="anchor" aria-label="anchor" href="#developer-workflow"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/replicateEverything</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="bu">cd</span> replicateEverything</span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/replicateEverything</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="bu">cd</span> replicateEverything</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">check</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Documentation site: <a href="https://replicate-anything.github.io/replicateEverything/">replicate-anything.github.io/replicateEverything</a></p>
+</div>
+<div class="section level2">
+<h2 id="shiny-demo-app">Shiny demo app<a class="anchor" aria-label="anchor" href="#shiny-demo-app"></a>
+</h2>
+<p>The package bundles a Shiny demo in <code>inst/shiny/</code>. Run it interactively or copy it for Shiny Server:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/run_shiny_app.html">run_shiny_app</a></span><span class="op">(</span><span class="op">)</span>                              <span class="co"># run from installed package</span></span>
+<span><span class="fu"><a href="reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/path/to/shiny/replicate"</span><span class="op">)</span> <span class="co"># materialize app.R + www/ for serving</span></span></code></pre></div>
+<p>See <code><a href="articles/shiny-app.html">vignette("shiny-app", package = "replicateEverything")</a></code> for server update workflows and <code>local.R</code> configuration.</p>
 </div>
 <div class="section level2">
 <h2 id="links">Links<a class="anchor" aria-label="anchor" href="#links"></a>

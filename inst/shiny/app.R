@@ -2,11 +2,11 @@ library(shiny)
 library(bslib)
 library(htmltools)
 
-REPLICATE_EVERYTHING_GITHUB <- "replicate-anything/replicateEverything"
-REPLICATE_EVERYTHING_REF <- "main"
 REGISTRY_INDEX_URL <- "https://raw.githubusercontent.com/replicate-anything/registry/main/index.csv"
 REGISTRY_GITHUB <- "https://github.com/replicate-anything/registry"
 ORG_GITHUB <- "https://github.com/orgs/replicate-anything/repositories"
+PKGDOCS_URL <- "https://replicate-anything.github.io/replicateEverything/index.html"
+LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
 
 registry_stub_yaml_url <- function(folder, repo = DEFAULT_REGISTRY_REPO) {
@@ -109,118 +109,17 @@ configure_registry_source <- function() {
 
 configure_registry_source()
 
-ensure_remotes <- function() {
-  if (!requireNamespace("remotes", quietly = TRUE)) {
-    install.packages("remotes")
-  }
-}
-
 using_local_replicate_everything <- function() {
   isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))
 }
 
-replicate_everything_needs_update <- function() {
-  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-    return(TRUE)
-  }
-  if (using_local_replicate_everything()) {
-    return(FALSE)
-  }
-  if (isFALSE(getOption("replicate_shiny.auto_update_replicate_everything", TRUE))) {
-    return(FALSE)
-  }
-  ns <- asNamespace("replicateEverything")
-  if (!exists("github_package_outdated", envir = ns, inherits = FALSE)) {
-    return(TRUE)
-  }
-  tryCatch(
-    get("github_package_outdated", envir = ns)(
-      "replicateEverything",
-      REPLICATE_EVERYTHING_GITHUB,
-      REPLICATE_EVERYTHING_REF
-    ),
-    error = function(e) {
-      warning(
-        "Could not check replicateEverything version: ",
-        conditionMessage(e),
-        call. = FALSE
-      )
-      FALSE
-    }
-  )
-}
-
-install_replicate_everything <- function() {
-  ensure_remotes()
-  spec <- paste0(REPLICATE_EVERYTHING_GITHUB, "@", REPLICATE_EVERYTHING_REF)
-  message("Installing replicateEverything from GitHub (", spec, ") ...")
-  remotes::install_github(
-    spec,
-    upgrade = "always",
-    quiet = TRUE,
-    args = "--no-test-load"
-  )
-}
-
-try_install_replicate_everything <- function(reason = "update") {
-  tryCatch(
-    {
-      install_replicate_everything()
-      TRUE
-    },
-    error = function(e) {
-      warning(
-        "Could not install replicateEverything (", reason, "): ",
-        conditionMessage(e),
-        call. = FALSE
-      )
-      FALSE
-    }
-  )
-}
-
 ensure_replicate_everything <- function() {
-  if (isTRUE(getOption("replicate_shiny.bundled_with_package", FALSE))) {
-    if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-      stop("replicateEverything could not be loaded.", call. = FALSE)
-    }
-    return(invisible(TRUE))
-  }
-
-  if (using_local_replicate_everything()) {
-    if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-      stop("Local replicateEverything could not be loaded.", call. = FALSE)
-    }
-    return(invisible(TRUE))
-  }
-
-  if (replicate_everything_needs_update()) {
-    ok <- try_install_replicate_everything("version check")
-    if (!ok && !requireNamespace("replicateEverything", quietly = TRUE)) {
-      stop(
-        "replicateEverything is not installed and auto-install from GitHub failed.",
-        call. = FALSE
-      )
-    }
-  }
-
   if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-    stop("Could not load replicateEverything.", call. = FALSE)
-  }
-
-  ns <- asNamespace("replicateEverything")
-  list_fn <- get("list_replications", envir = ns)
-  if (!exists("load_artifact", envir = ns, inherits = FALSE) ||
-      !exists("format_for_display", envir = ns, inherits = FALSE) ||
-      !("folder" %in% names(formals(list_fn)))) {
-    ok <- try_install_replicate_everything("missing exports")
-    if (!ok && !requireNamespace("replicateEverything", quietly = TRUE)) {
-      stop("Could not load replicateEverything.", call. = FALSE)
-    }
-  }
-
-  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-    stop("Could not load replicateEverything.", call. = FALSE)
+    stop(
+      "replicateEverything is not installed. Install from GitHub, then restart:\n",
+      "  remotes::install_github('replicate-anything/replicateEverything')",
+      call. = FALSE
+    )
   }
   invisible(TRUE)
 }
@@ -1838,6 +1737,35 @@ ui <- tagList(
   tabPanel(
     "Contribute",
     contribute_tab_ui()
+  ),
+  tabPanel(
+    "About",
+    fluidPage(
+      class = "px-3 py-2",
+      h4("replicateEverything"),
+      p(
+        "This demo app is bundled with the ",
+        tags$a(href = PKGDOCS_URL, "replicateEverything", target = "_blank"),
+        " R package. Browse studies, display precomputed artifacts, and run live replications."
+      ),
+      tags$ul(
+        tags$li(tags$a(href = LIVE_DEMO_URL, "Live demo (this app)", target = "_blank")),
+        tags$li(tags$a(href = PKGDOCS_URL, "Package documentation", target = "_blank")),
+        tags$li(tags$a(href = REGISTRY_GITHUB, "Replication registry", target = "_blank")),
+        tags$li(tags$a(href = ORG_GITHUB, "Study repositories", target = "_blank"))
+      ),
+      tags$hr(),
+      p(
+        class = "text-muted",
+        "Run interactively with ",
+        tags$code("replicateEverything::run_shiny_app()"),
+        " or deploy with ",
+        tags$code("save_local_shiny()"),
+        ". See the ",
+        tags$em("Shiny demo app"),
+        " vignette for details."
+      )
+    )
   )
   )
 )

@@ -7,25 +7,27 @@
 
 **Tools to discover, run, and contribute computational replications of empirical research papers.**
 
-`replicateEverything` connects to a public [replication registry](https://github.com/replicate-anything/registry), retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The goal is to make research **transparent, modular, and easily reproducible**.
+`replicateEverything` connects to a public [replication registry](https://github.com/replicate-anything/registry), retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The package also bundles a **Shiny demo app** for browsing studies and running replications interactively — try the [live demo](https://shiny2.wzb.eu/ipi/replicate/).
 
 ## Key features
 
 - **Discovery** — search the registry, look up papers by DOI, and inspect available replications
 - **One-line replication** — run a single figure or table, or reproduce an entire paper with `replicate_paper()`
 - **Registry-backed materials** — fetch data and code from GitHub without manual downloads
-- **Package-backed studies** — link standalone R packages as replication backends (local monorepo or GitHub install)
+- **Folder-backed studies** — dedicated study repositories with `code/`, `data/`, and `artifacts/`
+- **Package-backed studies** — standalone R packages linked from lightweight registry stubs
 - **Artifacts** — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display
 - **Display pipeline** — optional `format_*` steps turn analysis objects into HTML tables and ggplot figures
+- **Shiny demo** — [live app](https://shiny2.wzb.eu/ipi/replicate/); `run_shiny_app()` locally; `save_local_shiny()` to deploy on Shiny Server
 - **Contributor tooling** — scaffold a new replication folder with `create_replication_template()`
 
 ## Project status
 
-The inspiration for this package came from an idea by [Macartan Humphreys](https://macartan.github.io), Director of the [Institutions and Political Inequality](https://wzb-ipi.github.io/) Research Group at [WZB](https://www.wzb.eu/de), in a [2024 talk](https://macartan.github.io/slides/2024_standards.html#/reproduction-out-of-the-box-2) to a Lab² audience. The project is under active development. Feedback is welcome — contact [Vermon Washington](mailto:vermon.washington@wzb.eu) or [Macartan Humphreys](mailto:macartan.humphreys@wzb.eu).
+The project is under active development. Feedback is welcome — contact [Vermon Washington](mailto:vermon.washington@wzb.eu) or [Macartan Humphreys](mailto:macartan.humphreys@wzb.eu).
 
 ## Installation
 
-Once accepted on CRAN, install with `install.packages("replicateEverything")`. Until then, install from GitHub with `remotes` or `devtools`:
+Install from GitHub with `remotes` or `devtools`:
 
 ```r
 remotes::install_github("replicate-anything/replicateEverything")
@@ -284,6 +286,7 @@ and `build_report()`.
 | Sync folder study to registry | `sync_folder_paper()`, `add_folder_paper()` |
 | Validate folder study | `check_folder_replication()` |
 | Validate package study | `check_package_replication()`, `add_paper()` |
+| Shiny demo | `run_shiny_app()`, `save_local_shiny()` |
 | Contribute | `create_replication_template()` |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN dependencies automatically.
@@ -335,7 +338,7 @@ Documentation site: [replicate-anything.github.io/replicateEverything](https://r
 
 ## Shiny demo app
 
-The package bundles a Shiny demo in `inst/shiny/`. Run it interactively or copy it for Shiny Server:
+Try the [live demo](https://shiny2.wzb.eu/ipi/replicate/) at WZB, or run the bundled app from an installed package:
 
 ```r
 library(replicateEverything)

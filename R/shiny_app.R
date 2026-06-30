@@ -91,7 +91,8 @@ save_local_shiny <- function(
 #'
 #' Launches the demo from `inst/shiny` inside the installed package. Does not
 #' auto-update `replicateEverything` from GitHub (the running session already
-#' uses the installed package).
+#' uses the installed package). A live instance is hosted at
+#' \url{https://shiny2.wzb.eu/ipi/replicate/}.
 #'
 #' @param ... Passed to [shiny::runApp()].
 #' @return The value returned by [shiny::runApp()].
@@ -116,9 +117,6 @@ run_shiny_app <- function(...) {
     )
   }
 
-  options(
-    replicate_shiny.auto_update_replicate_everything = FALSE,
-    replicate_shiny.bundled_with_package = TRUE
-  )
+  options(replicate_shiny.auto_update_replicate_everything = FALSE)
   shiny::runApp(app_dir, ...)
 }

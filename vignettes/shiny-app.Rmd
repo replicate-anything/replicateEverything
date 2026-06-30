@@ -12,8 +12,9 @@ knitr::opts_chunk$set(eval = FALSE)
 ```
 
 The **replicateEverything** package includes a Shiny demo in `inst/shiny/`
-(`app.R` plus `www/` assets). You can run it directly from the installed
-package, or copy it into a Shiny Server directory.
+(`app.R` plus `www/` assets). A live instance runs at
+<https://shiny2.wzb.eu/ipi/replicate/>. You can also run the app from an
+installed package, or copy it into a Shiny Server directory.
 
 ## Install
 

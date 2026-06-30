@@ -15,7 +15,8 @@ The value returned by \code{\link[shiny:runApp]{shiny::runApp()}}.
 \description{
 Launches the demo from \code{inst/shiny} inside the installed package. Does not
 auto-update \code{replicateEverything} from GitHub (the running session already
-uses the installed package).
+uses the installed package). A live instance is hosted at
+\url{https://shiny2.wzb.eu/ipi/replicate/}.
 }
 \examples{
 \dontrun{

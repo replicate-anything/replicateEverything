@@ -24,6 +24,8 @@ A typical workflow using the package is:
 \item Inspect available replications using \code{list_replications()}.
 \item Run a single replication using \code{run_replication()}.
 \item Reproduce all results from a paper using \code{replicate_paper()}.
+\item Launch the bundled Shiny demo with \code{run_shiny_app()}, or deploy it
+with \code{save_local_shiny()}.
 }
 }
 
@@ -53,6 +55,20 @@ run_replication("10.1177/00491241211036161","fig_1")
 Replicate an entire paper:
 
 replicate_paper("10.1177/00491241211036161")
+
+Launch the Shiny demo:
+
+run_shiny_app()
+}
+
+\section{Shiny demo}{
+
+
+A live instance runs at \url{https://shiny2.wzb.eu/ipi/replicate/}. The
+package ships a demo app in \code{inst/shiny/}. Use
+\code{\link[=run_shiny_app]{run_shiny_app()}} to launch it from an installed
+build, or \code{\link[=save_local_shiny]{save_local_shiny()}} to copy
+\code{app.R} and \code{www/} into a Shiny Server directory.
 }
 
 \section{Registry}{
@@ -76,6 +92,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Vermon Washington \email{vermon.washington@wzb.eu}
   \item Macartan Humphreys \email{macartan.humphreys@wzb.eu}
   \item Cord Masche \email{cord.masche@wzb.eu}
 }
