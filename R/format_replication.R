@@ -55,7 +55,9 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
   }
 
   tmp_code <- resolve_registry_file(code_path, ctx)
-  source_replication_functions(tmp_code, env, install_deps = install_deps)
+  if (!grepl("\\.do$", code_path, ignore.case = TRUE)) {
+    source_replication_functions(tmp_code, env, install_deps = install_deps)
+  }
 
   if (!include_format || !format_specified(rep)) {
     return(invisible(env))

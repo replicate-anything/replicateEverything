@@ -10,6 +10,14 @@ infer_result_format <- function(object, type) {
     return("ggplot")
   }
 
+  if (inherits(object, "stata_replication_result")) {
+    path <- object$output_path %||% object$smcl_path %||% NULL
+    if (!is.null(path) && stata_output_is_image(path)) {
+      return("png")
+    }
+    return("stata_output")
+  }
+
   if (is.list(object) && !is.data.frame(object)) {
     return("rds")
   }
@@ -45,8 +53,22 @@ infer_result_format <- function(object, type) {
 #'
 #' @export
 replication_object <- function(x) {
+  if (inherits(x, "stata_replication_result")) {
+    path <- x$output_path %||% x$smcl_path %||% NULL
+    if (!is.null(path) && stata_output_is_image(path)) {
+      return(path)
+    }
+    return(x)
+  }
   if (is.list(x) && !is.null(x$object)) {
-    return(x$object)
+    obj <- x$object
+    if (inherits(obj, "stata_replication_result")) {
+      path <- obj$output_path %||% obj$smcl_path %||% NULL
+      if (!is.null(path) && stata_output_is_image(path)) {
+        return(path)
+      }
+    }
+    return(obj)
   }
   x
 }

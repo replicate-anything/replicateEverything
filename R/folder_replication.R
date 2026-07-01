@@ -12,6 +12,170 @@ NULL
 #' @keywords internal
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
 
+#' Derive the standard study repo folder name from a DOI
+#'
+#' @param doi Character DOI.
+#' @return Character folder name such as \code{rep-10.1596-1813-9450-10626}.
+#' @keywords internal
+study_folder_from_doi <- function(doi) {
+  paste0("rep-", gsub("/", "-", normalize_doi(doi), fixed = TRUE))
+}
+
+#' Walk up directory tree until a relative path exists
+#'
+#' @param start Starting directory.
+#' @param relative Path relative to each candidate root.
+#' @param max_depth Maximum levels to ascend.
+#' @return Normalized directory containing \code{relative}, or \code{NULL}.
+#' @keywords internal
+walk_up_for_relative <- function(start, relative, max_depth = 12L) {
+  if (is.null(start) || length(start) != 1L || is.na(start) || !nzchar(start)) {
+    return(NULL)
+  }
+  dir <- tryCatch(
+    normalizePath(start, winslash = "/", mustWork = FALSE),
+    error = function(e) NULL
+  )
+  if (is.null(dir) || !dir.exists(dir)) {
+    return(NULL)
+  }
+  for (i in seq_len(max_depth)) {
+    candidate <- file.path(dir, relative)
+    if (file.exists(candidate)) {
+      return(dir)
+    }
+    parent <- normalizePath(file.path(dir, ".."), winslash = "/", mustWork = FALSE)
+    if (identical(parent, dir)) {
+      break
+    }
+    dir <- parent
+  }
+  NULL
+}
+
+#' Detect a local replicate-anything monorepo root
+#'
+#' Looks for \code{registry/index.csv} next to the installed or loaded
+#' \pkg{replicateEverything} package, or uses
+#' \code{getOption("replicateEverything.study_folders_root")}.
+#'
+#' @return Normalized path or \code{NULL}.
+#' @keywords internal
+auto_detect_monorepo_root <- function() {
+  study_root <- getOption("replicateEverything.study_folders_root", NULL)
+  if (!is.null(study_root) && dir.exists(study_root)) {
+    return(normalizePath(study_root, winslash = "/", mustWork = FALSE))
+  }
+
+  pkg_root <- tryCatch(
+    getNamespaceInfo("replicateEverything", "path"),
+    error = function(e) ""
+  )
+  if (!nzchar(pkg_root)) {
+    pkg_root <- tryCatch(system.file(package = "replicateEverything"), error = function(e) "")
+  }
+
+  starts <- unique(c(getwd(), pkg_root, if (nzchar(pkg_root)) dirname(pkg_root)))
+  for (start in starts) {
+    found <- walk_up_for_relative(start, "registry/index.csv")
+    if (!is.null(found)) {
+      return(found)
+    }
+  }
+
+  NULL
+}
+
+#' Resolve a local folder-backed study directory for a DOI
+#'
+#' @param doi Character DOI.
+#' @return Normalized study path or \code{NULL}.
+#' @keywords internal
+resolve_local_study_folder <- function(doi) {
+  study_name <- study_folder_from_doi(doi)
+  monorepo <- sibling_monorepo_root()
+  if (!is.null(monorepo)) {
+    candidate <- file.path(monorepo, study_name)
+    if (dir.exists(candidate) && file.exists(file.path(candidate, "replication.yml"))) {
+      return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+    }
+  }
+
+  pkg_root <- tryCatch(
+    getNamespaceInfo("replicateEverything", "path"),
+    error = function(e) ""
+  )
+  starts <- unique(c(getwd(), pkg_root))
+  for (start in starts) {
+    found <- walk_up_for_relative(start, file.path(study_name, "replication.yml"))
+    if (!is.null(found)) {
+      return(normalizePath(file.path(found, study_name), winslash = "/", mustWork = FALSE))
+    }
+  }
+
+  NULL
+}
+
+#' Configure options for a local replicate-anything monorepo
+#'
+#' Sets \code{replicateEverything.registry_root},
+#' \code{replicateEverything.study_folders_root}, and enables sibling study
+#' discovery. Call once per session when developing unpublished studies locally.
+#'
+#' @param root Monorepo root containing \code{registry/} and \code{rep-*} study
+#'   folders. When \code{NULL}, attempts \code{auto_detect_monorepo_root()}.
+#' @return Invisibly, the monorepo root path.
+#' @export
+configure_local_monorepo <- function(root = NULL) {
+  if (is.null(root) || !dir.exists(root)) {
+    root <- auto_detect_monorepo_root()
+  }
+  if (is.null(root) || !dir.exists(root)) {
+    stop(
+      "Could not find a local monorepo (expected registry/index.csv). ",
+      "Pass root = to your replicate_everything checkout, e.g.\n",
+      "  configure_local_monorepo(\"c:/path/to/replicate_everything\")",
+      call. = FALSE
+    )
+  }
+  root <- normalizePath(root, winslash = "/", mustWork = FALSE)
+  registry_root <- file.path(root, "registry")
+  if (!file.exists(file.path(registry_root, "index.csv"))) {
+    stop("No registry/index.csv under ", root, call. = FALSE)
+  }
+  options(
+    replicateEverything.registry_root = registry_root,
+    replicateEverything.study_folders_root = root,
+    replicateEverything.use_sibling_packages = TRUE
+  )
+  invisible(root)
+}
+
+#' Detect a local registry checkout
+#'
+#' Uses \code{getOption("replicateEverything.registry_root")} or a sibling
+#' \code{registry/} folder in an auto-detected monorepo.
+#'
+#' @return Normalized path or \code{NULL}.
+#' @keywords internal
+auto_detect_registry_root <- function() {
+  registry_root <- getOption("replicateEverything.registry_root", NULL)
+  if (!is.null(registry_root) && dir.exists(registry_root)) {
+    return(normalizePath(registry_root, winslash = "/", mustWork = FALSE))
+  }
+
+  monorepo <- auto_detect_monorepo_root()
+  if (!is.null(monorepo)) {
+    candidate <- file.path(monorepo, "registry")
+    if (dir.exists(candidate)) {
+      return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+    }
+  }
+
+  NULL
+}
+
+
 #' Whether replication metadata refers to a folder-backed external study repo
 #'
 #' @param meta Parsed replication.yml contents.
@@ -162,6 +326,10 @@ study_folder_candidates <- function(meta, ctx = NULL) {
   if (nzchar(repo_slug)) {
     derived <- c(derived, basename(repo_slug))
   }
+  paper_doi <- meta$paper$doi %||% NULL
+  if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
+    derived <- c(derived, study_folder_from_doi(as.character(paper_doi[[1]])))
+  }
 
   unique(c(explicit, derived))
 }
@@ -267,6 +435,9 @@ registry_paper_yaml_url <- function(
 read_registry_stub_yaml <- function(folder, registry_root = NULL) {
   if (is.null(registry_root)) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
+  }
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    registry_root <- auto_detect_registry_root()
   }
   if (!is.null(registry_root)) {
     path <- registry_paper_yaml_path(registry_root, folder)

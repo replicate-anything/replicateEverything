@@ -1,5 +1,4 @@
 .Rproj.user
-.Rproj.user
 .Rhistory
 .RData
 .DS_Store
@@ -9,3 +8,4 @@ docs
 Rplots.pdf
 /doc/
 /Meta/
+*.log

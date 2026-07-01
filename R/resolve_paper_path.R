@@ -53,6 +53,9 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
   }
 
   registry_root <- getOption("replicateEverything.registry_root", NULL)
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    registry_root <- auto_detect_registry_root()
+  }
   registry_stub_path <- if (!is.null(registry_root)) {
     registry_paper_yaml_path(registry_root, folder)
   } else {
@@ -98,12 +101,16 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
       "/"
     )
   } else {
-    local_root <- NULL
+    local_root <- resolve_local_study_folder(doi)
     base_url <- paste0(
       "https://raw.githubusercontent.com/",
       DEFAULT_REGISTRY_REPO,
       "/main/papers/"
     )
+  }
+
+  if (is.null(local_root)) {
+    local_root <- resolve_local_study_folder(doi)
   }
 
   list(

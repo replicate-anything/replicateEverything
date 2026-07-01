@@ -48,9 +48,37 @@ get_code <- function(doi, what, repo = NULL, folder = NULL) {
   }
 
   lines <- read_code_file(rep$code)
+
+  if (is_stata_replication(rep, meta$paper)) {
+    stata_paths <- rep$stata_source %||% rep$stata_sources %||% NULL
+    if (!is.null(stata_paths)) {
+      stata_paths <- as.character(unlist(stata_paths, use.names = FALSE))
+      stata_paths <- stata_paths[nzchar(stata_paths)]
+      for (stata_path in stata_paths) {
+        src_lines <- read_code_file(stata_path)
+        if (length(src_lines)) {
+          lines <- c(
+            lines,
+            "",
+            paste0("* --- ", stata_path, " ---"),
+            src_lines
+          )
+        }
+      }
+    }
+  }
+
   fmt_path <- format_script_path(rep)
   if (!is.null(fmt_path) && fmt_path != rep$code) {
-    lines <- c(lines, "", read_code_file(fmt_path))
+    fmt_lines <- read_code_file(fmt_path)
+    if (length(fmt_lines)) {
+      lines <- c(
+        lines,
+        "",
+        paste0("* --- ", fmt_path, " (R display helper) ---"),
+        fmt_lines
+      )
+    }
   }
   lines
 }

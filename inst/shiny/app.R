@@ -1099,7 +1099,7 @@ display_object <- function(doi, what, obj, install_deps = FALSE, folder = NULL, 
   if (is.character(obj) && length(obj) == 1 && nzchar(obj) && file.exists(obj)) {
     return(obj)
   }
-  if (is.character(obj) && length(obj) == 1 && grepl("<table|<html|<!DOCTYPE", obj, ignore.case = TRUE)) {
+  if (is.character(obj) && length(obj) == 1 && grepl("<table|<html|<!DOCTYPE|<pre", obj, ignore.case = TRUE)) {
     return(obj)
   }
   analysis <- if (is.list(obj) && !is.null(obj$object)) {
@@ -1135,8 +1135,12 @@ as_table_ui <- function(result) {
     result
   }
 
-  if (is.character(obj) && length(obj) == 1 && grepl("<table", obj, ignore.case = TRUE)) {
-    html <- replicate_fn("normalize_html_table", obj)
+  if (is.character(obj) && length(obj) == 1 && grepl("<table|<pre", obj, ignore.case = TRUE)) {
+    html <- if (grepl("<table", obj, ignore.case = TRUE)) {
+      replicate_fn("normalize_html_table", obj)
+    } else {
+      obj
+    }
     return(tags$div(
       class = "replication-table table-responsive",
       HTML(html)
@@ -1431,10 +1435,11 @@ code_copy_icon_svg <- function() {
   ))
 }
 
-code_block_ui <- function(code_text, block_id, button_id, title = NULL) {
+code_block_ui <- function(code_text, block_id, button_id, title = NULL, language = "r") {
   if (is.null(code_text) || !nzchar(code_text)) {
     return(NULL)
   }
+  lang_class <- paste0("language-", language)
   tags$div(
     class = "replication-code-wrap",
     if (!is.null(title) && nzchar(title)) {
@@ -1453,7 +1458,7 @@ code_block_ui <- function(code_text, block_id, button_id, title = NULL) {
       ),
       tags$pre(
         tags$code(
-          class = "language-r",
+          class = lang_class,
           id = block_id,
           code_text
         )
@@ -1462,7 +1467,7 @@ code_block_ui <- function(code_text, block_id, button_id, title = NULL) {
   )
 }
 
-code_panel_ui <- function(simple_code, full_code = NULL) {
+code_panel_ui <- function(simple_code, full_code = NULL, language = "r") {
   if ((is.null(simple_code) || !nzchar(simple_code)) &&
       (is.null(full_code) || !nzchar(full_code))) {
     return(helpText("Select a table or figure to view code."))
@@ -1473,14 +1478,16 @@ code_panel_ui <- function(simple_code, full_code = NULL) {
       simple_code,
       "replication_simple_code_block",
       "copy_simple_code_btn",
-      "One-line replication"
+      "One-line replication",
+      language = language
     ),
     if (!is.null(full_code) && nzchar(full_code)) {
       code_block_ui(
         full_code,
         "replication_full_code_block",
         "copy_full_code_btn",
-        "Full replication code"
+        "Full replication code",
+        language = language
       )
     }
   )
@@ -1495,6 +1502,7 @@ ui <- tagList(
     ),
     tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"),
     tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/r.min.js"),
+    tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/stata.min.js"),
     tags$script(HTML("
       function copyReplicationCode(elementId, buttonId) {
         var el = document.getElementById(elementId);
@@ -1525,7 +1533,7 @@ ui <- tagList(
         });
       }
       Shiny.addCustomMessageHandler('highlightCode', function(msg) {
-        document.querySelectorAll('.replication-code-block code.language-r').forEach(function(el) {
+        document.querySelectorAll('.replication-code-block code[class*=language-]').forEach(function(el) {
           if (window.hljs) hljs.highlightElement(el);
         });
       });
@@ -2279,7 +2287,17 @@ server <- function(input, output, session) {
         "folder-backed and registry studies load scripts from the study or registry repo."
       ))
     }
-    code_panel_ui(simple_code, full_code)
+    code_lang <- tryCatch(
+      replicate_fn(
+        "replication_code_language_for",
+        state$doi,
+        state$selected_replication,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      ),
+      error = function(e) "r"
+    )
+    code_panel_ui(simple_code, full_code, language = code_lang)
   })
 
   observeEvent(list(state$selected_replication, input$result_tabs), {

@@ -9,6 +9,7 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 # --- Shiny Server example (uncomment and edit) ---
 # registry_root <- "/srv/registry"
 # packages_root <- NULL
+# options(replicateEverything.stata_executable = "/usr/local/stata17/stata-mp")
 
 if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
   options(
@@ -28,6 +29,7 @@ options(
 if (!is.null(packages_root) && dir.exists(packages_root)) {
   options(
     replicateEverything.replication_packages_root = packages_root,
+    replicateEverything.study_folders_root = packages_root,
     replicateEverything.use_sibling_packages = TRUE
   )
 }

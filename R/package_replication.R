@@ -50,7 +50,8 @@ package_repo_ref <- function(meta) {
 #' @keywords internal
 sibling_packages_enabled <- function() {
   isTRUE(getOption("replicateEverything.use_sibling_packages", FALSE)) ||
-    isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))
+    isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE)) ||
+    !is.null(auto_detect_monorepo_root())
 }
 
 #' Read yaml from an HTTP(S) URL without writing a temp file
@@ -647,10 +648,10 @@ package_desc_matches <- function(path, pkg_name) {
 #' @keywords internal
 sibling_monorepo_root <- function() {
   registry_root <- getOption("replicateEverything.registry_root", NULL)
-  if (is.null(registry_root) || !dir.exists(registry_root)) {
-    return(NULL)
+  if (!is.null(registry_root) && dir.exists(registry_root)) {
+    return(normalizePath(file.path(registry_root, ".."), winslash = "/", mustWork = FALSE))
   }
-  normalizePath(file.path(registry_root, ".."), winslash = "/", mustWork = FALSE)
+  auto_detect_monorepo_root()
 }
 
 #' SHA recorded for a package installed from GitHub

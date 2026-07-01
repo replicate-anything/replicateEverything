@@ -51,7 +51,15 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   ctx <- paper_context(doi, repo = repo, folder = folder)
   meta <- NULL
 
+  registry_root <- getOption("replicateEverything.registry_root", NULL)
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    registry_root <- auto_detect_registry_root()
+  }
+
   stub_path <- ctx$registry_stub_path %||% NULL
+  if (is.null(stub_path) && !is.null(registry_root)) {
+    stub_path <- registry_paper_yaml_path(registry_root, ctx$folder)
+  }
   if (!is.null(stub_path) && file.exists(stub_path)) {
     meta <- tryCatch(yaml::read_yaml(stub_path), error = function(e) NULL)
   }
@@ -83,6 +91,27 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   }
 
   if (is.null(meta)) {
+    monorepo <- sibling_monorepo_root()
+    if (!is.null(monorepo)) {
+      study_dir <- file.path(monorepo, study_folder_from_doi(doi))
+      local_yml <- file.path(study_dir, "replication.yml")
+      if (file.exists(local_yml)) {
+        meta <- yaml::read_yaml(local_yml)
+      }
+    }
+  }
+
+  if (is.null(meta)) {
+    study_dir <- resolve_local_study_folder(doi)
+    if (!is.null(study_dir)) {
+      local_yml <- file.path(study_dir, "replication.yml")
+      if (file.exists(local_yml)) {
+        meta <- yaml::read_yaml(local_yml)
+      }
+    }
+  }
+
+  if (is.null(meta)) {
     urls <- unique(c(
       paste0(ctx$base_url, "replication.yml"),
       paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/replication.yml"),
@@ -97,7 +126,16 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   }
 
   if (is.null(meta)) {
-    stop("Could not load replication.yml for ", doi, call. = FALSE)
+    stop(
+      "Could not load replication.yml for ", doi, ".\n",
+      "This study is not on the remote registry yet. From your monorepo run:\n",
+      "  devtools::load_all(\"replicateEverything\")\n",
+      "  replicateEverything::configure_local_monorepo()\n",
+      "Or set options(replicateEverything.registry_root = ..., ",
+      "replicateEverything.study_folders_root = ..., ",
+      "replicateEverything.use_sibling_packages = TRUE).",
+      call. = FALSE
+    )
   }
 
   meta <- enrich_package_replication_meta(meta, ctx)
@@ -446,6 +484,23 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
 
   rep <- find_replication_entry(meta, what)
 
+  if (is_stata_replication(rep, meta$paper)) {
+    ensure_stata_available(rep)
+    obj <- run_stata_replication(rep, ctx)
+    return(structure(
+      list(
+        id = what,
+        type = rep$type,
+        object = obj,
+        format = infer_result_format(obj, rep$type),
+        has_format = format_specified(rep),
+        meta = rep,
+        source = "stata"
+      ),
+      class = "replication_result"
+    ))
+  }
+
   ensure_replication_dependencies(
     rep,
     paper_meta = meta$paper,
@@ -470,7 +525,8 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
       object = result,
       format = infer_result_format(result, rep$type),
       has_format = format_specified(rep),
-      meta = rep
+      meta = rep,
+      source = "r"
     ),
     class = "replication_result"
   )
@@ -687,6 +743,8 @@ save_artifact <- function(
     html = "html",
     `data.frame` = "html",
     plot = "png",
+    png = "png",
+    stata_output = "smcl",
     "rds"
   )
 
@@ -712,6 +770,11 @@ save_artifact <- function(
       "</table>"
     )
     writeLines(html, out_path, useBytes = TRUE)
+  } else if (format_type == "stata_output" && inherits(object, "stata_replication_result")) {
+    src <- object$output_path %||% object$smcl_path
+    file.copy(src, out_path, overwrite = TRUE)
+  } else if (format_type == "png" && is.character(object) && length(object) == 1L && file.exists(object)) {
+    file.copy(object, out_path, overwrite = TRUE)
   } else if (format_type == "plot" && !is.null(object)) {
     png(out_path, width = 800, height = 600)
     on.exit(dev.off(), add = TRUE)
