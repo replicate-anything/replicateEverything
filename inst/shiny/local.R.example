@@ -10,6 +10,13 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 # registry_root <- "/srv/registry"
 # packages_root <- NULL
 # options(replicateEverything.stata_executable = "/usr/local/stata17/stata-mp")
+#
+# Folder-backed Stata studies: code is cached from GitHub; data must be deployed.
+# Point study_folders at a checkout that includes data/ (not gitignored in cache).
+# options(replicateEverything.study_folders = list(
+#   "10.1596_1813-9450-10626" = "/srv/studies/rep-10.1596-1813-9450-10626"
+# ))
+# options(replicateEverything.study_cache_root = "/srv/cache/replicateEverything-studies")
 
 if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
   options(

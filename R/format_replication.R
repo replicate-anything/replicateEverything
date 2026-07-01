@@ -48,13 +48,13 @@ format_script_path <- function(rep) {
 #' Source replication and optional format scripts into an environment
 #'
 #' @keywords internal
-source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, include_format = TRUE) {
+source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, include_format = TRUE, meta = NULL) {
   code_path <- rep$code
   if (is.null(code_path) || !nzchar(code_path)) {
     stop("Replication ", rep$id, " is missing a code path.")
   }
 
-  tmp_code <- resolve_registry_file(code_path, ctx)
+  tmp_code <- resolve_registry_file(code_path, ctx, meta = meta)
   if (!grepl("\\.do$", code_path, ignore.case = TRUE)) {
     source_replication_functions(tmp_code, env, install_deps = install_deps)
   }
@@ -66,7 +66,7 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
   fmt_path <- format_script_path(rep)
   if (!is.null(fmt_path) && normalizePath(fmt_path, winslash = "/", mustWork = FALSE) !=
       normalizePath(tmp_code, winslash = "/", mustWork = FALSE)) {
-    tmp_format <- resolve_registry_file(fmt_path, ctx)
+    tmp_format <- resolve_registry_file(fmt_path, ctx, meta = meta)
     source_replication_functions(tmp_format, env, install_deps = install_deps)
   }
 
@@ -118,6 +118,15 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
     return(NULL)
   }
 
+  if (is.character(object) && length(object) == 1L &&
+      grepl("<table|<html|<!DOCTYPE|<pre", object, ignore.case = TRUE)) {
+    return(object)
+  }
+
+  if (is_stata_replication(rep, meta$paper)) {
+    object <- normalize_stata_result_object(object)
+  }
+
   ensure_replication_dependencies(
     rep,
     paper_meta = meta$paper,
@@ -125,8 +134,11 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
   )
 
   ctx <- paper_context(doi, repo = repo, folder = folder)
+  if (is_stata_replication(rep, meta$paper)) {
+    ctx$local_root <- ensure_study_folder_local(meta, ctx)
+  }
   env <- new.env(parent = globalenv())
-  source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = TRUE)
+  source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = TRUE, meta = meta)
 
   fn_name <- format_function_name(rep)
   if (!exists(fn_name, envir = env, inherits = FALSE)) {
@@ -177,7 +189,10 @@ render_for_display <- function(doi, what, install_deps = FALSE, repo = NULL, fol
 }
 
 #' @keywords internal
-resolve_registry_file <- function(path, ctx) {
+resolve_registry_file <- function(path, ctx, meta = NULL) {
+  if (is.null(ctx$local_root) && !is.null(meta)) {
+    ctx$local_root <- ensure_study_folder_local(meta, ctx)
+  }
   if (!is.null(ctx$local_root)) {
     local_path <- file.path(ctx$local_root, path)
     if (file.exists(local_path)) {

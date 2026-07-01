@@ -224,6 +224,62 @@ stata_log_error <- function(log_path) {
   paste(lines[start:end], collapse = "\n")
 }
 
+#' Extract the output file path from a Stata replication result
+#'
+#' Accepts a \code{stata_replication_result} list or a plain character path.
+#'
+#' @param object Stata result list or path to \code{.smcl}/image output.
+#' @return Character path or \code{NULL}.
+#' @export
+stata_result_path <- function(object) {
+  if (is.null(object)) {
+    return(NULL)
+  }
+  if (is.character(object) && length(object) == 1L && nzchar(object)) {
+    return(object)
+  }
+  if (is.list(object) && !is.data.frame(object)) {
+    path <- object$output_path %||% object$smcl_path %||% NULL
+    if (is.null(path)) {
+      return(NULL)
+    }
+    if (length(path) > 1L) {
+      path <- path[[1L]]
+    }
+    path <- as.character(path)
+    if (nzchar(path)) {
+      return(path)
+    }
+  }
+  NULL
+}
+
+#' Normalize a Stata result for format functions
+#'
+#' @param object Stata result list, path, or replication envelope.
+#' @return A \code{stata_replication_result} list when possible.
+#' @keywords internal
+normalize_stata_result_object <- function(object) {
+  if (inherits(object, "stata_replication_result")) {
+    return(object)
+  }
+  path <- stata_result_path(object)
+  if (is.null(path)) {
+    return(object)
+  }
+  structure(
+    list(
+      output_path = path,
+      smcl_path = if (identical(stata_output_extension(path), "smcl")) {
+        path
+      } else {
+        NULL
+      }
+    ),
+    class = c("stata_replication_result", "list")
+  )
+}
+
 #' Resolve Stata output path for a replication entry
 #'
 #' @param rep Replication entry.
@@ -251,15 +307,23 @@ stata_output_is_image <- function(path) {
 #'
 #' @param rep Replication entry.
 #' @param ctx Paper context.
+#' @param meta Optional parsed replication metadata for study resolution.
 #' @return A \code{stata_replication_result} list.
 #' @keywords internal
-run_stata_replication <- function(rep, ctx) {
-  if (is.null(ctx$local_root) || !dir.exists(ctx$local_root)) {
-    stop("Stata replication requires a local study folder.", call. = FALSE)
+run_stata_replication <- function(rep, ctx, meta = NULL) {
+  study_root <- ensure_study_folder_local(meta, ctx)
+  if (is.null(study_root) || !dir.exists(study_root)) {
+    stop(
+      "Stata replication requires a local study folder. ",
+      "Set options(replicateEverything.study_folders = list(<folder> = '/path/to/study')) ",
+      "or ensure the study repo is reachable on GitHub.",
+      call. = FALSE
+    )
   }
 
-  study_root <- normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE)
-  code_path <- resolve_registry_file(rep$code, ctx)
+  study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  ctx$local_root <- study_root
+  code_path <- resolve_registry_file(rep$code, ctx, meta = meta)
   staging <- file.path(study_root, "artifacts", "staging")
   dir.create(staging, recursive = TRUE, showWarnings = FALSE)
 
@@ -269,7 +333,15 @@ run_stata_replication <- function(rep, ctx) {
     for (path in data_files) {
       local_data <- file.path(study_root, path)
       if (!file.exists(local_data)) {
-        stop("Data file not found: ", local_data, call. = FALSE)
+        folder_key <- ctx$folder %||% study_folder_from_doi(ctx$doi %||% "")
+        stop(
+          "Data file not found: ", local_data, "\n",
+          "Study code may be cached from GitHub, but data are not in the repo. ",
+          "Deploy data on the server, e.g.\n",
+          "  options(replicateEverything.study_folders = list(",
+          "\"", folder_key, "\" = \"/path/to/study-with-data\"))",
+          call. = FALSE
+        )
       }
     }
   }

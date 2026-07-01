@@ -73,6 +73,45 @@ test_that("get_code includes stata_source for Stata studies", {
   testthat::expect_true(any(grepl("stata/Table1.do", code, fixed = TRUE)))
 })
 
+test_that("stata_result_path accepts list and character paths", {
+  smcl <- tempfile(fileext = ".smcl")
+  writeLines("test", smcl)
+  on.exit(unlink(smcl), add = TRUE)
+
+  expect_equal(
+    stata_result_path(list(output_path = smcl)),
+    smcl
+  )
+  expect_equal(stata_result_path(smcl), smcl)
+
+  normalized <- normalize_stata_result_object(smcl)
+  expect_true(inherits(normalized, "stata_replication_result"))
+  expect_equal(normalized$output_path, smcl)
+})
+
+test_that("materialize_folder_study_from_github caches public study repo", {
+  testthat::skip_on_cran()
+  testthat::skip_if_offline()
+
+  cache_root <- tempfile("study-cache-")
+  on.exit(unlink(cache_root, recursive = TRUE), add = TRUE)
+  withr::local_options(list(replicateEverything.study_cache_root = cache_root))
+
+  path <- materialize_folder_study_from_github(
+    "replicate-anything/rep-10.1596-1813-9450-10626",
+    "main"
+  )
+  expect_true(dir.exists(path))
+  expect_true(file.exists(file.path(path, "replication.yml")))
+  expect_equal(
+    materialize_folder_study_from_github(
+      "replicate-anything/rep-10.1596-1813-9450-10626",
+      "main"
+    ),
+    path
+  )
+})
+
 test_that("replication_code_language_for reads study metadata", {
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),

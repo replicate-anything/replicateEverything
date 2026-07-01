@@ -486,7 +486,7 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
 
   if (is_stata_replication(rep, meta$paper)) {
     ensure_stata_available(rep)
-    obj <- run_stata_replication(rep, ctx)
+    obj <- run_stata_replication(rep, ctx, meta = meta)
     return(structure(
       list(
         id = what,
@@ -510,7 +510,7 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
   data <- load_replication_data(rep$data, ctx)
 
   env <- new.env(parent = globalenv())
-  source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = FALSE)
+  source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)
 
   analysis_fn <- get_analysis_function(env, what, rep$type)
   result <- retry_with_missing_package(

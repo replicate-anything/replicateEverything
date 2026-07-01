@@ -387,6 +387,154 @@ resolve_study_folder_path <- function(meta, ctx = NULL) {
   NULL
 }
 
+#' Default directory for cached GitHub study checkouts
+#'
+#' @return Normalized path.
+#' @keywords internal
+default_study_cache_root <- function() {
+  tryCatch(
+    file.path(tools::R_user_dir("replicateEverything", which = "cache"), "study-repos"),
+    error = function(e) {
+      file.path(tempdir(), "replicateEverything-study-cache")
+    }
+  )
+}
+
+#' GitHub archive URL for a folder-backed study repository
+#'
+#' @param repo GitHub slug \code{org/repo}.
+#' @param ref Branch, tag, or commit.
+#' @keywords internal
+study_repo_archive_url <- function(repo, ref = "main") {
+  sprintf("https://github.com/%s/archive/%s.zip", repo, ref)
+}
+
+#' Move or copy a directory to a destination path
+#'
+#' @param from Source directory.
+#' @param to Destination directory.
+#' @keywords internal
+move_directory <- function(from, to) {
+  if (dir.exists(to)) {
+    unlink(to, recursive = TRUE)
+  }
+  dir.create(dirname(to), recursive = TRUE, showWarnings = FALSE)
+  if (file.rename(from, to)) {
+    return(invisible(TRUE))
+  }
+  dir.create(to, recursive = TRUE, showWarnings = FALSE)
+  entries <- list.files(from, full.names = TRUE, all.files = TRUE, no.. = TRUE)
+  ok <- file.copy(from = entries, to = to, recursive = TRUE, copy.mode = TRUE)
+  if (!all(ok)) {
+    stop("Failed to copy study repository into cache.", call. = FALSE)
+  }
+  unlink(from, recursive = TRUE)
+  invisible(TRUE)
+}
+
+#' Download and cache a folder-backed study repository from GitHub
+#'
+#' @param repo GitHub slug \code{org/repo}.
+#' @param ref Branch, tag, or commit.
+#' @return Normalized path to cached study root.
+#' @keywords internal
+materialize_folder_study_from_github <- function(repo, ref = "main") {
+  if (length(repo) != 1L || is.na(repo) || !nzchar(repo)) {
+    stop("Study repository slug is missing.", call. = FALSE)
+  }
+  if (identical(repo, DEFAULT_REGISTRY_REPO)) {
+    stop("Folder-backed study repository slug is invalid.", call. = FALSE)
+  }
+  ref <- as.character(ref[[1]] %||% ref)
+  if (!nzchar(ref)) {
+    ref <- "main"
+  }
+
+  cache_root <- getOption("replicateEverything.study_cache_root", default_study_cache_root())
+  safe_repo <- gsub("[^a-zA-Z0-9._-]", "_", repo)
+  safe_ref <- gsub("[^a-zA-Z0-9._-]", "_", ref)
+  cache_dir <- file.path(cache_root, safe_repo, safe_ref)
+  marker <- file.path(cache_dir, "replication.yml")
+  if (file.exists(marker)) {
+    return(normalizePath(cache_dir, winslash = "/", mustWork = FALSE))
+  }
+
+  dir.create(cache_root, recursive = TRUE, showWarnings = FALSE)
+  zip_url <- study_repo_archive_url(repo, ref)
+  zip_file <- download_registry_file(zip_url)
+  unzip_parent <- tempfile("study-unzip-")
+  dir.create(unzip_parent)
+  on.exit(unlink(unzip_parent, recursive = TRUE), add = TRUE)
+  utils::unzip(zip_file, exdir = unzip_parent)
+  subs <- list.dirs(unzip_parent, full.names = TRUE, recursive = FALSE)
+  if (length(subs) != 1L) {
+    stop(
+      "Unexpected GitHub archive layout for study repo ", repo, ".",
+      call. = FALSE
+    )
+  }
+  move_directory(subs[[1]], cache_dir)
+  if (!file.exists(marker)) {
+    stop(
+      "Downloaded study repo is missing replication.yml: ", repo, ".",
+      call. = FALSE
+    )
+  }
+  normalizePath(cache_dir, winslash = "/", mustWork = FALSE)
+}
+
+#' Ensure a folder-backed study is available on local disk
+#'
+#' Search order: explicit paths and sibling folders, optional
+#' \code{replicateEverything.study_folders} map, then GitHub archive cache.
+#'
+#' @param meta Parsed registry or study metadata.
+#' @param ctx Paper context from \code{paper_context()}.
+#' @return Normalized study root, or \code{NULL}.
+#' @keywords internal
+ensure_study_folder_local <- function(meta, ctx = NULL) {
+  path <- resolve_study_folder_path(meta, ctx)
+  if (!is.null(path)) {
+    return(path)
+  }
+
+  if (!is.null(ctx) && !is.null(ctx$local_root) && dir.exists(ctx$local_root)) {
+    marker <- file.path(ctx$local_root, "replication.yml")
+    if (file.exists(marker)) {
+      return(normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE))
+    }
+  }
+
+  is_folder <- if (!is.null(ctx)) {
+    isTRUE(ctx$is_folder_study)
+  } else {
+    is_folder_study_replication(meta, ctx)
+  }
+  if (!is_folder) {
+    return(NULL)
+  }
+
+  repo <- study_repo_slug(meta, ctx)
+  if (length(repo) != 1L || is.na(repo) || !nzchar(repo)) {
+    return(NULL)
+  }
+  if (identical(repo, DEFAULT_REGISTRY_REPO)) {
+    return(NULL)
+  }
+
+  ref <- study_repo_ref(meta)
+  tryCatch(
+    materialize_folder_study_from_github(repo, ref),
+    error = function(e) {
+      stop(
+        "Could not materialize study folder for ", repo, ": ",
+        conditionMessage(e),
+        call. = FALSE
+      )
+    }
+  )
+}
+
 #' Path to a registry paper stub yaml file
 #'
 #' Prefers \code{papers/<folder>.yml}; falls back to legacy
