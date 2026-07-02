@@ -334,6 +334,120 @@ study_folder_candidates <- function(meta, ctx = NULL) {
   unique(c(explicit, derived))
 }
 
+#' Candidate keys for \code{replicateEverything.study_folders} lookups
+#'
+#' @param meta Parsed replication.yml contents.
+#' @param ctx Paper context from \code{paper_context()}.
+#' @return Character vector of non-empty keys (no duplicates).
+#' @keywords internal
+study_folder_map_keys <- function(meta, ctx = NULL) {
+  keys <- character(0)
+  if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$folder) && nzchar(ctx$folder)) {
+    keys <- c(keys, as.character(ctx$folder))
+  }
+  doi <- NULL
+  if (!is.null(meta$paper$doi) && length(meta$paper$doi) > 0L) {
+    doi <- normalize_doi(as.character(meta$paper$doi[[1]]))
+  } else if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
+    doi <- normalize_doi(as.character(ctx$doi))
+  }
+  if (!is.null(doi) && nzchar(doi)) {
+    keys <- c(keys, gsub("/", "_", doi, fixed = TRUE), study_folder_from_doi(doi))
+  }
+  study_name <- c(
+    meta$paper$study_folder %||% NULL,
+    meta$study_folder %||% NULL
+  )
+  for (item in study_name) {
+    if (!is.null(item) && length(item) > 0L) {
+      value <- as.character(item[[1]])
+      if (nzchar(value)) {
+        keys <- c(keys, value)
+      }
+    }
+  }
+  slug <- study_repo_slug(meta, ctx)
+  if (length(slug) == 1L && !is.na(slug) && nzchar(slug)) {
+    keys <- c(keys, basename(slug))
+  }
+  unique(keys[nzchar(keys)])
+}
+
+#' Resolve a path from \code{replicateEverything.study_folders}
+#'
+#' @param meta Parsed replication.yml contents.
+#' @param ctx Paper context from \code{paper_context()}.
+#' @return Normalized path, or \code{NULL}.
+#' @keywords internal
+lookup_study_folders_option <- function(meta, ctx = NULL) {
+  folder_map <- getOption("replicateEverything.study_folders", NULL)
+  if (is.null(folder_map) || length(folder_map) == 0L) {
+    return(NULL)
+  }
+  keys <- study_folder_map_keys(meta, ctx)
+  for (key in keys) {
+    if (is.null(folder_map[[key]])) {
+      next
+    }
+    path <- as.character(folder_map[[key]][[1]] %||% folder_map[[key]])
+    if (!nzchar(path)) {
+      next
+    }
+    marker <- file.path(path, "replication.yml")
+    if (dir.exists(path) && file.exists(marker)) {
+      return(normalizePath(path, winslash = "/", mustWork = FALSE))
+    }
+  }
+  NULL
+}
+
+#' Whether \code{study_folders} includes an entry for this study
+#'
+#' @param meta Parsed replication.yml contents.
+#' @param ctx Paper context from \code{paper_context()}.
+#' @keywords internal
+study_folders_configured <- function(meta, ctx = NULL) {
+  folder_map <- getOption("replicateEverything.study_folders", NULL)
+  if (is.null(folder_map) || length(folder_map) == 0L) {
+    return(FALSE)
+  }
+  keys <- study_folder_map_keys(meta, ctx)
+  any(keys %in% names(folder_map))
+}
+
+#' Register a server-local study folder for a DOI
+#'
+#' Sets \code{replicateEverything.study_folders} under every alias the package
+#' uses for lookups (registry folder name, \code{rep-<doi>}, etc.).
+#'
+#' @param doi Character DOI.
+#' @param path Absolute path to the study root (must contain \code{replication.yml}).
+#' @return Invisibly, the normalized path.
+#' @export
+configure_study_folder <- function(doi, path) {
+  doi <- normalize_doi(doi)
+  if (length(path) != 1L || is.na(path) || !nzchar(path)) {
+    stop("Study path must be a non-empty string.", call. = FALSE)
+  }
+  if (!dir.exists(path)) {
+    stop("Study folder does not exist: ", path, call. = FALSE)
+  }
+  marker <- file.path(path, "replication.yml")
+  if (!file.exists(marker)) {
+    stop("Study folder missing replication.yml: ", path, call. = FALSE)
+  }
+  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  stub <- list(paper = list(doi = doi))
+  ctx <- list(doi = doi, folder = resolve_paper_path(doi))
+  keys <- study_folder_map_keys(stub, ctx)
+  map <- getOption("replicateEverything.study_folders", list())
+  for (key in keys) {
+    map[[key]] <- path
+  }
+  options(replicateEverything.study_folders = map)
+  invisible(path)
+}
+
 #' Resolve a local path to a folder-backed study repository
 #'
 #' Search order mirrors package sibling resolution:
@@ -344,21 +458,15 @@ study_folder_candidates <- function(meta, ctx = NULL) {
 #' @return Normalized path, or \code{NULL}.
 #' @keywords internal
 resolve_study_folder_path <- function(meta, ctx = NULL) {
+  mapped <- lookup_study_folders_option(meta, ctx)
+  if (!is.null(mapped)) {
+    return(mapped)
+  }
+
   candidates <- study_folder_candidates(meta, ctx)
   for (path in candidates) {
     if (dir.exists(path) && file.exists(file.path(path, "replication.yml"))) {
       return(normalizePath(path, winslash = "/", mustWork = FALSE))
-    }
-  }
-
-  folder_map <- getOption("replicateEverything.study_folders", NULL)
-  if (!is.null(folder_map)) {
-    key <- ctx$folder %||% basename(study_repo_slug(meta, ctx))
-    if (!is.null(folder_map[[key]])) {
-      path <- folder_map[[key]]
-      if (dir.exists(path) && file.exists(file.path(path, "replication.yml"))) {
-        return(normalizePath(path, winslash = "/", mustWork = FALSE))
-      }
     }
   }
 
@@ -496,6 +604,23 @@ ensure_study_folder_local <- function(meta, ctx = NULL) {
   path <- resolve_study_folder_path(meta, ctx)
   if (!is.null(path)) {
     return(path)
+  }
+
+  if (study_folders_configured(meta, ctx)) {
+    folder_map <- getOption("replicateEverything.study_folders", NULL)
+    keys <- study_folder_map_keys(meta, ctx)
+    configured <- keys[keys %in% names(folder_map)]
+    paths <- vapply(configured, function(key) {
+      as.character(folder_map[[key]][[1]] %||% folder_map[[key]])
+    }, character(1))
+    stop(
+      "replicateEverything.study_folders is set for this study but the path could not be used.\n",
+      "Keys checked: ", paste(configured, collapse = ", "), "\n",
+      "Configured paths:\n  ", paste(paths, collapse = "\n  "), "\n",
+      "Each path must exist and contain replication.yml. ",
+      "Use configure_study_folder(doi, path) to register all aliases.",
+      call. = FALSE
+    )
   }
 
   if (!is.null(ctx) && !is.null(ctx$local_root) && dir.exists(ctx$local_root)) {

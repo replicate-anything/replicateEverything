@@ -328,22 +328,7 @@ run_stata_replication <- function(rep, ctx, meta = NULL) {
   dir.create(staging, recursive = TRUE, showWarnings = FALSE)
 
   if (!is.null(rep$data)) {
-    data_files <- as.character(unlist(rep$data, use.names = FALSE))
-    data_files <- data_files[nzchar(data_files)]
-    for (path in data_files) {
-      local_data <- file.path(study_root, path)
-      if (!file.exists(local_data)) {
-        folder_key <- ctx$folder %||% study_folder_from_doi(ctx$doi %||% "")
-        stop(
-          "Data file not found: ", local_data, "\n",
-          "Study code may be cached from GitHub, but data are not in the repo. ",
-          "Deploy data on the server, e.g.\n",
-          "  options(replicateEverything.study_folders = list(",
-          "\"", folder_key, "\" = \"/path/to/study-with-data\"))",
-          call. = FALSE
-        )
-      }
-    }
+    ensure_study_data_files(rep$data, study_root, meta, ctx)
   }
 
   run_stata_do(code_path, study_root)

@@ -507,7 +507,7 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
     install_missing = install_deps
   )
 
-  data <- load_replication_data(rep$data, ctx)
+  data <- load_replication_data(rep$data, ctx, meta = meta)
 
   env <- new.env(parent = globalenv())
   source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)

@@ -151,9 +151,27 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
   }
 
   fmt_fn <- get(fn_name, envir = env, inherits = FALSE)
-  retry_with_missing_package(
-    fmt_fn(object),
-    install_missing = install_deps
+  fmt_object <- if (is_stata_replication(rep, meta$paper)) {
+    normalize_stata_result_object(object)
+  } else {
+    object
+  }
+  tryCatch(
+    retry_with_missing_package(
+      fmt_fn(fmt_object),
+      install_missing = install_deps
+    ),
+    error = function(e) {
+      if (!is_stata_replication(rep, meta$paper)) {
+        stop(e)
+      }
+      path <- stata_result_path(fmt_object)
+      if (!is.null(path) && file.exists(path) &&
+          identical(stata_output_extension(path), "smcl")) {
+        return(smcl_to_html(path))
+      }
+      stop(e)
+    }
   )
 }
 

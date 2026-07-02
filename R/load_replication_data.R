@@ -7,8 +7,9 @@
 #' @param ctx Paper context from \code{paper_context()}.
 #'
 #' @return A data frame, a named list of objects, or \code{NULL}.
+#' @param meta Optional parsed replication metadata for external data lookup.
 #' @keywords internal
-load_replication_data <- function(data_files, ctx) {
+load_replication_data <- function(data_files, ctx, meta = NULL) {
   if (is.null(data_files)) {
     return(NULL)
   }
@@ -25,7 +26,7 @@ load_replication_data <- function(data_files, ctx) {
   }
 
   loaded <- lapply(data_files, function(path) {
-    read_data_file(path, ctx)
+    read_data_file(path, ctx, meta = meta)
   })
 
   if (length(loaded) == 1) {
@@ -36,8 +37,12 @@ load_replication_data <- function(data_files, ctx) {
 }
 
 #' @keywords internal
-read_data_file <- function(path, ctx) {
+read_data_file <- function(path, ctx, meta = NULL) {
   ext <- tolower(tools::file_ext(path))
+
+  if (!is.null(ctx$local_root) && dir.exists(ctx$local_root) && !is.null(meta)) {
+    ensure_study_data_files(path, ctx$local_root, meta, ctx)
+  }
 
   local_path <- if (!is.null(ctx$local_root)) {
     file.path(ctx$local_root, path)
@@ -46,7 +51,14 @@ read_data_file <- function(path, ctx) {
   }
 
   if (!is.na(local_path) && file.exists(local_path)) {
-  return(read_data_path(local_path, ext))
+    return(read_data_path(local_path, ext))
+  }
+
+  if (!is.null(ctx$local_root) && !is.null(meta)) {
+    hit <- resolve_study_data_file(path, ctx$local_root, meta, ctx)
+    if (isTRUE(hit$found)) {
+      return(read_data_path(hit$path, ext))
+    }
   }
 
   url <- paste0(ctx$base_url, "/", path)

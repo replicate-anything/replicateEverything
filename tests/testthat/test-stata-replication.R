@@ -73,6 +73,50 @@ test_that("get_code includes stata_source for Stata studies", {
   testthat::expect_true(any(grepl("stata/Table1.do", code, fixed = TRUE)))
 })
 
+test_that("study_folder_map_keys includes registry and repo aliases", {
+  meta <- list(
+    paper = list(
+      doi = "https://doi.org/10.1596/1813-9450-10626",
+      study_folder = "rep-10.1596-1813-9450-10626"
+    ),
+    repo = "replicate-anything/rep-10.1596-1813-9450-10626"
+  )
+  ctx <- list(
+    doi = "10.1596/1813-9450-10626",
+    folder = "10.1596_1813-9450-10626"
+  )
+  keys <- study_folder_map_keys(meta, ctx)
+  expect_true("10.1596_1813-9450-10626" %in% keys)
+  expect_true("rep-10.1596-1813-9450-10626" %in% keys)
+})
+
+test_that("lookup_study_folders_option matches rep-* alias", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_dir <- file.path(monorepo_root, "rep-10.1596-1813-9450-10626")
+  testthat::skip_if_not(dir.exists(study_dir), "Stata study repo missing")
+
+  meta <- get_replication_meta("10.1596/1813-9450-10626")
+  ctx <- paper_context("10.1596/1813-9450-10626")
+
+  withr::local_options(list(
+    replicateEverything.study_folders = list(
+      "rep-10.1596-1813-9450-10626" = study_dir
+    ),
+    replicateEverything.use_sibling_packages = FALSE,
+    replicateEverything.study_folders_root = NULL
+  ))
+
+  resolved <- lookup_study_folders_option(meta, ctx)
+  expect_equal(
+    normalizePath(resolved, winslash = "/", mustWork = FALSE),
+    normalizePath(study_dir, winslash = "/", mustWork = FALSE)
+  )
+})
+
 test_that("stata_result_path accepts list and character paths", {
   smcl <- tempfile(fileext = ".smcl")
   writeLines("test", smcl)
