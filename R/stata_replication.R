@@ -163,6 +163,60 @@ stata_batch_args <- function(do_path) {
   c("-b", do_path)
 }
 
+#' @keywords internal
+stata_batch_log_name <- function(runner_path) {
+  sub("\\.do$", ".log", basename(runner_path), ignore.case = TRUE)
+}
+
+#' @keywords internal
+stata_stray_batch_log_paths <- function(dirs, log_name) {
+  dirs <- unique(dirs[nzchar(dirs)])
+  dirs <- dirs[dir.exists(dirs)]
+  if (!length(dirs) || !nzchar(log_name)) {
+    return(character(0))
+  }
+  unique(unlist(lapply(dirs, function(dir) {
+    path <- file.path(dir, log_name)
+    if (file.exists(path)) path else character(0)
+  }), use.names = FALSE))
+}
+
+#' @keywords internal
+relocate_stata_batch_log <- function(from, to) {
+  if (!length(from) || !nzchar(from) || !file.exists(from)) {
+    return(invisible(FALSE))
+  }
+  to <- normalizePath(to, winslash = "/", mustWork = FALSE)
+  from <- normalizePath(from, winslash = "/", mustWork = FALSE)
+  if (identical(from, to)) {
+    return(invisible(TRUE))
+  }
+  dir.create(dirname(to), recursive = TRUE, showWarnings = FALSE)
+  if (file.exists(to)) {
+    unlink(to)
+  }
+  moved <- file.rename(from, to)
+  if (!isTRUE(moved)) {
+    file.copy(from, to, overwrite = TRUE)
+    unlink(from)
+  }
+  invisible(TRUE)
+}
+
+#' @keywords internal
+cleanup_stata_stray_batch_logs <- function(dirs, log_name, keep = NULL) {
+  keep <- keep %||% character(0)
+  paths <- stata_stray_batch_log_paths(dirs, log_name)
+  if (length(keep)) {
+    keep <- normalizePath(keep, winslash = "/", mustWork = FALSE)
+    paths <- paths[!normalizePath(paths, winslash = "/", mustWork = FALSE) %in% keep]
+  }
+  if (length(paths)) {
+    unlink(paths)
+  }
+  invisible(paths)
+}
+
 #' Run a Stata do-file non-interactively
 #'
 #' @param do_path Path to the do-file.
@@ -213,12 +267,28 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
 
   writeLines(runner_lines, runner, useBytes = TRUE)
 
-  log_path <- sub("\\.do$", ".log", runner, ignore.case = TRUE)
+  log_name <- stata_batch_log_name(runner)
+  log_path <- file.path(run_dir, log_name)
+  old_wd <- getwd()
+  on.exit({
+    setwd(old_wd)
+    cleanup_stata_stray_batch_logs(
+      c(workdir, old_wd),
+      log_name,
+      keep = if (file.exists(log_path)) log_path else character(0)
+    )
+  }, add = TRUE)
+
+  cleanup_stata_stray_batch_logs(c(workdir, old_wd, run_dir), log_name, keep = log_path)
   if (file.exists(log_path)) {
     unlink(log_path)
   }
 
   batch_args <- stata_batch_args(runner)
+
+  if (dir.exists(run_dir)) {
+    setwd(run_dir)
+  }
 
   status <- system2(
     stata,
@@ -227,6 +297,12 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
     stdout = "",
     stderr = ""
   )
+
+  strays <- stata_stray_batch_log_paths(c(workdir, old_wd), log_name)
+  if (length(strays) && !file.exists(log_path)) {
+    relocate_stata_batch_log(strays[[1]], log_path)
+  }
+  cleanup_stata_stray_batch_logs(c(workdir, old_wd), log_name, keep = log_path)
 
   log_exists <- file.exists(log_path)
   stata_err <- if (log_exists) stata_log_error(log_path) else NULL

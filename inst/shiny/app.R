@@ -193,14 +193,46 @@ is_live_source <- function(source) {
   identical(as.character(source), "live")
 }
 
-replication_source_label <- function(source) {
-  if (is_artifact_source(source)) {
-    "Showing precomputed result."
-  } else if (is_live_source(source)) {
-    "Showing live replication (no precomputed artifact, or Run was clicked)."
-  } else {
-    "Showing replication output."
+replication_source_label <- function(source, title) {
+  title <- trimws(as.character(title %||% ""))
+  if (!nzchar(title)) {
+    title <- "this item"
   }
+  if (is_artifact_source(source)) {
+    return(paste0("Showing precomputed result for ", title))
+  }
+  if (is_live_source(source)) {
+    return(paste0("Showing replication result for ", title))
+  }
+  paste0("Showing result for ", title)
+}
+
+replication_row_for_id <- function(replications_df, replication_id) {
+  if (is.null(replications_df) || is.null(replication_id) || !nzchar(replication_id)) {
+    return(NULL)
+  }
+  match <- replications_df[
+    replications_df$id == replication_id |
+      replications_df$r_id == replication_id |
+      replications_df$stata_id == replication_id,
+    ,
+    drop = FALSE
+  ]
+  if (nrow(match) == 0) {
+    return(NULL)
+  }
+  match[1, , drop = FALSE]
+}
+
+selected_replication_title <- function(state) {
+  row <- replication_row_for_id(state$replications_df, state$selected_replication)
+  if (!is.null(row)) {
+    return(row$label_full[[1]] %||% row$label[[1]])
+  }
+  replication_stub_label(
+    state$selected_type %||% "table",
+    state$selected_replication %||% ""
+  )
 }
 
 github_repo_browse_url <- function(repo_slug, subpath = NULL) {
@@ -243,7 +275,7 @@ study_materials_info <- function(doi, folder = NULL, repo = NULL) {
   NULL
 }
 
-study_materials_summary_ui <- function(doi, folder = NULL, repo = NULL) {
+study_materials_summary_ui <- function(doi, folder = NULL, repo = NULL, dual_engine = FALSE) {
   info <- study_materials_info(doi, folder = folder, repo = repo)
   if (is.null(info)) {
     return(NULL)
@@ -252,6 +284,12 @@ study_materials_summary_ui <- function(doi, folder = NULL, repo = NULL) {
     class = "mb-0",
     strong("Replication type: "),
     info$type,
+    if (isTRUE(dual_engine)) {
+      tags$span(
+        class = "text-muted",
+        " — Replication code available in both R and Stata."
+      )
+    },
     br(),
     strong("Study materials: "),
     tags$a(href = info$url, target = "_blank", rel = "noopener", info$repo)
@@ -370,24 +408,6 @@ engine_icon_stata <- function() {
       fill = "#ffffff", `font-size` = "7.5", `font-weight` = "700",
       `font-family` = "Arial, sans-serif"
     , "Stata")
-  )
-}
-
-engine_toggle_ui <- function() {
-  tags$div(
-    class = "engine-toggle-wrap is-hidden",
-    id = "engine_toggle_wrap",
-    tags$div(
-      class = "engine-toggle",
-      role = "group",
-      `aria-label` = "Replication engine",
-      tags$span(class = "engine-toggle-icon engine-toggle-r", title = "R", engine_icon_r()),
-      tags$div(
-        class = "engine-toggle-switch-wrap",
-        checkboxInput("global_engine_stata", label = NULL, value = FALSE)
-      ),
-      tags$span(class = "engine-toggle-icon engine-toggle-stata", title = "Stata", engine_icon_stata())
-    )
   )
 }
 
@@ -1644,17 +1664,6 @@ ui <- tagList(
           if (window.hljs) hljs.highlightElement(el);
         });
       });
-      Shiny.addCustomMessageHandler('engineToggleState', function(msg) {
-        var wrap = document.getElementById('engine_toggle_wrap');
-        if (!wrap) return;
-        wrap.classList.toggle('is-hidden', msg.wrapClass === 'is-hidden');
-        var rIcon = wrap.querySelector('.engine-toggle-r');
-        var sIcon = wrap.querySelector('.engine-toggle-stata');
-        var input = wrap.querySelector('input[type=checkbox]');
-        if (rIcon) rIcon.classList.toggle('disabled', !msg.hasR);
-        if (sIcon) sIcon.classList.toggle('disabled', !msg.hasStata);
-        if (input) input.disabled = !!msg.disabled;
-      });
     ")),
     tags$style(HTML("
     .replication-table table { display: table; width: auto; max-width: 100%; margin-bottom: 1rem; }
@@ -1836,85 +1845,6 @@ ui <- tagList(
       min-width: 0;
     }
     .doi-go-wrap .btn { white-space: nowrap; min-width: 2.75rem; }
-    .engine-toggle-wrap { margin-bottom: 0.55rem; }
-    .engine-toggle-wrap.is-hidden { display: none; }
-    .engine-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.45rem;
-    }
-    .engine-toggle-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 0;
-      opacity: 0.95;
-    }
-    .engine-toggle-icon.disabled { opacity: 0.35; }
-    .engine-toggle-switch-wrap {
-      flex: 0 0 auto;
-    }
-    .engine-toggle-switch-wrap .shiny-input-container {
-      margin-bottom: 0;
-    }
-    .engine-toggle-switch-wrap .checkbox {
-      margin: 0;
-      min-height: 0;
-    }
-    .engine-toggle-switch-wrap .checkbox label {
-      position: relative;
-      display: inline-block;
-      width: 2.6rem;
-      height: 1.35rem;
-      margin: 0;
-      padding: 0;
-      font-size: 0;
-      line-height: 0;
-      cursor: pointer;
-    }
-    .engine-toggle-switch-wrap .checkbox label::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: #cfd8dc;
-      border-radius: 999px;
-      transition: background 0.15s ease;
-    }
-    .engine-toggle-switch-wrap .checkbox label::after {
-      content: '';
-      position: absolute;
-      height: 1rem;
-      width: 1rem;
-      left: 0.18rem;
-      bottom: 0.18rem;
-      background: #ffffff;
-      border-radius: 50%;
-      transition: transform 0.15s ease;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-    }
-    .engine-toggle-switch-wrap .checkbox input[type='checkbox'] {
-      position: absolute;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      cursor: pointer;
-      z-index: 2;
-    }
-    .engine-toggle-switch-wrap .checkbox label:has(> input:checked)::before {
-      background: #0054A4;
-    }
-    .engine-toggle-switch-wrap .checkbox label:has(> input:checked)::after {
-      transform: translateX(1.25rem);
-    }
-    .engine-toggle-switch-wrap .checkbox input[type='checkbox']:disabled {
-      cursor: not-allowed;
-    }
-    .engine-toggle-switch-wrap .checkbox label:has(> input:disabled) {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
     .replication-list-wrap .text-muted { margin-bottom: 0.35rem !important; font-size: 0.82rem; }
     .replication-row {
       gap: 0.35rem;
@@ -1932,8 +1862,36 @@ ui <- tagList(
     }
     .replication-actions {
       display: inline-flex;
-      gap: 0.25rem;
+      align-items: center;
+      gap: 0.2rem;
       flex: 0 0 auto;
+    }
+    .engine-pick {
+      width: 1.55rem;
+      height: 1.55rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      line-height: 0;
+      border-radius: 999px;
+    }
+    .engine-pick.is-active { opacity: 1; }
+    .engine-pick.is-inactive {
+      opacity: 0.38;
+      filter: grayscale(0.35);
+    }
+    .engine-pick.is-inactive:hover:not(:disabled) { opacity: 0.72; }
+    .engine-pick.is-disabled {
+      opacity: 0.2;
+      filter: grayscale(1);
+      cursor: not-allowed;
+    }
+    .engine-pick.is-active svg {
+      box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+      border-radius: 999px;
     }
     .replication-actions .btn {
       min-width: 3.25rem;
@@ -1971,7 +1929,6 @@ ui <- tagList(
         ),
         tags$hr(style = "margin: 0.5rem 0;"),
         h4("2. Tables & figures"),
-        engine_toggle_ui(),
         div(class = "replication-list-wrap", uiOutput("replication_list"))
       ),
       mainPanel(
@@ -2045,7 +2002,8 @@ server <- function(input, output, session) {
     replications_load_error = NULL,
     replications_index_diagnostics = NULL,
     registry_folder = NULL,
-    registry_repo = NULL
+    registry_repo = NULL,
+    group_engines = list()
   )
 
   showModal(modalDialog(
@@ -2061,25 +2019,31 @@ server <- function(input, output, session) {
     any(!is.na(reps[[col]]) & nzchar(reps[[col]]))
   }
 
-  current_engine <- function() {
-    if (isTRUE(input$global_engine_stata)) "stata" else "r"
+  row_has_engine <- function(row, engine) {
+    col <- if (engine == "stata") "stata_id" else "r_id"
+    val <- row[[col]][[1]]
+    !is.na(val) && nzchar(val)
   }
 
-  sync_engine_toggle <- function() {
-    reps <- state$replications_df
-    show <- !is.null(state$doi) && !is.null(reps) && nrow(reps) > 0
-    has_r <- show && replication_has_engine(reps, "r")
-    has_stata <- show && replication_has_engine(reps, "stata")
-    cls <- if (show && has_r && has_stata) "" else "is-hidden"
-    session$sendCustomMessage("engineToggleState", list(
-      wrapClass = cls,
-      hasR = has_r,
-      hasStata = has_stata,
-      disabled = !has_r || !has_stata
-    ))
-    if (show && !has_stata && isTRUE(input$global_engine_stata)) {
-      updateCheckboxInput(session, "global_engine_stata", value = FALSE)
+  default_row_engine <- function(row) {
+    if (row_has_engine(row, "r")) return("r")
+    if (row_has_engine(row, "stata")) return("stata")
+    "r"
+  }
+
+  group_engine <- function(group, row = NULL) {
+    eng <- state$group_engines[[group]]
+    if (identical(eng, "stata") || identical(eng, "r")) {
+      if (!is.null(row)) {
+        if (identical(eng, "stata") && !row_has_engine(row, "stata")) return(default_row_engine(row))
+        if (identical(eng, "r") && !row_has_engine(row, "r")) return(default_row_engine(row))
+      }
+      return(eng)
     }
+    if (!is.null(row)) {
+      return(default_row_engine(row))
+    }
+    "r"
   }
 
   load_study <- function(doi) {
@@ -2100,14 +2064,7 @@ server <- function(input, output, session) {
     state$replications_load_error <- meta$error
     state$replications_index_diagnostics <- meta$diagnostics
     state$replications_df <- replications_to_df(state$replications)
-    reps <- state$replications_df
-    has_r <- !is.null(reps) && replication_has_engine(reps, "r")
-    has_stata <- !is.null(reps) && replication_has_engine(reps, "stata")
-    updateCheckboxInput(
-      session,
-      "global_engine_stata",
-      value = !has_r && has_stata
-    )
+    state$group_engines <- list()
     state$selected_replication <- NULL
     state$selected_type <- NULL
     state$selected_result <- NULL
@@ -2115,12 +2072,11 @@ server <- function(input, output, session) {
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
       first <- state$replications_df[1, , drop = FALSE]
-      eng <- current_engine()
+      eng <- group_engine(first$group[[1]], first)
       state$selected_replication <- resolve_group_replication_id(first, eng)
       state$selected_type <- first$type[[1]]
       load_selected_artifact(fallback_live = FALSE)
     }
-    sync_engine_toggle()
   }
 
   observeEvent(input$study_select, {
@@ -2193,7 +2149,10 @@ server <- function(input, output, session) {
         study_materials_summary_ui(
           state$doi,
           folder = state$registry_folder,
-          repo = state$registry_repo
+          repo = state$registry_repo,
+          dual_engine = !is.null(state$replications_df) &&
+            replication_has_engine(state$replications_df, "r") &&
+            replication_has_engine(state$replications_df, "stata")
         )
       ),
       study_package_install_ui(
@@ -2218,11 +2177,41 @@ server <- function(input, output, session) {
         ""
       }
     )
+    engine_pick_btn <- function(eng) {
+      enabled <- row_has_engine(row, eng)
+      active <- identical(engine, eng)
+      btn_class <- paste(
+        "engine-pick",
+        if (!enabled) "is-disabled"
+        else if (active) "is-active"
+        else "is-inactive"
+      )
+      icon <- if (eng == "r") engine_icon_r() else engine_icon_stata()
+      tags$button(
+        type = "button",
+        class = btn_class,
+        title = if (eng == "r") "R" else "Stata",
+        `aria-label` = if (eng == "r") "Use R replication" else "Use Stata replication",
+        `aria-pressed` = if (active) "true" else "false",
+        disabled = if (!enabled) NA else NULL,
+        onclick = if (enabled) {
+          sprintf(
+            "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
+            group, eng
+          )
+        } else {
+          NULL
+        },
+        icon
+      )
+    }
     tags$div(
       class = row_class,
       tags$span(label, class = "replication-label", title = label_full),
       tags$div(
         class = "replication-actions",
+        engine_pick_btn("r"),
+        engine_pick_btn("stata"),
         actionButton(
           paste0("display_", safe_group),
           "Display",
@@ -2282,10 +2271,11 @@ server <- function(input, output, session) {
         tagList(
           tags$h6(class = "text-muted mb-2", "Figures"),
           lapply(seq_len(nrow(figs)), function(i) {
+            row <- figs[i, , drop = FALSE]
             replication_row(
-              figs[i, , drop = FALSE],
+              row,
               active_id = active,
-              engine = current_engine()
+              engine = group_engine(row$group[[1]], row)
             )
           })
         )
@@ -2294,10 +2284,11 @@ server <- function(input, output, session) {
         tagList(
           tags$h6(class = "text-muted mb-2 mt-2", "Tables"),
           lapply(seq_len(nrow(tabs)), function(i) {
+            row <- tabs[i, , drop = FALSE]
             replication_row(
-              tabs[i, , drop = FALSE],
+              row,
               active_id = active,
-              engine = current_engine()
+              engine = group_engine(row$group[[1]], row)
             )
           })
         )
@@ -2305,20 +2296,27 @@ server <- function(input, output, session) {
     )
   })
 
-  observeEvent(input$global_engine_stata, {
-    req(state$replications_df, state$selected_replication)
-    row <- tryCatch(
+  observeEvent(input$engine_action, {
+    req(input$engine_action)
+    parts <- strsplit(input$engine_action, ":", fixed = TRUE)[[1]]
+    req(length(parts) == 2)
+    row <- resolve_replication_row(parts[[1]])
+    eng <- parts[[2]]
+    if (!row_has_engine(row, eng)) return()
+    state$group_engines[[parts[[1]]]] <- eng
+    rep_id <- resolve_group_replication_id(row, eng)
+    cur_row <- tryCatch(
       resolve_replication_row(state$selected_replication),
       error = function(e) NULL
     )
-    if (is.null(row)) return()
-    rep_id <- resolve_group_replication_id(row, current_engine())
-    if (identical(rep_id, state$selected_replication)) return()
+    same_group <- !is.null(cur_row) && identical(cur_row$group[[1]], parts[[1]])
     state$selected_replication <- rep_id
     state$selected_type <- row$type[[1]]
-    state$selected_result <- NULL
-    state$selected_source <- "artifact"
-    load_selected_artifact(fallback_live = FALSE)
+    if (isTRUE(same_group)) {
+      state$selected_result <- NULL
+      state$selected_source <- "artifact"
+      load_selected_artifact(fallback_live = FALSE)
+    }
   }, ignoreInit = TRUE)
 
   observeEvent(input$replication_action, {
@@ -2329,7 +2327,7 @@ server <- function(input, output, session) {
     group_or_id <- parts[[2]]
 
     row <- resolve_replication_row(group_or_id)
-    rep_id <- resolve_group_replication_id(row, current_engine())
+    rep_id <- resolve_group_replication_id(row, group_engine(row$group[[1]], row))
 
     state$selected_replication <- rep_id
     state$selected_type <- row$type[[1]]
@@ -2451,14 +2449,16 @@ server <- function(input, output, session) {
 
   output$selected_output_ui <- renderUI({
     req(state$selected_replication)
+    caption <- selected_replication_title(state)
+    source_line <- replication_source_label(state$selected_source, caption)
     if (is_figure_replication(state$selected_type)) {
       tagList(
-        p(class = "text-muted", replication_source_label(state$selected_source)),
+        p(class = "text-muted", source_line),
         uiOutput("selected_figure_ui")
       )
     } else if (is_table_replication(state$selected_type)) {
       tagList(
-        p(class = "text-muted", replication_source_label(state$selected_source)),
+        p(class = "text-muted", source_line),
         uiOutput("selected_table_ui")
       )
     } else {

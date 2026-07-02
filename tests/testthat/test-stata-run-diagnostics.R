@@ -1,3 +1,25 @@
+test_that("stata_batch_log_name derives runner log basename", {
+  expect_equal(
+    stata_batch_log_name("/tmp/study/artifacts/staging/.run/replicate_tab_1.do"),
+    "replicate_tab_1.log"
+  )
+})
+
+test_that("cleanup_stata_stray_batch_logs removes logs outside run dir", {
+  tmp <- tempfile("stata_stray_")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  run_dir <- file.path(tmp, "artifacts", "staging", ".run")
+  dir.create(run_dir, recursive = TRUE)
+  keep <- file.path(run_dir, "replicate_tab_1.log")
+  writeLines("keep", keep)
+  stray <- file.path(tmp, "replicate_tab_1.log")
+  writeLines("stray", stray)
+  cleanup_stata_stray_batch_logs(tmp, "replicate_tab_1.log", keep = keep)
+  expect_false(file.exists(stray))
+  expect_true(file.exists(keep))
+})
+
 test_that("stata_run_dir is under study artifacts staging", {
   run_dir <- stata_run_dir("/tmp/study", "/tmp/study/artifacts/staging")
   expect_equal(run_dir, "/tmp/study/artifacts/staging/.run")
