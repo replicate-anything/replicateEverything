@@ -1,3 +1,11 @@
+test_that("stata_batch_args uses platform-specific invocation", {
+  if (.Platform$OS.type == "windows") {
+    expect_equal(stata_batch_args("/tmp/runner.do"), c("/e", "do", "/tmp/runner.do"))
+  } else {
+    expect_equal(stata_batch_args("/tmp/runner.do"), c("-b", "/tmp/runner.do"))
+  }
+})
+
 test_that("stata_run_failed_message reports whether Stata ran", {
   run <- list(
     ran = TRUE,

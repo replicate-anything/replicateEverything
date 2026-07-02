@@ -149,6 +149,20 @@ stata_path_in_do <- function(path) {
   gsub("\\", "/", normalizePath(path, winslash = "/", mustWork = FALSE), fixed = TRUE)
 }
 
+#' Stata command-line arguments for non-interactive do-file execution
+#'
+#' Windows: \code{/e do file.do}. Unix/Linux/macOS: \code{-b file.do}.
+#'
+#' @param do_path Path to the do-file.
+#' @return Character vector of arguments for \code{system2()}.
+#' @keywords internal
+stata_batch_args <- function(do_path) {
+  if (.Platform$OS.type == "windows") {
+    return(c("/e", "do", do_path))
+  }
+  c("-b", do_path)
+}
+
 #' Run a Stata do-file non-interactively
 #'
 #' @param do_path Path to the do-file.
@@ -200,9 +214,11 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
     unlink(log_path)
   }
 
+  batch_args <- stata_batch_args(runner)
+
   status <- system2(
     stata,
-    c("/e", "do", runner),
+    batch_args,
     wait = TRUE,
     stdout = "",
     stderr = ""
@@ -216,6 +232,7 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
       log_path = log_path,
       exit_status = status,
       stata_executable = stata,
+      batch_args = batch_args,
       do_path = do_path,
       workdir = workdir,
       staging_dir = staging_dir,
@@ -295,6 +312,11 @@ stata_run_failed_message <- function(run) {
     "Stata replication failed.\n",
     "Stata ran: ", if (isTRUE(run$ran)) "yes" else "no", "\n",
     "Executable: ", run$stata_executable %||% "(unknown)", "\n",
+    if (!is.null(run$batch_args)) {
+      paste0("Invocation: ", paste(run$batch_args, collapse = " "), "\n")
+    } else {
+      ""
+    },
     "Exit status: ", run$exit_status %||% "(unknown)", "\n",
     "Do-file: ", run$do_path %||% "(unknown)", "\n",
     "Working directory: ", run$workdir %||% "(unknown)", "\n",
@@ -333,6 +355,11 @@ stata_output_missing_message <- function(output_path, study_root, run, staging_d
     "Expected file: ", output_path, "\n",
     "Stata ran: ", if (isTRUE(run$ran)) "yes" else "no", "\n",
     "Executable: ", run$stata_executable %||% "(unknown)", "\n",
+    if (!is.null(run$batch_args)) {
+      paste0("Invocation: ", paste(run$batch_args, collapse = " "), "\n")
+    } else {
+      ""
+    },
     "Exit status: ", run$exit_status %||% "(unknown)", "\n",
     "Do-file: ", run$do_path %||% "(unknown)", "\n",
     "Study folder (code): ", study_root, "\n",
