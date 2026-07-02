@@ -154,8 +154,10 @@ stata_path_in_do <- function(path) {
 #' @param do_path Path to the do-file.
 #' @param workdir Working directory Stata should use.
 #' @param timeout Seconds before aborting (best effort on Windows).
+#' @param staging_dir Optional writable directory for \code{$result} output.
+#' @return A \code{stata_run_result} list with log path and diagnostics.
 #' @keywords internal
-run_stata_do <- function(do_path, workdir, timeout = 900L) {
+run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
   stata <- find_stata_executable()
   if (is.null(stata)) {
     stop(
@@ -172,18 +174,26 @@ run_stata_do <- function(do_path, workdir, timeout = 900L) {
   do_in_do <- stata_path_in_do(do_path)
   wd_in_do <- stata_path_in_do(workdir)
 
-  writeLines(
-    c(
-      "version 17",
-      "clear all",
-      "set more off, permanently",
-      sprintf("local root \"%s\"", wd_in_do),
-      "cd \"`root'\"",
-      sprintf("do \"%s\"", do_in_do)
-    ),
-    runner,
-    useBytes = TRUE
+  runner_lines <- c(
+    "version 17",
+    "clear all",
+    "set more off, permanently",
+    sprintf("local root \"%s\"", wd_in_do),
+    "cd \"`root'\""
   )
+  if (!is.null(staging_dir) && nzchar(staging_dir)) {
+    staging_dir <- normalizePath(staging_dir, winslash = "/", mustWork = FALSE)
+    dir.create(staging_dir, recursive = TRUE, showWarnings = FALSE)
+    staging_in_do <- stata_path_in_do(staging_dir)
+    runner_lines <- c(
+      runner_lines,
+      sprintf("global REPLICATE_STATA_RESULT \"%s\"", staging_in_do),
+      sprintf("cap mkdir \"%s\"", staging_in_do)
+    )
+  }
+  runner_lines <- c(runner_lines, sprintf("do \"%s\"", do_in_do))
+
+  writeLines(runner_lines, runner, useBytes = TRUE)
 
   log_path <- sub("\\.do$", ".log", runner, ignore.case = TRUE)
   if (file.exists(log_path)) {
@@ -198,15 +208,39 @@ run_stata_do <- function(do_path, workdir, timeout = 900L) {
     stderr = ""
   )
 
-  stata_err <- stata_log_error(log_path)
+  log_exists <- file.exists(log_path)
+  stata_err <- if (log_exists) stata_log_error(log_path) else NULL
+
+  result <- structure(
+    list(
+      log_path = log_path,
+      exit_status = status,
+      stata_executable = stata,
+      do_path = do_path,
+      workdir = workdir,
+      staging_dir = staging_dir,
+      log_exists = log_exists,
+      log_tail = if (log_exists) stata_log_tail(log_path) else NULL,
+      stata_error = stata_err,
+      ran = TRUE
+    ),
+    class = "stata_run_result"
+  )
+
   if (!is.null(stata_err)) {
-    stop("Stata error: ", stata_err, call. = FALSE)
+    stop(
+      stata_run_failed_message(result),
+      call. = FALSE
+    )
   }
   if (!identical(status, 0L) && !identical(status, 0)) {
-    stop("Stata exited with status ", status, call. = FALSE)
+    stop(
+      stata_run_failed_message(result),
+      call. = FALSE
+    )
   }
 
-  invisible(log_path)
+  result
 }
 
 #' @keywords internal
@@ -222,6 +256,152 @@ stata_log_error <- function(log_path) {
   start <- max(1L, err_idx[[1]] - 3L)
   end <- min(length(lines), err_idx[[1]] + 1L)
   paste(lines[start:end], collapse = "\n")
+}
+
+#' @keywords internal
+stata_log_tail <- function(log_path, n = 40L) {
+  if (!file.exists(log_path)) {
+    return(NULL)
+  }
+  lines <- readLines(log_path, warn = FALSE, encoding = "UTF-8")
+  if (length(lines) <= n) {
+    return(paste(lines, collapse = "\n"))
+  }
+  paste(lines[(length(lines) - n + 1L):length(lines)], collapse = "\n")
+}
+
+#' @keywords internal
+describe_directory <- function(path, label = "Directory") {
+  if (is.null(path) || !nzchar(path) || !dir.exists(path)) {
+    return(paste0(label, ": (missing) ", path))
+  }
+  entries <- tryCatch(
+    list.files(path, all.files = FALSE),
+    error = function(e) character(0)
+  )
+  paste0(
+    label, ": ", normalizePath(path, winslash = "/", mustWork = FALSE), "\n",
+    if (length(entries)) {
+      paste0("  ", paste(entries, collapse = "\n  "))
+    } else {
+      "  (empty)"
+    }
+  )
+}
+
+#' @keywords internal
+stata_run_failed_message <- function(run) {
+  paste0(
+    "Stata replication failed.\n",
+    "Stata ran: ", if (isTRUE(run$ran)) "yes" else "no", "\n",
+    "Executable: ", run$stata_executable %||% "(unknown)", "\n",
+    "Exit status: ", run$exit_status %||% "(unknown)", "\n",
+    "Do-file: ", run$do_path %||% "(unknown)", "\n",
+    "Working directory: ", run$workdir %||% "(unknown)", "\n",
+    if (!is.null(run$staging_dir) && nzchar(run$staging_dir)) {
+      paste0("Staging directory: ", run$staging_dir, "\n")
+    } else {
+      ""
+    },
+    "Log file: ", run$log_path %||% "(unknown)", "\n",
+    "Log exists: ", if (isTRUE(run$log_exists)) "yes" else "no", "\n",
+    if (!is.null(run$stata_error)) {
+      paste0("Stata error:\n", run$stata_error, "\n")
+    } else {
+      ""
+    },
+    if (!is.null(run$log_tail) && nzchar(run$log_tail)) {
+      paste0("Log tail:\n", run$log_tail, "\n")
+    } else {
+      ""
+    }
+  )
+}
+
+#' @keywords internal
+stata_output_missing_message <- function(output_path, study_root, run, staging_dir = NULL) {
+  expected_name <- basename(output_path)
+  staging_candidates <- character(0)
+  if (!is.null(staging_dir) && nzchar(staging_dir)) {
+    staging_candidates <- c(
+      file.path(staging_dir, expected_name),
+      file.path(study_root, "artifacts", "staging", expected_name)
+    )
+  }
+  paste0(
+    "Expected Stata output not found.\n",
+    "Expected file: ", output_path, "\n",
+    "Stata ran: ", if (isTRUE(run$ran)) "yes" else "no", "\n",
+    "Executable: ", run$stata_executable %||% "(unknown)", "\n",
+    "Exit status: ", run$exit_status %||% "(unknown)", "\n",
+    "Do-file: ", run$do_path %||% "(unknown)", "\n",
+    "Study folder (code): ", study_root, "\n",
+    if (!is.null(run$staging_dir) && nzchar(run$staging_dir)) {
+      paste0("Staging directory: ", run$staging_dir, "\n")
+    } else {
+      ""
+    },
+    "Log file: ", run$log_path %||% "(unknown)", "\n",
+    "Log exists: ", if (isTRUE(run$log_exists)) "yes" else "no", "\n",
+    if (length(staging_candidates)) {
+      paste0(
+        "Also checked:\n",
+        paste0("  - ", staging_candidates, collapse = "\n"),
+        "\n"
+      )
+    } else {
+      ""
+    },
+    if (!is.null(run$stata_error)) {
+      paste0("Stata error:\n", run$stata_error, "\n")
+    } else {
+      ""
+    },
+    if (!is.null(run$log_tail) && nzchar(run$log_tail)) {
+      paste0("Log tail:\n", run$log_tail, "\n")
+    } else {
+      ""
+    },
+    describe_directory(file.path(study_root, "artifacts", "staging"), "Study staging"),
+    if (!is.null(staging_dir) && nzchar(staging_dir)) {
+      paste0("\n", describe_directory(staging_dir, "Writable staging"))
+    } else {
+      ""
+    }
+  )
+}
+
+#' Writable staging directory beside external study data
+#'
+#' @param meta Parsed replication metadata.
+#' @param ctx Paper context.
+#' @return Normalized path.
+#' @keywords internal
+writable_stata_staging_dir <- function(meta, ctx = NULL) {
+  study_name <- study_data_folder_name(meta, ctx)
+  dir <- file.path(study_data_root(ctx), "staging", study_name)
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  normalizePath(dir, winslash = "/", mustWork = FALSE)
+}
+
+#' Resolve Stata output path after a run
+#'
+#' @param rep Replication entry.
+#' @param study_root Study repository root.
+#' @param staging_dir Optional writable staging directory.
+#' @keywords internal
+resolve_stata_output_after_run <- function(rep, study_root, staging_dir = NULL) {
+  primary <- stata_output_path(rep, study_root)
+  if (file.exists(primary)) {
+    return(normalizePath(primary, winslash = "/", mustWork = FALSE))
+  }
+  if (!is.null(staging_dir) && nzchar(staging_dir)) {
+    candidate <- file.path(staging_dir, basename(primary))
+    if (file.exists(candidate)) {
+      return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+    }
+  }
+  primary
 }
 
 #' Extract the output file path from a Stata replication result
@@ -324,20 +504,18 @@ run_stata_replication <- function(rep, ctx, meta = NULL) {
   study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
   ctx$local_root <- study_root
   code_path <- resolve_registry_file(rep$code, ctx, meta = meta)
-  staging <- file.path(study_root, "artifacts", "staging")
-  dir.create(staging, recursive = TRUE, showWarnings = FALSE)
+  staging_dir <- writable_stata_staging_dir(meta, ctx)
 
   if (!is.null(rep$data)) {
     ensure_study_data_files(rep$data, study_root, meta, ctx)
   }
 
-  run_stata_do(code_path, study_root)
+  stata_run <- run_stata_do(code_path, study_root, staging_dir = staging_dir)
 
-  output_path <- stata_output_path(rep, study_root)
+  output_path <- resolve_stata_output_after_run(rep, study_root, staging_dir = staging_dir)
   if (!file.exists(output_path)) {
     stop(
-      "Expected Stata output not found at ", output_path,
-      ". Check replication.yml `output` path.",
+      stata_output_missing_message(output_path, study_root, stata_run, staging_dir = staging_dir),
       call. = FALSE
     )
   }
