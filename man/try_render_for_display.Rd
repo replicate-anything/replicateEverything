@@ -4,7 +4,13 @@
 \alias{try_render_for_display}
 \title{Run a replication and return a result or error object}
 \usage{
-try_render_for_display(doi, what, install_deps = FALSE, repo = NULL)
+try_render_for_display(
+  doi,
+  what,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
@@ -15,6 +21,8 @@ try_render_for_display(doi, what, install_deps = FALSE, repo = NULL)
 \code{TRUE}. Defaults to \code{FALSE}.}
 
 \item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
 A replication result list, a display-ready object, or an error.

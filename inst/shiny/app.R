@@ -1650,7 +1650,7 @@ ui <- tagList(
         wrap.classList.toggle('is-hidden', msg.wrapClass === 'is-hidden');
         var rIcon = wrap.querySelector('.engine-toggle-r');
         var sIcon = wrap.querySelector('.engine-toggle-stata');
-        var input = wrap.querySelector("input[type='checkbox']");
+        var input = wrap.querySelector('input[type=checkbox]');
         if (rIcon) rIcon.classList.toggle('disabled', !msg.hasR);
         if (sIcon) sIcon.classList.toggle('disabled', !msg.hasStata);
         if (input) input.disabled = !!msg.disabled;
