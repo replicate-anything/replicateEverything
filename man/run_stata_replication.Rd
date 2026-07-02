@@ -4,12 +4,14 @@
 \alias{run_stata_replication}
 \title{Run a Stata-backed replication entry}
 \usage{
-run_stata_replication(rep, ctx)
+run_stata_replication(rep, ctx, meta = NULL)
 }
 \arguments{
 \item{rep}{Replication entry.}
 
 \item{ctx}{Paper context.}
+
+\item{meta}{Optional parsed replication metadata for study resolution.}
 }
 \value{
 A \code{stata_replication_result} list.

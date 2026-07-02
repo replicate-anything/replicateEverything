@@ -1,6 +1,10 @@
 #' Retrieve replication code for a paper
 #'
-#' Returns the analysis script and, when defined, the format script.
+#' Returns a single script suitable for the Code tab in Shiny. For Stata
+#' replications, the substantive analysis from \code{stata_source} is inlined
+#' after a short setup section so the script can be copied and run. R
+#' replications return the analysis script only; optional \code{format_*} helpers
+#' in separate files are labeled and omitted for Stata.
 #'
 #' For package-backed studies, reads \code{inst/replication_code/*.R} from the
 #' study package GitHub repo when the package is not installed (same idea as
@@ -43,42 +47,106 @@ get_code <- function(doi, what, repo = NULL, folder = NULL) {
         return(readLines(local_code, warn = FALSE))
       }
     }
+    if (is.null(ctx$local_root) && !is.null(meta)) {
+      study_root <- ensure_study_folder_local(meta, ctx)
+      if (!is.null(study_root)) {
+        local_code <- file.path(study_root, path)
+        if (file.exists(local_code)) {
+          return(readLines(local_code, warn = FALSE))
+        }
+      }
+    }
     code_url <- paste0(ctx$base_url, "/", path)
     read_lines_url(code_url)
   }
 
-  lines <- read_code_file(rep$code)
-
   if (is_stata_replication(rep, meta$paper)) {
-    stata_paths <- rep$stata_source %||% rep$stata_sources %||% NULL
-    if (!is.null(stata_paths)) {
-      stata_paths <- as.character(unlist(stata_paths, use.names = FALSE))
-      stata_paths <- stata_paths[nzchar(stata_paths)]
-      for (stata_path in stata_paths) {
-        src_lines <- read_code_file(stata_path)
-        if (length(src_lines)) {
-          lines <- c(
-            lines,
-            "",
-            paste0("* --- ", stata_path, " ---"),
-            src_lines
-          )
-        }
-      }
-    }
+    return(assemble_stata_display_code(rep, read_code_file))
   }
 
+  lines <- read_code_file(rep$code)
+
   fmt_path <- format_script_path(rep)
-  if (!is.null(fmt_path) && fmt_path != rep$code) {
+  if (!is.null(fmt_path) && normalizePath(fmt_path, winslash = "/", mustWork = FALSE) !=
+      normalizePath(rep$code, winslash = "/", mustWork = FALSE)) {
     fmt_lines <- read_code_file(fmt_path)
     if (length(fmt_lines)) {
       lines <- c(
         lines,
         "",
-        paste0("* --- ", fmt_path, " (R display helper) ---"),
+        "# --- Display formatting (optional; used by Shiny, not required to reproduce) ---",
         fmt_lines
       )
     }
   }
   lines
+}
+
+#' @keywords internal
+stata_code_banner <- function(title) {
+  bar <- paste(rep("=", 60L), collapse = "")
+  c(paste0("* ", bar), paste0("* ", title), paste0("* ", bar))
+}
+
+#' @keywords internal
+drop_nested_stata_do_calls <- function(lines) {
+  if (!length(lines)) {
+    return(lines)
+  }
+  keep <- !grepl('^\\s*(quietly\\s+)?do\\s+"', lines, ignore.case = TRUE)
+  lines[keep]
+}
+
+#' @keywords internal
+drop_stata_log_directives <- function(lines) {
+  if (!length(lines)) {
+    return(lines)
+  }
+  keep <- !grepl("^\\s*(capture\\s+)?log\\s+(using|close)", lines, ignore.case = TRUE)
+  keep <- keep & !grepl("^\\s*cd\\s+", lines, ignore.case = TRUE)
+  lines[keep]
+}
+
+#' @keywords internal
+assemble_stata_display_code <- function(rep, read_code_file) {
+  wrapper <- read_code_file(rep$code)
+  wrapper <- drop_nested_stata_do_calls(wrapper)
+
+  stata_paths <- rep$stata_source %||% rep$stata_sources %||% NULL
+  stata_paths <- as.character(unlist(stata_paths, use.names = FALSE))
+  stata_paths <- stata_paths[nzchar(stata_paths)]
+
+  if (!length(stata_paths)) {
+    return(c(
+      stata_code_banner("STATA REPLICATION — setup and runner"),
+      wrapper
+    ))
+  }
+
+  source_label <- stata_paths[[1]]
+  source_lines <- read_code_file(stata_paths[[1]])
+  source_lines <- drop_stata_log_directives(source_lines)
+
+  out <- c(
+    stata_code_banner("STATA REPLICATION — setup (edit maindir if needed)"),
+    wrapper,
+    "",
+    stata_code_banner(paste0("ANALYSIS — ", source_label)),
+    source_lines
+  )
+
+  if (length(stata_paths) > 1L) {
+    for (extra in stata_paths[-1L]) {
+      extra_lines <- read_code_file(extra)
+      extra_lines <- drop_stata_log_directives(extra_lines)
+      out <- c(
+        out,
+        "",
+        stata_code_banner(paste0("ANALYSIS — ", extra)),
+        extra_lines
+      )
+    }
+  }
+
+  out
 }

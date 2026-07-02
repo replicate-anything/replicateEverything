@@ -19,7 +19,11 @@ get_code(doi, what, repo = NULL, folder = NULL)
 A character vector containing the lines of the replication script(s).
 }
 \description{
-Returns the analysis script and, when defined, the format script.
+Returns a single script suitable for the Code tab in Shiny. For Stata
+replications, the substantive analysis from \code{stata_source} is inlined
+after a short setup section so the script can be copied and run. R
+replications return the analysis script only; optional \code{format_*} helpers
+in separate files are labeled and omitted for Stata.
 }
 \details{
 For package-backed studies, reads \code{inst/replication_code/*.R} from the

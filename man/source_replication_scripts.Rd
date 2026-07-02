@@ -9,7 +9,8 @@ source_replication_scripts(
   ctx,
   env,
   install_deps = FALSE,
-  include_format = TRUE
+  include_format = TRUE,
+  meta = NULL
 )
 }
 \description{

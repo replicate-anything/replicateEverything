@@ -4,7 +4,7 @@
 \alias{run_stata_do}
 \title{Run a Stata do-file non-interactively}
 \usage{
-run_stata_do(do_path, workdir, timeout = 900L)
+run_stata_do(do_path, workdir, timeout = 900L, staging_dir = NULL)
 }
 \arguments{
 \item{do_path}{Path to the do-file.}
@@ -12,6 +12,11 @@ run_stata_do(do_path, workdir, timeout = 900L)
 \item{workdir}{Working directory Stata should use.}
 
 \item{timeout}{Seconds before aborting (best effort on Windows).}
+
+\item{staging_dir}{Optional writable directory for \code{$result} output.}
+}
+\value{
+A \code{stata_run_result} list with log path and diagnostics.
 }
 \description{
 Run a Stata do-file non-interactively

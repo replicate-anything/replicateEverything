@@ -4,12 +4,14 @@
 \alias{load_replication_data}
 \title{Load replication data files}
 \usage{
-load_replication_data(data_files, ctx)
+load_replication_data(data_files, ctx, meta = NULL)
 }
 \arguments{
 \item{data_files}{Character vector of paths relative to the paper folder.}
 
 \item{ctx}{Paper context from \code{paper_context()}.}
+
+\item{meta}{Optional parsed replication metadata for external data lookup.}
 }
 \value{
 A data frame, a named list of objects, or \code{NULL}.

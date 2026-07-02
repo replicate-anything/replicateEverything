@@ -70,7 +70,8 @@ test_that("get_code includes stata_source for Stata studies", {
 
   code <- get_code("10.1596/1813-9450-10626", "tab_1")
   testthat::expect_true(any(grepl("esttab", code, fixed = TRUE)))
-  testthat::expect_true(any(grepl("stata/Table1.do", code, fixed = TRUE)))
+  testthat::expect_true(any(grepl("ANALYSIS", code, fixed = TRUE)))
+  testthat::expect_true(any(grepl("summ", code, fixed = TRUE) | grepl("esttab", code, fixed = TRUE)))
 })
 
 test_that("study_folder_map_keys includes registry and repo aliases", {

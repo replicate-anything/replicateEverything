@@ -182,9 +182,13 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
   }
 
   do_path <- normalizePath(do_path, winslash = "/", mustWork = TRUE)
-  workdir <- normalizePath(workdir, winslash = "/", mustWork = TRUE)
+  workdir <- normalizePath(workdir, winslash = "/", mustWork = FALSE)
 
-  runner <- file.path(tempdir(), paste0("replicate_", gsub("[^a-zA-Z0-9._-]", "_", basename(do_path))))
+  run_dir <- stata_run_dir(workdir, staging_dir)
+  runner <- file.path(
+    run_dir,
+    paste0("replicate_", gsub("[^a-zA-Z0-9._-]", "_", basename(do_path)))
+  )
   do_in_do <- stata_path_in_do(do_path)
   wd_in_do <- stata_path_in_do(workdir)
 
@@ -398,17 +402,65 @@ stata_output_missing_message <- function(output_path, study_root, run, staging_d
   )
 }
 
-#' Writable staging directory beside external study data
+#' Writable staging directory for Stata output
+#'
+#' Uses \code{<study>/artifacts/staging} when the study folder is writable;
+#' otherwise falls back to \code{<study_data_root>/staging/<study>} (Shiny server).
 #'
 #' @param meta Parsed replication metadata.
 #' @param ctx Paper context.
+#' @param study_root Optional local study repository root.
 #' @return Normalized path.
 #' @keywords internal
-writable_stata_staging_dir <- function(meta, ctx = NULL) {
+writable_stata_staging_dir <- function(meta, ctx = NULL, study_root = NULL) {
+  if (is.null(study_root) && !is.null(ctx$local_root)) {
+    study_root <- ctx$local_root
+  }
+  if (!is.null(study_root) && nzchar(study_root)) {
+    candidate <- file.path(study_root, "artifacts", "staging")
+    if (staging_dir_is_writable(candidate)) {
+      return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+    }
+  }
+
   study_name <- study_data_folder_name(meta, ctx)
   dir <- file.path(study_data_root(ctx), "staging", study_name)
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   normalizePath(dir, winslash = "/", mustWork = FALSE)
+}
+
+#' @keywords internal
+staging_dir_is_writable <- function(path) {
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
+  if (!dir.exists(path)) {
+    return(FALSE)
+  }
+  probe <- file.path(path, ".write_test")
+  ok <- tryCatch(
+    {
+      writeLines("ok", probe)
+      unlink(probe)
+      TRUE
+    },
+    error = function(e) FALSE
+  )
+  isTRUE(ok)
+}
+
+#' Directory for ephemeral Stata runner scripts and batch logs
+#'
+#' @param workdir Study repository root.
+#' @param staging_dir Writable staging directory for replication output.
+#' @keywords internal
+stata_run_dir <- function(workdir, staging_dir = NULL) {
+  base <- if (!is.null(staging_dir) && nzchar(staging_dir)) {
+    staging_dir
+  } else {
+    file.path(workdir, "artifacts", "staging")
+  }
+  run_dir <- file.path(base, ".run")
+  dir.create(run_dir, recursive = TRUE, showWarnings = FALSE)
+  run_dir
 }
 
 #' Resolve Stata output path after a run
@@ -531,7 +583,7 @@ run_stata_replication <- function(rep, ctx, meta = NULL) {
   study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
   ctx$local_root <- study_root
   code_path <- resolve_registry_file(rep$code, ctx, meta = meta)
-  staging_dir <- writable_stata_staging_dir(meta, ctx)
+  staging_dir <- writable_stata_staging_dir(meta, ctx, study_root = study_root)
 
   if (!is.null(rep$data)) {
     ensure_study_data_files(rep$data, study_root, meta, ctx)

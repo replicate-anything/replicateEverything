@@ -259,8 +259,7 @@ study_materials_summary_ui <- function(doi, folder = NULL, repo = NULL) {
 }
 
 artifact_missing <- function(result) {
-  is.null(result) ||
-    (is.character(result) && length(result) == 1L && !nzchar(result))
+  replicate_fn("artifact_display_missing", result)
 }
 
 artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "output") {
@@ -356,12 +355,51 @@ replications_to_df <- function(reps) {
     type %in% c("figure", "table")
   }, logical(1))]
   if (length(reps) == 0) return(NULL)
-  data.frame(
-    id = vapply(reps, function(x) as.character(x$id), character(1)),
-    label = vapply(reps, replication_display_label, character(1)),
-    type = vapply(reps, function(x) as.character(x$type), character(1)),
-    stringsAsFactors = FALSE
-  )
+
+  rep_engine <- function(x) {
+    eng <- tolower(as.character(x$engine %||% ""))
+    if (identical(eng, "stata")) return("stata")
+    if (identical(eng, "r")) return("r")
+    if (grepl("_stata$", as.character(x$id), ignore.case = TRUE)) return("stata")
+    if (grepl("\\.do$", as.character(x$code %||% ""), ignore.case = TRUE)) return("stata")
+    "r"
+  }
+
+  rep_group <- function(x) {
+    grp <- as.character(x$group %||% "")
+    if (nzchar(grp)) return(grp)
+    as.character(x$id)
+  }
+
+  groups <- unique(vapply(reps, rep_group, character(1)))
+  rows <- lapply(groups, function(group) {
+    group_reps <- reps[vapply(reps, function(x) identical(rep_group(x), group), logical(1))]
+    r_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "r"), logical(1))]
+    stata_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "stata"), logical(1))]
+    primary <- if (length(r_reps)) r_reps[[1]] else group_reps[[1]]
+    data.frame(
+      group = group,
+      id = as.character(primary$id),
+      r_id = if (length(r_reps)) as.character(r_reps[[1]]$id) else NA_character_,
+      stata_id = if (length(stata_reps)) as.character(stata_reps[[1]]$id) else NA_character_,
+      label = replication_display_label(primary),
+      type = as.character(primary$type),
+      stringsAsFactors = FALSE
+    )
+  })
+
+  do.call(rbind, rows)
+}
+
+resolve_group_replication_id <- function(row, engine = c("r", "stata")) {
+  engine <- match.arg(engine)
+  if (engine == "stata" && !is.na(row$stata_id) && nzchar(row$stata_id)) {
+    return(row$stata_id)
+  }
+  if (engine == "r" && !is.na(row$r_id) && nzchar(row$r_id)) {
+    return(row$r_id)
+  }
+  row$id
 }
 
 first_author_surname <- function(name) {
@@ -1793,7 +1831,8 @@ server <- function(input, output, session) {
     replications_load_error = NULL,
     replications_index_diagnostics = NULL,
     registry_folder = NULL,
-    registry_repo = NULL
+    registry_repo = NULL,
+    group_engines = list()
   )
 
   showModal(modalDialog(
@@ -1822,6 +1861,7 @@ server <- function(input, output, session) {
     state$replications_load_error <- meta$error
     state$replications_index_diagnostics <- meta$diagnostics
     state$replications_df <- replications_to_df(state$replications)
+    state$group_engines <- list()
     state$selected_replication <- NULL
     state$selected_type <- NULL
     state$selected_result <- NULL
@@ -1916,37 +1956,91 @@ server <- function(input, output, session) {
     )
   })
 
-  replication_row <- function(id, label, active = FALSE) {
-    safe_id <- gsub("[^a-zA-Z0-9]", "_", id)
+  replication_row <- function(row, active_id = NULL, engine = "r") {
+    group <- row$group
+    label <- row$label
+    r_id <- row$r_id
+    stata_id <- row$stata_id
+    safe_group <- gsub("[^a-zA-Z0-9]", "_", group)
+    resolved_id <- resolve_group_replication_id(row, engine)
     row_class <- paste(
       "replication-row d-flex align-items-center mb-2 px-2 py-1 rounded",
-      if (active) "bg-light border border-primary" else ""
+      if (!is.null(active_id) && identical(resolved_id, active_id)) {
+        "bg-light border border-primary"
+      } else {
+        ""
+      }
     )
+    engine_btn <- function(code, eng, enabled = TRUE) {
+      btn_class <- paste(
+        "btn btn-sm",
+        if (identical(engine, eng)) "btn-secondary" else "btn-outline-secondary"
+      )
+      if (!isTRUE(enabled)) {
+        return(tags$button(class = paste(btn_class, "disabled"), type = "button", disabled = "disabled", code))
+      }
+      actionButton(
+        paste0("engine_", safe_group, "_", eng),
+        code,
+        class = btn_class,
+        style = "min-width: 34px; font-weight: 600;",
+        onclick = sprintf(
+          "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
+          group, eng
+        )
+      )
+    }
     tags$div(
       class = row_class,
       style = "gap: 8px;",
       tags$span(label, class = "flex-grow-1 small", style = "line-height: 1.3;"),
+      tags$div(
+        class = "btn-group btn-group-sm",
+        role = "group",
+        `aria-label` = "Replication engine",
+        engine_btn("R", "r", enabled = !is.na(r_id) && nzchar(r_id)),
+        engine_btn("St", "stata", enabled = !is.na(stata_id) && nzchar(stata_id))
+      ),
       actionButton(
-        paste0("display_", safe_id),
+        paste0("display_", safe_group),
         "Display",
         class = "btn-outline-secondary btn-sm",
         style = "min-width: 72px;",
         onclick = sprintf(
           "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
-          id
+          group
         )
       ),
       actionButton(
-        paste0("replicate_", safe_id),
+        paste0("replicate_", safe_group),
         "Run",
         class = "btn-primary btn-sm",
         style = "min-width: 72px;",
         onclick = sprintf(
           "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
-          id
+          group
         )
       )
     )
+  }
+
+  group_engine <- function(group) {
+    eng <- state$group_engines[[group]]
+    if (identical(eng, "stata") || identical(eng, "r")) {
+      return(eng)
+    }
+    "r"
+  }
+
+  resolve_replication_row <- function(group_or_id) {
+    reps <- state$replications_df
+    req(!is.null(reps), nrow(reps) > 0)
+    row <- reps[reps$group == group_or_id, , drop = FALSE]
+    if (nrow(row) == 0) {
+      row <- reps[reps$id == group_or_id, , drop = FALSE]
+    }
+    req(nrow(row) == 1)
+    row
   }
 
   output$replication_list <- renderUI({
@@ -1975,7 +2069,11 @@ server <- function(input, output, session) {
         tagList(
           tags$h6(class = "text-muted mb-2", "Figures"),
           lapply(seq_len(nrow(figs)), function(i) {
-            replication_row(figs$id[[i]], figs$label[[i]], active = identical(figs$id[[i]], active))
+            replication_row(
+              figs[i, , drop = FALSE],
+              active_id = active,
+              engine = group_engine(figs$group[[i]])
+            )
           })
         )
       },
@@ -1983,22 +2081,38 @@ server <- function(input, output, session) {
         tagList(
           tags$h6(class = "text-muted mb-2 mt-3", "Tables"),
           lapply(seq_len(nrow(tabs)), function(i) {
-            replication_row(tabs$id[[i]], tabs$label[[i]], active = identical(tabs$id[[i]], active))
+            replication_row(
+              tabs[i, , drop = FALSE],
+              active_id = active,
+              engine = group_engine(tabs$group[[i]])
+            )
           })
         )
       }
     )
   })
 
+  observeEvent(input$engine_action, {
+    req(input$engine_action)
+    parts <- strsplit(input$engine_action, ":", fixed = TRUE)[[1]]
+    req(length(parts) == 2)
+    state$group_engines[[parts[[1]]]] <- parts[[2]]
+    row <- resolve_replication_row(parts[[1]])
+    rep_id <- resolve_group_replication_id(row, parts[[2]])
+    state$selected_replication <- rep_id
+    state$selected_type <- row$type[[1]]
+  }, ignoreInit = TRUE)
+
   observeEvent(input$replication_action, {
     req(input$replication_action, state$replications_df)
     parts <- strsplit(input$replication_action, ":", fixed = TRUE)[[1]]
     req(length(parts) == 2)
     action <- parts[[1]]
-    rep_id <- parts[[2]]
+    group_or_id <- parts[[2]]
 
-    row <- state$replications_df[state$replications_df$id == rep_id, , drop = FALSE]
-    req(nrow(row) == 1)
+    row <- resolve_replication_row(group_or_id)
+    eng <- group_engine(row$group[[1]])
+    rep_id <- resolve_group_replication_id(row, eng)
 
     state$selected_replication <- rep_id
     state$selected_type <- row$type[[1]]
@@ -2024,29 +2138,29 @@ server <- function(input, output, session) {
     req(state$doi, state$selected_replication)
     withProgress(message = "Loading precomputed result...", value = 0.4, {
       state$progress <- "Loading artifact"
-      result <- tryCatch(
-        load_replication_artifact(
-          state$doi,
-          state$selected_replication,
-          folder = state$registry_folder,
-          repo = state$registry_repo
-        ),
-        error = function(e) e
+      loaded <- replicate_fn(
+        "load_replication_for_display",
+        state$doi,
+        state$selected_replication,
+        prefer = "artifact",
+        fallback_live = fallback_live,
+        install_deps = TRUE,
+        folder = state$registry_folder,
+        repo = state$registry_repo
       )
       state$progress <- NULL
 
-      if (inherits(result, "error")) {
-        state$selected_result <- result
-        state$selected_source <- "artifact"
+      if (isTRUE(loaded$ok)) {
+        state$selected_result <- loaded$raw %||% loaded$value
+        state$selected_source <- loaded$source
         return(invisible(NULL))
       }
-
-      if (fallback_live && artifact_missing(result)) {
-        run_live_replication(state$doi, state$selected_replication)
+      if (!is.null(loaded$error)) {
+        state$selected_result <- loaded$error
+        state$selected_source <- loaded$source %||% "artifact"
         return(invisible(NULL))
       }
-
-      state$selected_result <- result
+      state$selected_result <- NULL
       state$selected_source <- "artifact"
     })
   }
@@ -2063,26 +2177,16 @@ server <- function(input, output, session) {
         return(list(ok = FALSE, missing = TRUE))
       }
 
-      res <- tryCatch(
-        display_object(
-          state$doi,
-          state$selected_replication,
-          state$selected_result,
-          install_deps = is_live_source(state$selected_source),
-          folder = state$registry_folder,
-          repo = state$registry_repo
-        ),
-        error = function(e) e
+      replicate_fn(
+        "resolve_replication_display",
+        state$doi,
+        state$selected_replication,
+        state$selected_result,
+        source = state$selected_source,
+        install_deps = is_live_source(state$selected_source),
+        folder = state$registry_folder,
+        repo = state$registry_repo
       )
-
-      if (inherits(res, "error")) {
-        return(list(ok = FALSE, error = res))
-      }
-      if (is.null(res)) {
-        return(list(ok = FALSE, missing = TRUE))
-      }
-
-      list(ok = TRUE, value = res)
     }, error = function(e) {
       list(ok = FALSE, error = e)
     })
@@ -2093,27 +2197,30 @@ server <- function(input, output, session) {
       withProgress(message = "Running live replication...", value = 0.2, {
         state$progress <- "Running replication"
         ensure_study_replication_package(doi, folder = state$registry_folder, repo = state$registry_repo)
-        result <- tryCatch(
-          replicate_fn(
-            "render_for_display",
-            doi,
-            what,
-            install_deps = TRUE,
-            folder = state$registry_folder,
-            repo = state$registry_repo
-          ),
-          error = function(e) e
+        loaded <- replicate_fn(
+          "load_replication_for_display",
+          doi,
+          what,
+          prefer = "live",
+          fallback_live = FALSE,
+          install_deps = TRUE,
+          folder = state$registry_folder,
+          repo = state$registry_repo
         )
-        state$selected_result <- result
+        state$selected_result <- if (isTRUE(loaded$ok)) {
+          loaded$raw %||% loaded$value
+        } else if (!is.null(loaded$error)) {
+          loaded$error
+        } else {
+          NULL
+        }
         state$selected_source <- "live"
         state$progress <- NULL
-        result
       })
     }, error = function(e) {
       state$selected_result <- e
       state$selected_source <- "live"
       state$progress <- NULL
-      e
     })
   }
 

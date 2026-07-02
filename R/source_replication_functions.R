@@ -55,8 +55,9 @@ source_replication_functions <- function(path, env, install_deps = FALSE) {
     is_fn <- is.call(rhs) && identical(as.character(rhs[[1]]), "function")
     is_alias <- is.symbol(rhs) || (is.call(rhs) && identical(rhs[[1]], quote(`<-`)))
     is_generate <- grepl("^generate_(table|figure)$", lhs)
+    is_format <- grepl("^format_", lhs)
 
-    if (is_fn || (is_generate && is_alias)) {
+    if (is_fn || (is_generate && is_alias) || (is_format && is_alias)) {
       retry_with_missing_package(
         eval(expr, envir = env),
         install_missing = install_deps

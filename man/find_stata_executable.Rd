@@ -11,6 +11,5 @@ Normalized path or \code{NULL}.
 }
 \description{
 Checks \code{getOption("replicateEverything.stata_executable")} first, then
-common install paths and \code{PATH}.
+common install paths (Windows, Linux, macOS) and \code{PATH}.
 }
-\keyword{internal}

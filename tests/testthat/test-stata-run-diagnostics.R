@@ -1,3 +1,8 @@
+test_that("stata_run_dir is under study artifacts staging", {
+  run_dir <- stata_run_dir("/tmp/study", "/tmp/study/artifacts/staging")
+  expect_equal(run_dir, "/tmp/study/artifacts/staging/.run")
+})
+
 test_that("stata_batch_args uses platform-specific invocation", {
   if (.Platform$OS.type == "windows") {
     expect_equal(stata_batch_args("/tmp/runner.do"), c("/e", "do", "/tmp/runner.do"))
