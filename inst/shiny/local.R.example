@@ -11,10 +11,10 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 # packages_root <- NULL
 # options(replicateEverything.stata_executable = "/usr/local/stata17/stata-mp")
 #
-# Study code may be cached from GitHub; data can live beside the app:
-#   <app-dir>/data/rep-10.1596-1813-9450-10626/ACS2017-2021_finalready.dta
-# replicateEverything searches getwd() automatically; set explicitly if needed:
-# options(replicateEverything.study_data_root = normalizePath(".", winslash = "/"))
+# Study data layout (relative to getwd() when replicating):
+#   data/rep-<doi>/<file>.dta
+# Override working directory if needed:
+# options(replicateEverything.study_data_root = "/wzb/samba/user/ipi/replicate")
 
 if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
   options(

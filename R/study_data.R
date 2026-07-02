@@ -1,71 +1,93 @@
-#' Roots to search for external study data files
+#' Root directory for external study data
 #'
-#' Checks \code{replicateEverything.study_data_root},
-#' \code{replicateEverything.study_data_roots}, \code{replicate_shiny.app_root},
-#' and \code{getwd()} (typically the Shiny app directory).
+#' Uses \code{ctx$study_data_root}, then
+#' \code{getOption("replicateEverything.study_data_root")}, then \code{getwd()}.
 #'
 #' @param ctx Optional paper context.
-#' @return Character vector of existing directory paths.
+#' @return Normalized path.
 #' @keywords internal
-study_data_search_roots <- function(ctx = NULL) {
-  roots <- c(
-    getOption("replicateEverything.study_data_root", NULL),
-    unlist(getOption("replicateEverything.study_data_roots", NULL), use.names = FALSE),
-    getOption("replicate_shiny.app_root", NULL)
-  )
+study_data_root <- function(ctx = NULL) {
+  root <- NULL
   if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$study_data_root)) {
-    roots <- c(ctx$study_data_root, roots)
+    root <- as.character(ctx$study_data_root[[1]] %||% ctx$study_data_root)
   }
-  roots <- c(roots, getwd())
-  roots <- unique(as.character(roots))
-  roots <- roots[!is.na(roots) & nzchar(roots)]
-  roots <- roots[dir.exists(roots)]
-  if (length(roots) == 0L) {
-    return(character(0))
+  if (is.null(root) || !nzchar(root)) {
+    root <- getOption("replicateEverything.study_data_root", NULL)
   }
-  vapply(roots, function(path) {
-    normalizePath(path, winslash = "/", mustWork = FALSE)
-  }, character(1))
+  if (is.null(root) || !nzchar(root)) {
+    root <- getwd()
+  }
+  normalizePath(root, winslash = "/", mustWork = FALSE)
 }
 
-#' Study subfolder names used under external data roots
+#' Study subfolder name under \code{data/}
 #'
-#' @inheritParams study_data_search_roots
 #' @param meta Parsed replication metadata.
+#' @param ctx Optional paper context.
+#' @return Character scalar.
 #' @keywords internal
-study_data_folder_names <- function(meta, ctx = NULL) {
-  study_folder_map_keys(meta, ctx)
+study_data_folder_name <- function(meta, ctx = NULL) {
+  names <- study_folder_map_keys(meta, ctx)
+  rep_like <- names[grepl("^rep-", names)]
+  if (length(rep_like) > 0L) {
+    return(rep_like[[1]])
+  }
+  if (length(names) > 0L) {
+    return(names[[1]])
+  }
+  if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
+    return(study_folder_from_doi(normalize_doi(ctx$doi)))
+  }
+  "study"
 }
 
 #' Candidate paths for a replication data file
 #'
+#' Checks the study checkout, then \code{<root>/data/<study>/<file>}.
+#'
 #' @param rel_path Path relative to study root (e.g. \code{data/file.dta}).
 #' @param study_root Normalized study repository root.
-#' @inheritParams study_data_folder_names
-#' @return Character vector of paths checked (deduplicated, in search order).
+#' @param meta Parsed replication metadata.
+#' @param ctx Optional paper context.
+#' @return Character vector of paths checked.
 #' @keywords internal
 study_data_file_candidates <- function(rel_path, study_root, meta, ctx = NULL) {
   rel_path <- gsub("\\", "/", as.character(rel_path), fixed = TRUE)
   file_name <- basename(rel_path)
-
-  checked <- c(
+  study_name <- study_data_folder_name(meta, ctx)
+  root <- study_data_root(ctx)
+  c(
     file.path(study_root, rel_path),
-    file.path(study_root, "data", file_name)
+    file.path(root, "data", study_name, file_name)
   )
+}
 
-  for (root in study_data_search_roots(ctx)) {
-    for (name in study_data_folder_names(meta, ctx)) {
-      checked <- c(
-        checked,
-        file.path(root, "data", name, file_name),
-        file.path(root, "data", name, rel_path),
-        file.path(root, name, file_name),
-        file.path(root, name, rel_path)
-      )
-    }
+#' Summarize a directory for error messages
+#'
+#' @param path Directory path.
+#' @return Character scalar.
+#' @keywords internal
+describe_working_directory <- function(path = getwd()) {
+  if (is.null(path) || !nzchar(path) || !dir.exists(path)) {
+    return(paste0("Working directory missing: ", path))
   }
-
-  unique(checked)
+  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  entries <- tryCatch(
+    list.files(path, all.files = FALSE),
+    error = function(e) character(0)
+  )
+  data_dir <- file.path(path, "data")
+  data_entries <- if (dir.exists(data_dir)) {
+    list.files(data_dir, all.files = FALSE)
+  } else {
+    "(no data/ folder)"
+  }
+  paste0(
+    "Working directory: ", path, "\n",
+    "Contents:\n  ", paste(if (length(entries)) entries else "(empty)", collapse = "\n  "),
+    "\n",
+    "data/:\n  ", paste(if (length(data_entries)) data_entries else "(empty)", collapse = "\n  ")
+  )
 }
 
 #' Resolve a study data file on disk
@@ -120,41 +142,24 @@ link_or_copy_study_data_file <- function(from, to) {
 #' @inheritParams resolve_study_data_file
 #' @keywords internal
 study_data_not_found_message <- function(rel_path, study_root, checked, meta, ctx = NULL) {
-  roots <- study_data_search_roots(ctx)
-  names <- study_data_folder_names(meta, ctx)
+  root <- study_data_root(ctx)
+  study_name <- study_data_folder_name(meta, ctx)
+  file_name <- basename(gsub("\\", "/", rel_path, fixed = TRUE))
   paste0(
     "Data file not found: ", rel_path, "\n",
-    "Study folder: ", study_root, "\n",
-    if (length(roots) > 0L) {
-      paste0(
-        "External data roots: ",
-        paste(roots, collapse = ", "),
-        "\n"
-      )
-    } else {
-      ""
-    },
-    if (length(names) > 0L) {
-      paste0(
-        "Study data subfolders tried: ",
-        paste(names, collapse = ", "),
-        "\n"
-      )
-    } else {
-      ""
-    },
-    "Searched:\n",
+    "Study folder (code): ", study_root, "\n",
+    "Expected data path: ", file.path(root, "data", study_name, file_name), "\n",
+    "Also checked:\n",
     paste0("  - ", checked, collapse = "\n"),
-    "\n\nPlace data in study_root/data/ or beside the Shiny app at ",
-    "data/<study>/ (e.g. data/rep-<doi>/). ",
-    "Set options(replicateEverything.study_data_root = '<app-dir>') if needed."
+    "\n\n",
+    describe_working_directory(root)
   )
 }
 
 #' Ensure replication data files exist under a study root
 #'
-#' Looks in the study checkout first, then external roots such as
-#' \code{<app>/data/rep-<doi>/}. When found externally, links or copies into
+#' Looks in the study checkout, then \code{data/<study>/<file>} under the
+#' working directory. When found externally, links or copies into
 #' \code{study_root} so Stata paths keep working.
 #'
 #' @param data_files Character vector of paths relative to study root.
