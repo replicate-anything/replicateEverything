@@ -2,19 +2,22 @@
 % Please edit documentation in R/stata_replication.R
 \name{writable_stata_staging_dir}
 \alias{writable_stata_staging_dir}
-\title{Writable staging directory beside external study data}
+\title{Writable staging directory for Stata output}
 \usage{
-writable_stata_staging_dir(meta, ctx = NULL)
+writable_stata_staging_dir(meta, ctx = NULL, study_root = NULL)
 }
 \arguments{
 \item{meta}{Parsed replication metadata.}
 
 \item{ctx}{Paper context.}
+
+\item{study_root}{Optional local study repository root.}
 }
 \value{
 Normalized path.
 }
 \description{
-Writable staging directory beside external study data
+Uses \code{<study>/artifacts/staging} when the study folder is writable;
+otherwise falls back to \code{<study_data_root>/staging/<study>} (Shiny server).
 }
 \keyword{internal}
