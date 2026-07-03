@@ -172,27 +172,27 @@ only when you intend to refresh that snapshot.</p>
 </tr>
 <tr class="odd">
 <td align="left">Replication runs</td>
-<td align="right">70</td>
+<td align="right">71</td>
 </tr>
 <tr class="even">
 <td align="left">Successful</td>
-<td align="right">57</td>
+<td align="right">67</td>
 </tr>
 <tr class="odd">
 <td align="left">Failed</td>
-<td align="right">13</td>
+<td align="right">4</td>
 </tr>
 <tr class="even">
 <td align="left">Timed out</td>
-<td align="right">0</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td align="left">Audit started</td>
-<td align="right">2026-07-03 07:17</td>
+<td align="right">2026-07-03 10:22</td>
 </tr>
 <tr class="even">
 <td align="left">Audit finished</td>
-<td align="right">2026-07-03 07:19</td>
+<td align="right">2026-07-03 10:26</td>
 </tr>
 </tbody>
 </table>
@@ -201,7 +201,7 @@ only when you intend to refresh that snapshot.</p>
 <span>  <span class="va">pct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">sm</span><span class="op">$</span><span class="va">success</span> <span class="op">/</span> <span class="va">sm</span><span class="op">$</span><span class="va">runs</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"**Pass rate:** %s%%\n"</span>, <span class="va">pct</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt; **Pass rate:** 81.4%</span></span></code></pre></div>
+<span><span class="co">#&gt; **Pass rate:** 94.4%</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="results-by-study">Results by study<a class="anchor" aria-label="anchor" href="#results-by-study"></a>
@@ -235,14 +235,24 @@ only when you intend to refresh that snapshot.</p>
 <th align="right">Seconds</th>
 <th align="left">Error</th>
 </tr></thead>
-<tbody><tr class="odd">
+<tbody>
+<tr class="odd">
 <td align="left">Table 1</td>
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">1.48</td>
+<td align="right">2.24</td>
 <td align="left"></td>
-</tr></tbody>
+</tr>
+<tr class="even">
+<td align="left">Table 1</td>
+<td align="left">tab_1_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">4.75</td>
+<td align="left"></td>
+</tr>
+</tbody>
 </table>
 </div>
 <div class="section level4">
@@ -272,7 +282,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">1.56</td>
+<td align="right">2.06</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -280,7 +290,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">fig_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.14</td>
+<td align="right">0.22</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -288,7 +298,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">fig_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.22</td>
+<td align="right">0.44</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -296,7 +306,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">fig_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">9.85</td>
+<td align="right">11.05</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -304,7 +314,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">fig_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">9.50</td>
+<td align="right">10.26</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -312,7 +322,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">fig_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">8.95</td>
+<td align="right">10.14</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -320,7 +330,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.16</td>
+<td align="right">0.17</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -328,7 +338,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.06</td>
+<td align="right">0.07</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -336,7 +346,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">1.11</td>
+<td align="right">1.28</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -344,7 +354,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.22</td>
+<td align="right">2.58</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -353,7 +363,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.20</td>
+<td align="right">2.53</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -361,7 +371,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.16</td>
+<td align="right">2.44</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -369,7 +379,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_7</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">4.23</td>
+<td align="right">4.81</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -377,7 +387,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_8</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.96</td>
+<td align="right">3.16</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -385,7 +395,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_9</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">5.18</td>
+<td align="right">5.30</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -393,7 +403,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_10</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">9.46</td>
+<td align="right">10.86</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -401,7 +411,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_11</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">7.34</td>
+<td align="right">9.11</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -448,7 +458,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">4.60</td>
+<td align="right">6.07</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -456,7 +466,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">7.17</td>
+<td align="right">10.20</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -464,7 +474,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.84</td>
+<td align="right">1.14</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -472,7 +482,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.72</td>
+<td align="right">0.84</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -480,7 +490,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.72</td>
+<td align="right">0.91</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -488,7 +498,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.84</td>
+<td align="right">3.56</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -496,7 +506,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_7</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">3.86</td>
+<td align="right">5.81</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -504,7 +514,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_8</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">4.73</td>
+<td align="right">5.36</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -512,7 +522,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">tab_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">3.61</td>
+<td align="right">4.52</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -520,7 +530,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">3.27</td>
+<td align="right">3.75</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -553,7 +563,7 @@ Evidence from Sierra Leone<a class="anchor" aria-label="anchor" href="#selection
 <td align="left">fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.23</td>
+<td align="right">0.28</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -562,7 +572,7 @@ variable</td>
 <td align="left">fig_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.12</td>
+<td align="right">0.23</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -570,7 +580,7 @@ variable</td>
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.10</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -578,7 +588,7 @@ variable</td>
 <td align="left">tab_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.09</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -586,7 +596,7 @@ variable</td>
 <td align="left">tab_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.14</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -595,7 +605,7 @@ variable</td>
 <td align="left">tab_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.08</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -604,7 +614,7 @@ variable</td>
 <td align="left">tab_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.09</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -622,7 +632,7 @@ parameters</td>
 <td align="left">fig_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.11</td>
+<td align="right">0.13</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -630,7 +640,7 @@ parameters</td>
 <td align="left">fig_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.11</td>
+<td align="right">0.14</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -639,7 +649,7 @@ Package Outperforms Community Package</td>
 <td align="left">fig_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.10</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -647,7 +657,7 @@ Package Outperforms Community Package</td>
 <td align="left">fig_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.09</td>
+<td align="right">0.12</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -656,7 +666,7 @@ standardization)</td>
 <td align="left">fig_7</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.09</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -664,7 +674,7 @@ standardization)</td>
 <td align="left">tab_7</td>
 <td align="left">r</td>
 <td align="left">Failed</td>
-<td align="right">0.04</td>
+<td align="right">0.05</td>
 <td align="left">Custom GOF row 5 has a different number of values than
 there are models. | Call: matrixreg(l, single.row = single.row, stars =
 stars, custom.model.names = custom.model.names, custom.coef.names =
@@ -676,7 +686,7 @@ CAHW</td>
 <td align="left">tab_8</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.03</td>
+<td align="right">0.04</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -685,7 +695,7 @@ CAHW</td>
 <td align="left">tab_9</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.03</td>
+<td align="right">0.05</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -693,7 +703,7 @@ CAHW</td>
 <td align="left">tab_10</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.04</td>
+<td align="right">0.05</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -701,7 +711,7 @@ CAHW</td>
 <td align="left">tab_11</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.05</td>
+<td align="right">0.06</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -718,7 +728,7 @@ Treatment Arm</td>
 <td align="left">fig_8</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.11</td>
+<td align="right">0.15</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -727,7 +737,7 @@ Subcomponents</td>
 <td align="left">tab_13</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.06</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -736,7 +746,7 @@ Subcomponents</td>
 <td align="left">tab_14</td>
 <td align="left">r</td>
 <td align="left">Failed</td>
-<td align="right">0.05</td>
+<td align="right">0.08</td>
 <td align="left">There are 3 models, but you provided 4 name(s) for
 them. | Call: matrixreg(l, single.row = single.row, stars = stars,
 custom.model.names = custom.model.names, custom.coef.names =
@@ -748,7 +758,7 @@ Subcomponents</td>
 <td align="left">tab_15</td>
 <td align="left">r</td>
 <td align="left">Failed</td>
-<td align="right">0.03</td>
+<td align="right">0.06</td>
 <td align="left">Custom GOF row 5 has a different number of values than
 there are models. | Call: matrixreg(l, single.row = single.row, stars =
 stars, custom.model.names = custom.model.names, custom.coef.names =
@@ -762,12 +772,12 @@ custom.coef.names,</td>
 </h4>
 <table class="table">
 <colgroup>
-<col width="3%">
-<col width="2%">
-<col width="2%">
-<col width="2%">
-<col width="2%">
-<col width="87%">
+<col width="6%">
+<col width="4%">
+<col width="4%">
+<col width="6%">
+<col width="5%">
+<col width="72%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Object</th>
@@ -782,23 +792,18 @@ custom.coef.names,</td>
 <td align="left">Table 1</td>
 <td align="left">tab_1</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">1.05</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1596-1813-9450-10626/artifacts/staging/.run/replicat…</td>
+<td align="left">Timed out</td>
+<td align="right">25.03</td>
+<td align="left">reached elapsed time limit | Call: system2(stata,
+batch_args, wait = TRUE, stdout = ““, stderr =”“)</td>
 </tr>
 <tr class="even">
 <td align="left">Figure 1</td>
 <td align="left">fig_1</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">1.27</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1596-1813-9450-10626/artifacts/staging/.run/replicat…</td>
+<td align="left">OK</td>
+<td align="right">18.77</td>
+<td align="left"></td>
 </tr>
 </tbody>
 </table>
@@ -807,14 +812,6 @@ Humphreys/5_github/replicate_everything/rep-10.1596-1813-9450-10626/artifacts/st
 <h4 id="the-colonial-origins-of-comparative-development">The Colonial Origins of Comparative Development<a class="anchor" aria-label="anchor" href="#the-colonial-origins-of-comparative-development"></a>
 </h4>
 <table class="table">
-<colgroup>
-<col width="2%">
-<col width="3%">
-<col width="2%">
-<col width="2%">
-<col width="2%">
-<col width="86%">
-</colgroup>
 <thead><tr class="header">
 <th align="left">Object</th>
 <th align="left">ID</th>
@@ -829,152 +826,128 @@ Humphreys/5_github/replicate_everything/rep-10.1596-1813-9450-10626/artifacts/st
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.30</td>
+<td align="right">0.36</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 1</td>
 <td align="left">tab_1_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.97</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">1.42</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td align="left">Table 2</td>
 <td align="left">tab_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.04</td>
+<td align="right">0.05</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 2</td>
 <td align="left">tab_2_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.97</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">2.61</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td align="left">Table 3</td>
 <td align="left">tab_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.08</td>
+<td align="right">0.07</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 3</td>
 <td align="left">tab_3_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.99</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">3.07</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td align="left">Table 4</td>
 <td align="left">tab_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.10</td>
+<td align="right">0.11</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 4</td>
 <td align="left">tab_4_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">1.00</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">3.67</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td align="left">Table 5</td>
 <td align="left">tab_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.13</td>
+<td align="right">0.14</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 5</td>
 <td align="left">tab_5_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.89</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">3.22</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td align="left">Table 6</td>
 <td align="left">tab_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.14</td>
+<td align="right">0.18</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 6</td>
 <td align="left">tab_6_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.93</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">3.50</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td align="left">Table 7</td>
 <td align="left">tab_7</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.13</td>
+<td align="right">0.17</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 7</td>
 <td align="left">tab_7_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.97</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">3.24</td>
+<td align="left"></td>
 </tr>
 <tr class="odd">
 <td align="left">Table 8</td>
 <td align="left">tab_8</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.36</td>
+<td align="right">0.45</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
 <td align="left">Table 8</td>
 <td align="left">tab_8_stata</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.93</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">OK</td>
+<td align="right">4.73</td>
+<td align="left"></td>
 </tr>
 </tbody>
 </table>
@@ -1001,13 +974,13 @@ Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/stag
 <span><span class="op">}</span></span></code></pre></div>
 <table class="table">
 <colgroup>
-<col width="20%">
-<col width="13%">
+<col width="22%">
+<col width="14%">
+<col width="1%">
+<col width="1%">
 <col width="2%">
 <col width="1%">
-<col width="1%">
-<col width="1%">
-<col width="58%">
+<col width="54%">
 </colgroup>
 <thead><tr class="header">
 <th align="left">Study</th>
@@ -1026,7 +999,7 @@ Theory and Evidence from Sierra Leone</td>
 <td align="left">tab_7</td>
 <td align="left">r</td>
 <td align="left">Failed</td>
-<td align="right">0.04</td>
+<td align="right">0.05</td>
 <td align="left">Custom GOF row 5 has a different number of values than
 there are models. | Call: matrixreg(l, single.row = single.row, stars =
 stars, custom.model.names = custom.model.names, custom.coef.names =
@@ -1040,7 +1013,7 @@ Subcomponents</td>
 <td align="left">tab_14</td>
 <td align="left">r</td>
 <td align="left">Failed</td>
-<td align="right">0.05</td>
+<td align="right">0.08</td>
 <td align="left">There are 3 models, but you provided 4 name(s) for
 them. | Call: matrixreg(l, single.row = single.row, stars = stars,
 custom.model.names = custom.model.names, custom.coef.names =
@@ -1054,7 +1027,7 @@ Subcomponents</td>
 <td align="left">tab_15</td>
 <td align="left">r</td>
 <td align="left">Failed</td>
-<td align="right">0.03</td>
+<td align="right">0.06</td>
 <td align="left">Custom GOF row 5 has a different number of values than
 there are models. | Call: matrixreg(l, single.row = single.row, stars =
 stars, custom.model.names = custom.model.names, custom.coef.names =
@@ -1065,120 +1038,10 @@ custom.coef.names,</td>
 <td align="left">Table 1</td>
 <td align="left">tab_1</td>
 <td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">1.05</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1596-1813-9450-10626/artifacts/staging/.run/replicat…</td>
-</tr>
-<tr class="odd">
-<td align="left">Migration, Families, and Counterfactual Families</td>
-<td align="left">Figure 1</td>
-<td align="left">fig_1</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">1.27</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1596-1813-9450-10626/artifacts/staging/.run/replicat…</td>
-</tr>
-<tr class="even">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 1</td>
-<td align="left">tab_1_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.97</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
-</tr>
-<tr class="odd">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 2</td>
-<td align="left">tab_2_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.97</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
-</tr>
-<tr class="even">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 3</td>
-<td align="left">tab_3_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.99</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
-</tr>
-<tr class="odd">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 4</td>
-<td align="left">tab_4_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">1.00</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
-</tr>
-<tr class="even">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 5</td>
-<td align="left">tab_5_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.89</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
-</tr>
-<tr class="odd">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 6</td>
-<td align="left">tab_6_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.93</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
-</tr>
-<tr class="even">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 7</td>
-<td align="left">tab_7_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.97</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
-</tr>
-<tr class="odd">
-<td align="left">The Colonial Origins of Comparative Development</td>
-<td align="left">Table 8</td>
-<td align="left">tab_8_stata</td>
-<td align="left">stata</td>
-<td align="left">Failed</td>
-<td align="right">0.93</td>
-<td align="left">Stata replication failed. | Stata ran: yes |
-Executable: C:/Program Files/Stata17/StataMP-64.exe | Invocation: /e do
-C:/WZB Dropbox/Macartan
-Humphreys/5_github/replicate_everything/rep-10.1257-aer.91.5.1369/artifacts/staging/.run/replicate_…</td>
+<td align="left">Timed out</td>
+<td align="right">25.03</td>
+<td align="left">reached elapsed time limit | Call: system2(stata,
+batch_args, wait = TRUE, stdout = ““, stderr =”“)</td>
 </tr>
 </tbody>
 </table>
