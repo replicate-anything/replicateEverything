@@ -552,17 +552,16 @@ staging_dir_is_writable <- function(path) {
 #' @param staging_dir Writable staging directory for replication output.
 #' @keywords internal
 stata_run_dir <- function(workdir, staging_dir = NULL) {
-  key <- paste(
-    normalizePath(workdir, winslash = "/", mustWork = FALSE),
-    normalizePath(staging_dir %||% "", winslash = "/", mustWork = FALSE),
-    Sys.getpid(),
-    sep = "|"
-  )
-  key <- gsub("[^a-zA-Z0-9._-]+", "_", key)
-  key <- substr(key, 1, 180)
-  run_parent <- file.path(tempdir(), "replicateEverything-stata", key)
+  base <- file.path(tempdir(), "replicateEverything-stata")
+  dir.create(base, recursive = TRUE, showWarnings = FALSE)
+  run_parent <- tempfile(pattern = "run", tmpdir = base)
+  if (!dir.create(run_parent, showWarnings = FALSE) || !dir.exists(run_parent)) {
+    stop("Could not create Stata run directory: ", run_parent, call. = FALSE)
+  }
   run_dir <- file.path(run_parent, ".run")
-  dir.create(run_dir, recursive = TRUE, showWarnings = FALSE)
+  if (!dir.create(run_dir, recursive = TRUE, showWarnings = FALSE) || !dir.exists(run_dir)) {
+    stop("Could not create Stata run directory: ", run_dir, call. = FALSE)
+  }
   run_dir
 }
 
@@ -571,9 +570,13 @@ cleanup_stata_run_dir <- function(run_dir) {
   if (is.null(run_dir) || !nzchar(run_dir)) {
     return(invisible(FALSE))
   }
-  parent <- dirname(run_dir)
-  if (dir.exists(parent) && grepl("replicateEverything-stata", parent, fixed = TRUE)) {
-    unlink(parent, recursive = TRUE)
+  run_parent <- dirname(run_dir)
+  staging_root <- dirname(run_parent)
+  if (
+    dir.exists(run_parent) &&
+    grepl("replicateEverything-stata", staging_root, fixed = TRUE)
+  ) {
+    unlink(run_parent, recursive = TRUE)
   }
   invisible(TRUE)
 }

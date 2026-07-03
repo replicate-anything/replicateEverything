@@ -23,10 +23,29 @@ test_that("cleanup_stata_stray_batch_logs removes logs outside run dir", {
 test_that("stata_run_dir uses ephemeral temp directory", {
   run_dir <- stata_run_dir("/tmp/study", "/tmp/study/artifacts/staging")
   expect_match(run_dir, "replicateEverything-stata")
-  expect_true(grepl("/\\.run$", run_dir))
+  expect_true(grepl("[\\\\/]\\.run$", run_dir))
   expect_true(dir.exists(run_dir))
   cleanup_stata_run_dir(run_dir)
   expect_false(dir.exists(run_dir))
+})
+
+test_that("stata_run_dir stays short for long Dropbox-style paths", {
+  long <- file.path(
+    tempdir(),
+    "WZB Dropbox",
+    "Macartan Humphreys",
+    "5_github",
+    "replicate_everything",
+    "rep-10.1596-1813-9450-10626",
+    "artifacts",
+    "staging"
+  )
+  run_dir <- stata_run_dir(long, long)
+  expect_lt(nchar(run_dir), 220L)
+  runner <- file.path(run_dir, "replicate_tab_1.do")
+  writeLines("version 17", runner)
+  expect_true(file.exists(runner))
+  cleanup_stata_run_dir(run_dir)
 })
 
 test_that("stata_shell_do_path shortens spaced paths on Windows", {
