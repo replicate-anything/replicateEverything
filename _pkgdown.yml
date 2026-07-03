@@ -89,5 +89,7 @@ articles:
   contents:
   - replication-example
   - shiny-app
+  - audit
+  - stata-replications
   - folder-replication-checklist
   - package-replication-checklist

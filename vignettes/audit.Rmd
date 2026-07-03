@@ -13,8 +13,10 @@ audit_rds <- system.file(
   "vignette-data", "audit_latest.rds",
   package = "replicateEverything"
 )
-run_live <- identical(Sys.getenv("NOT_CRAN"), "true") &&
-  requireNamespace("devtools", quietly = TRUE)
+run_live <- identical(
+  tolower(Sys.getenv("REPLICATE_AUDIT_LIVE", unset = "")),
+  "true"
+)
 ```
 
 ## What `audit_everything()` does
@@ -48,7 +50,7 @@ quarto::quarto_render(audit_everything_qmd(), execute_params = list(patience = 2
 
 ## Latest audit results
 
-The table below is built from a saved audit snapshot shipped with the package (`inst/vignette-data/audit_latest.rds`). When `NOT_CRAN=true` and a local monorepo is available, the vignette can refresh the snapshot.
+The table below is built from a saved audit snapshot shipped with the package (`inst/vignette-data/audit_latest.rds`). Set `REPLICATE_AUDIT_LIVE=true` (and point at a local monorepo) only when you intend to refresh that snapshot.
 
 ```{r load-audit}
 audit <- if (run_live) {
@@ -158,6 +160,7 @@ Common reasons a run fails or times out:
 Re-run locally and refresh the package vignette snapshot:
 
 ```{r, eval = FALSE}
+Sys.setenv(REPLICATE_AUDIT_LIVE = "true")
 configure_local_monorepo("/path/to/replicate_everything")
 audit <- audit_everything(patience = 20)
 saveRDS(audit, "inst/vignette-data/audit_latest.rds")
