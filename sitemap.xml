@@ -94,6 +94,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/load_artifact_file_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/load_index.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/load_local_replication_data.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/load_registry_audit_summary.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/load_replication_data.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/load_replication_for_display.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/load_replication_package_path.html</loc></url>
@@ -128,6 +129,8 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/read_study_replication_yaml.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/read_yaml_url.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_artifact_rel_paths.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_audit_rds_path.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_audit_summary_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_paper_yaml_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_paper_yaml_url.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_stub_from_folder_meta.html</loc></url>
@@ -201,6 +204,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/walk_up_for_relative.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/writable_stata_staging_dir.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/write_folder_registry_stub.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/write_registry_audit_record.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/yaml_url_status.html</loc></url>
 </urlset>
 

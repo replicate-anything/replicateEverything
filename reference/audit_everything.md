@@ -15,7 +15,8 @@ audit_everything(
   index = NULL,
   dois = NULL,
   install_deps = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  registry_root = NULL
 )
 ```
 
@@ -44,6 +45,12 @@ audit_everything(
 - verbose:
 
   Logical. Print progress messages.
+
+- registry_root:
+
+  Optional path to the registry repository. When set, writes
+  `audit_summary.json` (and `audit_latest.rds`) there after the audit
+  completes.
 
 ## Value
 

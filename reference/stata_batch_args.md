@@ -1,6 +1,7 @@
 # Stata command-line arguments for non-interactive do-file execution
 
-Windows: `/e do file.do`. Unix/Linux/macOS: `-b file.do`.
+Windows: `/e do file.do`. Unix/Linux/macOS: `-b file.do`. Paths with
+spaces are shortened on Windows when possible.
 
 ## Usage
 

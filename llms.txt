@@ -491,6 +491,14 @@ Run all registry replications and inspect results.
   : Audit all registry replications
 - [`audit_everything_qmd()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything_qmd.md)
   : Path to the registry Quarto audit report
+- [`write_registry_audit_record()`](https://replicate-anything.github.io/replicateEverything/reference/write_registry_audit_record.md)
+  : Write audit results into the registry repository
+- [`load_registry_audit_summary()`](https://replicate-anything.github.io/replicateEverything/reference/load_registry_audit_summary.md)
+  : Load the registry audit summary
+- [`registry_audit_summary_path()`](https://replicate-anything.github.io/replicateEverything/reference/registry_audit_summary_path.md)
+  : Path to the registry audit summary JSON
+- [`registry_audit_rds_path()`](https://replicate-anything.github.io/replicateEverything/reference/registry_audit_rds_path.md)
+  : Path to the full registry audit RDS snapshot
 
 ## Discovery
 

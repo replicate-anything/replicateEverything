@@ -1,6 +1,8 @@
 # Directory for ephemeral Stata runner scripts and batch logs
 
-Directory for ephemeral Stata runner scripts and batch logs
+Runners and Stata batch logs live under the R session temp directory so
+study repos are not littered with `artifacts/staging/.run` and paths
+with spaces do not break the Stata command line.
 
 ## Usage
 

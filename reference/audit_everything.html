@@ -70,7 +70,8 @@ results are returned in a concise data frame. For a full HTML report, render
 <span>  index <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dois <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  install_deps <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  registry_root <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,6 +99,12 @@ audits every row in <code>index</code>.</p></dd>
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical. Print progress messages.</p></dd>
+
+
+<dt id="arg-registry-root">registry_root<a class="anchor" aria-label="anchor" href="#arg-registry-root"></a></dt>
+<dd><p>Optional path to the registry repository. When set,
+writes <code>audit_summary.json</code> (and <code>audit_latest.rds</code>) there after
+the audit completes.</p></dd>
 
 </dl></div>
     <div class="section level2">
