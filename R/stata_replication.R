@@ -149,18 +149,36 @@ stata_path_in_do <- function(path) {
   gsub("\\", "/", normalizePath(path, winslash = "/", mustWork = FALSE), fixed = TRUE)
 }
 
+#' @keywords internal
+stata_shell_do_path <- function(path) {
+  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  if (.Platform$OS.type != "windows" || !grepl(" ", path, fixed = TRUE)) {
+    return(path)
+  }
+  short <- tryCatch(utils::shortPathName(path), error = function(e) NULL)
+  if (!is.null(short) && nzchar(short)) {
+    short <- gsub("\\", "/", short, fixed = TRUE)
+    if (!grepl(" ", short, fixed = TRUE)) {
+      return(short)
+    }
+  }
+  path
+}
+
 #' Stata command-line arguments for non-interactive do-file execution
 #'
 #' Windows: \code{/e do file.do}. Unix/Linux/macOS: \code{-b file.do}.
+#' Paths with spaces are shortened on Windows when possible.
 #'
 #' @param do_path Path to the do-file.
 #' @return Character vector of arguments for \code{system2()}.
 #' @keywords internal
 stata_batch_args <- function(do_path) {
+  path <- stata_shell_do_path(do_path)
   if (.Platform$OS.type == "windows") {
-    return(c("/e", "do", do_path))
+    return(c("/e", "do", path))
   }
-  c("-b", do_path)
+  c("-b", path)
 }
 
 #' @keywords internal
@@ -277,6 +295,7 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
       log_name,
       keep = if (file.exists(log_path)) log_path else character(0)
     )
+    cleanup_stata_run_dir(run_dir)
   }, add = TRUE)
 
   cleanup_stata_stray_batch_logs(c(workdir, old_wd, run_dir), log_name, keep = log_path)
@@ -525,18 +544,38 @@ staging_dir_is_writable <- function(path) {
 
 #' Directory for ephemeral Stata runner scripts and batch logs
 #'
+#' Runners and Stata batch logs live under the R session temp directory so study
+#' repos are not littered with \code{artifacts/staging/.run} and paths with
+#' spaces do not break the Stata command line.
+#'
 #' @param workdir Study repository root.
 #' @param staging_dir Writable staging directory for replication output.
 #' @keywords internal
 stata_run_dir <- function(workdir, staging_dir = NULL) {
-  base <- if (!is.null(staging_dir) && nzchar(staging_dir)) {
-    staging_dir
-  } else {
-    file.path(workdir, "artifacts", "staging")
-  }
-  run_dir <- file.path(base, ".run")
+  key <- paste(
+    normalizePath(workdir, winslash = "/", mustWork = FALSE),
+    normalizePath(staging_dir %||% "", winslash = "/", mustWork = FALSE),
+    Sys.getpid(),
+    sep = "|"
+  )
+  key <- gsub("[^a-zA-Z0-9._-]+", "_", key)
+  key <- substr(key, 1, 180)
+  run_parent <- file.path(tempdir(), "replicateEverything-stata", key)
+  run_dir <- file.path(run_parent, ".run")
   dir.create(run_dir, recursive = TRUE, showWarnings = FALSE)
   run_dir
+}
+
+#' @keywords internal
+cleanup_stata_run_dir <- function(run_dir) {
+  if (is.null(run_dir) || !nzchar(run_dir)) {
+    return(invisible(FALSE))
+  }
+  parent <- dirname(run_dir)
+  if (dir.exists(parent) && grepl("replicateEverything-stata", parent, fixed = TRUE)) {
+    unlink(parent, recursive = TRUE)
+  }
+  invisible(TRUE)
 }
 
 #' Resolve Stata output path after a run

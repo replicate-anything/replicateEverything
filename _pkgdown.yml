@@ -39,6 +39,10 @@ reference:
   contents:
   - audit_everything
   - audit_everything_qmd
+  - write_registry_audit_record
+  - load_registry_audit_summary
+  - registry_audit_summary_path
+  - registry_audit_rds_path
 - title: Discovery
   desc: Find papers and inspect replication metadata.
   contents:

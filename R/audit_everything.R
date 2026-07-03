@@ -179,6 +179,9 @@ audit_run_one <- function(
 #'   audits every row in \code{index}.
 #' @param install_deps Logical. Passed to [render_replication()].
 #' @param verbose Logical. Print progress messages.
+#' @param registry_root Optional path to the registry repository. When set,
+#'   writes \code{audit_summary.json} (and \code{audit_latest.rds}) there after
+#'   the audit completes.
 #' @return An object of class \code{audit_everything} with components
 #'   \code{results} (data frame), \code{summary}, and metadata.
 #' @export
@@ -193,7 +196,8 @@ audit_everything <- function(
   index = NULL,
   dois = NULL,
   install_deps = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  registry_root = NULL
 ) {
   patience <- as.numeric(patience)
   if (!is.finite(patience) || patience <= 0) {
@@ -314,7 +318,7 @@ audit_everything <- function(
   n_fail <- sum(!results_df$success, na.rm = TRUE)
   n_timeout <- sum(results_df$timed_out, na.rm = TRUE)
 
-  structure(
+  out <- structure(
     list(
       patience = patience,
       started_at = started_at,
@@ -330,6 +334,20 @@ audit_everything <- function(
     ),
     class = "audit_everything"
   )
+
+  root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
+  if (!is.null(root) && nzchar(root)) {
+    tryCatch(
+      write_registry_audit_record(out, registry_root = root),
+      error = function(e) {
+        if (isTRUE(verbose)) {
+          warning("Could not write registry audit record: ", conditionMessage(e), call. = FALSE)
+        }
+      }
+    )
+  }
+
+  out
 }
 
 #' @export
@@ -375,6 +393,102 @@ print.audit_everything <- function(x, ...) {
     }
   }
   invisible(x)
+}
+
+#' Path to the registry audit summary JSON
+#'
+#' @param registry_root Optional registry repository root.
+#' @return Character path, or \code{""} if the registry root is unknown.
+#' @export
+registry_audit_summary_path <- function(registry_root = NULL) {
+  root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
+  if (is.null(root) || !nzchar(root)) {
+    root <- auto_detect_registry_root()
+  }
+  if (is.null(root) || !nzchar(root)) {
+    return("")
+  }
+  file.path(root, "audit_summary.json")
+}
+
+#' Path to the full registry audit RDS snapshot
+#'
+#' @param registry_root Optional registry repository root.
+#' @return Character path, or \code{""} if the registry root is unknown.
+#' @export
+registry_audit_rds_path <- function(registry_root = NULL) {
+  root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
+  if (is.null(root) || !nzchar(root)) {
+    root <- auto_detect_registry_root()
+  }
+  if (is.null(root) || !nzchar(root)) {
+    return("")
+  }
+  file.path(root, "audit_latest.rds")
+}
+
+#' Write audit results into the registry repository
+#'
+#' Writes \code{audit_summary.json} for Shiny and lightweight consumers, and
+#' \code{audit_latest.rds} with the full \code{audit_everything} object.
+#'
+#' @param audit An \code{audit_everything} object.
+#' @param registry_root Registry repository root.
+#' @return Invisibly, a list with paths \code{summary} and \code{rds}.
+#' @export
+write_registry_audit_record <- function(audit, registry_root = NULL) {
+  summary_path <- registry_audit_summary_path(registry_root)
+  rds_path <- registry_audit_rds_path(registry_root)
+  if (!nzchar(summary_path)) {
+    stop("Could not resolve registry root for audit record.", call. = FALSE)
+  }
+
+  sm <- audit$summary
+  payload <- list(
+    patience = audit$patience,
+    started_at = format(audit$started_at, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    finished_at = format(audit$finished_at, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    studies = sm$studies,
+    runs = sm$runs,
+    success = sm$success,
+    failed = sm$failed,
+    timed_out = sm$timed_out
+  )
+  jsonlite::write_json(
+    payload,
+    summary_path,
+    pretty = TRUE,
+    auto_unbox = TRUE,
+    null = "null"
+  )
+  saveRDS(audit, rds_path)
+
+  invisible(list(summary = summary_path, rds = rds_path))
+}
+
+#' Load the registry audit summary
+#'
+#' Reads \code{audit_summary.json} from a local registry checkout when
+#' available; otherwise fetches from GitHub.
+#'
+#' @param registry_root Optional registry repository root.
+#' @return A list with summary counts, or \code{NULL} when unavailable.
+#' @export
+load_registry_audit_summary <- function(registry_root = NULL) {
+  path <- registry_audit_summary_path(registry_root)
+  if (nzchar(path) && file.exists(path)) {
+    return(jsonlite::fromJSON(path))
+  }
+
+  url <- paste0(
+    "https://raw.githubusercontent.com/",
+    DEFAULT_REGISTRY_REPO,
+    "/main/audit_summary.json"
+  )
+  tryCatch(
+    jsonlite::fromJSON(url),
+    error = function(e) NULL
+  )
 }
 
 #' Path to the registry Quarto audit report

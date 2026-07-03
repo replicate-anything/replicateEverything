@@ -36,3 +36,22 @@ test_that("audit_everything_qmd resolves registry report path", {
   expect_true(nzchar(path))
   expect_equal(normalizePath(path, winslash = "/"), normalizePath(registry_qmd, winslash = "/"))
 })
+
+test_that("registry audit summary paths resolve under registry root", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  registry_root <- file.path(monorepo_root, "registry")
+  testthat::skip_if_not(dir.exists(registry_root), "registry folder missing")
+
+  expect_equal(
+    basename(registry_audit_summary_path(registry_root)),
+    "audit_summary.json"
+  )
+  expect_equal(
+    basename(registry_audit_rds_path(registry_root)),
+    "audit_latest.rds"
+  )
+})

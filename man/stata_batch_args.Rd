@@ -14,5 +14,6 @@ Character vector of arguments for \code{system2()}.
 }
 \description{
 Windows: \code{/e do file.do}. Unix/Linux/macOS: \code{-b file.do}.
+Paths with spaces are shortened on Windows when possible.
 }
 \keyword{internal}

@@ -386,6 +386,44 @@ load_registry_index <- function() {
 
 registry_index <- load_registry_index()
 
+registry_audit_summary <- tryCatch(
+  replicateEverything::load_registry_audit_summary(),
+  error = function(e) NULL
+)
+
+registry_health_bar_ui <- function(summary) {
+  if (is.null(summary)) {
+    return(NULL)
+  }
+  total <- as.integer(summary$runs %||% 0)
+  ok <- as.integer(summary$success %||% 0)
+  if (!is.finite(total) || total <= 0L) {
+    return(NULL)
+  }
+  ok <- max(0L, min(ok, total))
+  pct_ok <- 100 * ok / total
+  pct_fail <- 100 - pct_ok
+  finished <- summary$finished_at %||% ""
+  tags$div(
+    class = "registry-health-wrap",
+    tags$div(
+      class = "registry-health-bar",
+      title = sprintf(
+        "Registry audit: %d of %d tables/figures replicating%s",
+        ok,
+        total,
+        if (nzchar(finished)) paste0(" (", finished, ")") else ""
+      ),
+      tags$div(class = "registry-health-ok", style = sprintf("width:%.4f%%", pct_ok)),
+      tags$div(class = "registry-health-fail", style = sprintf("width:%.4f%%", pct_fail))
+    ),
+    tags$span(
+      class = "registry-health-label",
+      sprintf("%d / %d replicating", ok, total)
+    )
+  )
+}
+
 nice_doi_choices <- function(index_df) {
   if (is.null(index_df) || nrow(index_df) == 0) return(character(0))
   idx <- index_df[nzchar(index_df$doi), , drop = FALSE]
@@ -2198,7 +2236,38 @@ ui <- tagList(
       font-size: 0.75rem;
       line-height: 1.2;
     }
+    .registry-health-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.35rem 1rem 0;
+      max-width: 100%;
+    }
+    .registry-health-bar {
+      flex: 1 1 auto;
+      display: flex;
+      height: 0.55rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #e9ecef;
+      min-width: 120px;
+      max-width: 420px;
+    }
+    .registry-health-ok {
+      background: #2ca25f;
+      height: 100%;
+    }
+    .registry-health-fail {
+      background: #de2d26;
+      height: 100%;
+    }
+    .registry-health-label {
+      font-size: 0.8rem;
+      color: #495057;
+      white-space: nowrap;
+    }
   "))),
+  registry_health_bar_ui(registry_audit_summary),
   navbarPage(
   id = "main_nav",
   title = app_brand_title(),

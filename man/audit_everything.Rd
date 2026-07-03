@@ -9,7 +9,8 @@ audit_everything(
   index = NULL,
   dois = NULL,
   install_deps = FALSE,
-  verbose = TRUE
+  verbose = TRUE,
+  registry_root = NULL
 )
 }
 \arguments{
@@ -24,6 +25,10 @@ audits every row in \code{index}.}
 \item{install_deps}{Logical. Passed to \code{\link[=render_replication]{render_replication()}}.}
 
 \item{verbose}{Logical. Print progress messages.}
+
+\item{registry_root}{Optional path to the registry repository. When set,
+writes \code{audit_summary.json} (and \code{audit_latest.rds}) there after
+the audit completes.}
 }
 \value{
 An object of class \code{audit_everything} with components

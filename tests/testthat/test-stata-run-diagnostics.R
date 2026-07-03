@@ -20,16 +20,35 @@ test_that("cleanup_stata_stray_batch_logs removes logs outside run dir", {
   expect_true(file.exists(keep))
 })
 
-test_that("stata_run_dir is under study artifacts staging", {
+test_that("stata_run_dir uses ephemeral temp directory", {
   run_dir <- stata_run_dir("/tmp/study", "/tmp/study/artifacts/staging")
-  expect_equal(run_dir, "/tmp/study/artifacts/staging/.run")
+  expect_match(run_dir, "replicateEverything-stata")
+  expect_true(grepl("/\\.run$", run_dir))
+  expect_true(dir.exists(run_dir))
+  cleanup_stata_run_dir(run_dir)
+  expect_false(dir.exists(run_dir))
+})
+
+test_that("stata_shell_do_path shortens spaced paths on Windows", {
+  skip_if_not(.Platform$OS.type == "windows")
+  tmp <- tempfile("stata path test")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  do_file <- file.path(tmp, "tab_1.do")
+  writeLines("version 17", do_file)
+  path <- stata_shell_do_path(do_file)
+  expect_true(file.exists(path))
 })
 
 test_that("stata_batch_args uses platform-specific invocation", {
+  runner <- "/tmp/runner.do"
   if (.Platform$OS.type == "windows") {
-    expect_equal(stata_batch_args("/tmp/runner.do"), c("/e", "do", "/tmp/runner.do"))
+    expect_equal(
+      stata_batch_args(runner),
+      c("/e", "do", stata_shell_do_path(runner))
+    )
   } else {
-    expect_equal(stata_batch_args("/tmp/runner.do"), c("-b", "/tmp/runner.do"))
+    expect_equal(stata_batch_args(runner), c("-b", runner))
   }
 })
 
