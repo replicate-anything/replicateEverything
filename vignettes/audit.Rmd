@@ -37,12 +37,12 @@ audit <- audit_everything(patience = 20)
 print(audit)
 ```
 
-You can restrict to specific DOIs or render the bundled Quarto report:
+You can restrict to specific DOIs or render the Quarto report in the [registry repository](https://github.com/replicate-anything/registry):
 
 ```{r, eval = FALSE}
 audit <- audit_everything(patience = 30, dois = "10.1257/aer.91.5.1369")
 
-# Quarto (from package checkout or installed path)
+# Quarto report lives in the registry repo (sibling registry/ in a monorepo)
 quarto::quarto_render(audit_everything_qmd(), execute_params = list(patience = 20))
 ```
 
@@ -155,9 +155,12 @@ Common reasons a run fails or times out:
 - **Network / data** — folder-backed studies may need data files downloaded on first run.
 - **Patience too low** — slow tables may need a higher `patience` value without indicating a true failure.
 
-Re-run locally and save an updated snapshot:
+Re-run locally and refresh the package vignette snapshot:
 
 ```{r, eval = FALSE}
+configure_local_monorepo("/path/to/replicate_everything")
 audit <- audit_everything(patience = 20)
 saveRDS(audit, "inst/vignette-data/audit_latest.rds")
+
+# Full HTML report: quarto render audit_everything.qmd (in the registry repo)
 ```

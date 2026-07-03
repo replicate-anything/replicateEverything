@@ -167,7 +167,10 @@ audit_run_one <- function(
 #'
 #' Walks the replication registry and attempts every table and figure in each
 #' available engine (R and Stata where defined). Failures do not stop the audit;
-#' results are returned in a concise data frame and optional Quarto report.
+#' results are returned in a concise data frame. For a full HTML report, render
+#' \code{audit_everything.qmd} in the
+#' [registry repository](https://github.com/replicate-anything/registry) (see
+#' [audit_everything_qmd()]).
 #'
 #' @param patience Seconds to allow each table or figure before halting that run.
 #'   Defaults to \code{20}.
@@ -374,19 +377,39 @@ print.audit_everything <- function(x, ...) {
   invisible(x)
 }
 
-#' Path to the bundled audit Quarto document
+#' Path to the registry Quarto audit report
 #'
+#' Returns \code{audit_everything.qmd} from a local registry checkout. Looks in
+#' \code{registry_root}, \code{getOption("replicateEverything.registry_root")},
+#' \code{auto_detect_registry_root()}, or a sibling \code{registry/} folder in a
+#' monorepo.
+#'
+#' @param registry_root Optional path to the registry repository root.
 #' @return Character path, or \code{""} if not found.
 #' @export
-audit_everything_qmd <- function() {
-  installed <- system.file("audit", "audit_everything.qmd", package = "replicateEverything")
-  if (nzchar(installed)) {
-    return(installed)
+audit_everything_qmd <- function(registry_root = NULL) {
+  candidates <- character(0)
+  if (!is.null(registry_root) && nzchar(registry_root)) {
+    candidates <- c(candidates, registry_root)
   }
-  pkg_root <- find.package("replicateEverything")
-  dev_path <- file.path(dirname(pkg_root), "audit_everything.qmd")
-  if (file.exists(dev_path)) {
-    return(normalizePath(dev_path, winslash = "/", mustWork = FALSE))
+  opt <- getOption("replicateEverything.registry_root", NULL)
+  if (!is.null(opt) && nzchar(opt)) {
+    candidates <- c(candidates, opt)
+  }
+  detected <- auto_detect_registry_root()
+  if (!is.null(detected) && nzchar(detected)) {
+    candidates <- c(candidates, detected)
+  }
+  monorepo <- auto_detect_monorepo_root()
+  if (!is.null(monorepo) && nzchar(monorepo)) {
+    candidates <- c(candidates, file.path(monorepo, "registry"))
+  }
+
+  for (root in unique(candidates[nzchar(candidates)])) {
+    path <- file.path(root, "audit_everything.qmd")
+    if (file.exists(path)) {
+      return(normalizePath(path, winslash = "/", mustWork = FALSE))
+    }
   }
   ""
 }

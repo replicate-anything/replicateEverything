@@ -6,7 +6,6 @@
 ^papers$
 ^10\..*$
 ^README\.qmd$
-^audit_everything\.qmd$
 ^README_files$
 ^_pkgdown\.yml$
 ^docs$

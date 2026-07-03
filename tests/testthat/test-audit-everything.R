@@ -23,9 +23,16 @@ test_that("audit_error_snippet truncates long messages", {
   expect_match(out, "\\.\\.\\.$")
 })
 
-test_that("audit_everything_qmd resolves installed or dev path", {
-  path <- audit_everything_qmd()
+test_that("audit_everything_qmd resolves registry report path", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  registry_qmd <- file.path(monorepo_root, "registry", "audit_everything.qmd")
+  testthat::skip_if_not(file.exists(registry_qmd), "registry audit_everything.qmd missing")
+
+  path <- audit_everything_qmd(file.path(monorepo_root, "registry"))
   expect_true(nzchar(path))
-  expect_true(file.exists(path))
-  expect_match(path, "audit_everything\\.qmd$")
+  expect_equal(normalizePath(path, winslash = "/"), normalizePath(registry_qmd, winslash = "/"))
 })

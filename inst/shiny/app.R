@@ -6,6 +6,7 @@ REGISTRY_INDEX_URL <- "https://raw.githubusercontent.com/replicate-anything/regi
 REGISTRY_GITHUB <- "https://github.com/replicate-anything/registry"
 ORG_GITHUB <- "https://github.com/orgs/replicate-anything/repositories"
 PKGDOCS_URL <- "https://replicate-anything.github.io/replicateEverything/index.html"
+SHINY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/shiny-app.html"
 LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
 
@@ -161,7 +162,15 @@ replicate_fn <- function(name, ..., folder = NULL, repo = NULL) {
     stop("replicateEverything is not installed.", call. = FALSE)
   }
   ns <- asNamespace("replicateEverything")
-  fn <- get(name, envir = ns)
+  if (!exists(name, envir = ns, inherits = FALSE)) {
+    stop(
+      "Function replicateEverything::", name,
+      " is not available. Update replicateEverything ",
+      "(remotes::install_github('replicate-anything/replicateEverything')).",
+      call. = FALSE
+    )
+  }
+  fn <- get(name, envir = ns, inherits = FALSE)
   args <- list(...)
   fm <- names(formals(fn))
   if ("folder" %in% fm && !is.null(folder) && nzchar(folder)) {
@@ -171,6 +180,28 @@ replicate_fn <- function(name, ..., folder = NULL, repo = NULL) {
     args$repo <- repo
   }
   do.call(fn, args)
+}
+
+#' Resolve DOI / path input for Shiny study loading
+#'
+#' Registry dropdown selections use \code{normalize_doi()} only. The DOI/path
+#' field uses \code{resolve_doi_input()} when available.
+resolve_study_doi_input <- function(doi_input, from_registry = FALSE) {
+  doi_input <- trimws(as.character(doi_input %||% ""))
+  if (isTRUE(from_registry)) {
+    if (!nzchar(doi_input)) {
+      stop("Study DOI is required.", call. = FALSE)
+    }
+    return(list(
+      doi = replicate_fn("normalize_doi", doi_input),
+      local_root = NULL,
+      is_local = FALSE
+    ))
+  }
+  if (!nzchar(doi_input)) {
+    doi_input <- "local"
+  }
+  replicate_fn("resolve_doi_input", doi_input)
 }
 
 ensure_replicate_everything()
@@ -599,21 +630,25 @@ format_study_citation <- function(row) {
   author <- format_author_label(row$authors[[1]])
   year <- row$year[[1]] %||% ""
   title <- truncate_title(row$title[[1]])
-  doi <- row$doi[[1]] %||% ""
-  journal_raw <- strip_html_entities(row$journal[[1]])
-  journal_line <- if (nzchar(journal_raw)) {
-    tags$em(journal_raw)
+  doi_raw <- row$doi[[1]] %||% ""
+  doi <- if (nzchar(doi_raw)) {
+    tryCatch(replicate_fn("normalize_doi", doi_raw), error = function(e) doi_raw)
   } else {
-    tags$em("Working paper")
+    ""
   }
-  line1 <- tagList(
-    sprintf('%s (%s) "%s"', author, year, title),
+  journal_raw <- strip_html_entities(row$journal[[1]])
+  journal_line <- tagList(
+    if (nzchar(journal_raw)) {
+      tags$em(journal_raw)
+    } else {
+      tags$em("Working paper")
+    },
     if (nzchar(doi)) {
       tagList(" ", tags$span(class = "text-muted", doi))
     }
   )
   list(
-    line1 = line1,
+    line1 = sprintf('%s (%s) "%s"', author, year, title),
     line2 = journal_line
   )
 }
@@ -2048,11 +2083,19 @@ ui <- tagList(
       align-items: flex-end;
       gap: 0.35rem;
       margin-bottom: 0.55rem;
+      width: 100%;
     }
-    .doi-input-row .form-group {
-      margin-bottom: 0;
+    .doi-input-field {
       flex: 1 1 auto;
       min-width: 0;
+    }
+    .doi-input-field .form-group {
+      margin-bottom: 0;
+      width: 100%;
+    }
+    .doi-go-wrap {
+      flex: 0 0 auto;
+      margin-left: auto;
     }
     .doi-go-wrap .btn { white-space: nowrap; min-width: 2.75rem; }
     .replication-list-wrap .text-muted { margin-bottom: 0.35rem !important; font-size: 0.82rem; }
@@ -2239,7 +2282,7 @@ ui <- tagList(
         " or deploy with ",
         tags$code("save_local_shiny()"),
         ". See the ",
-        tags$em("Shiny demo app"),
+        tags$a(href = SHINY_VIGNETTE_URL, "Shiny demo app", target = "_blank"),
         " vignette for details."
       )
     )
@@ -2307,14 +2350,14 @@ server <- function(input, output, session) {
     "r"
   }
 
-  load_study <- function(doi_input) {
+  load_study <- function(doi_input, from_registry = FALSE) {
     doi_input <- trimws(as.character(doi_input %||% ""))
-    if (!nzchar(doi_input)) {
+    if (!isTRUE(from_registry) && !nzchar(doi_input)) {
       doi_input <- "local"
     }
 
     resolved <- tryCatch(
-      replicate_fn("resolve_doi_input", doi_input),
+      resolve_study_doi_input(doi_input, from_registry = from_registry),
       error = function(e) {
         state$doi <- NULL
         state$local_study_meta <- NULL
@@ -2396,17 +2439,17 @@ server <- function(input, output, session) {
 
   observeEvent(input$study_select, {
     req(nzchar(input$study_select))
-    load_study(input$study_select)
+    load_study(input$study_select, from_registry = TRUE)
   })
 
   observeEvent(input$doi_go, {
-    load_study(input$study_doi)
+    load_study(input$study_doi, from_registry = FALSE)
   })
 
   observeEvent(input$go_to_study, {
     req(input$go_to_study)
     updateSelectInput(session, "study_select", selected = input$go_to_study)
-    load_study(input$go_to_study)
+    load_study(input$go_to_study, from_registry = TRUE)
     updateNavbarPage(session, "main_nav", selected = "Explore")
   })
 
