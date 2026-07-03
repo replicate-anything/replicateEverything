@@ -24,6 +24,8 @@ A typical workflow using the package is:
 \item Inspect available replications using \code{list_replications()}.
 \item Run a single replication using \code{run_replication()}.
 \item Reproduce all results from a paper using \code{replicate_paper()}.
+\item Audit the full registry with \code{audit_everything()} (see
+\code{audit_everything.qmd} in the registry repository).
 \item Launch the bundled Shiny demo with \code{run_shiny_app()}, or deploy it
 with \code{save_local_shiny()}.
 }
