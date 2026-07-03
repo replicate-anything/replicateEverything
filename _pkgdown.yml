@@ -34,12 +34,22 @@ reference:
   - print.package_replication_check
   - study_package_install_info
   - study_package_install_message
+- title: Registry audit
+  desc: Run all registry replications and inspect results.
+  contents:
+  - audit_everything
+  - audit_everything_qmd
 - title: Discovery
   desc: Find papers and inspect replication metadata.
   contents:
   - get_doi_metadata
   - search_papers
   - normalize_doi
+  - resolve_doi_input
+  - is_local_doi_query
+  - find_local_study_root
+  - configure_local_monorepo
+  - configure_study_folder
   - load_index
   - find_repo
   - list_replications
@@ -56,6 +66,12 @@ reference:
   - create_replication_template
   - self_run
   - load_local_replication_data
+  - find_stata_executable
+  - replication_code_language_for
+  - load_replication_for_display
+  - resolve_replication_display
+  - stata_result_path
+  - smcl_to_html
 - title: Folder-backed studies
   desc: Build artifacts and sync folder-backed study repos.
   contents:
@@ -82,6 +98,8 @@ reference:
   - replication_object
   - replication_error_message
   - try_render_for_display
+  - artifact_display_missing
+  - resolve_display_value
 build:
   readme: yes
 articles:

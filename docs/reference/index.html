@@ -147,6 +147,29 @@
         </dt>
         <dd>User-facing message for installing a study replication package</dd>
       </dl></div><div class="section level2">
+      <h2 id="registry-audit">Registry audit<a class="anchor" aria-label="anchor" href="#registry-audit"></a></h2>
+
+      <div class="section-desc"><p>Run all registry replications and inspect results.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="audit_everything.html">audit_everything()</a></code>
+
+        </dt>
+        <dd>Audit all registry replications</dd>
+
+        <dt>
+
+          <code><a href="audit_everything_qmd.html">audit_everything_qmd()</a></code>
+
+        </dt>
+        <dd>Path to the registry Quarto audit report</dd>
+      </dl></div><div class="section level2">
       <h2 id="discovery">Discovery<a class="anchor" aria-label="anchor" href="#discovery"></a></h2>
 
       <div class="section-desc"><p>Find papers and inspect replication metadata.</p></div>
@@ -176,6 +199,41 @@
 
         </dt>
         <dd>Normalize a DOI</dd>
+
+        <dt>
+
+          <code><a href="resolve_doi_input.html">resolve_doi_input()</a></code>
+
+        </dt>
+        <dd>Resolve a DOI or local study query into a canonical DOI</dd>
+
+        <dt>
+
+          <code><a href="is_local_doi_query.html">is_local_doi_query()</a></code>
+
+        </dt>
+        <dd>Detect whether a DOI argument requests the local working-directory study</dd>
+
+        <dt>
+
+          <code><a href="find_local_study_root.html">find_local_study_root()</a></code>
+
+        </dt>
+        <dd>Find a folder-backed study root containing <code>replication.yml</code></dd>
+
+        <dt>
+
+          <code><a href="configure_local_monorepo.html">configure_local_monorepo()</a></code>
+
+        </dt>
+        <dd>Configure options for a local replicate-anything monorepo</dd>
+
+        <dt>
+
+          <code><a href="configure_study_folder.html">configure_study_folder()</a></code>
+
+        </dt>
+        <dd>Register a server-local study folder for a DOI</dd>
 
         <dt>
 
@@ -276,6 +334,48 @@
 
         </dt>
         <dd>Load replication data from local paths (for self-contained scripts)</dd>
+
+        <dt>
+
+          <code><a href="find_stata_executable.html">find_stata_executable()</a></code>
+
+        </dt>
+        <dd>Locate a Stata executable</dd>
+
+        <dt>
+
+          <code><a href="replication_code_language_for.html">replication_code_language_for()</a></code>
+
+        </dt>
+        <dd>Code language for a replication (for Shiny syntax highlighting)</dd>
+
+        <dt>
+
+          <code><a href="load_replication_for_display.html">load_replication_for_display()</a></code>
+
+        </dt>
+        <dd>Load or run a replication for display</dd>
+
+        <dt>
+
+          <code><a href="resolve_replication_display.html">resolve_replication_display()</a></code>
+
+        </dt>
+        <dd>Resolve display output for an already-selected result</dd>
+
+        <dt>
+
+          <code><a href="stata_result_path.html">stata_result_path()</a></code>
+
+        </dt>
+        <dd>Extract the output file path from a Stata replication result</dd>
+
+        <dt>
+
+          <code><a href="smcl_to_html.html">smcl_to_html()</a></code>
+
+        </dt>
+        <dd>Convert a Stata SMCL file to HTML for display</dd>
       </dl></div><div class="section level2">
       <h2 id="folder-backed-studies">Folder-backed studies<a class="anchor" aria-label="anchor" href="#folder-backed-studies"></a></h2>
 
@@ -422,6 +522,20 @@
 
         </dt>
         <dd>Run a replication and return a result or error object</dd>
+
+        <dt>
+
+          <code><a href="artifact_display_missing.html">artifact_display_missing()</a></code>
+
+        </dt>
+        <dd>Whether display content is missing or empty</dd>
+
+        <dt>
+
+          <code><a href="resolve_display_value.html">resolve_display_value()</a></code>
+
+        </dt>
+        <dd>Resolve a replication result envelope to a display-ready value</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

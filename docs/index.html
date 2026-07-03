@@ -16,8 +16,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="replicateEverything">
-<meta name="description" content="Discover, run, and contribute computational replications — with a bundled Shiny demo">
-<meta property="og:description" content="Discover, run, and contribute computational replications — with a bundled Shiny demo">
+<meta name="description" content="Discover, run, and contribute computational replications — with a bundled Shiny demo and live app at shiny2.wzb.eu/ipi/replicate/">
+<meta property="og:description" content="Discover, run, and contribute computational replications — with a bundled Shiny demo and live app at shiny2.wzb.eu/ipi/replicate/">
 <meta property="og:image" content="https://replicate-anything.github.io/replicateEverything/logo.png">
 </head>
 <body>
@@ -73,7 +73,7 @@
 <!-- badges: end -->
 <p><img src="reference/figures/logo.png" align="right" height="139" alt="replicateEverything logo"></p>
 <p><strong>Tools to discover, run, and contribute computational replications of empirical research papers.</strong></p>
-<p><code>replicateEverything</code> connects to a public <a href="https://github.com/replicate-anything/registry" class="external-link">replication registry</a>, retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The package also bundles a <strong>Shiny demo app</strong> for browsing studies and running replications interactively.</p>
+<p><code>replicateEverything</code> connects to a public <a href="https://github.com/replicate-anything/registry" class="external-link">replication registry</a>, retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The package also bundles a <strong>Shiny demo app</strong> for browsing studies and running replications interactively — try the <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">live demo</a>.</p>
 <div class="section level2">
 <h2 id="key-features">Key features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
@@ -95,7 +95,7 @@
 <li>
 <strong>Display pipeline</strong> — optional <code>format_*</code> steps turn analysis objects into HTML tables and ggplot figures</li>
 <li>
-<strong>Shiny demo</strong> — <code><a href="reference/run_shiny_app.html">run_shiny_app()</a></code> to launch interactively; <code><a href="reference/save_local_shiny.html">save_local_shiny()</a></code> to deploy on Shiny Server</li>
+<strong>Shiny demo</strong> — <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">live app</a>; <code><a href="reference/run_shiny_app.html">run_shiny_app()</a></code> locally; <code><a href="reference/save_local_shiny.html">save_local_shiny()</a></code> to deploy on Shiny Server</li>
 <li>
 <strong>Contributor tooling</strong> — scaffold a new replication folder with <code><a href="reference/create_replication_template.html">create_replication_template()</a></code>
 </li>
@@ -467,7 +467,7 @@ tests/testthat/</code></pre>
 <div class="section level2">
 <h2 id="shiny-demo-app">Shiny demo app<a class="anchor" aria-label="anchor" href="#shiny-demo-app"></a>
 </h2>
-<p>The package bundles a Shiny demo in <code>inst/shiny/</code>. Run it interactively or copy it for Shiny Server:</p>
+<p>Try the <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">live demo</a> at WZB, or run the bundled app from an installed package:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/run_shiny_app.html">run_shiny_app</a></span><span class="op">(</span><span class="op">)</span>                              <span class="co"># run from installed package</span></span>
