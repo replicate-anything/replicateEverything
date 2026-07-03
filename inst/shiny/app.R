@@ -1425,15 +1425,29 @@ as_table_ui <- function(result) {
   HTML(as.character(obj))
 }
 
+contribute_prose <- function(..., class = NULL) {
+  cls <- paste(c("contribute-prose", class), collapse = " ")
+  tags$div(class = cls, ...)
+}
+
 contribute_hint <- function(label, example, caption = NULL) {
+  example <- gsub("\r\n", "\n", example, fixed = TRUE)
+  example <- sub("^\n+", "", example)
   tags$span(
     class = "contribute-hint",
     tabindex = "0",
+    role = "button",
     tags$span(class = "contribute-hint-label", label),
     tags$span(
       class = "contribute-example",
-      if (!is.null(caption)) tags$div(class = "contribute-example-caption", caption),
-      tags$pre(tags$code(example))
+      `aria-hidden` = "true",
+      if (!is.null(caption) && nzchar(caption)) {
+        tags$div(class = "contribute-example-caption", caption)
+      },
+      tags$pre(
+        class = "contribute-example-code",
+        htmltools::HTML(htmltools::htmlEscape(example))
+      )
     )
   )
 }
@@ -1613,7 +1627,7 @@ contribute_tab_ui <- function() {
       ),
       h3(class = "mb-0", "Contribute a replication")
     ),
-    p(
+    contribute_prose(
       class = "contribute-intro",
       "We invite contributions of replications to ",
       tags$strong("replicateEverything"),
@@ -1621,20 +1635,20 @@ contribute_tab_ui <- function() {
       tags$strong("replicateEverything"),
       " package and this Shiny app to inspect code and run replications live."
     ),
-    p(
+    contribute_prose(
       class = "text-muted mb-1",
       "Hover ",
       tags$span(class = "contribute-hint-demo", "underlined terms"),
       " for copy-paste examples."
     ),
     h4("How should replications be formatted?"),
-    p("There are two approaches: a ", tags$strong("folder-backed study repository"), " or a ", tags$strong("package-backed"), " R package."),
+    contribute_prose("There are two approaches: a ", tags$strong("folder-backed study repository"), " or a ", tags$strong("package-backed"), " R package."),
 
     tags$div(
       class = "contribute-section",
       h4("Folder-backed study repository"),
       contribute_step_title("1. Create a study repository", "folder"),
-      tags$p(
+      contribute_prose(
         "Create a Git repository with three folders — ",
         code("code/"),
         ", ",
@@ -1642,10 +1656,10 @@ contribute_tab_ui <- function() {
         ", and ",
         code("artifacts/"),
         " — plus a ",
-        contribute_hint(code("replication.yml"), example_yaml, "Study replication.yml"),
+        contribute_hint(code("replication.yml"), example_yaml),
         " that tells replicateEverything how code, data, and outputs relate."
       ),
-      tags$p(
+      contribute_prose(
         tags$strong("R, Stata, or both. "),
         "Each table or figure is one entry in ",
         code("replication.yml"),
@@ -1661,10 +1675,10 @@ contribute_tab_ui <- function() {
         code("tab_1_stata"),
         ") so both engines appear in Shiny."
       ),
-      tags$p(
+      contribute_prose(
         tags$strong("Artifacts must be baked. "),
         "Run ",
-        contribute_hint(code("build_study_artifacts()"), example_folder_build, "Build artifacts"),
+        contribute_hint(code("build_study_artifacts()"), example_folder_build),
         " so ",
         code("artifacts/"),
         " contains precomputed HTML tables, figures, and ",
@@ -1673,7 +1687,7 @@ contribute_tab_ui <- function() {
       ),
 
       contribute_step_title("2. Check locally", "check"),
-      tags$p(
+      contribute_prose(
         "Before contacting the registry maintainers, confirm your repo works with replicateEverything on your machine:"
       ),
       tags$ul(
@@ -1701,7 +1715,7 @@ contribute_tab_ui <- function() {
       ),
 
       contribute_step_title("3. Connect with the registry", "registry"),
-      tags$p("When local checks pass, add your study to the central registry:"),
+      contribute_prose("When local checks pass, add your study to the central registry:"),
       tags$ul(
         tags$li(
           contribute_hint(code("prepare_folder_paper()"), example_folder_build, "Prepare registry stubs"),
@@ -1748,9 +1762,9 @@ contribute_tab_ui <- function() {
       class = "contribute-section",
       h4("Package-backed study"),
       contribute_step_title("1. Create an R package", "package"),
-      tags$p(
+      contribute_prose(
         "Scaffold with ",
-        contribute_hint(code("create_replication_template()"), example_package_stub, "Package template"),
+        contribute_hint(code("create_replication_template()"), example_package_stub),
         " or build manually. The package must export ",
         contribute_hint(code("run_replication()"), example_package_api, "Required API"),
         ", ",
@@ -1760,14 +1774,14 @@ contribute_tab_ui <- function() {
         ", and ",
         code("get_code()"),
         ", and include ",
-        contribute_hint(code("replication.yml"), example_package_stub, "Package replication.yml"),
+        contribute_hint(code("replication.yml"), example_package_stub),
         " describing each replication."
       ),
-      tags$p(
+      contribute_prose(
         tags$strong("R only. "),
         "Package-backed studies use R. Stata replications belong in the folder-backed model."
       ),
-      tags$p(
+      contribute_prose(
         tags$strong("Bake display artifacts. "),
         "Run ",
         code("build_report()"),
@@ -2018,10 +2032,14 @@ ui <- tagList(
       color: #1a7f37;
       border-color: #4ac26b;
     }
+    .contribute-prose {
+      margin-bottom: 1rem;
+    }
     .contribute-hint {
       position: relative;
       display: inline;
       cursor: help;
+      vertical-align: baseline;
     }
     .contribute-hint-label {
       border-bottom: 1px dotted currentColor;
@@ -2034,7 +2052,6 @@ ui <- tagList(
       z-index: 1050;
     }
     .contribute-example {
-      display: none;
       position: absolute;
       left: 0;
       top: calc(100% + 6px);
@@ -2053,10 +2070,19 @@ ui <- tagList(
       color: #24292f;
       text-align: left;
       white-space: normal;
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
     }
     .contribute-hint:hover .contribute-example,
     .contribute-hint:focus-within .contribute-example {
-      display: block;
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      clip: auto;
+      clip-path: none;
     }
     .contribute-example-caption {
       font-weight: 600;
@@ -2066,18 +2092,18 @@ ui <- tagList(
       text-transform: uppercase;
       letter-spacing: 0.02em;
     }
-    .contribute-example pre {
+    .contribute-example-code {
       margin: 0;
       padding: 0.5rem;
       background: #f6f8fa;
       border-radius: 4px;
       overflow-x: auto;
-    }
-    .contribute-example code {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       white-space: pre;
       font-size: 0.72rem;
       color: #24292f;
+      text-align: left;
+      tab-size: 2;
     }
     .replication-error-message {
       white-space: pre-wrap;
