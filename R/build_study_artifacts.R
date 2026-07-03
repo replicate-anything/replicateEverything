@@ -64,12 +64,14 @@ build_study_artifacts <- function(
   old_opts <- options(run_opts)
   on.exit(options(old_opts), add = TRUE)
 
-  manifest <- list(
-    generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
-    folder = folder,
-    doi = doi,
-    study_path = study_root,
-    replications = list()
+  manifest <- c(
+    list(
+      generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+      folder = folder,
+      doi = doi,
+      replications = list()
+    ),
+    folder_manifest_metadata(study_root, meta)
   )
 
   failures <- character(0)
@@ -109,8 +111,9 @@ build_study_artifacts <- function(
         )
       )
     }, error = function(e) {
-      failures <<- c(failures, paste0(rep_id, ": ", conditionMessage(e)))
-      list(status = "error", message = conditionMessage(e))
+      msg <- portable_path_in_text(conditionMessage(e), study_root)
+      failures <<- c(failures, paste0(rep_id, ": ", msg))
+      list(status = "error", message = msg)
     })
 
     manifest$replications[[rep_id]] <- status

@@ -132,6 +132,62 @@ folder_study_run_options <- function(study_root, meta, registry_root = NULL) {
   opts
 }
 
+#' Portable study metadata for artifacts/manifest.json
+#'
+#' Committed manifests should reference the GitHub slug and monorepo-relative
+#' folder name, not machine-specific absolute paths.
+#'
+#' @param study_root Normalized study repository path.
+#' @param meta Parsed study \code{replication.yml}.
+#' @keywords internal
+folder_manifest_metadata <- function(study_root, meta) {
+  study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  study_repo <- infer_study_repo_slug(study_root, meta)
+  out <- list(
+    study_repo = study_repo,
+    study_folder = basename(study_root)
+  )
+  monorepo <- sibling_monorepo_root()
+  if (!is.null(monorepo)) {
+    monorepo <- normalizePath(monorepo, winslash = "/", mustWork = FALSE)
+    rel <- sub(paste0("^", gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", monorepo), "/?"), "", study_root)
+    if (nzchar(rel) && !identical(rel, study_root) && !identical(rel, out$study_folder)) {
+      out$monorepo_path <- rel
+    }
+  }
+  out[!vapply(out, is.null, logical(1))]
+}
+
+#' Rewrite absolute paths in text for portable logs and manifests
+#'
+#' @param text Character scalar.
+#' @param study_root Study repository root to relativize.
+#' @keywords internal
+portable_path_in_text <- function(text, study_root = NULL) {
+  if (is.null(text) || length(text) != 1L || !nzchar(text)) {
+    return(text)
+  }
+  replacements <- list()
+  if (!is.null(study_root) && nzchar(study_root)) {
+    study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+    replacements[[study_root]] <- basename(study_root)
+  }
+  monorepo <- sibling_monorepo_root()
+  if (!is.null(monorepo)) {
+    monorepo <- normalizePath(monorepo, winslash = "/", mustWork = FALSE)
+    replacements[[monorepo]] <- "."
+  }
+  for (abs_path in names(replacements)) {
+    rel <- replacements[[abs_path]]
+    text <- gsub(abs_path, rel, text, fixed = TRUE)
+    win_path <- gsub("/", "\\", abs_path, fixed = TRUE)
+    if (!identical(win_path, abs_path)) {
+      text <- gsub(win_path, rel, text, fixed = TRUE)
+    }
+  }
+  text
+}
+
 #' Display replications from study yaml
 #' @keywords internal
 folder_display_replications <- function(meta) {
@@ -170,6 +226,31 @@ replication_data_paths <- function(rep) {
     data <- unlist(data, use.names = FALSE)
   }
   as.character(data)
+}
+
+#' Check whether a baked table artifact file is valid for folder checks
+#'
+#' Accepts `.rds`, HTML with a `<table>`, or (for Stata entries) monospace
+#' `<pre class="stata-output">` blocks produced when regression output cannot
+#' be parsed into an HTML table.
+#'
+#' @param art_path Path to the artifact file.
+#' @param engine Optional replication engine (`"stata"` or `"r"`).
+#' @keywords internal
+table_artifact_file_ok <- function(art_path, engine = NULL) {
+  ext <- tolower(tools::file_ext(art_path))
+  if (identical(ext, "rds")) {
+    return(TRUE)
+  }
+  if (!identical(ext, "html") || !file.exists(art_path)) {
+    return(FALSE)
+  }
+  html <- paste(readLines(art_path, warn = FALSE), collapse = "\n")
+  if (grepl("<table", html, ignore.case = TRUE)) {
+    return(TRUE)
+  }
+  identical(engine, "stata") &&
+    grepl('<pre[^>]*class="[^"]*stata-output', html, ignore.case = TRUE)
 }
 
 #' Expected artifact path relative to study root

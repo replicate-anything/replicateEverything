@@ -143,3 +143,56 @@ test_that("resolve_doi_input path errors include formatting hints", {
   expect_error(resolve_doi_input("c:/no/such/repo"), "Windows:")
   expect_error(resolve_doi_input("c:/no/such/repo"), "macOS:")
 })
+
+test_that("folder_manifest_metadata uses github slug not absolute paths", {
+  tmp <- withr::local_tempdir()
+  study <- file.path(tmp, "rep-10.9999_manifest")
+  dir.create(study, recursive = TRUE)
+  meta <- list(
+    paper = list(
+      doi = "https://doi.org/10.9999/manifest",
+      title = "Manifest test"
+    ),
+    repo = "replicate-anything/rep-10.9999_manifest"
+  )
+  yaml::write_yaml(meta, file.path(study, "replication.yml"))
+  withr::with_options(list(replicateEverything.study_folders_root = tmp), {
+    out <- folder_manifest_metadata(study, meta)
+    expect_equal(out$study_repo, "replicate-anything/rep-10.9999_manifest")
+    expect_equal(out$study_folder, "rep-10.9999_manifest")
+    expect_null(out$monorepo_path)
+    expect_false(grepl(normalizePath(tmp, winslash = "/"), paste(unlist(out), collapse = " ")))
+  })
+})
+
+test_that("portable_path_in_text rewrites study and monorepo roots", {
+  monorepo <- normalizePath(withr::local_tempdir(), winslash = "/")
+  study <- file.path(monorepo, "rep-10.9999_paths")
+  dir.create(study, recursive = TRUE)
+  raw <- paste0(
+    "Missing file: ", study, "/artifacts/tab_1.html\n",
+    "Monorepo: ", monorepo, "/registry"
+  )
+  withr::with_options(list(replicateEverything.study_folders_root = monorepo), {
+    out <- portable_path_in_text(raw, study)
+    expect_match(out, "rep-10.9999_paths/artifacts/tab_1.html", fixed = TRUE)
+    expect_match(out, "./registry", fixed = TRUE)
+    expect_false(grepl(monorepo, out, fixed = TRUE))
+  })
+})
+
+test_that("table_artifact_file_ok accepts html tables and stata pre output", {
+  tmp <- withr::local_tempdir()
+  html_table <- file.path(tmp, "tab.html")
+  writeLines("<table><tr><td>1</td></tr></table>", html_table)
+  expect_true(table_artifact_file_ok(html_table))
+
+  stata_pre <- file.path(tmp, "stata.html")
+  writeLines('<pre class="stata-output replication-table">logit</pre>', stata_pre)
+  expect_false(table_artifact_file_ok(stata_pre))
+  expect_true(table_artifact_file_ok(stata_pre, engine = "stata"))
+
+  rds_path <- file.path(tmp, "tab.rds")
+  saveRDS(data.frame(x = 1), rds_path)
+  expect_true(table_artifact_file_ok(rds_path))
+})

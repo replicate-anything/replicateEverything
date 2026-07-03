@@ -202,21 +202,18 @@ check_folder_replication <- function(
         )
       )
     } else {
-      ext <- tolower(tools::file_ext(art_path))
-      ok_table <- if (identical(ext, "html")) {
-        html <- paste(readLines(art_path, warn = FALSE), collapse = "\n")
-        grepl("<table", html, ignore.case = TRUE)
-      } else if (identical(ext, "rds")) {
-        TRUE
-      } else {
-        FALSE
-      }
+      engine <- replication_engine(rep, meta$paper)
+      ok_table <- table_artifact_file_ok(art_path, engine = engine)
       checks <- bind_check_results(
         checks,
         check_result(
           paste0("artifact_", rid),
           ok_table,
-          if (ok_table) art_path else "Table artifact must be HTML with <table> or .rds"
+          if (ok_table) {
+            art_path
+          } else {
+            "Table artifact must be HTML with <table>, Stata <pre> output, or .rds"
+          }
         )
       )
     }
