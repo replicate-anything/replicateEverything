@@ -17,7 +17,9 @@
 #' 4. Inspect available replications using \code{list_replications()}.
 #' 5. Run a single replication using \code{run_replication()}.
 #' 6. Reproduce all results from a paper using \code{replicate_paper()}.
-#' 7. Launch the bundled Shiny demo with \code{run_shiny_app()}, or deploy it
+#' 7. Audit the full registry with \code{audit_everything()} or
+#'    \code{audit_everything.qmd}.
+#' 8. Launch the bundled Shiny demo with \code{run_shiny_app()}, or deploy it
 #'    with \code{save_local_shiny()}.
 #'
 #' @section Examples:

@@ -116,6 +116,240 @@ resolve_local_study_folder <- function(doi) {
   NULL
 }
 
+#' Detect whether input is a filesystem path to a study repository
+#'
+#' @param x Character scalar.
+#' @return Logical scalar.
+#' @keywords internal
+is_study_path_query <- function(x) {
+  if (is.null(x) || length(x) != 1L) {
+    return(FALSE)
+  }
+  x <- trimws(as.character(x))
+  if (!nzchar(x)) {
+    return(FALSE)
+  }
+  if (grepl("^https?://", x, ignore.case = TRUE)) {
+    return(FALSE)
+  }
+  if (grepl("^doi:", x, ignore.case = TRUE)) {
+    return(FALSE)
+  }
+  if (grepl("\\\\", x)) {
+    return(TRUE)
+  }
+  if (grepl("^[a-zA-Z]:", x)) {
+    return(TRUE)
+  }
+  if (grepl("^~", x)) {
+    return(TRUE)
+  }
+  if (grepl("^/", x)) {
+    return(TRUE)
+  }
+  if (grepl("^\\./|^\\.\\.[/\\\\]", x)) {
+    return(TRUE)
+  }
+  suppressWarnings(dir.exists(x))
+}
+
+#' Expand a study-path input for filesystem lookup
+#'
+#' @param path Character path.
+#' @return Normalized path or \code{NULL}.
+#' @keywords internal
+expand_study_path_input <- function(path) {
+  path <- trimws(as.character(path))
+  if (!nzchar(path)) {
+    return(NULL)
+  }
+  if (grepl("^~", path)) {
+    path <- path.expand(path)
+  }
+  tryCatch(
+    normalizePath(path, winslash = "/", mustWork = FALSE),
+    error = function(e) NULL
+  )
+}
+
+#' User-facing hint when a DOI or study-path lookup fails
+#'
+#' @param kind Failure kind: \code{path}, \code{cwd}, \code{empty}, \code{doi},
+#'   or \code{generic}.
+#' @param path Optional path string entered by the user.
+#' @param input Optional raw input string.
+#' @return Multi-line character message.
+#' @keywords internal
+study_input_error_message <- function(
+  kind = c("path", "cwd", "empty", "doi", "generic"),
+  path = NULL,
+  input = NULL
+) {
+  kind <- match.arg(kind)
+  path_hint <- paste(
+    "For a local study repo, enter the path to the folder that contains replication.yml.",
+    "Use forward slashes; quote paths that contain spaces.",
+    "  Windows: c:/Users/you/my_repo/  or  \"c:/typical path/my_repo/\"",
+    "  macOS:   /Users/you/my_repo/  or  ~/my_repo/",
+    sep = "\n"
+  )
+  doi_hint <- paste(
+    "For a registered study, enter its DOI (with or without https://doi.org/).",
+    "Check spelling against the Studies tab.",
+    sep = " "
+  )
+
+  switch(
+    kind,
+    path = paste0(
+      "Could not find replication.yml at that path",
+      if (!is.null(path) && nzchar(path)) paste0(" (", path, ")") else "",
+      ".\n\n",
+      path_hint,
+      "\n\nIf this study is already in the registry, try its DOI instead.\n",
+      doi_hint
+    ),
+    cwd = paste0(
+      "No replication.yml found in the working directory or its parent folders.\n\n",
+      path_hint,
+      "\n\n",
+      doi_hint
+    ),
+    empty = paste0(
+      "Enter a DOI or the path to a study repository folder.\n\n",
+      doi_hint,
+      "\n",
+      path_hint
+    ),
+    doi = paste0(
+      "Could not interpret \"",
+      input %||% "",
+      "\" as a DOI or study path.\n\n",
+      doi_hint,
+      "\n",
+      path_hint
+    ),
+    generic = paste0(doi_hint, "\n", path_hint)
+  )
+}
+
+register_local_study_from_root <- function(local_root) {
+  meta <- read_study_replication_yaml(local_root)
+  if (is.null(meta) || is.null(meta$paper$doi)) {
+    stop("Local replication.yml must include paper.doi.", call. = FALSE)
+  }
+  doi_out <- normalize_doi(meta$paper$doi)
+  configure_study_folder(doi_out, local_root)
+  list(doi = doi_out, local_root = local_root, is_local = TRUE)
+}
+
+#' Detect whether a DOI argument requests the local working-directory study
+#'
+#' @param doi Character. Use \code{""}, \code{"local"}, or \code{"."}.
+#' @return Logical scalar.
+#' @export
+is_local_doi_query <- function(doi) {
+  if (is.null(doi) || length(doi) != 1L) {
+    return(FALSE)
+  }
+  x <- tolower(trimws(as.character(doi)))
+  x %in% c("", "local", ".")
+}
+
+#' Find a folder-backed study root containing \code{replication.yml}
+#'
+#' Walks up from \code{location} (default working directory).
+#'
+#' @param location Directory to start from.
+#' @return Normalized study root or \code{NULL}.
+#' @export
+find_local_study_root <- function(location = getwd()) {
+  if (is.null(location) || length(location) != 1L || is.na(location) || !nzchar(location)) {
+    return(NULL)
+  }
+  dir <- tryCatch(
+    normalizePath(location, winslash = "/", mustWork = FALSE),
+    error = function(e) NULL
+  )
+  if (is.null(dir) || !dir.exists(dir)) {
+    return(NULL)
+  }
+  if (file.exists(file.path(dir, "replication.yml"))) {
+    return(dir)
+  }
+  found <- walk_up_for_relative(dir, "replication.yml")
+  if (is.null(found)) {
+    return(NULL)
+  }
+  normalizePath(found, winslash = "/", mustWork = FALSE)
+}
+
+#' Resolve a DOI or local study query into a canonical DOI
+#'
+#' When \code{doi} is blank or \code{"local"}, searches for
+#' \code{replication.yml} from the working directory upward. When \code{doi} is a
+#' filesystem path, searches that folder (and parents). When a matching local
+#' study is found, registers it via \code{\link{configure_study_folder}}.
+#'
+#' @param doi Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.
+#' @param location Directory to search for a local study (default \code{getwd()}).
+#' @return A list with \code{doi}, \code{local_root}, and \code{is_local}.
+#' @export
+resolve_doi_input <- function(doi = NULL, location = getwd()) {
+  raw <- trimws(as.character(doi %||% ""))
+
+  if (is_study_path_query(raw)) {
+    path_root <- expand_study_path_input(raw)
+    local_root <- if (!is.null(path_root)) {
+      find_local_study_root(path_root)
+    } else {
+      NULL
+    }
+    if (is.null(local_root)) {
+      stop(study_input_error_message("path", path = raw), call. = FALSE)
+    }
+    return(register_local_study_from_root(local_root))
+  }
+
+  local_root <- find_local_study_root(location)
+
+  if (is_local_doi_query(raw)) {
+    if (is.null(local_root)) {
+      stop(study_input_error_message("cwd"), call. = FALSE)
+    }
+    return(register_local_study_from_root(local_root))
+  }
+
+  if (!nzchar(raw)) {
+    stop(study_input_error_message("empty"), call. = FALSE)
+  }
+
+  doi_out <- normalize_doi(raw)
+  if (!is.null(local_root)) {
+    meta <- read_study_replication_yaml(local_root)
+    if (!is.null(meta) && !is.null(meta$paper$doi)) {
+      local_doi <- normalize_doi(meta$paper$doi)
+      if (identical(local_doi, doi_out)) {
+        configure_study_folder(doi_out, local_root)
+        return(list(doi = doi_out, local_root = local_root, is_local = FALSE))
+      }
+    }
+  }
+
+  list(doi = doi_out, local_root = NULL, is_local = FALSE)
+}
+
+#' Prepare a DOI for replication API calls
+#'
+#' Wrapper around \code{\link{resolve_doi_input}} that returns the canonical DOI.
+#'
+#' @inheritParams resolve_doi_input
+#' @return Character DOI.
+#' @keywords internal
+prepare_doi_for_replication <- function(doi, location = getwd()) {
+  resolve_doi_input(doi, location = location)$doi
+}
+
 #' Configure options for a local replicate-anything monorepo
 #'
 #' Sets \code{replicateEverything.registry_root},

@@ -411,6 +411,61 @@ engine_icon_stata <- function() {
   )
 }
 
+engine_icons_display <- function(has_r = FALSE, has_stata = FALSE) {
+  if (!has_r && !has_stata) {
+    return(tags$span(class = "text-muted small", "—"))
+  }
+  tags$div(
+    class = "engine-icons-cell",
+    if (has_r) tags$span(class = "engine-badge", title = "R", engine_icon_r()),
+    if (has_stata) tags$span(class = "engine-badge", title = "Stata", engine_icon_stata())
+  )
+}
+
+study_engine_availability <- function(reps) {
+  has_r <- FALSE
+  has_stata <- FALSE
+  if (is.null(reps) || !length(reps)) {
+    return(list(r = FALSE, stata = FALSE))
+  }
+  for (x in reps) {
+    eng <- tolower(as.character(x$engine %||% ""))
+    id <- as.character(x$id %||% "")
+    code <- as.character(x$code %||% "")
+    if (identical(eng, "stata") || grepl("_stata$", id, ignore.case = TRUE) ||
+        grepl("\\.do$", code, ignore.case = TRUE)) {
+      has_stata <- TRUE
+    } else {
+      has_r <- TRUE
+    }
+  }
+  list(r = has_r, stata = has_stata)
+}
+
+study_engine_availability_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO) {
+  folder <- row$folder[[1]] %||% NULL
+  if (is.null(folder) || !nzchar(folder)) {
+    return(list(r = TRUE, stata = FALSE))
+  }
+  reps <- tryCatch(
+    fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
+    error = function(e) NULL
+  )
+  study_engine_availability(reps)
+}
+
+contribute_step_title <- function(text, kind = c("folder", "package", "registry", "check")) {
+  kind <- match.arg(kind)
+  color <- switch(
+    kind,
+    folder = "#0d6efd",
+    package = "#198754",
+    registry = "#6f42c1",
+    check = "#fd7e14"
+  )
+  tags$h5(class = "contribute-step-title", style = paste0("color:", color, ";"), text)
+}
+
 replication_stub_label <- function(type, id) {
   prefix <- switch(as.character(type), figure = "Fig", table = "Table", "Item")
   num <- sub("^[^0-9]*([0-9]+).*", "\\1", as.character(id))
@@ -544,10 +599,22 @@ format_study_citation <- function(row) {
   author <- format_author_label(row$authors[[1]])
   year <- row$year[[1]] %||% ""
   title <- truncate_title(row$title[[1]])
-  journal <- strip_html_entities(row$journal[[1]])
+  doi <- row$doi[[1]] %||% ""
+  journal_raw <- strip_html_entities(row$journal[[1]])
+  journal_line <- if (nzchar(journal_raw)) {
+    tags$em(journal_raw)
+  } else {
+    tags$em("Working paper")
+  }
+  line1 <- tagList(
+    sprintf('%s (%s) "%s"', author, year, title),
+    if (nzchar(doi)) {
+      tagList(" ", tags$span(class = "text-muted", doi))
+    }
+  )
   list(
-    line1 = sprintf('%s (%s) "%s"', author, year, title),
-    line2 = if (nzchar(journal)) journal else ""
+    line1 = line1,
+    line2 = journal_line
   )
 }
 
@@ -1421,22 +1488,43 @@ contribute_tab_ui <- function() {
     "sync_folder_paper(\".\")"
   )
 
-  example_package_tests <- paste0(
+  example_local_dev <- paste0(
+    "library(replicateEverything)\n",
+    "configure_local_monorepo()  # or set registry_root manually\n",
+    "configure_study_folder(\"10.1257/aer.91.5.1369\", \".\")\n",
+    "\n",
+    "check_folder_replication(\".\", full_replication = FALSE)\n",
+    "run_replication(\"local\", \"tab_1\", format = TRUE)\n",
+    "run_shiny_app()  # Explore tab: enter a path or leave blank for cwd"
+  )
+
+  example_folder_check <- paste0(
+    "library(replicateEverything)\n",
+    "check_folder_replication(\".\", full_replication = FALSE)\n",
+    "run_replication(\"local\", \"tab_1\", format = TRUE)"
+  )
+
+  example_registry_connect <- paste0(
+    "library(replicateEverything)\n",
+    "options(replicateEverything.registry_root = \"../registry\")\n",
+    "\n",
+    "prepare_folder_paper(\".\", build_artifacts = FALSE)\n",
+    "sync_folder_paper(\".\")\n",
+    "add_folder_paper(\".\")"
+  )
+
+  example_package_check <- paste0(
     "build_report()\n",
     "testthat::test_dir(\"tests/testthat\")\n",
     "check_package_replication(\".\", full_replication = FALSE)"
   )
 
-  example_add_paper <- paste0(
+  example_package_registry <- paste0(
     "library(replicateEverything)\n",
     "options(replicateEverything.registry_root = \"../registry\")\n",
     "\n",
-    "check_package_replication(\n",
-    "  \"../rep-10.1371_journal.pone.0278337\",\n",
-    "  full_replication = FALSE\n",
-    ")\n",
-    "\n",
-    "add_paper(\"../rep-10.1371_journal.pone.0278337\")"
+    "check_package_replication(\"../rep-package\", full_replication = FALSE)\n",
+    "add_paper(\"../rep-package\")"
   )
 
   fluidPage(
@@ -1453,88 +1541,210 @@ contribute_tab_ui <- function() {
       h3(class = "mb-0", "Contribute a replication")
     ),
     p(
-      class = "text-muted",
-      "Two models: ",
-      tags$strong("folder-backed study repo"),
-      " (code/data in a dedicated repo; registry stub only) and ",
-      tags$strong("package-backed"),
-      " (study R package on GitHub; registry stub only). Hover ",
-      tags$span(class = "contribute-hint-demo", "underlined terms"),
-      " for examples."
+      class = "contribute-intro",
+      "We invite contributions of replications to ",
+      tags$strong("replicateEverything"),
+      ". Individual replications are saved in a dedicated folder or as a standalone R package, following a prespecified format. Once checked, they are included in the registry. Users can then use the ",
+      tags$strong("replicateEverything"),
+      " package and this Shiny app to inspect code and run replications live."
     ),
-    h4("Folder-backed study repo"),
-    tags$ol(
-      tags$li(
-        "Create a study repository with ",
-        contribute_hint(code("replication.yml"), example_yaml, "Study replication.yml"),
-        ", ",
-        contribute_hint(code("data/"), example_folder_repo, "Study repo layout"),
-        ", ",
+    p(
+      class = "text-muted mb-1",
+      "Hover ",
+      tags$span(class = "contribute-hint-demo", "underlined terms"),
+      " for copy-paste examples."
+    ),
+    h4("How should replications be formatted?"),
+    p("There are two approaches: a ", tags$strong("folder-backed study repository"), " or a ", tags$strong("package-backed"), " R package."),
+
+    tags$div(
+      class = "contribute-section",
+      h4("Folder-backed study repository"),
+      contribute_step_title("1. Create a study repository", "folder"),
+      tags$p(
+        "Create a Git repository with three folders — ",
         code("code/"),
+        ", ",
+        code("data/"),
         ", and ",
         code("artifacts/"),
-        "."
+        " — plus a ",
+        contribute_hint(code("replication.yml"), example_yaml, "Study replication.yml"),
+        " that tells replicateEverything how code, data, and outputs relate."
       ),
-      tags$li(
-        "Add a registry stub file ",
-        code("papers/<folder>.yml"),
-        " with ",
-        contribute_hint(code("materials: folder"), example_folder_stub, "Registry stub fields"),
-        " pointing at the study repo."
-      ),
-      tags$li(
-        "Update ",
-        code("index.csv"),
-        " so the ",
-        code("repo"),
-        " column names the study repository."
-      ),
-      tags$li(
-        "Build artifacts, test, and prepare registry stub files with ",
-        contribute_hint(code("prepare_folder_paper()"), example_folder_build, "Build, test, prepare"),
-        ". This writes ",
-        code("registry/replication.yml"),
+      tags$p(
+        tags$strong("R, Stata, or both. "),
+        "Each table or figure is one entry in ",
+        code("replication.yml"),
+        ". Use ",
+        code("engine: stata"),
+        " and a ",
+        code(".do"),
+        " file for Stata; omit ",
+        code("engine"),
+        " (or use R scripts) for R. You may list paired entries (e.g. ",
+        code("tab_1"),
         " and ",
-        code("registry/index.csv"),
-        " in the study repo."
+        code("tab_1_stata"),
+        ") so both engines appear in Shiny."
       ),
-      tags$li(
-        "Sync those files to the registry with ",
-        contribute_hint(code("sync_folder_paper()"), example_sync_folder, "Sync to registry"),
-        " (or copy manually). See vignette ",
+      tags$p(
+        tags$strong("Artifacts must be baked. "),
+        "Run ",
+        contribute_hint(code("build_study_artifacts()"), example_folder_build, "Build artifacts"),
+        " so ",
+        code("artifacts/"),
+        " contains precomputed HTML tables, figures, and ",
+        code("manifest.json"),
+        " for fast Display in Shiny."
+      ),
+
+      contribute_step_title("2. Check locally", "check"),
+      tags$p(
+        "Before contacting the registry maintainers, confirm your repo works with replicateEverything on your machine:"
+      ),
+      tags$ul(
+        tags$li(
+          contribute_hint(code("check_folder_replication()"), example_folder_check, "Folder validation"),
+          " — structure, artifacts, and optional live runs."
+        ),
+        tags$li(
+          contribute_hint(code("run_replication()"), example_folder_check, "Run one replication"),
+          " — use ",
+          code('doi = "local"'),
+          " when your working directory is inside the study repo."
+        ),
+        tags$li(
+          "Launch ",
+          contribute_hint(code("run_shiny_app()"), example_local_dev, "Local Shiny + dev registry"),
+          " with ",
+          contribute_hint(code("configure_local_monorepo()"), example_local_dev, "Local monorepo"),
+          " or a development registry checkout. On the Explore tab, enter the path to your study repo (e.g. ",
+          code("c:/Users/you/my_repo/"),
+          " or ",
+          code("~/my_repo/"),
+          "), or leave the field blank when Shiny's working directory is inside the repo."
+        )
+      ),
+
+      contribute_step_title("3. Connect with the registry", "registry"),
+      tags$p("When local checks pass, add your study to the central registry:"),
+      tags$ul(
+        tags$li(
+          contribute_hint(code("prepare_folder_paper()"), example_folder_build, "Prepare registry stubs"),
+          " — writes ",
+          code("registry/replication.yml"),
+          " and ",
+          code("registry/index.csv"),
+          " snippets inside your study repo."
+        ),
+        tags$li(
+          contribute_hint(code("sync_folder_paper()"), example_sync_folder, "Sync stub files"),
+          " — copies those stubs into your local ",
+          code("registry/"),
+          " checkout (or copy manually)."
+        ),
+        tags$li(
+          "Add a registry paper stub ",
+          code("papers/<folder>.yml"),
+          " with ",
+          contribute_hint(code("materials: folder"), example_folder_stub, "Registry stub fields"),
+          " pointing at your study repository."
+        ),
+        tags$li(
+          "Update ",
+          code("index.csv"),
+          " so the ",
+          code("repo"),
+          " column names your study repository."
+        ),
+        tags$li(
+          contribute_hint(code("add_folder_paper()"), example_registry_connect, "Register folder study"),
+          " — validates and opens a pull request (or follow your team's process)."
+        )
+      ),
+      p(
+        class = "text-muted small",
+        "See vignette ",
         code("folder-replication-checklist"),
-        "."
+        " for the full checklist."
       )
     ),
-    h4("Package-backed study"),
-    tags$ol(
-      tags$li(
-        "Build an R package with ",
-        contribute_hint(code("replication.yml"), example_package_stub, "Registry stub fields"),
-        " and exported ",
+
+    tags$div(
+      class = "contribute-section",
+      h4("Package-backed study"),
+      contribute_step_title("1. Create an R package", "package"),
+      tags$p(
+        "Scaffold with ",
+        contribute_hint(code("create_replication_template()"), example_package_stub, "Package template"),
+        " or build manually. The package must export ",
         contribute_hint(code("run_replication()"), example_package_api, "Required API"),
-        "."
+        ", ",
+        code("list_replications()"),
+        ", ",
+        code("load_artifact()"),
+        ", and ",
+        code("get_code()"),
+        ", and include ",
+        contribute_hint(code("replication.yml"), example_package_stub, "Package replication.yml"),
+        " describing each replication."
       ),
-      tags$li(
-        "Bake display artifacts with ",
+      tags$p(
+        tags$strong("R only. "),
+        "Package-backed studies use R. Stata replications belong in the folder-backed model."
+      ),
+      tags$p(
+        tags$strong("Bake display artifacts. "),
+        "Run ",
         code("build_report()"),
-        " into ",
+        " so ",
         code("inst/report/artifacts/"),
-        " (PNG figures, HTML tables)."
+        " holds PNG figures and HTML tables for Shiny Display."
       ),
-      tags$li(
-        "Add ",
-        code("tests/testthat/"),
-        " and validate with ",
-        contribute_hint(code("check_package_replication()"), example_package_tests, "Build, test, validate"),
-        "."
+
+      contribute_step_title("2. Check locally", "check"),
+      tags$ul(
+        tags$li(
+          code("tests/testthat/"),
+          " with replication smoke tests."
+        ),
+        tags$li(
+          contribute_hint(code("check_package_replication()"), example_package_check, "Package validation"),
+          " — structure, artifacts, and optional live ",
+          code("run_replication()"),
+          " calls."
+        ),
+        tags$li(
+          contribute_hint(code("run_shiny_app()"), example_local_dev, "Preview in Shiny"),
+          " after ",
+          contribute_hint(code("configure_local_monorepo()"), example_local_dev, "Dev registry"),
+          " and installing your package locally."
+        )
       ),
-      tags$li(
-        "Register with ",
-        contribute_hint(code("add_paper()"), example_add_paper, "Register package"),
-        " in ",
-        code("replicateEverything"),
-        ". See vignette ",
+
+      contribute_step_title("3. Connect with the registry", "registry"),
+      tags$ul(
+        tags$li(
+          "Add ",
+          code("papers/<folder>.yml"),
+          " with ",
+          contribute_hint(code("materials: package"), example_package_stub, "Package registry stub"),
+          " and the package name."
+        ),
+        tags$li(
+          "Update ",
+          code("index.csv"),
+          " with bibliographic metadata and the package repository URL."
+        ),
+        tags$li(
+          contribute_hint(code("add_paper()"), example_package_registry, "Register package study"),
+          " — validates the package against the registry and records it."
+        )
+      ),
+      p(
+        class = "text-muted small",
+        "See vignette ",
         code("package-replication-checklist"),
         "."
       )
@@ -1893,6 +2103,52 @@ ui <- tagList(
       box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
       border-radius: 999px;
     }
+    .engine-icons-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+      min-width: 2.5rem;
+      justify-content: flex-end;
+    }
+    .engine-badge {
+      display: inline-flex;
+      line-height: 0;
+      opacity: 0.95;
+    }
+    .study-list-header,
+    .study-citation {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .study-list-header {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #6c757d;
+      border-bottom: 1px solid #dee2e6;
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.25rem;
+    }
+    .study-engine-col,
+    .study-run-col {
+      text-align: right;
+      white-space: nowrap;
+    }
+    .study-citation {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eee;
+      line-height: 1.35;
+      font-size: 0.95rem;
+    }
+    .contribute-step-title {
+      font-weight: 600;
+      margin-top: 1rem;
+      margin-bottom: 0.35rem;
+    }
+    .contribute-intro { margin-bottom: 1rem; }
+    .contribute-section { margin-bottom: 1.25rem; }
+    .doi-input-field input::placeholder { color: #9aa0a6; }
     .replication-actions .btn {
       min-width: 3.25rem;
       padding: 0.12rem 0.35rem;
@@ -1920,7 +2176,7 @@ ui <- tagList(
           class = "doi-input-row",
           tags$div(
             class = "doi-input-field",
-            textInput("study_doi", label = NULL, placeholder = "Or enter DOI")
+            textInput("study_doi", label = NULL, placeholder = "Enter DOI or path to repo")
           ),
           tags$div(
             class = "doi-go-wrap",
@@ -1959,6 +2215,10 @@ ui <- tagList(
     "About",
     fluidPage(
       class = "px-3 py-2",
+      p(
+        class = "mb-3",
+        "This is a project of IPI WZB led by Macartan Humphreys, Cord Masche, and Vernon Washington."
+      ),
       h4("replicateEverything"),
       p(
         "This demo app is bundled with the ",
@@ -2003,6 +2263,7 @@ server <- function(input, output, session) {
     replications_index_diagnostics = NULL,
     registry_folder = NULL,
     registry_repo = NULL,
+    local_study_meta = NULL,
     group_engines = list()
   )
 
@@ -2046,22 +2307,76 @@ server <- function(input, output, session) {
     "r"
   }
 
-  load_study <- function(doi) {
-    req(nzchar(doi))
-    doi <- replicate_fn("normalize_doi", doi)
+  load_study <- function(doi_input) {
+    doi_input <- trimws(as.character(doi_input %||% ""))
+    if (!nzchar(doi_input)) {
+      doi_input <- "local"
+    }
+
+    resolved <- tryCatch(
+      replicate_fn("resolve_doi_input", doi_input),
+      error = function(e) {
+        state$doi <- NULL
+        state$local_study_meta <- NULL
+        state$registry_folder <- NULL
+        state$registry_repo <- NULL
+        state$replications <- NULL
+        state$replications_df <- NULL
+        state$replications_load_error <- e
+        state$replications_index_diagnostics <- NULL
+        state$selected_replication <- NULL
+        state$selected_type <- NULL
+        state$selected_result <- NULL
+        state$group_engines <- list()
+        return(NULL)
+      }
+    )
+    if (is.null(resolved)) {
+      return(invisible(NULL))
+    }
+
+    doi <- resolved$doi
     ctx <- registry_row_for(doi)
     state$doi <- doi
     state$registry_folder <- ctx$folder
     state$registry_repo <- ctx$repo
+    state$local_study_meta <- NULL
+
+    if (!is.null(resolved$local_root)) {
+      local_yaml <- tryCatch(
+        yaml::read_yaml(file.path(resolved$local_root, "replication.yml")),
+        error = function(e) NULL
+      )
+      if (!is.null(local_yaml$paper)) {
+        state$local_study_meta <- local_yaml$paper
+      }
+      if (is.null(state$registry_folder) || !nzchar(state$registry_folder)) {
+        state$registry_folder <- basename(resolved$local_root)
+      }
+    }
 
     withProgress(message = "Preparing study...", value = 0.1, {
       meta <- tryCatch(
-        get_replications_meta(doi, folder = ctx$folder, repo = ctx$repo),
+        get_replications_meta(doi, folder = state$registry_folder, repo = state$registry_repo),
         error = function(e) list(replications = NULL, error = e)
       )
     })
     state$replications <- meta$replications
     state$replications_load_error <- meta$error
+    if (
+      is.null(state$replications_load_error) &&
+      (is.null(meta$replications) || replication_display_count(meta$replications) == 0L)
+    ) {
+      state$replications_load_error <- simpleError(
+        paste0(
+          "No replications found for DOI ", doi, ".\n\n",
+          "Check the DOI against the Studies tab. ",
+          "For a local folder-backed repo, enter the path to the folder ",
+          "that contains replication.yml (e.g. c:/Users/you/my_repo/ or ~/my_repo/)."
+        ),
+        call = NULL
+      )
+    }
     state$replications_index_diagnostics <- meta$diagnostics
     state$replications_df <- replications_to_df(state$replications)
     state$group_engines <- list()
@@ -2085,7 +2400,6 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$doi_go, {
-    req(input$study_doi)
     load_study(input$study_doi)
   })
 
@@ -2103,49 +2417,89 @@ server <- function(input, output, session) {
     rows <- lapply(seq_len(nrow(idx)), function(i) {
       row <- idx[i, , drop = FALSE]
       cite <- format_study_citation(row)
+      engines <- study_engine_availability_for_row(row)
       tags$div(
-        class = "study-citation d-flex align-items-start py-2 border-bottom",
-        style = "gap: 12px;",
+        class = "study-citation",
         tags$div(
-          class = "flex-grow-1",
-          style = "line-height: 1.35; font-size: 0.95rem;",
           tags$div(cite$line1),
-          if (nzchar(cite$line2)) {
-            tags$div(class = "text-muted", style = "font-size: 0.9rem;", cite$line2)
-          }
+          tags$div(class = "text-muted", style = "font-size: 0.9rem;", cite$line2)
         ),
-        actionButton(
-          paste0("study_", i),
-          "Run",
-          class = "btn-primary btn-sm",
-          style = "flex-shrink: 0; min-width: 84px; margin-top: 1px;",
-          onclick = sprintf(
-            "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
-            row$doi[[1]]
+        tags$div(
+          class = "study-engine-col",
+          engine_icons_display(engines$r, engines$stata)
+        ),
+        tags$div(
+          class = "study-run-col",
+          actionButton(
+            paste0("study_", i),
+            "Run",
+            class = "btn-primary btn-sm",
+            style = "min-width: 84px;",
+            onclick = sprintf(
+              "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
+              row$doi[[1]]
+            )
           )
         )
       )
     })
 
-    tagList(rows)
+    tagList(
+      tags$div(
+        class = "study-list-header",
+        tags$div("Citation"),
+        tags$div(class = "study-engine-col", "Code"),
+        tags$div(class = "study-run-col", "")
+      ),
+      rows
+    )
   })
 
   output$study_details <- renderUI({
     req(state$doi)
     row <- registry_index[registry_index$doi == state$doi, , drop = FALSE]
-    if (nrow(row) == 0) {
+    paper <- if (nrow(row) > 0) {
+      list(
+        title = row$title[[1]],
+        authors = row$authors[[1]],
+        year = row$year[[1]],
+        journal = row$journal[[1]]
+      )
+    } else if (!is.null(state$local_study_meta)) {
+      state$local_study_meta
+    } else {
       return(helpText("Study metadata not found in registry index."))
+    }
+    journal_raw <- strip_html_entities(paper$journal %||% "")
+    journal_display <- if (nzchar(journal_raw)) {
+      tags$em(journal_raw)
+    } else {
+      tags$em("Working paper")
     }
     tagList(
       card(
-        card_header("Study details"),
-        h4(row$title[[1]]),
+        card_header(if (!is.null(state$local_study_meta) && nrow(row) == 0) {
+          "Study details (local)"
+        } else {
+          "Study details"
+        }),
+        h4(paper$title %||% state$doi),
         p(
           strong("DOI: "), state$doi, br(),
-          strong("Authors: "), format_authors_summary(row$authors[[1]]), br(),
-          strong("Year: "), row$year[[1]], br(),
-          strong("Journal: "), HTML(row$journal[[1]])
+          strong("Authors: "), format_authors_summary(paper$authors %||% ""), br(),
+          if (!is.null(paper$year) && nzchar(as.character(paper$year))) {
+            tagList(strong("Year: "), paper$year, br())
+          },
+          strong("Journal: "), journal_display
         ),
+        if (!is.null(state$local_study_meta) && nrow(row) == 0) {
+          p(
+            class = "text-muted small mb-0",
+            "Loaded from ",
+            code("replication.yml"),
+            " via a local path or the working directory."
+          )
+        },
         study_materials_summary_ui(
           state$doi,
           folder = state$registry_folder,
@@ -2178,13 +2532,10 @@ server <- function(input, output, session) {
       }
     )
     engine_pick_btn <- function(eng) {
-      enabled <- row_has_engine(row, eng)
       active <- identical(engine, eng)
       btn_class <- paste(
         "engine-pick",
-        if (!enabled) "is-disabled"
-        else if (active) "is-active"
-        else "is-inactive"
+        if (active) "is-active" else "is-inactive"
       )
       icon <- if (eng == "r") engine_icon_r() else engine_icon_stata()
       tags$button(
@@ -2193,25 +2544,23 @@ server <- function(input, output, session) {
         title = if (eng == "r") "R" else "Stata",
         `aria-label` = if (eng == "r") "Use R replication" else "Use Stata replication",
         `aria-pressed` = if (active) "true" else "false",
-        disabled = if (!enabled) NA else NULL,
-        onclick = if (enabled) {
-          sprintf(
-            "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
-            group, eng
-          )
-        } else {
-          NULL
-        },
+        onclick = sprintf(
+          "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
+          group, eng
+        ),
         icon
       )
     }
+    engine_picks <- tagList(
+      if (row_has_engine(row, "r")) engine_pick_btn("r"),
+      if (row_has_engine(row, "stata")) engine_pick_btn("stata")
+    )
     tags$div(
       class = row_class,
       tags$span(label, class = "replication-label", title = label_full),
       tags$div(
         class = "replication-actions",
-        engine_pick_btn("r"),
-        engine_pick_btn("stata"),
+        engine_picks,
         actionButton(
           paste0("display_", safe_group),
           "Display",
@@ -2246,6 +2595,16 @@ server <- function(input, output, session) {
   }
 
   output$replication_list <- renderUI({
+    if (!is.null(state$replications_load_error) && is.null(state$doi)) {
+      return(tags$div(
+        class = "alert alert-warning mb-0",
+        tags$pre(
+          class = "mb-0 mt-0",
+          style = "white-space: pre-wrap; font-family: inherit; font-size: inherit; background: transparent; border: 0; padding: 0;",
+          format_replication_error(state$replications_load_error)
+        )
+      ))
+    }
     if (is.null(state$doi)) {
       return(helpText("Choose a study to see its tables and figures."))
     }

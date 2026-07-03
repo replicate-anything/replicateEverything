@@ -7,7 +7,8 @@
 * `prepare_folder_paper()` — build artifacts, validate, write `registry/replication.yml` + `registry/index.csv` in study repo.
 * `sync_folder_paper()` — copy prepared stub files into a registry checkout.
 * `add_folder_paper()` — validate and register a folder-backed study stub in the registry.
-* Vignette: "Folder replication checklist".
+* `audit_everything()` — registry-wide audit of every table and figure in R and Stata, with per-object time limits.
+* Vignettes: [Registry audit](audit.html) and [Stata replications](stata-replications.html).
 * Improved artifact error hints for folder-backed studies.
 
 # replicateEverything 0.2.0

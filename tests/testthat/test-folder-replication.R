@@ -88,3 +88,58 @@ test_that("infer_study_repo_slug derives from folder name", {
     "replicate-anything/rep-10.1177-00491241211036161"
   )
 })
+
+test_that("is_local_doi_query recognizes local aliases", {
+  expect_true(is_local_doi_query(""))
+  expect_true(is_local_doi_query("local"))
+  expect_true(is_local_doi_query("LOCAL"))
+  expect_true(is_local_doi_query("."))
+  expect_false(is_local_doi_query("10.1/example"))
+})
+
+test_that("resolve_doi_input finds local replication.yml", {
+  tmp <- withr::local_tempdir()
+  meta <- list(
+    paper = list(
+      doi = "https://doi.org/10.9999/localtest",
+      title = "Local test"
+    ),
+    replications = list(list(id = "tab_1", type = "table", code = "code/tab_1.R"))
+  )
+  yaml::write_yaml(meta, file.path(tmp, "replication.yml"))
+  withr::with_dir(tmp, {
+    out <- resolve_doi_input("local")
+    expect_equal(out$doi, "10.9999/localtest")
+    expect_true(out$is_local)
+    expect_equal(basename(out$local_root), basename(tmp))
+  })
+})
+
+test_that("resolve_doi_input errors when no local study exists", {
+  tmp <- withr::local_tempdir()
+  withr::with_dir(tmp, {
+    expect_error(resolve_doi_input("local"), "No replication.yml found")
+  })
+})
+
+test_that("resolve_doi_input accepts an explicit study path", {
+  tmp <- withr::local_tempdir()
+  meta <- list(
+    paper = list(
+      doi = "https://doi.org/10.9999/pathtest",
+      title = "Path test"
+    ),
+    replications = list(list(id = "tab_1", type = "table", code = "code/tab_1.R"))
+  )
+  yaml::write_yaml(meta, file.path(tmp, "replication.yml"))
+  out <- resolve_doi_input(tmp)
+  expect_equal(out$doi, "10.9999/pathtest")
+  expect_true(out$is_local)
+  expect_equal(normalizePath(out$local_root, winslash = "/"), normalizePath(tmp, winslash = "/"))
+})
+
+test_that("resolve_doi_input path errors include formatting hints", {
+  expect_error(resolve_doi_input("c:/no/such/repo"), "Could not find replication.yml")
+  expect_error(resolve_doi_input("c:/no/such/repo"), "Windows:")
+  expect_error(resolve_doi_input("c:/no/such/repo"), "macOS:")
+})

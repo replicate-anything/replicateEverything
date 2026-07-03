@@ -48,6 +48,7 @@ enrich_package_replication_meta <- function(meta, ctx) {
 #' @return Parsed \code{replication.yml} contents.
 #' @keywords internal
 get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
+  doi <- prepare_doi_for_replication(doi)
   ctx <- paper_context(doi, repo = repo, folder = folder)
   meta <- NULL
 
@@ -143,8 +144,12 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
 }
 
 get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
+  doi_key <- tryCatch(
+    prepare_doi_for_replication(doi),
+    error = function(e) normalize_doi(doi)
+  )
   key <- paste(
-    normalize_doi(doi),
+    doi_key,
     repo %||% "",
     folder %||% "",
     sep = "\x1f"
@@ -453,7 +458,7 @@ find_replication_entry <- function(meta, what) {
 #'
 #' @export
 render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
-  doi <- normalize_doi(doi)
+  doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
