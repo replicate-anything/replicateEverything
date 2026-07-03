@@ -47,6 +47,23 @@ get_code <- function(doi, what, repo = NULL, folder = NULL) {
         return(readLines(local_code, warn = FALSE))
       }
     }
+
+    # Code display should track GitHub main; the materialized study cache is for
+    # runs (data files, Stata) and is not refreshed on every push.
+    if (
+      isTRUE(ctx$is_folder_study) &&
+      !is.null(ctx$base_url) &&
+      grepl("raw\\.githubusercontent\\.com", ctx$base_url, fixed = TRUE)
+    ) {
+      remote_lines <- tryCatch(
+        read_lines_url(paste0(ctx$base_url, path)),
+        error = function(e) NULL
+      )
+      if (length(remote_lines)) {
+        return(remote_lines)
+      }
+    }
+
     if (is.null(ctx$local_root) && !is.null(meta)) {
       study_root <- ensure_study_folder_local(meta, ctx)
       if (!is.null(study_root)) {

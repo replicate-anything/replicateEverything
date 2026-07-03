@@ -26,3 +26,25 @@ test_that("save_local_shiny does not overwrite local.R", {
   save_local_shiny(dest)
   expect_equal(readLines(local_r), "options(replicate_shiny.keep_me = TRUE)")
 })
+
+test_that("save_local_shiny does not nest when dest matches cwd tail", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  parent <- tempfile("shiny-parent-")
+  deploy <- file.path(parent, "shiny_apps", "replicate")
+  dir.create(deploy, recursive = TRUE)
+  on.exit(unlink(parent, recursive = TRUE), add = TRUE)
+
+  withr::with_dir(deploy, {
+    out <- save_local_shiny("shiny_apps/replicate")
+    expect_equal(out, normalizePath(deploy, winslash = "/", mustWork = FALSE))
+    expect_true(file.exists(file.path(deploy, "app.R")))
+    expect_false(dir.exists(file.path(deploy, "shiny_apps")))
+  })
+})
+
+test_that("shiny_path_has_suffix detects trailing path segments", {
+  expect_true(shiny_path_has_suffix("/srv/shiny_apps/replicate", "shiny_apps/replicate"))
+  expect_false(shiny_path_has_suffix("/srv/shiny", "shiny_apps/replicate"))
+})

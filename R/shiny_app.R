@@ -11,6 +11,57 @@ shiny_app_dir <- function(package = "replicateEverything") {
   )
 }
 
+#' Resolve Shiny deploy destination directory
+#'
+#' When \code{dest} is a relative path that already matches the tail of
+#' \code{getwd()} (e.g. cwd is \code{.../shiny_apps/replicate} and
+#' \code{dest} is \code{"shiny_apps/replicate"}), returns \code{getwd()} so
+#' files are not written into a nested subfolder.
+#'
+#' @param dest Target directory; default current working directory.
+#' @return Normalized absolute path.
+#' @keywords internal
+resolve_shiny_deploy_dest <- function(dest = getwd()) {
+  cwd <- normalizePath(getwd(), winslash = "/", mustWork = TRUE)
+
+  if (missing(dest) || is.null(dest)) {
+    return(cwd)
+  }
+  dest <- as.character(dest[[1]] %||% dest)
+  if (!nzchar(dest) || dest %in% c(".", "./")) {
+    return(cwd)
+  }
+
+  dest_norm <- gsub("\\\\", "/", dest, fixed = TRUE)
+
+  if (grepl("^/", dest_norm) || grepl(":", dest_norm, fixed = TRUE)) {
+    if (!dir.exists(dest_norm)) {
+      dir.create(dest_norm, recursive = TRUE, showWarnings = FALSE)
+    }
+    return(normalizePath(dest_norm, winslash = "/", mustWork = TRUE))
+  }
+
+  if (shiny_path_has_suffix(cwd, dest_norm)) {
+    return(cwd)
+  }
+
+  out <- file.path(cwd, dest_norm)
+  dir.create(out, recursive = TRUE, showWarnings = FALSE)
+  normalizePath(out, winslash = "/", mustWork = TRUE)
+}
+
+#' @keywords internal
+shiny_path_has_suffix <- function(path, suffix) {
+  path <- gsub("\\\\", "/", path, fixed = TRUE)
+  suffix <- gsub("\\\\", "/", suffix, fixed = TRUE)
+  suffix <- sub("^/+", "", suffix)
+  suffix <- sub("/+$", "", suffix)
+  if (!nzchar(suffix)) {
+    return(FALSE)
+  }
+  endsWith(path, suffix)
+}
+
 #' Copy the bundled Shiny app into a deploy directory
 #'
 #' Materializes `inst/shiny` from an installed `replicateEverything` build into
@@ -41,8 +92,7 @@ save_local_shiny <- function(
     )
   }
 
-  dest <- normalizePath(dest, winslash = "/", mustWork = FALSE)
-  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+  dest <- resolve_shiny_deploy_dest(dest)
 
   copy_file <- function(from, to) {
     if (!file.exists(from)) {
