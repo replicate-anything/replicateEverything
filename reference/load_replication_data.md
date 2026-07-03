@@ -6,7 +6,7 @@ remote raw GitHub URLs.
 ## Usage
 
 ``` r
-load_replication_data(data_files, ctx)
+load_replication_data(data_files, ctx, meta = NULL)
 ```
 
 ## Arguments
@@ -19,6 +19,10 @@ load_replication_data(data_files, ctx)
 
   Paper context from
   [`paper_context()`](https://replicate-anything.github.io/replicateEverything/reference/paper_context.md).
+
+- meta:
+
+  Optional parsed replication metadata for external data lookup.
 
 ## Value
 

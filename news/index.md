@@ -17,7 +17,13 @@
   — copy prepared stub files into a registry checkout.
 - [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
   — validate and register a folder-backed study stub in the registry.
-- Vignette: “Folder replication checklist”.
+- [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
+  — registry-wide audit (Quarto report: `audit_everything.qmd` in the
+  registry repo).
+- Vignettes: [Registry
+  audit](https://replicate-anything.github.io/replicateEverything/news/audit.md)
+  and [Stata
+  replications](https://replicate-anything.github.io/replicateEverything/news/stata-replications.md).
 - Improved artifact error hints for folder-backed studies.
 
 ## replicateEverything 0.2.0

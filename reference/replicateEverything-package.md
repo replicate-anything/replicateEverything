@@ -28,7 +28,11 @@ A typical workflow using the package is:
 6.  Reproduce all results from a paper using
     [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md).
 
-7.  Launch the bundled Shiny demo with
+7.  Audit the full registry with
+    [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
+    (see `audit_everything.qmd` in the registry repository).
+
+8.  Launch the bundled Shiny demo with
     [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md),
     or deploy it with
     [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md).
@@ -93,8 +97,6 @@ Useful links:
 **Maintainer**: Vermon Washington <vermon.washington@wzb.eu>
 
 Authors:
-
-- Vermon Washington <vermon.washington@wzb.eu>
 
 - Macartan Humphreys <macartan.humphreys@wzb.eu>
 

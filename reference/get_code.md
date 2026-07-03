@@ -1,6 +1,10 @@
 # Retrieve replication code for a paper
 
-Returns the analysis script and, when defined, the format script.
+Returns a single script suitable for the Code tab in Shiny. For Stata
+replications, the substantive analysis from `stata_source` is inlined
+after a short setup section so the script can be copied and run. R
+replications return the analysis script only; optional `format_*`
+helpers in separate files are labeled and omitted for Stata.
 
 ## Usage
 

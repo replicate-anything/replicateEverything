@@ -2,11 +2,13 @@ pandoc: 3.8.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
+  audit: audit.html
   folder-replication-checklist: folder-replication-checklist.html
   package-replication-checklist: package-replication-checklist.html
   replication-example: replication-example.html
   shiny-app: shiny-app.html
-last_built: 2026-06-30T10:54Z
+  stata-replications: stata-replications.html
+last_built: 2026-07-03T08:21Z
 urls:
   reference: https://replicate-anything.github.io/replicateEverything/reference
   article: https://replicate-anything.github.io/replicateEverything/articles

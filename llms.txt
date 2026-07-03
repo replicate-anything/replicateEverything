@@ -483,24 +483,58 @@ Add and validate package-backed studies.
 - [`study_package_install_message()`](https://replicate-anything.github.io/replicateEverything/reference/study_package_install_message.md)
   : User-facing message for installing a study replication package
 
+## Registry audit
+
+Run all registry replications and inspect results.
+
+- [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
+  : Audit all registry replications
+- [`audit_everything_qmd()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything_qmd.md)
+  : Path to the registry Quarto audit report
+
 ## Discovery
 
 Find papers and inspect replication metadata.
 
 - [`get_doi_metadata()`](https://replicate-anything.github.io/replicateEverything/reference/get_doi_metadata.md)
   : Retrieve metadata for a DOI
+
 - [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md)
   : Search replicated papers
+
 - [`normalize_doi()`](https://replicate-anything.github.io/replicateEverything/reference/normalize_doi.md)
   : Normalize a DOI
+
+- [`resolve_doi_input()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_doi_input.md)
+  : Resolve a DOI or local study query into a canonical DOI
+
+- [`is_local_doi_query()`](https://replicate-anything.github.io/replicateEverything/reference/is_local_doi_query.md)
+  : Detect whether a DOI argument requests the local working-directory
+  study
+
+- [`find_local_study_root()`](https://replicate-anything.github.io/replicateEverything/reference/find_local_study_root.md)
+  :
+
+  Find a folder-backed study root containing `replication.yml`
+
+- [`configure_local_monorepo()`](https://replicate-anything.github.io/replicateEverything/reference/configure_local_monorepo.md)
+  : Configure options for a local replicate-anything monorepo
+
+- [`configure_study_folder()`](https://replicate-anything.github.io/replicateEverything/reference/configure_study_folder.md)
+  : Register a server-local study folder for a DOI
+
 - [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md)
   : Load the replication registry index
+
 - [`find_repo()`](https://replicate-anything.github.io/replicateEverything/reference/find_repo.md)
   : Find the repository for a paper replication
+
 - [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
   : List available replications for a paper
+
 - [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
   : Retrieve replication code for a paper
+
 - [`replication_index_diagnostics()`](https://replicate-anything.github.io/replicateEverything/reference/replication_index_diagnostics.md)
   : Report where the replication index was sought (for debugging Shiny)
 
@@ -524,6 +558,18 @@ Render tables and figures from registry scripts.
   : Run a replication script footer when executed directly
 - [`load_local_replication_data()`](https://replicate-anything.github.io/replicateEverything/reference/load_local_replication_data.md)
   : Load replication data from local paths (for self-contained scripts)
+- [`find_stata_executable()`](https://replicate-anything.github.io/replicateEverything/reference/find_stata_executable.md)
+  : Locate a Stata executable
+- [`replication_code_language_for()`](https://replicate-anything.github.io/replicateEverything/reference/replication_code_language_for.md)
+  : Code language for a replication (for Shiny syntax highlighting)
+- [`load_replication_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/load_replication_for_display.md)
+  : Load or run a replication for display
+- [`resolve_replication_display()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_replication_display.md)
+  : Resolve display output for an already-selected result
+- [`stata_result_path()`](https://replicate-anything.github.io/replicateEverything/reference/stata_result_path.md)
+  : Extract the output file path from a Stata replication result
+- [`smcl_to_html()`](https://replicate-anything.github.io/replicateEverything/reference/smcl_to_html.md)
+  : Convert a Stata SMCL file to HTML for display
 
 ## Folder-backed studies
 
@@ -573,6 +619,10 @@ Format analysis output for HTML tables and plots.
   : Format a replication error for user-facing display
 - [`try_render_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/try_render_for_display.md)
   : Run a replication and return a result or error object
+- [`artifact_display_missing()`](https://replicate-anything.github.io/replicateEverything/reference/artifact_display_missing.md)
+  : Whether display content is missing or empty
+- [`resolve_display_value()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_display_value.md)
+  : Resolve a replication result envelope to a display-ready value
 
 # Articles
 
@@ -582,6 +632,10 @@ Format analysis output for HTML tables and plots.
   Code](https://replicate-anything.github.io/replicateEverything/articles/replication-example.md):
 - [Shiny demo
   app](https://replicate-anything.github.io/replicateEverything/articles/shiny-app.md):
+- [Registry
+  audit](https://replicate-anything.github.io/replicateEverything/articles/audit.md):
+- [Stata
+  replications](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md):
 - [Folder replication
   checklist](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md):
 - [Package replication

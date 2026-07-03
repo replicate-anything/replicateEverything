@@ -7,7 +7,13 @@ but never throws; failures are returned as `simpleError` objects.
 ## Usage
 
 ``` r
-try_render_for_display(doi, what, install_deps = FALSE, repo = NULL)
+try_render_for_display(
+  doi,
+  what,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+)
 ```
 
 ## Arguments
@@ -28,6 +34,10 @@ try_render_for_display(doi, what, install_deps = FALSE, repo = NULL)
 - repo:
 
   Optional repository slug.
+
+- folder:
+
+  Optional registry folder name from `index.csv`.
 
 ## Value
 
