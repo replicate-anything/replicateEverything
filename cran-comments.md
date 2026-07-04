@@ -17,7 +17,7 @@ This is the first CRAN submission of replicateEverything.
 
 ### Network access
 
-The package is designed to fetch replication materials (metadata, data, code, and artifacts) from a public GitHub registry at runtime. Core functions such as `load_index()`, `list_replications()`, `run_replication()`, and `replicate_paper()` may access the network when users invoke them.
+The package is designed to fetch replication materials (metadata, data, code, and artifacts) from a public GitHub registry at runtime. Core functions such as `load_index()`, `list_replications()`, and `run_replication()` may access the network when users invoke them.
 
 * Package examples that require network access are wrapped in `\dontrun{}`.
 * The vignette sources live in `vignettes/`; pre-built HTML is shipped in `inst/doc/` for installs that skip vignette builds.

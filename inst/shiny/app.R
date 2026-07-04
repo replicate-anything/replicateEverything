@@ -1764,9 +1764,7 @@ contribute_tab_ui <- function() {
       h4("Package-backed study"),
       contribute_step_title("1. Create an R package", "package"),
       contribute_prose(
-        "Scaffold with ",
-        contribute_hint(code("create_replication_template()"), example_package_stub),
-        " or build manually. The package must export ",
+        "Scaffold manually or copy an existing study package. The package must export ",
         contribute_hint(code("run_replication()"), example_package_api, "Required API"),
         ", ",
         code("list_replications()"),

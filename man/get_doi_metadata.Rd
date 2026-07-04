@@ -24,9 +24,8 @@ The function queries a DOI resolver and returns basic metadata
 including the paper title, journal, publication year, and authors.
 }
 \details{
-This function is primarily used by \code{create_replication_template()}
-to automatically populate metadata in the \code{replication.yml}
-file when creating a new replication.
+Fetches bibliographic metadata from a DOI resolver. Used when preparing
+registry stubs and study metadata.
 }
 \examples{
 \dontrun{

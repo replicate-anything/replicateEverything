@@ -91,7 +91,7 @@ run_replication(
 ### Replicate the entire paper 
 This is the **single most important function** in this `replicateEverything` package. It allows you to replicate an entire paper. With a single line of code, you can be able to generate all figures at one go. See the output in this [article](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html). 
 ```{}
-replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 ```
 
 
@@ -183,12 +183,8 @@ replications:
 get_doi_metadata("10.1177/00491241211036161")
 ```
 
-### Create a replication template
-This create a folder on your local machine. Now, you will have to upload the final processed data used for generating the figure as well as the code in their exact areas. Read the `Writing Scripts` section below for how to include the `generate` function into your code.  
-```{r}
-#create a local folder 
-create_replication_template("10.1177/00491241211036161")
-```
+### Set up a folder-backed study
+Follow `vignette("folder-replication-checklist", package = "replicateEverything")` to scaffold a study repo, add data and code, then run `prepare_folder_paper()` and `sync_folder_paper()`.
 
 ### Clone the registry repository from Github
 Now, clone the Git repo: 

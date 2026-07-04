@@ -25,13 +25,11 @@ reference:
   - search_papers
   - list_replications
   - list_replication_groups
-  - get_code
 - title: Run replications
   desc: Run tables and figures from registry scripts.
   contents:
   - run_replication
-  - replicate_paper
-  - create_replication_template
+  - get_code
 - title: Shiny demo
   desc: Browse studies and run replications interactively.
   contents:

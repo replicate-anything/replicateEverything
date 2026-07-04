@@ -1,11 +1,22 @@
+# replicateEverything 0.5.0
+
+## Breaking changes
+
+* Removed deprecated `replicate_paper()` and `create_replication_template()`. Use `run_replication(doi, "everything")` and the folder/package replication checklists instead.
+* Pre-built vignette HTML is shipped again in `inst/doc/` so installs that skip vignette builds still include all articles.
+
+## Documentation
+
+* `get_code()` appears under **Run replications** in the pkgdown reference index.
+* **Meet the functions** vignette reorganized into consumer and contributor sections.
+
 # replicateEverything 0.4.0
 
 ## Public API
 
-* Slim export surface (~16 functions): discovery, run, Shiny, contribute, and audit helpers only.
+* Slim export surface (~14 functions): discovery, run, Shiny, contribute, and audit helpers only.
 * `run_replication(doi, what = "everything")` replaces `replicate_paper()` for full-paper runs.
 * Registry `index.csv` includes a `handle` column; `search_papers()` and run functions accept handles (e.g. `"bounding-causes"`).
-* `replicate_paper()` and `create_replication_template()` are deprecated.
 * `validate_replication()` and other internal helpers are no longer exported.
 * New vignette: [Meet the functions](articles/meet-the-functions.html).
 

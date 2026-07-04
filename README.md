@@ -19,7 +19,7 @@
 - **Artifacts** — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display
 - **Display pipeline** — optional `format_*` steps turn analysis objects into HTML tables and ggplot figures
 - **Shiny demo** — [live app](https://shiny2.wzb.eu/ipi/replicate/); `run_shiny_app()` locally; `save_local_shiny()` to deploy on Shiny Server
-- **Contributor tooling** — scaffold a new replication folder with `create_replication_template()`
+- **Contributor tooling** — validate and register folder- or package-backed studies (`prepare_folder_paper()`, `check_folder_replication()`, `check_package_replication()`)
 
 ## Project status
 
@@ -298,7 +298,7 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 ## Contributor workflow
 
 1. **Browse the registry** — `load_index()` or `search_papers("keyword")`
-2. **Scaffold a folder** — `create_replication_template("10.1177/00491241211036161")`
+2. **Set up a study repo** — follow `vignette("folder-replication-checklist")` or `vignette("package-replication-checklist")`
 3. **Add your data and code** — place processed data in `data/` and scripts in `code/`
 4. **Test locally** — run scripts in the R console or with `run_replication()`
 5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `papers/`, and open a pull request
