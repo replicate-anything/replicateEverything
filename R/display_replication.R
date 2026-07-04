@@ -26,6 +26,7 @@ resolve_display_value <- function(
   doi,
   what,
   result,
+  language = NULL,
   install_deps = FALSE,
   repo = NULL,
   folder = NULL
@@ -64,6 +65,7 @@ resolve_display_value <- function(
       analysis,
       doi,
       what,
+      language = language,
       install_deps = install_deps,
       repo = repo,
       folder = folder
@@ -91,6 +93,7 @@ resolve_display_value <- function(
 load_replication_for_display <- function(
   doi,
   what,
+  language = NULL,
   prefer = c("auto", "artifact", "live"),
   fallback_live = TRUE,
   install_deps = TRUE,
@@ -103,11 +106,17 @@ load_replication_for_display <- function(
   }
 
   if (identical(prefer, "live")) {
-    return(run_live_display(doi, what, install_deps = install_deps, repo = repo, folder = folder))
+    return(run_live_display(
+      doi, what,
+      language = language,
+      install_deps = install_deps,
+      repo = repo,
+      folder = folder
+    ))
   }
 
   artifact <- tryCatch(
-    load_artifact(doi, what, repo = repo, folder = folder),
+    load_artifact(doi, what, repo = repo, folder = folder, language = language),
     error = function(e) e
   )
   if (inherits(artifact, "error")) {
@@ -123,17 +132,31 @@ load_replication_for_display <- function(
   }
 
   if (isTRUE(fallback_live)) {
-    return(run_live_display(doi, what, install_deps = install_deps, repo = repo, folder = folder))
+    return(run_live_display(
+      doi, what,
+      language = language,
+      install_deps = install_deps,
+      repo = repo,
+      folder = folder
+    ))
   }
 
   list(ok = FALSE, missing = TRUE, source = "artifact")
 }
 
 #' @keywords internal
-run_live_display <- function(doi, what, install_deps = TRUE, repo = NULL, folder = NULL) {
+run_live_display <- function(
+  doi,
+  what,
+  language = NULL,
+  install_deps = TRUE,
+  repo = NULL,
+  folder = NULL
+) {
   result <- try_render_for_display(
     doi,
     what,
+    language = language,
     install_deps = install_deps,
     repo = repo,
     folder = folder
@@ -145,6 +168,7 @@ run_live_display <- function(doi, what, install_deps = TRUE, repo = NULL, folder
     doi,
     what,
     result,
+    language = language,
     install_deps = install_deps,
     repo = repo,
     folder = folder
@@ -169,6 +193,7 @@ resolve_replication_display <- function(
   doi,
   what,
   result,
+  language = NULL,
   source = c("artifact", "live"),
   install_deps = FALSE,
   repo = NULL,
@@ -185,6 +210,7 @@ resolve_replication_display <- function(
     doi,
     what,
     result,
+    language = language,
     install_deps = identical(source, "live"),
     repo = repo,
     folder = folder

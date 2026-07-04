@@ -12,7 +12,7 @@
 #' }
 #'
 #' @export
-validate_replication <- function(doi, what, install_deps = FALSE) {
-  render_replication(doi, what, install_deps = install_deps)
+validate_replication <- function(doi, what, language = NULL, install_deps = FALSE) {
+  render_replication(doi, what, language = language, install_deps = install_deps)
   invisible(TRUE)
 }

@@ -13,6 +13,13 @@
 #'   study repo in a monorepo). Defaults to
 #'   `getOption("replicateEverything.registry_root")`.
 #' @return A list with `ok` (logical), `checks` (data frame), and `study_path`.
+#'
+#' @examples
+#' \dontrun{
+#' check_folder_replication(".")
+#' check_folder_replication(".", full_replication = TRUE)
+#' }
+#'
 #' @export
 check_folder_replication <- function(
   location = ".",

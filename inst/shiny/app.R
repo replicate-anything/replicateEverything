@@ -243,7 +243,8 @@ replication_row_for_id <- function(replications_df, replication_id) {
     return(NULL)
   }
   match <- replications_df[
-    replications_df$id == replication_id |
+    replications_df$group == replication_id |
+      replications_df$id == replication_id |
       replications_df$r_id == replication_id |
       replications_df$stata_id == replication_id,
     ,
@@ -1839,11 +1840,18 @@ contribute_tab_ui <- function() {
   )
 }
 
-replication_run_snippet <- function(doi, what) {
+replication_run_snippet <- function(doi, what, language = NULL) {
+  lang <- tolower(trimws(as.character(language %||% "")))
+  lang_line <- if (nzchar(lang) && !identical(lang, "r")) {
+    paste0("  language = ", encodeString(if (identical(lang, "stata")) "stata" else language, quote = '"'), ",\n")
+  } else {
+    ""
+  }
   paste0(
     "replicateEverything::run_replication(\n",
     "  doi = ", encodeString(doi, quote = '"'), ",\n",
-    "  what = ", encodeString(what, quote = '"'), "\n",
+    "  what = ", encodeString(what, quote = '"'), ",\n",
+    lang_line,
     ")"
   )
 }
@@ -2445,6 +2453,14 @@ server <- function(input, output, session) {
     "r"
   }
 
+  selected_replication_language <- function() {
+    row <- replication_row_for_id(state$replications_df, state$selected_replication)
+    if (is.null(row)) {
+      return("r")
+    }
+    group_engine(row$group[[1]], row)
+  }
+
   load_study <- function(doi_input, from_registry = FALSE) {
     doi_input <- trimws(as.character(doi_input %||% ""))
     if (!isTRUE(from_registry) && !nzchar(doi_input)) {
@@ -2525,8 +2541,7 @@ server <- function(input, output, session) {
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
       first <- state$replications_df[1, , drop = FALSE]
-      eng <- group_engine(first$group[[1]], first)
-      state$selected_replication <- resolve_group_replication_id(first, eng)
+      state$selected_replication <- first$group[[1]]
       state$selected_type <- first$type[[1]]
       load_selected_artifact(fallback_live = FALSE)
     }
@@ -2663,7 +2678,7 @@ server <- function(input, output, session) {
     resolved_id <- resolve_group_replication_id(row, engine)
     row_class <- paste(
       "replication-row d-flex align-items-center rounded",
-      if (!is.null(active_id) && identical(resolved_id, active_id)) {
+      if (!is.null(active_id) && (identical(group, active_id) || identical(resolved_id, active_id))) {
         "bg-light border border-primary"
       } else {
         ""
@@ -2801,13 +2816,12 @@ server <- function(input, output, session) {
     eng <- parts[[2]]
     if (!row_has_engine(row, eng)) return()
     state$group_engines[[parts[[1]]]] <- eng
-    rep_id <- resolve_group_replication_id(row, eng)
     cur_row <- tryCatch(
       resolve_replication_row(state$selected_replication),
       error = function(e) NULL
     )
     same_group <- !is.null(cur_row) && identical(cur_row$group[[1]], parts[[1]])
-    state$selected_replication <- rep_id
+    state$selected_replication <- parts[[1]]
     state$selected_type <- row$type[[1]]
     if (isTRUE(same_group)) {
       state$selected_result <- NULL
@@ -2824,9 +2838,8 @@ server <- function(input, output, session) {
     group_or_id <- parts[[2]]
 
     row <- resolve_replication_row(group_or_id)
-    rep_id <- resolve_group_replication_id(row, group_engine(row$group[[1]], row))
 
-    state$selected_replication <- rep_id
+    state$selected_replication <- row$group[[1]]
     state$selected_type <- row$type[[1]]
     state$selected_result <- NULL
 
@@ -2835,7 +2848,7 @@ server <- function(input, output, session) {
       load_selected_artifact(fallback_live = FALSE)
     } else if (action == "replicate") {
       tryCatch(
-        run_live_replication(state$doi, rep_id),
+        run_live_replication(state$doi, state$selected_replication, selected_replication_language()),
         error = function(e) {
           state$selected_result <- e
           state$selected_source <- "live"
@@ -2854,6 +2867,7 @@ server <- function(input, output, session) {
         "load_replication_for_display",
         state$doi,
         state$selected_replication,
+        language = selected_replication_language(),
         prefer = "artifact",
         fallback_live = fallback_live,
         install_deps = TRUE,
@@ -2894,6 +2908,7 @@ server <- function(input, output, session) {
         state$doi,
         state$selected_replication,
         state$selected_result,
+        language = selected_replication_language(),
         source = state$selected_source,
         install_deps = is_live_source(state$selected_source),
         folder = state$registry_folder,
@@ -2904,7 +2919,7 @@ server <- function(input, output, session) {
     })
   })
 
-  run_live_replication <- function(doi, what) {
+  run_live_replication <- function(doi, what, language = "r") {
     tryCatch({
       withProgress(message = "Running live replication...", value = 0.2, {
         state$progress <- "Running replication"
@@ -2913,6 +2928,7 @@ server <- function(input, output, session) {
           "load_replication_for_display",
           doi,
           what,
+          language = language,
           prefer = "live",
           fallback_live = FALSE,
           install_deps = TRUE,
@@ -3074,13 +3090,15 @@ server <- function(input, output, session) {
 
   output$replication_code_ui <- renderUI({
     req(state$selected_replication, state$doi)
-    simple_code <- replication_run_snippet(state$doi, state$selected_replication)
+    lang <- selected_replication_language()
+    simple_code <- replication_run_snippet(state$doi, state$selected_replication, lang)
     full_code <- tryCatch(
       paste(
         replicate_fn(
           "get_code",
           state$doi,
           state$selected_replication,
+          language = lang,
           folder = state$registry_folder,
           repo = state$registry_repo
         ),
@@ -3113,6 +3131,7 @@ server <- function(input, output, session) {
         "replication_code_language_for",
         state$doi,
         state$selected_replication,
+        language = lang,
         folder = state$registry_folder,
         repo = state$registry_repo
       ),

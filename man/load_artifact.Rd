@@ -4,16 +4,18 @@
 \alias{load_artifact}
 \title{Load a precomputed artifact for a replication}
 \usage{
-load_artifact(doi, what, repo = NULL, folder = NULL)
+load_artifact(doi, what, repo = NULL, folder = NULL, language = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
 
 \item{repo}{Optional repository slug.}
 
 \item{folder}{Optional registry folder name from \code{index.csv}.}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 }
 \value{
 Artifact contents suitable for display, or \code{NULL}.

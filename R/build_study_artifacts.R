@@ -14,6 +14,12 @@
 #'   `NULL`, builds every figure and table in `replication.yml`.
 #' @param registry_root Optional registry checkout path for monorepo dev.
 #' @return Invisibly, a list with `artifact_dir`, `manifest`, and per-id status.
+#'
+#' @examples
+#' \dontrun{
+#' build_study_artifacts(".", install_deps = TRUE)
+#' }
+#'
 #' @export
 build_study_artifacts <- function(
   location = ".",

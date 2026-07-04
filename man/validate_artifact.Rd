@@ -4,14 +4,16 @@
 \alias{validate_artifact}
 \title{Validate that a precomputed artifact exists}
 \usage{
-validate_artifact(doi, what, repo = NULL)
+validate_artifact(doi, what, repo = NULL, language = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
 
 \item{repo}{Optional repository slug.}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 }
 \value{
 Invisibly \code{TRUE} on success.

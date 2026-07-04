@@ -34,3 +34,9 @@ the study repository root (or pass the path explicitly).
 Registry papers use \code{registry/scripts/build_artifacts.R} instead; folder-backed
 studies keep materials in their own repository.
 }
+\examples{
+\dontrun{
+build_study_artifacts(".", install_deps = TRUE)
+}
+
+}

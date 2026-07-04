@@ -812,8 +812,14 @@ replication_code_language <- function(rep, paper_meta = NULL) {
 #' @inheritParams render_replication
 #' @return \code{"stata"} or \code{"r"}.
 #' @export
-replication_code_language_for <- function(doi, what, repo = NULL, folder = NULL) {
+replication_code_language_for <- function(
+  doi,
+  what,
+  language = NULL,
+  repo = NULL,
+  folder = NULL
+) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
-  rep <- find_replication_entry(meta, what)
+  rep <- find_replication_entry(meta, what, language = language)
   replication_code_language(rep, meta$paper)
 }

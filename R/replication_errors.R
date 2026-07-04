@@ -54,11 +54,19 @@ replication_error_message <- function(x) {
 #' }
 #'
 #' @export
-try_render_for_display <- function(doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
+try_render_for_display <- function(
+  doi,
+  what,
+  language = NULL,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+) {
   tryCatch(
     render_for_display(
       doi,
       what,
+      language = language,
       install_deps = install_deps,
       repo = repo,
       folder = folder

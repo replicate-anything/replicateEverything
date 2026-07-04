@@ -4,12 +4,14 @@
 \alias{get_code}
 \title{Retrieve replication code for a paper}
 \usage{
-get_code(doi, what, repo = NULL, folder = NULL)
+get_code(doi, what, language = NULL, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id).}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 
 \item{repo}{Optional repository slug.}
 
@@ -33,6 +35,7 @@ reading \code{code/*.R} from the registry repo).
 \examples{
 \dontrun{
 head(get_code("10.1177/00491241211036161", "fig_1"))
+get_code("10.1017/S0003055403000534", "tab_1", language = "stata")
 }
 
 }

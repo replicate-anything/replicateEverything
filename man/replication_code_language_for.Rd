@@ -4,12 +4,20 @@
 \alias{replication_code_language_for}
 \title{Code language for a replication (for Shiny syntax highlighting)}
 \usage{
-replication_code_language_for(doi, what, repo = NULL, folder = NULL)
+replication_code_language_for(
+  doi,
+  what,
+  language = NULL,
+  repo = NULL,
+  folder = NULL
+)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 
 \item{repo}{Optional repository slug.}
 

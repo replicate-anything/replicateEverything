@@ -4,14 +4,16 @@
 \alias{artifact_available}
 \title{Check whether a precomputed artifact is available}
 \usage{
-artifact_available(doi, what, repo = NULL)
+artifact_available(doi, what, repo = NULL, language = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
 
 \item{repo}{Optional repository slug.}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 }
 \value{
 Logical scalar.

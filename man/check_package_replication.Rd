@@ -19,3 +19,10 @@ A list with \code{ok} (logical), \code{checks} (data frame), and \code{package_p
 Runs a transparent checklist: package layout, \code{replication.yml}, exported API,
 baked artifacts, and (optionally) live execution of every table and figure.
 }
+\examples{
+\dontrun{
+check_package_replication("../rep-10.1371_journal.pone.0278337")
+check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
+}
+
+}

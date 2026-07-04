@@ -57,6 +57,7 @@ reference:
   - load_index
   - find_repo
   - list_replications
+  - list_replication_groups
   - get_code
   - replication_index_diagnostics
 - title: Run replications
@@ -109,6 +110,7 @@ build:
 articles:
 - title: Articles
   contents:
+  - meet-the-functions
   - replication-example
   - shiny-app
   - audit

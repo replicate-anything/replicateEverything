@@ -4,7 +4,7 @@
 \alias{get_artifact_path}
 \title{Get artifact URL or local path for a replication}
 \usage{
-get_artifact_path(doi, what, repo = NULL, folder = NULL)
+get_artifact_path(doi, what, repo = NULL, folder = NULL, language = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}

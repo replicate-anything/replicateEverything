@@ -16,7 +16,7 @@ audit_run_one(
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
 
 \item{patience}{Seconds before halting the run (default 20).}
 

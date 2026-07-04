@@ -18,13 +18,13 @@ default_artifact_path <- function(rep, what) {
 #' @inheritParams render_replication
 #' @return Character path or \code{NULL}.
 #' @keywords internal
-local_artifact_path <- function(doi, what, repo = NULL) {
+local_artifact_path <- function(doi, what, repo = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo)
   if (is_package_replication(meta)) {
     return(NULL)
   }
 
-  rep <- find_replication_entry(meta, what)
+  rep <- find_replication_entry(meta, what, language = language)
   ctx <- paper_context(doi, repo = repo)
 
   if (is.null(ctx$local_root)) {
@@ -50,19 +50,19 @@ local_artifact_path <- function(doi, what, repo = NULL) {
 #' }
 #'
 #' @export
-artifact_available <- function(doi, what, repo = NULL) {
-  local_path <- local_artifact_path(doi, what, repo = repo)
+artifact_available <- function(doi, what, repo = NULL, language = NULL) {
+  local_path <- local_artifact_path(doi, what, repo = repo, language = language)
   if (!is.null(local_path)) {
     return(file.exists(local_path))
   }
 
-  path <- get_artifact_path(doi, what, repo = repo)
+  path <- get_artifact_path(doi, what, repo = repo, language = language)
   if (is.null(path)) {
     return(FALSE)
   }
 
   !is.null(suppressWarnings(tryCatch(
-    load_artifact(doi, what, repo = repo),
+    load_artifact(doi, what, repo = repo, language = language),
     error = function(e) NULL
   )))
 }
@@ -78,11 +78,11 @@ artifact_available <- function(doi, what, repo = NULL) {
 #' }
 #'
 #' @export
-validate_artifact <- function(doi, what, repo = NULL) {
+validate_artifact <- function(doi, what, repo = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo)
 
   if (is_package_replication(meta)) {
-    if (!artifact_available(doi, what, repo = repo)) {
+    if (!artifact_available(doi, what, repo = repo, language = language)) {
       pkg <- as.character(meta$paper$package[[1]])
       stop(
         "Artifact not available for replication ", what,
@@ -93,7 +93,7 @@ validate_artifact <- function(doi, what, repo = NULL) {
     return(invisible(TRUE))
   }
 
-  local_path <- local_artifact_path(doi, what, repo = repo)
+  local_path <- local_artifact_path(doi, what, repo = repo, language = language)
   if (!is.null(local_path) && !file.exists(local_path)) {
     ctx <- tryCatch(paper_context(doi, repo = repo), error = function(e) NULL)
     hint <- if (!is.null(ctx) && isTRUE(ctx$is_folder_study)) {
@@ -108,7 +108,7 @@ validate_artifact <- function(doi, what, repo = NULL) {
     )
   }
 
-  if (!artifact_available(doi, what, repo = repo)) {
+  if (!artifact_available(doi, what, repo = repo, language = language)) {
     stop(
       "Artifact not available for replication ", what, ".",
       call. = FALSE

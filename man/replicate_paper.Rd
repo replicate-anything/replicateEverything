@@ -4,10 +4,12 @@
 \alias{replicate_paper}
 \title{Replicate all results from a paper}
 \usage{
-replicate_paper(doi, install_deps = FALSE)
+replicate_paper(doi, language = NULL, install_deps = FALSE)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
+
+\item{language}{Optional \code{"R"} or \code{"stata"} for all groups.}
 
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}
@@ -16,7 +18,8 @@ replicate_paper(doi, install_deps = FALSE)
 A named list of replication result envelopes.
 }
 \description{
-Runs all registered replications (figures and tables) for a given paper.
+Runs one replication per logical figure/table group, using the default
+engine (R when both R and Stata exist).
 }
 \examples{
 \dontrun{

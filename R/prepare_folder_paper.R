@@ -107,6 +107,12 @@ write_folder_registry_stub <- function(location = ".", stub_dir = NULL) {
 #' @param registry_root Optional registry checkout for monorepo dev.
 #' @return Invisibly, the result of [check_folder_replication()] with
 #'   `registry_stub_path` and `registry_index_path` when successful.
+#'
+#' @examples
+#' \dontrun{
+#' prepare_folder_paper(".", registry_root = "../registry")
+#' }
+#'
 #' @export
 prepare_folder_paper <- function(
   location = ".",
@@ -165,6 +171,13 @@ prepare_folder_paper <- function(
 #' @param registry_root Path to the registry repository root. Defaults to
 #'   `getOption("replicateEverything.registry_root")`.
 #' @return Invisibly, a list with `stub_path`, `index_updated`, and `folder`.
+#'
+#' @examples
+#' \dontrun{
+#' options(replicateEverything.registry_root = "../registry")
+#' sync_folder_paper(".")
+#' }
+#'
 #' @export
 sync_folder_paper <- function(location = ".", registry_root = NULL) {
   study_root <- resolve_study_location(location)

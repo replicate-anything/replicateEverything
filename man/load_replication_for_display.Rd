@@ -7,6 +7,7 @@
 load_replication_for_display(
   doi,
   what,
+  language = NULL,
   prefer = c("auto", "artifact", "live"),
   fallback_live = TRUE,
   install_deps = TRUE,

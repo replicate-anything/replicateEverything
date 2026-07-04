@@ -81,7 +81,8 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
 #'
 #' @param object Analysis output to format.
 #' @param doi Character. DOI of the paper.
-#' @param what Replication identifier.
+#' @param what Replication identifier (logical id).
+#' @param language Optional \code{"R"} or \code{"stata"}.
 #' @param install_deps Logical. Install missing dependencies when \code{TRUE}.
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
@@ -94,7 +95,15 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
 #' }
 #'
 #' @export
-format_for_display <- function(object, doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
+format_for_display <- function(
+  object,
+  doi,
+  what,
+  language = NULL,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+) {
   doi <- normalize_doi(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
 
@@ -104,7 +113,7 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
     return(object)
   }
 
-  rep <- find_replication_entry(meta, what)
+  rep <- find_replication_entry(meta, what, language = language)
 
   if (!format_specified(rep)) {
     return(object)
@@ -185,10 +194,18 @@ format_for_display <- function(object, doi, what, install_deps = FALSE, repo = N
 #' }
 #'
 #' @export
-render_for_display <- function(doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
+render_for_display <- function(
+  doi,
+  what,
+  language = NULL,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+) {
   result <- render_replication(
     doi,
     what,
+    language = language,
     install_deps = install_deps,
     repo = repo,
     folder = folder
@@ -197,6 +214,7 @@ render_for_display <- function(doi, what, install_deps = FALSE, repo = NULL, fol
     replication_object(result),
     doi,
     what,
+    language = language,
     install_deps = install_deps,
     repo = repo,
     folder = folder

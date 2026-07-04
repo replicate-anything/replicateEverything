@@ -30,3 +30,10 @@ Runs a transparent checklist: study layout, \code{replication.yml}, code and dat
 paths, baked artifacts under \verb{artifacts/}, optional \verb{tests/testthat/}, and
 (optionally) live execution of every table and figure.
 }
+\examples{
+\dontrun{
+check_folder_replication(".")
+check_folder_replication(".", full_replication = TRUE)
+}
+
+}

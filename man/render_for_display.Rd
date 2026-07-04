@@ -4,12 +4,21 @@
 \alias{render_for_display}
 \title{Render a replication and apply formatting for display}
 \usage{
-render_for_display(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
+render_for_display(
+  doi,
+  what,
+  language = NULL,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}

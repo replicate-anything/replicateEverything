@@ -4,7 +4,7 @@
 \alias{validate_replication}
 \title{Validate that a replication can be rendered}
 \usage{
-validate_replication(doi, what, install_deps = FALSE)
+validate_replication(doi, what, language = NULL, install_deps = FALSE)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}

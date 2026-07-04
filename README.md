@@ -42,8 +42,8 @@ Requires R (>= 4.1.0).
 ```r
 library(replicateEverything)
 
-# Look up bibliographic metadata
-get_doi_metadata("10.1177/00491241211036161")
+# Browse the registry index
+head(load_index()[, c("doi", "title", "year")])
 
 # Search the registry by title keyword
 search_papers("causes")
@@ -58,7 +58,7 @@ run_replication("10.1177/00491241211036161", "fig_1")
 replicate_paper("10.1177/00491241211036161")
 ```
 
-For a worked example with output, see the [replication vignette](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
+For a tour of every main function, see [Meet the functions](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.html). For a worked example with output, see the [replication vignette](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
 
 ## How it works
 
@@ -271,23 +271,18 @@ and `build_report()`.
 
 | Task | Function |
 |------|----------|
-| Search registry | `search_papers()`, `load_index()` |
-| DOI metadata | `get_doi_metadata()`, `normalize_doi()` |
-| Find repository | `find_repo()` |
-| List replications | `list_replications()` |
+| Browse registry | `load_index()`, `search_papers()` |
+| List replications | `list_replications()`, `list_replication_groups()` |
 | View source code | `get_code()` |
-| Run one replication | `run_replication()`, `render_replication()` |
+| Run one replication | `run_replication()` |
 | Replicate full paper | `replicate_paper()` |
-| Format for display | `format_for_display()`, `render_for_display()` |
-| Precomputed outputs | `load_artifact()`, `save_artifact()`, `artifact_available()` |
-| Validate | `validate_replication()`, `validate_artifact()` |
 | Build folder study artifacts | `build_study_artifacts()` |
-| Prepare folder study | `prepare_folder_paper()`, `write_folder_registry_stub()` |
-| Sync folder study to registry | `sync_folder_paper()`, `add_folder_paper()` |
+| Prepare folder study | `prepare_folder_paper()` |
+| Sync folder study to registry | `sync_folder_paper()` |
 | Validate folder study | `check_folder_replication()` |
 | Validate package study | `check_package_replication()`, `add_paper()` |
+| Registry health check | `audit_everything()` |
 | Shiny demo | `run_shiny_app()`, `save_local_shiny()` |
-| Contribute | `create_replication_template()` |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN dependencies automatically.
 
@@ -302,7 +297,7 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 
 ## Contributor workflow
 
-1. **Fetch metadata** — `get_doi_metadata("10.1177/00491241211036161")`
+1. **Browse the registry** — `load_index()` or `search_papers("keyword")`
 2. **Scaffold a folder** — `create_replication_template("10.1177/00491241211036161")`
 3. **Add your data and code** — place processed data in `data/` and scripts in `code/`
 4. **Test locally** — run scripts in the R console or with `run_replication()`

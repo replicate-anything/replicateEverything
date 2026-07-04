@@ -4,7 +4,13 @@
 \alias{artifact_lookup_candidates}
 \title{Human-readable list of artifact URLs/paths tried for a replication}
 \usage{
-artifact_lookup_candidates(doi, what, repo = NULL, folder = NULL)
+artifact_lookup_candidates(
+  doi,
+  what,
+  repo = NULL,
+  folder = NULL,
+  language = NULL
+)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}

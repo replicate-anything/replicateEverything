@@ -7,6 +7,13 @@
 #' @param full_replication If `TRUE`, also run every table and figure via
 #'   `run_replication()` and require success.
 #' @return A list with `ok` (logical), `checks` (data frame), and `package_path`.
+#'
+#' @examples
+#' \dontrun{
+#' check_package_replication("../rep-10.1371_journal.pone.0278337")
+#' check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
+#' }
+#'
 #' @export
 check_package_replication <- function(location, full_replication = FALSE) {
   checks <- bind_check_results()

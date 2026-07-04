@@ -61,19 +61,12 @@ library(replicateEverything)
 ```
 
 ## Quick Start
-### Retrieve metadata for a paper 
+### Browse the registry
 ```{r}
-get_doi_metadata("10.1177/00491241211036161")
+head(load_index()[, c("doi", "title", "year")])
 ```
 
-### Find Replication Repository 
-```{r}
-# find repo
-find_repo("10.1177/00491241211036161")
-```
-The way the package is set up now, researchers will have to outline their Github repository is an aligned way to allows it to be merge into the [Registry](https://github.com/replicate-anything/registry). More details on this later. However, you can use the `find_repo` function and the paper's `DOI` to located and look up a paper's repository from the registry. 
-
-### Search the replication registry 
+### Search the replication registry
 ```{r}
 search_papers("causes")
 ```

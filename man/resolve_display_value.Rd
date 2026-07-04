@@ -8,6 +8,7 @@ resolve_display_value(
   doi,
   what,
   result,
+  language = NULL,
   install_deps = FALSE,
   repo = NULL,
   folder = NULL

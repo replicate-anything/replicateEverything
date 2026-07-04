@@ -11,7 +11,8 @@
 #' reading \code{code/*.R} from the registry repo).
 #'
 #' @param doi Character. DOI of the paper.
-#' @param what Character. Replication identifier (e.g., \code{"fig_1"}).
+#' @param what Character. Replication identifier (logical id).
+#' @param language Optional \code{"R"} or \code{"stata"}.
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #' @return A character vector containing the lines of the replication script(s).
@@ -19,10 +20,11 @@
 #' @examples
 #' \dontrun{
 #' head(get_code("10.1177/00491241211036161", "fig_1"))
+#' get_code("10.1017/S0003055403000534", "tab_1", language = "stata")
 #' }
 #'
 #' @export
-get_code <- function(doi, what, repo = NULL, folder = NULL) {
+get_code <- function(doi, what, language = NULL, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
@@ -38,7 +40,7 @@ get_code <- function(doi, what, repo = NULL, folder = NULL) {
     return(get_code_from_package_repo(meta, ctx, what, pkg))
   }
 
-  rep <- find_replication_entry(meta, what)
+  rep <- find_replication_entry(meta, what, language = language)
 
   read_code_file <- function(path) {
     if (!is.null(ctx$local_root)) {

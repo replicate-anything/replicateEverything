@@ -8,6 +8,7 @@ format_for_display(
   object,
   doi,
   what,
+  language = NULL,
   install_deps = FALSE,
   repo = NULL,
   folder = NULL
@@ -18,7 +19,9 @@ format_for_display(
 
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Replication identifier.}
+\item{what}{Replication identifier (logical id).}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 
 \item{install_deps}{Logical. Install missing dependencies when \code{TRUE}.}
 

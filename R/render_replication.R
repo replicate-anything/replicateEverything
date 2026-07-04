@@ -402,40 +402,9 @@ package_replication_entries <- function(meta) {
 #' @param meta Parsed replication metadata.
 #' @param what Replication identifier.
 #'
+#' @rdname find_replication_entry
 #' @keywords internal
-find_replication_entry <- function(meta, what) {
-  entries <- meta$replications %||% list()
-  matches <- entries[
-    vapply(entries, function(x) identical(x$id, what), logical(1))
-  ]
-
-  if (length(matches) == 0 && is_folder_study_replication(meta)) {
-    ctx <- list(
-      repo = study_repo_slug(meta, NULL),
-      folder = meta$paper$study_folder %||% NULL
-    )
-    study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
-    if (!is.null(study_meta)) {
-      entries <- c(study_meta$prep %||% list(), study_meta$replications %||% list())
-      matches <- entries[
-        vapply(entries, function(x) identical(x$id, what), logical(1))
-      ]
-    }
-  }
-
-  if (length(matches) == 0 && is_package_replication(meta)) {
-    entries <- package_replication_entries(meta)
-    matches <- entries[
-      vapply(entries, function(x) identical(x$id, what), logical(1))
-    ]
-  }
-
-  if (length(matches) == 0) {
-    stop("Replication ", what, " not found in metadata")
-  }
-
-  matches[[1]]
-}
+NULL
 
 #' Render a single replication
 #'
@@ -443,7 +412,8 @@ find_replication_entry <- function(meta, what) {
 #' envelope suitable for Shiny display or artifact generation.
 #'
 #' @param doi Character. DOI of the paper.
-#' @param what Character. Replication identifier (e.g., \code{"fig_1"}).
+#' @param what Character. Replication identifier (logical id, e.g. \code{"tab_1"}).
+#' @param language Optional \code{"R"} or \code{"stata"}.
 #' @param install_deps Logical. Install missing CRAN dependencies when
 #'   \code{TRUE}. Defaults to \code{FALSE}.
 #' @param repo Optional repository slug.
@@ -454,10 +424,18 @@ find_replication_entry <- function(meta, what) {
 #' @examples
 #' \dontrun{
 #' render_replication("10.1177/00491241211036161", "fig_1")
+#' render_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 #' }
 #'
 #' @export
-render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, folder = NULL) {
+render_replication <- function(
+  doi,
+  what,
+  language = NULL,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+) {
   doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
@@ -487,7 +465,7 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
     ))
   }
 
-  rep <- find_replication_entry(meta, what)
+  rep <- find_replication_entry(meta, what, language = language)
 
   if (is_stata_replication(rep, meta$paper)) {
     ensure_stata_available(rep)
@@ -495,6 +473,8 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
     return(structure(
       list(
         id = what,
+        entry_id = rep$id,
+        language = replication_engine(rep, meta$paper),
         type = rep$type,
         object = obj,
         format = infer_result_format(obj, rep$type),
@@ -526,6 +506,8 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
   structure(
     list(
       id = what,
+      entry_id = rep$id,
+      language = replication_engine(rep, meta$paper),
       type = rep$type,
       object = result,
       format = infer_result_format(result, rep$type),
@@ -552,10 +534,13 @@ render_replication <- function(doi, what, install_deps = FALSE, repo = NULL, fol
 #' }
 #'
 #' @export
-get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
+get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
-  rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+  rep <- tryCatch(
+    find_replication_entry(meta, what, language = language),
+    error = function(e) NULL
+  )
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
@@ -576,9 +561,9 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
   }
 
   if (is.null(rep)) {
-    rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+    return(NULL)
   }
-  resolve_registry_artifact_path(what, ctx, rep, doi = doi)
+  resolve_registry_artifact_path(rep$id, ctx, rep, doi = doi)
 }
 
 #' Load a precomputed artifact for a replication
@@ -592,10 +577,13 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL) {
 #' }
 #'
 #' @export
-load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
+load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
-  rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+  rep <- tryCatch(
+    find_replication_entry(meta, what, language = language),
+    error = function(e) NULL
+  )
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
@@ -619,7 +607,7 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
     return(NULL)
   }
 
-  path <- get_artifact_path(doi, what, repo = repo, folder = folder)
+  path <- get_artifact_path(doi, what, repo = repo, folder = folder, language = language)
   if (is.null(path)) {
     return(NULL)
   }
@@ -630,7 +618,7 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL) {
 #'
 #' @inheritParams get_artifact_path
 #' @keywords internal
-artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL) {
+artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
@@ -657,8 +645,11 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL) {
     return(unique(paths[nzchar(paths)]))
   }
 
-  rep <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
-  rel <- registry_artifact_rel_paths(what, rep, ctx)
+  rep <- tryCatch(
+    find_replication_entry(meta, what, language = language),
+    error = function(e) NULL
+  )
+  rel <- registry_artifact_rel_paths(if (is.null(rep)) what else rep$id, rep, ctx)
   vapply(rel, function(r) {
     if (!is.null(ctx$local_root)) {
       local <- file.path(ctx$local_root, r)

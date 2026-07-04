@@ -20,3 +20,10 @@ Reads \code{registry/replication.yml} and \code{registry/index.csv} from the stu
 repo (written by \code{\link[=prepare_folder_paper]{prepare_folder_paper()}}) and installs them in a local
 registry checkout.
 }
+\examples{
+\dontrun{
+options(replicateEverything.registry_root = "../registry")
+sync_folder_paper(".")
+}
+
+}

@@ -33,3 +33,9 @@ writes \code{registry/replication.yml} and \code{registry/index.csv} in the stud
 repository. The only registry step left is syncing those files (see
 \code{\link[=sync_folder_paper]{sync_folder_paper()}}).
 }
+\examples{
+\dontrun{
+prepare_folder_paper(".", registry_root = "../registry")
+}
+
+}

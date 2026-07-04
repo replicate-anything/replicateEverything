@@ -8,12 +8,11 @@
 #' (same step used for display artifacts and Shiny).
 #'
 #' @param doi Character. DOI of the paper.
-#' @param what Character. Replication identifier (e.g., "fig_1").
+#' @param what Character. Replication identifier (logical id, e.g. \code{"tab_1"}).
+#' @param language Optional \code{"R"} or \code{"stata"}. Defaults to R when
+#'   both engines exist for the same logical replication.
 #' @param install_deps Logical. Install missing CRAN dependencies when
 #'   \code{TRUE}. Defaults to \code{FALSE}.
-#' @param format Logical or \code{"if_available"}. When \code{TRUE} or
-#'   \code{"if_available"}, apply formatting when the replication entry defines
-#'   a \code{format} step. Defaults to \code{FALSE}.
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #'
@@ -23,12 +22,14 @@
 #' \dontrun{
 #' run_replication("10.1177/00491241211036161", "fig_1")
 #' run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
+#' run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 #' }
 #'
 #' @export
 run_replication <- function(
   doi,
   what,
+  language = NULL,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
@@ -37,6 +38,7 @@ run_replication <- function(
   result <- render_replication(
     doi,
     what,
+    language = language,
     install_deps = install_deps,
     repo = repo,
     folder = folder
@@ -49,6 +51,7 @@ run_replication <- function(
       object,
       doi,
       what,
+      language = language,
       install_deps = install_deps,
       repo = repo,
       folder = folder

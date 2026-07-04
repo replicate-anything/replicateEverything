@@ -4,12 +4,21 @@
 \alias{render_replication}
 \title{Render a single replication}
 \usage{
-render_replication(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
+render_replication(
+  doi,
+  what,
+  language = NULL,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
 
-\item{what}{Character. Replication identifier (e.g., \code{"fig_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
+
+\item{language}{Optional \code{"R"} or \code{"stata"}.}
 
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}
@@ -28,6 +37,7 @@ envelope suitable for Shiny display or artifact generation.
 \examples{
 \dontrun{
 render_replication("10.1177/00491241211036161", "fig_1")
+render_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 }
 
 }
