@@ -119,14 +119,14 @@ run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1257/aer.91.5.1369", "tab_1", language = "stata", format = TRUE)
 ```
 
-### `replicate_paper()`
+### `run_replication(..., what = "everything")`
 
 Runs every logical replication group for a paper (R by default where
 bilingual).
 
 ``` r
 
-replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 ```
 
 ## Shiny demo
@@ -216,7 +216,7 @@ check_package_replication("../rep-10.1371_journal.pone.0278337", full_replicatio
 See
 [`vignette("package-replication-checklist")`](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md)
 for layout and
-[`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md).
+[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md).
 
 ## Registry audit
 
@@ -247,8 +247,8 @@ for the latest snapshot table shipped with the package.
 | What can I replicate? | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md) |
 | View code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one result | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
-| Run whole paper | [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md) |
+| Run whole paper | `run_replication(doi, "everything")` |
 | Interactive browser | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
 | Folder study workflow | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md), [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md), [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md), [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
-| Package study workflow | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md), [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md) |
+| Package study workflow | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
 | Health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |

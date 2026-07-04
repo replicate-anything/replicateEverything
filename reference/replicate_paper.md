@@ -1,7 +1,8 @@
 # Replicate all results from a paper
 
-Runs one replication per logical figure/table group, using the default
-engine (R when both R and Stata exist).
+**Deprecated.** Use
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+with `what = "everything"` instead.
 
 ## Usage
 
@@ -26,12 +27,13 @@ replicate_paper(doi, language = NULL, install_deps = FALSE)
 
 ## Value
 
-A named list of replication result envelopes.
+A named list of replication result envelopes (legacy behaviour).
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 } # }
 ```

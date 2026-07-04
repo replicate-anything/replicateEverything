@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,7 +45,7 @@
     <div class="section level2">
       <h2 id="package">Package<a class="anchor" aria-label="anchor" href="#package"></a></h2>
 
-      <div class="section-desc"><p>Package overview and help search entry point.</p></div>
+      <div class="section-desc"><p>Package overview.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -58,6 +58,80 @@
 
         </dt>
         <dd>replicateEverything: Reproduce Empirical Research Results</dd>
+      </dl></div><div class="section level2">
+      <h2 id="discovery">Discovery<a class="anchor" aria-label="anchor" href="#discovery"></a></h2>
+
+      <div class="section-desc"><p>Find papers and inspect replication metadata.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="load_index.html">load_index()</a></code>
+
+        </dt>
+        <dd>Load the replication registry index</dd>
+
+        <dt>
+
+          <code><a href="search_papers.html">search_papers()</a></code>
+
+        </dt>
+        <dd>Search replicated papers</dd>
+
+        <dt>
+
+          <code><a href="list_replications.html">list_replications()</a></code>
+
+        </dt>
+        <dd>List available replications for a paper</dd>
+
+        <dt>
+
+          <code><a href="list_replication_groups.html">list_replication_groups()</a></code>
+
+        </dt>
+        <dd>List one replication entry per logical group</dd>
+
+        <dt>
+
+          <code><a href="get_code.html">get_code()</a></code>
+
+        </dt>
+        <dd>Retrieve replication code for a paper</dd>
+      </dl></div><div class="section level2">
+      <h2 id="run-replications">Run replications<a class="anchor" aria-label="anchor" href="#run-replications"></a></h2>
+
+      <div class="section-desc"><p>Run tables and figures from registry scripts.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="run_replication.html">run_replication()</a></code>
+
+        </dt>
+        <dd>Run a single replication or all replications for a paper</dd>
+
+        <dt>
+
+          <code><a href="replicate_paper.html">replicate_paper()</a></code>
+
+        </dt>
+        <dd>Replicate all results from a paper</dd>
+
+        <dt>
+
+          <code><a href="create_replication_template.html">create_replication_template()</a></code>
+
+        </dt>
+        <dd>Create a replication template</dd>
       </dl></div><div class="section level2">
       <h2 id="shiny-demo">Shiny demo<a class="anchor" aria-label="anchor" href="#shiny-demo"></a></h2>
 
@@ -82,339 +156,9 @@
         </dt>
         <dd>Copy the bundled Shiny app into a deploy directory</dd>
       </dl></div><div class="section level2">
-      <h2 id="registry">Registry<a class="anchor" aria-label="anchor" href="#registry"></a></h2>
+      <h2 id="contribute">Contribute<a class="anchor" aria-label="anchor" href="#contribute"></a></h2>
 
-      <div class="section-desc"><p>Add and validate package-backed studies.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="check_package_replication.html">check_package_replication()</a></code>
-
-        </dt>
-        <dd>Validate a package-backed replication study</dd>
-
-        <dt>
-
-          <code><a href="add_paper.html">add_paper()</a></code>
-
-        </dt>
-        <dd>Add a package-backed study to the replication registry</dd>
-
-        <dt>
-
-          <code><a href="is_package_replication.html">is_package_replication()</a></code>
-
-        </dt>
-        <dd>Whether replication metadata refers to an installed R package</dd>
-
-        <dt>
-
-          <code><a href="is_folder_study_replication.html">is_folder_study_replication()</a></code>
-
-        </dt>
-        <dd>Whether replication metadata refers to a folder-backed external study repo</dd>
-
-        <dt>
-
-          <code><a href="is_study_package_error.html">is_study_package_error()</a></code>
-
-        </dt>
-        <dd>Whether an error is a missing study replication package</dd>
-
-        <dt>
-
-          <code><a href="print.package_replication_check.html">print(<i>&lt;package_replication_check&gt;</i>)</a></code> <code><a href="print.package_replication_check.html">print(<i>&lt;folder_replication_check&gt;</i>)</a></code> <code><a href="print.package_replication_check.html">print(<i>&lt;replication_check&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a replication checklist result</dd>
-
-        <dt>
-
-          <code><a href="study_package_install_info.html">study_package_install_info()</a></code>
-
-        </dt>
-        <dd>Install instructions for a package-backed study</dd>
-
-        <dt>
-
-          <code><a href="study_package_install_message.html">study_package_install_message()</a></code>
-
-        </dt>
-        <dd>User-facing message for installing a study replication package</dd>
-      </dl></div><div class="section level2">
-      <h2 id="registry-audit">Registry audit<a class="anchor" aria-label="anchor" href="#registry-audit"></a></h2>
-
-      <div class="section-desc"><p>Run all registry replications and inspect results.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="audit_everything.html">audit_everything()</a></code>
-
-        </dt>
-        <dd>Audit all registry replications</dd>
-
-        <dt>
-
-          <code><a href="audit_everything_qmd.html">audit_everything_qmd()</a></code>
-
-        </dt>
-        <dd>Path to the registry Quarto audit report</dd>
-
-        <dt>
-
-          <code><a href="write_registry_audit_record.html">write_registry_audit_record()</a></code>
-
-        </dt>
-        <dd>Write audit results into the registry repository</dd>
-
-        <dt>
-
-          <code><a href="load_registry_audit_summary.html">load_registry_audit_summary()</a></code>
-
-        </dt>
-        <dd>Load the registry audit summary</dd>
-
-        <dt>
-
-          <code><a href="registry_audit_summary_path.html">registry_audit_summary_path()</a></code>
-
-        </dt>
-        <dd>Path to the registry audit summary JSON</dd>
-
-        <dt>
-
-          <code><a href="registry_audit_rds_path.html">registry_audit_rds_path()</a></code>
-
-        </dt>
-        <dd>Path to the full registry audit RDS snapshot</dd>
-      </dl></div><div class="section level2">
-      <h2 id="discovery">Discovery<a class="anchor" aria-label="anchor" href="#discovery"></a></h2>
-
-      <div class="section-desc"><p>Find papers and inspect replication metadata.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="get_doi_metadata.html">get_doi_metadata()</a></code>
-
-        </dt>
-        <dd>Retrieve metadata for a DOI</dd>
-
-        <dt>
-
-          <code><a href="search_papers.html">search_papers()</a></code>
-
-        </dt>
-        <dd>Search replicated papers</dd>
-
-        <dt>
-
-          <code><a href="normalize_doi.html">normalize_doi()</a></code>
-
-        </dt>
-        <dd>Normalize a DOI</dd>
-
-        <dt>
-
-          <code><a href="resolve_doi_input.html">resolve_doi_input()</a></code>
-
-        </dt>
-        <dd>Resolve a DOI or local study query into a canonical DOI</dd>
-
-        <dt>
-
-          <code><a href="is_local_doi_query.html">is_local_doi_query()</a></code>
-
-        </dt>
-        <dd>Detect whether a DOI argument requests the local working-directory study</dd>
-
-        <dt>
-
-          <code><a href="find_local_study_root.html">find_local_study_root()</a></code>
-
-        </dt>
-        <dd>Find a folder-backed study root containing <code>replication.yml</code></dd>
-
-        <dt>
-
-          <code><a href="configure_local_monorepo.html">configure_local_monorepo()</a></code>
-
-        </dt>
-        <dd>Configure options for a local replicate-anything monorepo</dd>
-
-        <dt>
-
-          <code><a href="configure_study_folder.html">configure_study_folder()</a></code>
-
-        </dt>
-        <dd>Register a server-local study folder for a DOI</dd>
-
-        <dt>
-
-          <code><a href="load_index.html">load_index()</a></code>
-
-        </dt>
-        <dd>Load the replication registry index</dd>
-
-        <dt>
-
-          <code><a href="find_repo.html">find_repo()</a></code>
-
-        </dt>
-        <dd>Find the repository for a paper replication</dd>
-
-        <dt>
-
-          <code><a href="list_replications.html">list_replications()</a></code>
-
-        </dt>
-        <dd>List available replications for a paper</dd>
-
-        <dt>
-
-          <code><a href="list_replication_groups.html">list_replication_groups()</a></code>
-
-        </dt>
-        <dd>List one replication entry per logical group</dd>
-
-        <dt>
-
-          <code><a href="get_code.html">get_code()</a></code>
-
-        </dt>
-        <dd>Retrieve replication code for a paper</dd>
-
-        <dt>
-
-          <code><a href="replication_index_diagnostics.html">replication_index_diagnostics()</a></code>
-
-        </dt>
-        <dd>Report where the replication index was sought (for debugging Shiny)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="run-replications">Run replications<a class="anchor" aria-label="anchor" href="#run-replications"></a></h2>
-
-      <div class="section-desc"><p>Render tables and figures from registry scripts.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="render_replication.html">render_replication()</a></code>
-
-        </dt>
-        <dd>Render a single replication</dd>
-
-        <dt>
-
-          <code><a href="render_for_display.html">render_for_display()</a></code>
-
-        </dt>
-        <dd>Render a replication and apply formatting for display</dd>
-
-        <dt>
-
-          <code><a href="run_replication.html">run_replication()</a></code>
-
-        </dt>
-        <dd>Run a single replication</dd>
-
-        <dt>
-
-          <code><a href="replicate_paper.html">replicate_paper()</a></code>
-
-        </dt>
-        <dd>Replicate all results from a paper</dd>
-
-        <dt>
-
-          <code><a href="validate_replication.html">validate_replication()</a></code>
-
-        </dt>
-        <dd>Validate that a replication can be rendered</dd>
-
-        <dt>
-
-          <code><a href="create_replication_template.html">create_replication_template()</a></code>
-
-        </dt>
-        <dd>Create a replication template</dd>
-
-        <dt>
-
-          <code><a href="self_run.html">self_run()</a></code>
-
-        </dt>
-        <dd>Run a replication script footer when executed directly</dd>
-
-        <dt>
-
-          <code><a href="load_local_replication_data.html">load_local_replication_data()</a></code>
-
-        </dt>
-        <dd>Load replication data from local paths (for self-contained scripts)</dd>
-
-        <dt>
-
-          <code><a href="find_stata_executable.html">find_stata_executable()</a></code>
-
-        </dt>
-        <dd>Locate a Stata executable</dd>
-
-        <dt>
-
-          <code><a href="replication_code_language_for.html">replication_code_language_for()</a></code>
-
-        </dt>
-        <dd>Code language for a replication (for Shiny syntax highlighting)</dd>
-
-        <dt>
-
-          <code><a href="load_replication_for_display.html">load_replication_for_display()</a></code>
-
-        </dt>
-        <dd>Load or run a replication for display</dd>
-
-        <dt>
-
-          <code><a href="resolve_replication_display.html">resolve_replication_display()</a></code>
-
-        </dt>
-        <dd>Resolve display output for an already-selected result</dd>
-
-        <dt>
-
-          <code><a href="stata_result_path.html">stata_result_path()</a></code>
-
-        </dt>
-        <dd>Extract the output file path from a Stata replication result</dd>
-
-        <dt>
-
-          <code><a href="smcl_to_html.html">smcl_to_html()</a></code>
-
-        </dt>
-        <dd>Convert a Stata SMCL file to HTML for display</dd>
-      </dl></div><div class="section level2">
-      <h2 id="folder-backed-studies">Folder-backed studies<a class="anchor" aria-label="anchor" href="#folder-backed-studies"></a></h2>
-
-      <div class="section-desc"><p>Build artifacts and sync folder-backed study repos.</p></div>
+      <div class="section-desc"><p>Validate folder-backed studies and sync to the registry.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -451,21 +195,14 @@
 
         <dt>
 
-          <code><a href="add_folder_paper.html">add_folder_paper()</a></code>
+          <code><a href="check_package_replication.html">check_package_replication()</a></code>
 
         </dt>
-        <dd>Add a folder-backed study to the replication registry</dd>
-
-        <dt>
-
-          <code><a href="write_folder_registry_stub.html">write_folder_registry_stub()</a></code>
-
-        </dt>
-        <dd>Write registry stub files into a study repository</dd>
+        <dd>Validate a package-backed replication study</dd>
       </dl></div><div class="section level2">
-      <h2 id="artifacts">Artifacts<a class="anchor" aria-label="anchor" href="#artifacts"></a></h2>
+      <h2 id="registry-audit">Registry audit<a class="anchor" aria-label="anchor" href="#registry-audit"></a></h2>
 
-      <div class="section-desc"><p>Precomputed outputs for Display in the Shiny app.</p></div>
+      <div class="section-desc"><p>Run all registry replications and inspect results.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -474,103 +211,10 @@
 
       <dl><dt>
 
-          <code><a href="get_artifact_path.html">get_artifact_path()</a></code>
+          <code><a href="audit_everything.html">audit_everything()</a></code>
 
         </dt>
-        <dd>Get artifact URL or local path for a replication</dd>
-
-        <dt>
-
-          <code><a href="load_artifact.html">load_artifact()</a></code>
-
-        </dt>
-        <dd>Load a precomputed artifact for a replication</dd>
-
-        <dt>
-
-          <code><a href="save_artifact.html">save_artifact()</a></code>
-
-        </dt>
-        <dd>Save a replication result as an artifact file</dd>
-
-        <dt>
-
-          <code><a href="artifact_available.html">artifact_available()</a></code>
-
-        </dt>
-        <dd>Check whether a precomputed artifact is available</dd>
-
-        <dt>
-
-          <code><a href="validate_artifact.html">validate_artifact()</a></code>
-
-        </dt>
-        <dd>Validate that a precomputed artifact exists</dd>
-
-        <dt>
-
-          <code><a href="validate_paper_artifacts.html">validate_paper_artifacts()</a></code>
-
-        </dt>
-        <dd>Validate all artifacts for a paper</dd>
-      </dl></div><div class="section level2">
-      <h2 id="display-helpers">Display helpers<a class="anchor" aria-label="anchor" href="#display-helpers"></a></h2>
-
-      <div class="section-desc"><p>Format analysis output for HTML tables and plots.</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="format_for_display.html">format_for_display()</a></code>
-
-        </dt>
-        <dd>Apply an optional format function to an analysis object</dd>
-
-        <dt>
-
-          <code><a href="normalize_html_table.html">normalize_html_table()</a></code>
-
-        </dt>
-        <dd>Decode HTML entities in kableExtra / modelsummary table output</dd>
-
-        <dt>
-
-          <code><a href="replication_object.html">replication_object()</a></code>
-
-        </dt>
-        <dd>Extract a plain object from a replication result envelope</dd>
-
-        <dt>
-
-          <code><a href="replication_error_message.html">replication_error_message()</a></code>
-
-        </dt>
-        <dd>Format a replication error for user-facing display</dd>
-
-        <dt>
-
-          <code><a href="try_render_for_display.html">try_render_for_display()</a></code>
-
-        </dt>
-        <dd>Run a replication and return a result or error object</dd>
-
-        <dt>
-
-          <code><a href="artifact_display_missing.html">artifact_display_missing()</a></code>
-
-        </dt>
-        <dd>Whether display content is missing or empty</dd>
-
-        <dt>
-
-          <code><a href="resolve_display_value.html">resolve_display_value()</a></code>
-
-        </dt>
-        <dd>Resolve a replication result envelope to a display-ready value</dd>
+        <dd>Audit all registry replications</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

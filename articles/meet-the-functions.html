@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -178,13 +178,13 @@ display-ready HTML or a formatted plot.</p>
 <span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1"</span>, language <span class="op">=</span> <span class="st">"stata"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="replicate_paper">
-<code>replicate_paper()</code><a class="anchor" aria-label="anchor" href="#replicate_paper"></a>
+<h3 id="run_replication----what-everything">
+<code>run_replication(..., what = "everything")</code><a class="anchor" aria-label="anchor" href="#run_replication----what-everything"></a>
 </h3>
 <p>Runs every logical replication group for a paper (R by default where
 bilingual).</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -265,7 +265,7 @@ Validate with:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371_journal.pone.0278337"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371_journal.pone.0278337"</span>, full_replication <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>See <code><a href="../articles/package-replication-checklist.html">vignette("package-replication-checklist")</a></code> for layout
-and <code><a href="../reference/add_paper.html">add_paper()</a></code>.</p>
+and <code><a href="../reference/check_package_replication.html">check_package_replication()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="registry-audit">Registry audit<a class="anchor" aria-label="anchor" href="#registry-audit"></a>
@@ -321,7 +321,7 @@ shipped with the package.</p>
 </tr>
 <tr class="odd">
 <td>Run whole paper</td>
-<td><code><a href="../reference/replicate_paper.html">replicate_paper()</a></code></td>
+<td><code>run_replication(doi, "everything")</code></td>
 </tr>
 <tr class="even">
 <td>Interactive browser</td>
@@ -340,10 +340,7 @@ shipped with the package.</p>
 </tr>
 <tr class="even">
 <td>Package study workflow</td>
-<td>
-<code><a href="../reference/check_package_replication.html">check_package_replication()</a></code>,
-<code><a href="../reference/add_paper.html">add_paper()</a></code>
-</td>
+<td><code><a href="../reference/check_package_replication.html">check_package_replication()</a></code></td>
 </tr>
 <tr class="odd">
 <td>Health check</td>

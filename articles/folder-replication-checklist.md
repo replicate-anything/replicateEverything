@@ -123,8 +123,11 @@ sync_folder_paper(".")
 repo into the [registry
 repository](https://github.com/replicate-anything/registry).
 
-**Option C — one step:** `add_folder_paper(".")` runs checks, writes
-`registry/` if needed, and syncs.
+**Option C — one step:** run
+[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+then
+[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+(same as options A + B).
 
 ### 5. Tests (recommended before prepare)
 
@@ -141,7 +144,8 @@ so the checklist reflects a merge-ready study.
 
 ``` r
 
-add_folder_paper(".", registry_root = "../registry")
+prepare_folder_paper(".", registry_root = "../registry")
+sync_folder_paper(".", registry_root = "../registry")
 ```
 
 ## Reference implementations
@@ -156,6 +160,4 @@ add_folder_paper(".", registry_root = "../registry")
 For studies maintained as R packages, see
 [`vignette("package-replication-checklist", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md)
 and
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
-/
-[`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md).
+[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md).

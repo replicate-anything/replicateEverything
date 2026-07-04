@@ -22,5 +22,5 @@ Character HTML with common entities decoded for browser display.
 
 ``` r
 normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
-#> [1] "<table> data</table>"
+#> Error in normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;"): could not find function "normalize_html_table"
 ```

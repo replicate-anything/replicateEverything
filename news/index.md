@@ -1,5 +1,26 @@
 # Changelog
 
+## replicateEverything 0.4.0
+
+### Public API
+
+- Slim export surface (~16 functions): discovery, run, Shiny,
+  contribute, and audit helpers only.
+- `run_replication(doi, what = "everything")` replaces
+  [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
+  for full-paper runs.
+- Registry `index.csv` includes a `handle` column;
+  [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md)
+  and run functions accept handles (e.g. `"bounding-causes"`).
+- [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
+  and
+  [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
+  are deprecated.
+- [`validate_replication()`](https://replicate-anything.github.io/replicateEverything/reference/validate_replication.md)
+  and other internal helpers are no longer exported.
+- New vignette: [Meet the
+  functions](https://replicate-anything.github.io/replicateEverything/news/articles/meet-the-functions.md).
+
 ## replicateEverything 0.3.0
 
 ### Folder-backed study workflow

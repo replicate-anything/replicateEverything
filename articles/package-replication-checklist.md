@@ -95,33 +95,27 @@ This writes:
 
 The registry stub does **not** store artifacts.
 
-## Register with `add_paper()`
+## Register after checks pass
 
 ``` r
 
 library(replicateEverything)
 
-# Quick validation (artifacts + API; no live fits)
 check_package_replication(
-  "../rep-10.1371_journal.pone.0278337"
+  "../rep-10.1371_journal.pone.0278337",
+  full_replication = FALSE
 )
 
-# Full validation (also runs every table/figure)
 check_package_replication(
   "../rep-10.1371_journal.pone.0278337",
   full_replication = TRUE
 )
-
-# Add to registry after checks pass
-options(replicateEverything.registry_root = "../registry")
-add_paper(
-  "../rep-10.1371_journal.pone.0278337",
-  full_replication = FALSE
-)
 ```
 
-[`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
-writes `papers/<doi-folder>.yml` and updates `index.csv`.
+After checks pass, copy the generated registry stub into the [registry
+repository](https://github.com/replicate-anything/registry)
+(`papers/<folder>.yml` and a row in `index.csv` with `handle`, `doi`,
+`title`, etc.).
 
 ## Reference implementation
 

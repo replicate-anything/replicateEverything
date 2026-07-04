@@ -10,62 +10,39 @@ figures and tables from published studies.
 
 A typical workflow using the package is:
 
-1.  Retrieve metadata for a paper using
-    [`get_doi_metadata()`](https://replicate-anything.github.io/replicateEverything/reference/get_doi_metadata.md).
-
-2.  Search the replication registry using
+1.  Browse the registry with
+    [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md)
+    or
     [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md).
 
-3.  Create a template for contributing a replication using
-    [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md).
-
-4.  Inspect available replications using
+2.  Inspect available replications using
     [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md).
 
-5.  Run a single replication using
-    [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md).
+3.  Run a single table or figure with `run_replication(doi, "fig_1")`.
 
-6.  Reproduce all results from a paper using
-    [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md).
+4.  Reproduce all results with `run_replication(doi, "everything")`.
 
-7.  Audit the full registry with
-    [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
-    (see `audit_everything.qmd` in the registry repository).
+5.  View replication code with
+    [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md).
 
-8.  Launch the bundled Shiny demo with
+6.  Launch the bundled Shiny demo with
     [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md),
     or deploy it with
     [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md).
 
-## Examples
+7.  Contribute a folder-backed study with
+    [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md),
+    [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
+    [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md),
+    and
+    [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md).
 
-Retrieve metadata for a paper:
+8.  Audit the full registry with
+    [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md).
 
-get_doi_metadata("10.1177/00491241211036161")
-
-Search the registry:
-
-search_papers("causal")
-
-Create a replication template:
-
-create_replication_template("10.1177/00491241211036161")
-
-List replications:
-
-list_replications("10.1177/00491241211036161")
-
-Run a single replication:
-
-run_replication("10.1177/00491241211036161","fig_1")
-
-Replicate an entire paper:
-
-replicate_paper("10.1177/00491241211036161")
-
-Launch the Shiny demo:
-
-run_shiny_app()
+See
+[`vignette("meet-the-functions")`](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.md)
+for a tour of every main function.
 
 ## Shiny demo
 

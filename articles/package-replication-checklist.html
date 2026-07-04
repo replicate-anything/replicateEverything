@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -240,31 +240,24 @@ figure</li>
 <p>The registry stub does <strong>not</strong> store artifacts.</p>
 </div>
 <div class="section level2">
-<h2 id="register-with-add_paper">Register with <code>add_paper()</code><a class="anchor" aria-label="anchor" href="#register-with-add_paper"></a>
+<h2 id="register-after-checks-pass">Register after checks pass<a class="anchor" aria-label="anchor" href="#register-after-checks-pass"></a>
 </h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Quick validation (artifacts + API; no live fits)</span></span>
 <span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span></span>
-<span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span></span>
+<span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span>,</span>
+<span>  full_replication <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Full validation (also runs every table/figure)</span></span>
 <span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span></span>
 <span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span>,</span>
 <span>  full_replication <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Add to registry after checks pass</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/add_paper.html">add_paper</a></span><span class="op">(</span></span>
-<span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span>,</span>
-<span>  full_replication <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/add_paper.html">add_paper()</a></code> writes
-<code>papers/&lt;doi-folder&gt;.yml</code> and updates
-<code>index.csv</code>.</p>
+<p>After checks pass, copy the generated registry stub into the <a href="https://github.com/replicate-anything/registry" class="external-link">registry
+repository</a> (<code>papers/&lt;folder&gt;.yml</code> and a row in
+<code>index.csv</code> with <code>handle</code>, <code>doi</code>,
+<code>title</code>, etc.).</p>
 </div>
 <div class="section level2">
 <h2 id="reference-implementation">Reference implementation<a class="anchor" aria-label="anchor" href="#reference-implementation"></a>

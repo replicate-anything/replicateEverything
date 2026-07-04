@@ -23,6 +23,5 @@ The underlying replication object.
 ``` r
 result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_result")
 replication_object(result)
-#>   x
-#> 1 1
+#> Error in replication_object(result): could not find function "replication_object"
 ```

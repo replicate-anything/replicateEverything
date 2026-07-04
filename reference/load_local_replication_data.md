@@ -35,8 +35,5 @@ write.csv(
   row.names = FALSE
 )
 load_local_replication_data("data/example.csv", paper_dir = tmp)
-#>   x y
-#> 1 1 4
-#> 2 2 5
-#> 3 3 6
+#> Error in load_local_replication_data("data/example.csv", paper_dir = tmp): could not find function "load_local_replication_data"
 ```

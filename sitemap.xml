@@ -51,6 +51,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/download_registry_file.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/enrich_folder_study_replication_meta.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/enrich_package_replication_meta.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_index_handles.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_replication_dependencies.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_replication_package.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_stata_available.html</loc></url>
@@ -161,6 +162,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_package_location.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_paper_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_registry_artifact_path.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_registry_handle.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_replication_display.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_replication_package_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_shiny_deploy_dest.html</loc></url>

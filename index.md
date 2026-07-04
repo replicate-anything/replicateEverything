@@ -18,8 +18,7 @@ demo](https://shiny2.wzb.eu/ipi/replicate/).
 - **Discovery** — search the registry, look up papers by DOI, and
   inspect available replications
 - **One-line replication** — run a single figure or table, or reproduce
-  an entire paper with
-  [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
+  an entire paper with `run_replication(doi, "everything")`
 - **Registry-backed materials** — fetch data and code from GitHub
   without manual downloads
 - **Folder-backed studies** — dedicated study repositories with `code/`,
@@ -76,7 +75,7 @@ list_replications("10.1177/00491241211036161")
 run_replication("10.1177/00491241211036161", "fig_1")
 
 # Reproduce every registered result
-replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 ```
 
 For a tour of every main function, see [Meet the
@@ -329,12 +328,12 @@ Linked study packages should export:
 | List replications | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md) |
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
-| Replicate full paper | [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md) |
+| Replicate full paper | `run_replication(doi, "everything")` |
 | Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
 | Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md) |
 | Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
 | Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
-| Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md), [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md) |
+| Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
 | Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |
 | Shiny demo | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
 

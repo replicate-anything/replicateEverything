@@ -63,4 +63,5 @@ result <- structure(
   class = "replication_result"
 )
 save_artifact(result, tmp)
+#> Error in save_artifact(result, tmp): could not find function "save_artifact"
 ```

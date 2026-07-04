@@ -26,7 +26,7 @@ list_replications("10.1177/00491241211036161")
 run_replication("10.1177/00491241211036161", "fig_1")
 
 # Reproduce every registered result
-replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 ```
 
 ## How it works
@@ -102,5 +102,5 @@ run_replication("10.1177/00491241211036161", "fig_1")
 
 ``` r
 
-replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 ```

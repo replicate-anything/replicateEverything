@@ -1,6 +1,7 @@
-# Run a single replication
+# Run a single replication or all replications for a paper
 
-Executes a specific replication (figure or table) for a paper.
+Executes a specific replication (figure or table) for a paper, or every
+logical group when `what = "everything"`.
 
 ## Usage
 
@@ -20,11 +21,13 @@ run_replication(
 
 - doi:
 
-  Character. DOI of the paper.
+  Character. DOI, registry handle, or local study path (see
+  [`resolve_doi_input()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_doi_input.md)).
 
 - what:
 
-  Character. Replication identifier (logical id, e.g. `"tab_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`), or
+  `"everything"` to run all tables and figures.
 
 - language:
 
@@ -36,6 +39,11 @@ run_replication(
   Logical. Install missing CRAN dependencies when `TRUE`. Defaults to
   `FALSE`.
 
+- format:
+
+  Logical or `"if_available"`. Apply display formatting when available.
+  Ignored when `what = "everything"` unless set explicitly.
+
 - repo:
 
   Optional repository slug.
@@ -46,7 +54,8 @@ run_replication(
 
 ## Value
 
-The replication object (analysis output or formatted display).
+For a single replication, the analysis or formatted object. For
+`what = "everything"`, a named list of such objects (invisibly).
 
 ## Details
 
@@ -60,7 +69,9 @@ display artifacts and Shiny).
 ``` r
 if (FALSE) { # \dontrun{
 run_replication("10.1177/00491241211036161", "fig_1")
+run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
+run_replication("10.1177/00491241211036161", "everything")
 } # }
 ```

@@ -43,7 +43,7 @@
 
     <a class="navbar-brand me-2" href="index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,7 +81,7 @@
 <li>
 <strong>Discovery</strong> — search the registry, look up papers by DOI, and inspect available replications</li>
 <li>
-<strong>One-line replication</strong> — run a single figure or table, or reproduce an entire paper with <code><a href="reference/replicate_paper.html">replicate_paper()</a></code>
+<strong>One-line replication</strong> — run a single figure or table, or reproduce an entire paper with <code>run_replication(doi, "everything")</code>
 </li>
 <li>
 <strong>Registry-backed materials</strong> — fetch data and code from GitHub without manual downloads</li>
@@ -135,7 +135,7 @@
 <span><span class="fu"><a href="reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Reproduce every registered result</span></span>
-<span><span class="fu"><a href="reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
 <p>For a tour of every main function, see <a href="https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.html">Meet the functions</a>. For a worked example with output, see the <a href="https://replicate-anything.github.io/replicateEverything/articles/replication-example.html">replication vignette</a>.</p>
 </div>
 <div class="section level2">
@@ -347,7 +347,7 @@ tests/testthat/</code></pre>
 </tr>
 <tr>
 <td>Replicate full paper</td>
-<td><code><a href="reference/replicate_paper.html">replicate_paper()</a></code></td>
+<td><code>run_replication(doi, "everything")</code></td>
 </tr>
 <tr>
 <td>Build folder study artifacts</td>
@@ -367,9 +367,7 @@ tests/testthat/</code></pre>
 </tr>
 <tr>
 <td>Validate package study</td>
-<td>
-<code><a href="reference/check_package_replication.html">check_package_replication()</a></code>, <code><a href="reference/add_paper.html">add_paper()</a></code>
-</td>
+<td><code><a href="reference/check_package_replication.html">check_package_replication()</a></code></td>
 </tr>
 <tr>
 <td>Registry health check</td>

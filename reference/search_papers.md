@@ -1,7 +1,7 @@
 # Search replicated papers
 
 Searches the replication registry for papers matching a keyword in the
-title or author fields.
+title, handle, or author fields.
 
 ## Usage
 
@@ -13,7 +13,7 @@ search_papers(query)
 
 - query:
 
-  Character string used to search paper titles or authors.
+  Character string used to search paper titles, handles, or authors.
 
 ## Value
 
@@ -24,5 +24,6 @@ A filtered data frame of matching papers.
 ``` r
 if (FALSE) { # \dontrun{
 search_papers("causal")
+search_papers("bounding-causes")
 } # }
 ```

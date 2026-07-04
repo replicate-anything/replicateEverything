@@ -24,5 +24,5 @@ A single character string suitable for logs or UI.
 ``` r
 err <- simpleError("Replication failed", call = quote(run_replication()))
 replication_error_message(err)
-#> [1] "Replication failed\n\nCall: run_replication()"
+#> Error in replication_error_message(err): could not find function "replication_error_message"
 ```

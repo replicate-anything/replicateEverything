@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -223,9 +223,9 @@ or PNG md5)</li>
 <p><strong>Option B — manual:</strong> copy the two files from
 <code>registry/</code> in the study repo into the <a href="https://github.com/replicate-anything/registry" class="external-link">registry
 repository</a>.</p>
-<p><strong>Option C — one step:</strong>
-<code>add_folder_paper(".")</code> runs checks, writes
-<code>registry/</code> if needed, and syncs.</p>
+<p><strong>Option C — one step:</strong> run
+<code><a href="../reference/prepare_folder_paper.html">prepare_folder_paper()</a></code> then
+<code><a href="../reference/sync_folder_paper.html">sync_folder_paper()</a></code> (same as options A + B).</p>
 </div>
 <div class="section level3">
 <h3 id="tests-recommended-before-prepare">5. Tests (recommended before prepare)<a class="anchor" aria-label="anchor" href="#tests-recommended-before-prepare"></a>
@@ -239,7 +239,8 @@ reflects a merge-ready study.</p>
 <h3 id="register-shortcut">Register shortcut<a class="anchor" aria-label="anchor" href="#register-shortcut"></a>
 </h3>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/add_folder_paper.html">add_folder_paper</a></span><span class="op">(</span><span class="st">"."</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/prepare_folder_paper.html">prepare_folder_paper</a></span><span class="op">(</span><span class="st">"."</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/sync_folder_paper.html">sync_folder_paper</a></span><span class="op">(</span><span class="st">"."</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -259,8 +260,7 @@ reflects a merge-ready study.</p>
 </h2>
 <p>For studies maintained as R packages, see
 <code><a href="../articles/package-replication-checklist.html">vignette("package-replication-checklist", package = "replicateEverything")</a></code>
-and <code><a href="../reference/check_package_replication.html">check_package_replication()</a></code> /
-<code><a href="../reference/add_paper.html">add_paper()</a></code>.</p>
+and <code><a href="../reference/check_package_replication.html">check_package_replication()</a></code>.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
