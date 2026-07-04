@@ -13,6 +13,14 @@ audit_rds <- system.file(
   "vignette-data", "audit_latest.rds",
   package = "replicateEverything"
 )
+if (!nzchar(audit_rds) || !file.exists(audit_rds)) {
+  candidates <- c(
+    "inst/vignette-data/audit_latest.rds",
+    "../inst/vignette-data/audit_latest.rds"
+  )
+  found <- candidates[file.exists(candidates)]
+  audit_rds <- if (length(found)) found[[1]] else ""
+}
 run_live <- identical(
   tolower(Sys.getenv("REPLICATE_AUDIT_LIVE", unset = "")),
   "true"
