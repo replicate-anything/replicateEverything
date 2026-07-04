@@ -350,6 +350,7 @@ audit_everything <- function(
   out
 }
 
+#' @keywords internal
 #' @export
 print.audit_everything <- function(x, ...) {
   sm <- x$summary
@@ -399,7 +400,7 @@ print.audit_everything <- function(x, ...) {
 #'
 #' @param registry_root Optional registry repository root.
 #' @return Character path, or \code{""} if the registry root is unknown.
-#' @export
+#' @keywords internal
 registry_audit_summary_path <- function(registry_root = NULL) {
   root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
   if (is.null(root) || !nzchar(root)) {
@@ -415,7 +416,7 @@ registry_audit_summary_path <- function(registry_root = NULL) {
 #'
 #' @param registry_root Optional registry repository root.
 #' @return Character path, or \code{""} if the registry root is unknown.
-#' @export
+#' @keywords internal
 registry_audit_rds_path <- function(registry_root = NULL) {
   root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
   if (is.null(root) || !nzchar(root)) {
@@ -435,7 +436,7 @@ registry_audit_rds_path <- function(registry_root = NULL) {
 #' @param audit An \code{audit_everything} object.
 #' @param registry_root Registry repository root.
 #' @return Invisibly, a list with paths \code{summary} and \code{rds}.
-#' @export
+#' @keywords internal
 write_registry_audit_record <- function(audit, registry_root = NULL) {
   summary_path <- registry_audit_summary_path(registry_root)
   rds_path <- registry_audit_rds_path(registry_root)
@@ -473,7 +474,7 @@ write_registry_audit_record <- function(audit, registry_root = NULL) {
 #'
 #' @param registry_root Optional registry repository root.
 #' @return A list with summary counts, or \code{NULL} when unavailable.
-#' @export
+#' @keywords internal
 load_registry_audit_summary <- function(registry_root = NULL) {
   path <- registry_audit_summary_path(registry_root)
   if (nzchar(path) && file.exists(path)) {
@@ -500,7 +501,7 @@ load_registry_audit_summary <- function(registry_root = NULL) {
 #'
 #' @param registry_root Optional path to the registry repository root.
 #' @return Character path, or \code{""} if not found.
-#' @export
+#' @keywords internal
 audit_everything_qmd <- function(registry_root = NULL) {
   candidates <- character(0)
   if (!is.null(registry_root) && nzchar(registry_root)) {

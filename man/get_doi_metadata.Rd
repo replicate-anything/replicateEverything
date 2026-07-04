@@ -34,3 +34,4 @@ get_doi_metadata("10.1177/00491241211036161")
 }
 
 }
+\keyword{internal}

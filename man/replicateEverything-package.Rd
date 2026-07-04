@@ -17,50 +17,20 @@ figures and tables from published studies.
 
 A typical workflow using the package is:
 \enumerate{
-\item Retrieve metadata for a paper using \code{get_doi_metadata()}.
-\item Search the replication registry using \code{search_papers()}.
-\item Create a template for contributing a replication using
-\code{create_replication_template()}.
+\item Browse the registry with \code{load_index()} or \code{search_papers()}.
 \item Inspect available replications using \code{list_replications()}.
-\item Run a single replication using \code{run_replication()}.
-\item Reproduce all results from a paper using \code{replicate_paper()}.
-\item Audit the full registry with \code{audit_everything()} (see
-\code{audit_everything.qmd} in the registry repository).
+\item Run a single table or figure with \code{run_replication(doi, "fig_1")}.
+\item Reproduce all results with \code{run_replication(doi, "everything")}.
+\item View replication code with \code{get_code()}.
 \item Launch the bundled Shiny demo with \code{run_shiny_app()}, or deploy it
 with \code{save_local_shiny()}.
+\item Contribute a folder-backed study with \code{build_study_artifacts()},
+\code{check_folder_replication()}, \code{prepare_folder_paper()}, and
+\code{sync_folder_paper()}.
+\item Audit the full registry with \code{audit_everything()}.
 }
-}
 
-\section{Examples}{
-
-
-Retrieve metadata for a paper:
-
-get_doi_metadata("10.1177/00491241211036161")
-
-Search the registry:
-
-search_papers("causal")
-
-Create a replication template:
-
-create_replication_template("10.1177/00491241211036161")
-
-List replications:
-
-list_replications("10.1177/00491241211036161")
-
-Run a single replication:
-
-run_replication("10.1177/00491241211036161","fig_1")
-
-Replicate an entire paper:
-
-replicate_paper("10.1177/00491241211036161")
-
-Launch the Shiny demo:
-
-run_shiny_app()
+See \code{vignette("meet-the-functions")} for a tour of every main function.
 }
 
 \section{Shiny demo}{

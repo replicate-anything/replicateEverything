@@ -24,7 +24,7 @@
 #' get_doi_metadata("10.1177/00491241211036161")
 #' }
 #'
-#' @export
+#' @keywords internal
 get_doi_metadata <- function(doi){
 
   url <- paste0("https://doi.org/", doi)

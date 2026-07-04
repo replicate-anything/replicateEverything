@@ -427,7 +427,7 @@ NULL
 #' render_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 #' }
 #'
-#' @export
+#' @keywords internal
 render_replication <- function(
   doi,
   what,
@@ -533,7 +533,7 @@ render_replication <- function(
 #' get_artifact_path("10.1177/00491241211036161", "fig_1")
 #' }
 #'
-#' @export
+#' @keywords internal
 get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
@@ -576,7 +576,7 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = 
 #' load_artifact("10.1177/00491241211036161", "fig_1")
 #' }
 #'
-#' @export
+#' @keywords internal
 load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
@@ -701,7 +701,7 @@ read_artifact_file <- function(path, ext) {
 #' )
 #' save_artifact(result, tmp)
 #'
-#' @export
+#' @keywords internal
 save_artifact <- function(
   result,
   output_dir,

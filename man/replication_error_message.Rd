@@ -21,3 +21,4 @@ err <- simpleError("Replication failed", call = quote(run_replication()))
 replication_error_message(err)
 
 }
+\keyword{internal}

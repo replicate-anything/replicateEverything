@@ -29,7 +29,7 @@ figures and tables from published studies."><meta property="og:image" content="h
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,37 +66,18 @@ figures and tables from published studies.</p>
 
 
 
-<p>A typical workflow using the package is:</p><ol><li><p>Retrieve metadata for a paper using <code><a href="get_doi_metadata.html">get_doi_metadata()</a></code>.</p></li>
-<li><p>Search the replication registry using <code><a href="search_papers.html">search_papers()</a></code>.</p></li>
-<li><p>Create a template for contributing a replication using
-<code><a href="create_replication_template.html">create_replication_template()</a></code>.</p></li>
+<p>A typical workflow using the package is:</p><ol><li><p>Browse the registry with <code><a href="load_index.html">load_index()</a></code> or <code><a href="search_papers.html">search_papers()</a></code>.</p></li>
 <li><p>Inspect available replications using <code><a href="list_replications.html">list_replications()</a></code>.</p></li>
-<li><p>Run a single replication using <code><a href="run_replication.html">run_replication()</a></code>.</p></li>
-<li><p>Reproduce all results from a paper using <code><a href="replicate_paper.html">replicate_paper()</a></code>.</p></li>
-<li><p>Audit the full registry with <code><a href="audit_everything.html">audit_everything()</a></code> (see
-<code>audit_everything.qmd</code> in the registry repository).</p></li>
+<li><p>Run a single table or figure with <code>run_replication(doi, "fig_1")</code>.</p></li>
+<li><p>Reproduce all results with <code>run_replication(doi, "everything")</code>.</p></li>
+<li><p>View replication code with <code><a href="get_code.html">get_code()</a></code>.</p></li>
 <li><p>Launch the bundled Shiny demo with <code><a href="run_shiny_app.html">run_shiny_app()</a></code>, or deploy it
 with <code><a href="save_local_shiny.html">save_local_shiny()</a></code>.</p></li>
-</ol></div>
-    <div class="section level2">
-    <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a></h2>
-
-
-
-<p>Retrieve metadata for a paper:</p>
-<p>get_doi_metadata("10.1177/00491241211036161")</p>
-<p>Search the registry:</p>
-<p>search_papers("causal")</p>
-<p>Create a replication template:</p>
-<p>create_replication_template("10.1177/00491241211036161")</p>
-<p>List replications:</p>
-<p>list_replications("10.1177/00491241211036161")</p>
-<p>Run a single replication:</p>
-<p>run_replication("10.1177/00491241211036161","fig_1")</p>
-<p>Replicate an entire paper:</p>
-<p>replicate_paper("10.1177/00491241211036161")</p>
-<p>Launch the Shiny demo:</p>
-<p>run_shiny_app()</p>
+<li><p>Contribute a folder-backed study with <code><a href="build_study_artifacts.html">build_study_artifacts()</a></code>,
+<code><a href="check_folder_replication.html">check_folder_replication()</a></code>, <code><a href="prepare_folder_paper.html">prepare_folder_paper()</a></code>, and
+<code><a href="sync_folder_paper.html">sync_folder_paper()</a></code>.</p></li>
+<li><p>Audit the full registry with <code><a href="audit_everything.html">audit_everything()</a></code>.</p></li>
+</ol><p>See <code><a href="../articles/meet-the-functions.html">vignette("meet-the-functions")</a></code> for a tour of every main function.</p>
     </div>
     <div class="section level2">
     <h2 id="shiny-demo">Shiny demo<a class="anchor" aria-label="anchor" href="#shiny-demo"></a></h2>

@@ -8,7 +8,7 @@ NULL
 #'
 #' @param meta Parsed replication.yml contents.
 #' @return Logical.
-#' @export
+#' @keywords internal
 is_package_replication <- function(meta) {
   pkg <- meta$paper$package %||% NULL
   !is.null(pkg) && nzchar(as.character(pkg[[1]]))
@@ -438,7 +438,7 @@ fetch_package_replication_yaml <- function(meta, ctx) {
 #' replication_index_diagnostics("10.1177/00491241211036161")
 #' }
 #'
-#' @export
+#' @keywords internal
 replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
   doi <- normalize_doi(doi)
   ctx <- paper_context(doi, repo = repo, folder = folder)
@@ -992,7 +992,7 @@ study_package_sibling_path <- function(package, meta, ctx) {
 #' @param ctx Paper context from [paper_context()].
 #' @return A list with `package`, `repo`, `ref`, `github_url`, `install_github`,
 #'   and optional `sibling_path` / `load_local`.
-#' @export
+#' @keywords internal
 study_package_install_info <- function(meta, ctx) {
   package <- as.character(meta$paper$package[[1]])
   repo <- package_repo_slug(meta, ctx)
@@ -1028,7 +1028,7 @@ study_package_install_info <- function(meta, ctx) {
 #'
 #' @inheritParams study_package_install_info
 #' @return Character string.
-#' @export
+#' @keywords internal
 study_package_install_message <- function(meta, ctx) {
   info <- study_package_install_info(meta, ctx)
   lines <- c(
@@ -1075,7 +1075,7 @@ study_package_error <- function(package, meta, ctx) {
 #'
 #' @param x Object to test.
 #' @return Logical.
-#' @export
+#' @keywords internal
 is_study_package_error <- function(x) {
   inherits(x, "study_package_error")
 }

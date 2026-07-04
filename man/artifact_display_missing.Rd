@@ -15,3 +15,4 @@ Logical scalar.
 \description{
 Used by Shiny and other UIs to decide whether to fall back to a live run.
 }
+\keyword{internal}

@@ -16,3 +16,4 @@ A list with summary counts, or \code{NULL} when unavailable.
 Reads \code{audit_summary.json} from a local registry checkout when
 available; otherwise fetches from GitHub.
 }
+\keyword{internal}

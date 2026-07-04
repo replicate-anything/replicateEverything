@@ -19,3 +19,4 @@ Decode HTML entities in kableExtra / modelsummary table output
 normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
 
 }
+\keyword{internal}

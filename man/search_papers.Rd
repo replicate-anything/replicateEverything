@@ -7,18 +7,19 @@
 search_papers(query)
 }
 \arguments{
-\item{query}{Character string used to search paper titles or authors.}
+\item{query}{Character string used to search paper titles, handles, or authors.}
 }
 \value{
 A filtered data frame of matching papers.
 }
 \description{
 Searches the replication registry for papers matching a keyword
-in the title or author fields.
+in the title, handle, or author fields.
 }
 \examples{
 \dontrun{
 search_papers("causal")
+search_papers("bounding-causes")
 }
 
 }

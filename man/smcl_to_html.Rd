@@ -16,3 +16,4 @@ Character scalar containing HTML.
 Uses Stata's \code{translate} command when available; otherwise wraps raw
 SMCL in a monospace block.
 }
+\keyword{internal}

@@ -25,3 +25,4 @@ study repo. After \code{\link[=check_folder_replication]{check_folder_replicatio
 \item merge \code{registry/index.csv} into \code{index.csv}
 }
 }
+\keyword{internal}

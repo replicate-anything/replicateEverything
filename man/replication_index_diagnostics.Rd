@@ -29,3 +29,4 @@ replication_index_diagnostics("10.1177/00491241211036161")
 }
 
 }
+\keyword{internal}

@@ -34,3 +34,4 @@ Display-ready value (HTML string, ggplot, path, etc.) or an error.
 Accepts a precomputed artifact, a \code{render_for_display()} result, or a
 raw analysis object. Applies \code{format_for_display()} when needed.
 }
+\keyword{internal}

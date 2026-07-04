@@ -13,7 +13,7 @@
 #' }
 #'
 #' @keywords internal
-#' @export
+#' @keywords internal
 find_repo <- function(doi){
 
   doi <- normalize_doi(doi)

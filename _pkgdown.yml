@@ -15,96 +15,40 @@ navbar:
     right: github
 reference:
 - title: Package
-  desc: Package overview and help search entry point.
+  desc: Package overview.
   contents:
   - replicateEverything-package
+- title: Discovery
+  desc: Find papers and inspect replication metadata.
+  contents:
+  - load_index
+  - search_papers
+  - list_replications
+  - list_replication_groups
+  - get_code
+- title: Run replications
+  desc: Run tables and figures from registry scripts.
+  contents:
+  - run_replication
+  - replicate_paper
+  - create_replication_template
 - title: Shiny demo
   desc: Browse studies and run replications interactively.
   contents:
   - run_shiny_app
   - save_local_shiny
-- title: Registry
-  desc: Add and validate package-backed studies.
-  contents:
-  - check_package_replication
-  - add_paper
-  - is_package_replication
-  - is_folder_study_replication
-  - is_study_package_error
-  - print.package_replication_check
-  - study_package_install_info
-  - study_package_install_message
-- title: Registry audit
-  desc: Run all registry replications and inspect results.
-  contents:
-  - audit_everything
-  - audit_everything_qmd
-  - write_registry_audit_record
-  - load_registry_audit_summary
-  - registry_audit_summary_path
-  - registry_audit_rds_path
-- title: Discovery
-  desc: Find papers and inspect replication metadata.
-  contents:
-  - get_doi_metadata
-  - search_papers
-  - normalize_doi
-  - resolve_doi_input
-  - is_local_doi_query
-  - find_local_study_root
-  - configure_local_monorepo
-  - configure_study_folder
-  - load_index
-  - find_repo
-  - list_replications
-  - list_replication_groups
-  - get_code
-  - replication_index_diagnostics
-- title: Run replications
-  desc: Render tables and figures from registry scripts.
-  contents:
-  - render_replication
-  - render_for_display
-  - run_replication
-  - replicate_paper
-  - validate_replication
-  - create_replication_template
-  - self_run
-  - load_local_replication_data
-  - find_stata_executable
-  - replication_code_language_for
-  - load_replication_for_display
-  - resolve_replication_display
-  - stata_result_path
-  - smcl_to_html
-- title: Folder-backed studies
-  desc: Build artifacts and sync folder-backed study repos.
+- title: Contribute
+  desc: Validate folder-backed studies and sync to the registry.
   contents:
   - build_study_artifacts
   - check_folder_replication
   - prepare_folder_paper
   - sync_folder_paper
-  - add_folder_paper
-  - write_folder_registry_stub
-- title: Artifacts
-  desc: Precomputed outputs for Display in the Shiny app.
+  - check_package_replication
+- title: Registry audit
+  desc: Run all registry replications and inspect results.
   contents:
-  - get_artifact_path
-  - load_artifact
-  - save_artifact
-  - artifact_available
-  - validate_artifact
-  - validate_paper_artifacts
-- title: Display helpers
-  desc: Format analysis output for HTML tables and plots.
-  contents:
-  - format_for_display
-  - normalize_html_table
-  - replication_object
-  - replication_error_message
-  - try_render_for_display
-  - artifact_display_missing
-  - resolve_display_value
+  - audit_everything
 build:
   readme: yes
 articles:

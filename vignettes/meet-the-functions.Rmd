@@ -114,12 +114,12 @@ run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1257/aer.91.5.1369", "tab_1", language = "stata", format = TRUE)
 ```
 
-### `replicate_paper()`
+### `run_replication(..., what = "everything")`
 
 Runs every logical replication group for a paper (R by default where bilingual).
 
 ```{r}
-replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 ```
 
 ## Shiny demo
@@ -188,7 +188,7 @@ check_package_replication("../rep-10.1371_journal.pone.0278337")
 check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
 ```
 
-See `vignette("package-replication-checklist")` for layout and `add_paper()`.
+See `vignette("package-replication-checklist")` for layout and `check_package_replication()`.
 
 ## Registry audit
 
@@ -217,8 +217,8 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | What can I replicate? | `list_replications()`, `list_replication_groups()` |
 | View code | `get_code()` |
 | Run one result | `run_replication()` |
-| Run whole paper | `replicate_paper()` |
+| Run whole paper | `run_replication(doi, "everything")` |
 | Interactive browser | `run_shiny_app()`, `save_local_shiny()` |
 | Folder study workflow | `build_study_artifacts()`, `check_folder_replication()`, `prepare_folder_paper()`, `sync_folder_paper()` |
-| Package study workflow | `check_package_replication()`, `add_paper()` |
+| Package study workflow | `check_package_replication()` |
 | Health check | `audit_everything()` |

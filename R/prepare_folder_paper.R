@@ -8,8 +8,14 @@ folder_registry_index_row <- function(meta, study_root) {
   } else {
     authors <- as.character(authors[[1]] %||% "")
   }
+  folder <- doi_to_registry_folder(paper$doi)
+  handle <- as.character(paper$handle %||% folder[[1]])
+  if (!nzchar(handle)) {
+    handle <- folder
+  }
   data.frame(
-    folder = doi_to_registry_folder(paper$doi),
+    folder = folder,
+    handle = handle,
     doi = normalize_doi(paper$doi),
     title = as.character(paper$title[[1]]),
     journal = as.character(paper$journal %||% ""),
@@ -32,7 +38,7 @@ folder_registry_index_row <- function(meta, study_root) {
 #' @param location Study repo path. Defaults to `"."`.
 #' @param stub_dir Subdirectory under the study root; default `"registry"`.
 #' @return List with `stub_dir`, `stub_path`, `index_path`, and `folder`.
-#' @export
+#' @keywords internal
 write_folder_registry_stub <- function(location = ".", stub_dir = NULL) {
   study_root <- resolve_study_location(location)
   meta <- read_study_replication_yaml(study_root)

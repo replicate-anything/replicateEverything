@@ -94,7 +94,7 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
 #' format_for_display(replication_object(result), "10.1177/00491241211036161", "fig_1")
 #' }
 #'
-#' @export
+#' @keywords internal
 format_for_display <- function(
   object,
   doi,
@@ -193,7 +193,7 @@ format_for_display <- function(
 #' render_for_display("10.1177/00491241211036161", "fig_1")
 #' }
 #'
-#' @export
+#' @keywords internal
 render_for_display <- function(
   doi,
   what,

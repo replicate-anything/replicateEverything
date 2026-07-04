@@ -41,3 +41,4 @@ Equivalent to \code{\link[=prepare_folder_paper]{prepare_folder_paper()}} follow
 you already have a local registry checkout. If you only need the stub files,
 use \code{\link[=prepare_folder_paper]{prepare_folder_paper()}} and copy them manually.
 }
+\keyword{internal}

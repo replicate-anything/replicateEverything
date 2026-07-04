@@ -30,3 +30,4 @@ write.csv(
 load_local_replication_data("data/example.csv", paper_dir = tmp)
 
 }
+\keyword{internal}

@@ -15,3 +15,4 @@ Logical.
 \description{
 Whether replication metadata refers to an installed R package
 }
+\keyword{internal}

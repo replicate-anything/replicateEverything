@@ -15,3 +15,4 @@ Logical scalar.
 \description{
 Detect whether a DOI argument requests the local working-directory study
 }
+\keyword{internal}

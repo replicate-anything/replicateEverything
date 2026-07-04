@@ -10,7 +10,8 @@ create_replication_template(doi)
 \item{doi}{Character. DOI of the paper.}
 }
 \description{
-Create a replication template
+\strong{Deprecated.} Scaffold a folder-backed study manually or follow
+\code{vignette("folder-replication-checklist")}.
 }
 \examples{
 \dontrun{

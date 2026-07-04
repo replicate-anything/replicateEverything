@@ -18,3 +18,4 @@ Invisibly, a list with paths \code{summary} and \code{rds}.
 Writes \code{audit_summary.json} for Shiny and lightweight consumers, and
 \code{audit_latest.rds} with the full \code{audit_everything} object.
 }
+\keyword{internal}

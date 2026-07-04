@@ -17,7 +17,7 @@
 #' @param install_deps Passed to [build_study_artifacts()].
 #' @return Invisibly, the result of [check_folder_replication()], with
 #'   `stub_path` and `index_updated` when registration succeeds.
-#' @export
+#' @keywords internal
 add_folder_paper <- function(
   location = ".",
   full_replication = FALSE,

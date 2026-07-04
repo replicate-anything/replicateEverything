@@ -370,7 +370,7 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
 load_registry_index <- function() {
   df <- tryCatch({
     idx <- replicateEverything::load_index()
-    idx$doi <- replicateEverything::normalize_doi(idx$doi)
+    idx$doi <- replicate_fn("normalize_doi", idx$doi)
     if (!"repo" %in% names(idx)) idx$repo <- DEFAULT_REGISTRY_REPO
     idx
   }, error = function(e) NULL)
@@ -379,7 +379,7 @@ load_registry_index <- function() {
 
   tryCatch({
     df <- utils::read.csv(REGISTRY_INDEX_URL, stringsAsFactors = FALSE)
-    df$doi <- replicateEverything::normalize_doi(df$doi)
+    df$doi <- replicate_fn("normalize_doi", df$doi)
     df$repo <- DEFAULT_REGISTRY_REPO
     df
   }, error = function(e) NULL)
@@ -388,7 +388,7 @@ load_registry_index <- function() {
 registry_index <- load_registry_index()
 
 registry_audit_summary <- tryCatch(
-  replicateEverything::load_registry_audit_summary(),
+  replicate_fn("load_registry_audit_summary"),
   error = function(e) NULL
 )
 
@@ -1179,7 +1179,7 @@ format_replication_error <- function(error) {
       requireNamespace("replicateEverything", quietly = TRUE) &&
       exists("replication_error_message", envir = asNamespace("replicateEverything"), inherits = FALSE)
     ) {
-      return(replicateEverything::replication_error_message(error))
+      return(replicate_fn("replication_error_message", error))
     }
     if (inherits(error, "condition")) {
       return(conditionMessage(error))

@@ -16,7 +16,7 @@
 #' @param dry_run If `TRUE`, run checks only; do not write registry files.
 #' @return Invisibly, the result of [check_package_replication()], with
 #'   `stub_path` and `index_updated` when registration succeeds.
-#' @export
+#' @keywords internal
 add_paper <- function(
   location,
   full_replication = FALSE,
@@ -117,6 +117,7 @@ add_paper <- function(
 #' @param x Result from [check_package_replication()], [check_folder_replication()],
 #'   [add_paper()], or [add_folder_paper()].
 #' @param ... Ignored.
+#' @keywords internal
 #' @export
 print.package_replication_check <- function(x, ...) {
   print_replication_check(x, label = "package")
@@ -124,6 +125,7 @@ print.package_replication_check <- function(x, ...) {
 }
 
 #' @rdname print.package_replication_check
+#' @keywords internal
 #' @export
 print.folder_replication_check <- function(x, ...) {
   print_replication_check(x, label = "folder")
@@ -131,6 +133,7 @@ print.folder_replication_check <- function(x, ...) {
 }
 
 #' @rdname print.package_replication_check
+#' @keywords internal
 #' @export
 print.replication_check <- function(x, ...) {
   label <- if (inherits(x, "folder_replication_check")) "folder" else "package"

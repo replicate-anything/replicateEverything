@@ -20,3 +20,4 @@ When \code{doi} is blank or \code{"local"}, searches for
 filesystem path, searches that folder (and parents). When a matching local
 study is found, registers it via \code{\link{configure_study_folder}}.
 }
+\keyword{internal}

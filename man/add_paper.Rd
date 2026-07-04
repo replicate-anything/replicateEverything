@@ -36,3 +36,4 @@ Package-backed studies do \strong{not} copy code, data, or artifacts into the
 registry. Those live in the study package (\verb{inst/report/artifacts/} from
 \code{build_report()}).
 }
+\keyword{internal}

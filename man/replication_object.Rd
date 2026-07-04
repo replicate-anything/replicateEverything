@@ -20,3 +20,4 @@ result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_re
 replication_object(result)
 
 }
+\keyword{internal}

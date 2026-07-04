@@ -5,6 +5,7 @@ fixture_doi <- function() {
 fixture_index <- function() {
   data.frame(
     folder = "10.9999_example",
+    handle = "fixture-paper",
     doi = paste0("https://doi.org/", fixture_doi()),
     title = "Fixture Paper",
     journal = "Test Journal",

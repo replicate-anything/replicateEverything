@@ -4,7 +4,7 @@
 #'
 #' @param x Artifact or display value.
 #' @return Logical scalar.
-#' @export
+#' @keywords internal
 artifact_display_missing <- function(x) {
   artifact_content_missing(x)
 }
@@ -21,7 +21,7 @@ artifact_display_missing <- function(x) {
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name.
 #' @return Display-ready value (HTML string, ggplot, path, etc.) or an error.
-#' @export
+#' @keywords internal
 resolve_display_value <- function(
   doi,
   what,
@@ -89,7 +89,7 @@ resolve_display_value <- function(
 #' @param folder Optional registry folder name.
 #' @return A list with \code{ok}, \code{value}, \code{source} (\code{"artifact"}
 #'   or \code{"live"}), and optional \code{error} or \code{missing}.
-#' @export
+#' @keywords internal
 load_replication_for_display <- function(
   doi,
   what,
@@ -188,7 +188,7 @@ run_live_display <- function(
 #' @param source Character. \code{"artifact"} or \code{"live"}.
 #' @return A list with \code{ok}, \code{value}, and optional \code{error} or
 #'   \code{missing}.
-#' @export
+#' @keywords internal
 resolve_replication_display <- function(
   doi,
   what,

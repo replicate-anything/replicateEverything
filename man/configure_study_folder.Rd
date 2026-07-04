@@ -18,3 +18,4 @@ Invisibly, the normalized path.
 Sets \code{replicateEverything.study_folders} under every alias the package
 uses for lookups (registry folder name, \code{rep-<doi>}, etc.).
 }
+\keyword{internal}

@@ -117,7 +117,7 @@ stata_executable_candidates <- function() {
 #' common install paths (Windows, Linux, macOS) and \code{PATH}.
 #'
 #' @return Normalized path or \code{NULL}.
-#' @export
+#' @keywords internal
 find_stata_executable <- function() {
   opt <- getOption("replicateEverything.stata_executable", NULL)
   if (!is.null(opt) && nzchar(opt) && file.exists(opt)) {
@@ -607,7 +607,7 @@ resolve_stata_output_after_run <- function(rep, study_root, staging_dir = NULL) 
 #'
 #' @param object Stata result list or path to \code{.smcl}/image output.
 #' @return Character path or \code{NULL}.
-#' @export
+#' @keywords internal
 stata_result_path <- function(object) {
   if (is.null(object)) {
     return(NULL)
@@ -756,7 +756,7 @@ ensure_stata_available <- function(rep) {
 #'
 #' @param smcl_path Path to an \code{.smcl} file.
 #' @return Character scalar containing HTML.
-#' @export
+#' @keywords internal
 smcl_to_html <- function(smcl_path) {
   if (!file.exists(smcl_path)) {
     stop("SMCL file not found: ", smcl_path, call. = FALSE)
@@ -811,7 +811,7 @@ replication_code_language <- function(rep, paper_meta = NULL) {
 #'
 #' @inheritParams render_replication
 #' @return \code{"stata"} or \code{"r"}.
-#' @export
+#' @keywords internal
 replication_code_language_for <- function(
   doi,
   what,

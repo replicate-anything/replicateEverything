@@ -15,3 +15,4 @@ Character path, or \code{""} if the registry root is unknown.
 \description{
 Path to the full registry audit RDS snapshot
 }
+\keyword{internal}

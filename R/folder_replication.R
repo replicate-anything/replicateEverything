@@ -247,7 +247,7 @@ register_local_study_from_root <- function(local_root) {
 #'
 #' @param doi Character. Use \code{""}, \code{"local"}, or \code{"."}.
 #' @return Logical scalar.
-#' @export
+#' @keywords internal
 is_local_doi_query <- function(doi) {
   if (is.null(doi) || length(doi) != 1L) {
     return(FALSE)
@@ -262,7 +262,7 @@ is_local_doi_query <- function(doi) {
 #'
 #' @param location Directory to start from.
 #' @return Normalized study root or \code{NULL}.
-#' @export
+#' @keywords internal
 find_local_study_root <- function(location = getwd()) {
   if (is.null(location) || length(location) != 1L || is.na(location) || !nzchar(location)) {
     return(NULL)
@@ -294,7 +294,7 @@ find_local_study_root <- function(location = getwd()) {
 #' @param doi Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.
 #' @param location Directory to search for a local study (default \code{getwd()}).
 #' @return A list with \code{doi}, \code{local_root}, and \code{is_local}.
-#' @export
+#' @keywords internal
 resolve_doi_input <- function(doi = NULL, location = getwd()) {
   raw <- trimws(as.character(doi %||% ""))
 
@@ -322,6 +322,11 @@ resolve_doi_input <- function(doi = NULL, location = getwd()) {
 
   if (!nzchar(raw)) {
     stop(study_input_error_message("empty"), call. = FALSE)
+  }
+
+  handle_doi <- resolve_registry_handle(raw)
+  if (!is.null(handle_doi)) {
+    raw <- handle_doi
   }
 
   doi_out <- normalize_doi(raw)
@@ -359,7 +364,7 @@ prepare_doi_for_replication <- function(doi, location = getwd()) {
 #' @param root Monorepo root containing \code{registry/} and \code{rep-*} study
 #'   folders. When \code{NULL}, attempts \code{auto_detect_monorepo_root()}.
 #' @return Invisibly, the monorepo root path.
-#' @export
+#' @keywords internal
 configure_local_monorepo <- function(root = NULL) {
   if (is.null(root) || !dir.exists(root)) {
     root <- auto_detect_monorepo_root()
@@ -415,7 +420,7 @@ auto_detect_registry_root <- function() {
 #' @param meta Parsed replication.yml contents.
 #' @param ctx Optional paper context list with \code{repo} and \code{folder}.
 #' @return Logical.
-#' @export
+#' @keywords internal
 is_folder_study_replication <- function(meta, ctx = NULL) {
   if (is_package_replication(meta)) {
     return(FALSE)
@@ -657,7 +662,7 @@ study_folders_configured <- function(meta, ctx = NULL) {
 #' @param doi Character DOI.
 #' @param path Absolute path to the study root (must contain \code{replication.yml}).
 #' @return Invisibly, the normalized path.
-#' @export
+#' @keywords internal
 configure_study_folder <- function(doi, path) {
   doi <- normalize_doi(doi)
   if (length(path) != 1L || is.na(path) || !nzchar(path)) {

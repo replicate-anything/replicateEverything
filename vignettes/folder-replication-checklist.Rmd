@@ -125,7 +125,7 @@ sync_folder_paper(".")
 
 **Option B — manual:** copy the two files from `registry/` in the study repo into the [registry repository](https://github.com/replicate-anything/registry).
 
-**Option C — one step:** `add_folder_paper(".")` runs checks, writes `registry/` if needed, and syncs.
+**Option C — one step:** run `prepare_folder_paper()` then `sync_folder_paper()` (same as options A + B).
 
 ### 5. Tests (recommended before prepare)
 
@@ -138,7 +138,8 @@ Run tests before `prepare_folder_paper()` so the checklist reflects a merge-read
 ### Register shortcut
 
 ```{r, eval = FALSE}
-add_folder_paper(".", registry_root = "../registry")
+prepare_folder_paper(".", registry_root = "../registry")
+sync_folder_paper(".", registry_root = "../registry")
 ```
 
 ## Reference implementations
@@ -148,4 +149,4 @@ add_folder_paper(".", registry_root = "../registry")
 
 ## Package-backed studies
 
-For studies maintained as R packages, see `vignette("package-replication-checklist", package = "replicateEverything")` and `check_package_replication()` / `add_paper()`.
+For studies maintained as R packages, see `vignette("package-replication-checklist", package = "replicateEverything")` and `check_package_replication()`.

@@ -15,3 +15,4 @@ Normalized study root or \code{NULL}.
 \description{
 Walks up from \code{location} (default working directory).
 }
+\keyword{internal}

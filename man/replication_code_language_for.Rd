@@ -29,3 +29,4 @@ replication_code_language_for(
 \description{
 Code language for a replication (for Shiny syntax highlighting)
 }
+\keyword{internal}

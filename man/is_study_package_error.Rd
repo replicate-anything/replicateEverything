@@ -15,3 +15,4 @@ Logical.
 \description{
 Whether an error is a missing study replication package
 }
+\keyword{internal}

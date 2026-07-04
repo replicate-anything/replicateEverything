@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_replication.R
 \name{run_replication}
 \alias{run_replication}
-\title{Run a single replication}
+\title{Run a single replication or all replications for a paper}
 \usage{
 run_replication(
   doi,
@@ -15,9 +15,11 @@ run_replication(
 )
 }
 \arguments{
-\item{doi}{Character. DOI of the paper.}
+\item{doi}{Character. DOI, registry handle, or local study path (see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
 
-\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
+\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}),
+or \code{"everything"} to run all tables and figures.}
 
 \item{language}{Optional \code{"R"} or \code{"stata"}. Defaults to R when
 both engines exist for the same logical replication.}
@@ -25,15 +27,20 @@ both engines exist for the same logical replication.}
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}
 
+\item{format}{Logical or \code{"if_available"}. Apply display formatting when
+available. Ignored when \code{what = "everything"} unless set explicitly.}
+
 \item{repo}{Optional repository slug.}
 
 \item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
-The replication object (analysis output or formatted display).
+For a single replication, the analysis or formatted object. For
+\code{what = "everything"}, a named list of such objects (invisibly).
 }
 \description{
-Executes a specific replication (figure or table) for a paper.
+Executes a specific replication (figure or table) for a paper, or every
+logical group when \code{what = "everything"}.
 }
 \details{
 By default returns the raw analysis object (e.g. a \code{glm} or \code{ggplot}).
@@ -44,8 +51,10 @@ registered \code{format_*} step when \code{replication.yml} defines one
 \examples{
 \dontrun{
 run_replication("10.1177/00491241211036161", "fig_1")
+run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
+run_replication("10.1177/00491241211036161", "everything")
 }
 
 }

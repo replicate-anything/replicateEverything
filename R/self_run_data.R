@@ -18,7 +18,7 @@
 #' )
 #' load_local_replication_data("data/example.csv", paper_dir = tmp)
 #'
-#' @export
+#' @keywords internal
 load_local_replication_data <- function(data_paths, paper_dir = getwd()) {
   if (is.null(data_paths)) {
     return(NULL)
@@ -52,7 +52,7 @@ load_local_replication_data <- function(data_paths, paper_dir = getwd()) {
 #' # self_run(make_fig_1, "data/fig_1.csv")
 #' }
 #'
-#' @export
+#' @keywords internal
 self_run <- function(make_fn, data_paths, paper_dir = getwd()) {
   if (isTRUE(getOption("replicateEverything.skip_self_run", FALSE))) {
     return(invisible(NULL))

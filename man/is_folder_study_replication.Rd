@@ -17,3 +17,4 @@ Logical.
 \description{
 Whether replication metadata refers to a folder-backed external study repo
 }
+\keyword{internal}

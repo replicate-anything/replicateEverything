@@ -18,3 +18,4 @@ Returns \code{audit_everything.qmd} from a local registry checkout. Looks in
 \code{auto_detect_registry_root()}, or a sibling \code{registry/} folder in a
 monorepo.
 }
+\keyword{internal}

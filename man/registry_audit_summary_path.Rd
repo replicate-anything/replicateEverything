@@ -15,3 +15,4 @@ Character path, or \code{""} if the registry root is unknown.
 \description{
 Path to the registry audit summary JSON
 }
+\keyword{internal}

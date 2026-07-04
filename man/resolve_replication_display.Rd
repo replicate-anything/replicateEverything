@@ -37,3 +37,4 @@ A list with \code{ok}, \code{value}, and optional \code{error} or
 \description{
 Resolve display output for an already-selected result
 }
+\keyword{internal}

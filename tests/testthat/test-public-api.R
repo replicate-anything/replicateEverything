@@ -53,10 +53,10 @@ test_that("run_replication returns analysis object from fixture", {
   })
 })
 
-test_that("replicate_paper runs all fixture replications", {
+test_that("run_replication everything runs all fixture replications", {
   with_fixture_opts({
     invisible(capture.output({
-      results <- replicate_paper(fixture_doi())
+      results <- run_replication(fixture_doi(), "everything")
     }))
     expect_type(results, "list")
     expect_true(length(results) >= 2L)
@@ -179,4 +179,13 @@ test_that("save_local_shiny materializes app files", {
   save_local_shiny(tmp)
   expect_true(file.exists(file.path(tmp, "app.R")))
   expect_true(dir.exists(file.path(tmp, "www")))
+})
+
+test_that("run_replication accepts registry handles", {
+  with_fixture_opts({
+    invisible(suppressMessages(capture.output({
+      reps <- list_replications("fixture-paper")
+    })))
+    expect_true(length(reps) >= 1L)
+  })
 })

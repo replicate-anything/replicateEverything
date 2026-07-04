@@ -6,7 +6,7 @@
 #' @examples
 #' normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
 #'
-#' @export
+#' @keywords internal
 normalize_html_table <- function(html) {
   html <- as.character(html)
   if (!length(html) || !nzchar(html)) {

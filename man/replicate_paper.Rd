@@ -15,15 +15,15 @@ replicate_paper(doi, language = NULL, install_deps = FALSE)
 \code{TRUE}. Defaults to \code{FALSE}.}
 }
 \value{
-A named list of replication result envelopes.
+A named list of replication result envelopes (legacy behaviour).
 }
 \description{
-Runs one replication per logical figure/table group, using the default
-engine (R when both R and Stata exist).
+\strong{Deprecated.} Use \code{\link[=run_replication]{run_replication()}} with \code{what = "everything"} instead.
 }
 \examples{
 \dontrun{
 replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 }
 
 }

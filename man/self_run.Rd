@@ -25,3 +25,4 @@ Scripts normally use an \code{if/else} footer:
 }
 
 }
+\keyword{internal}

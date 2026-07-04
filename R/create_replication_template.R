@@ -1,5 +1,9 @@
 #' Create a replication template
 #'
+#' @description
+#' **Deprecated.** Scaffold a folder-backed study manually or follow
+#' `vignette("folder-replication-checklist")`.
+#'
 #' @param doi Character. DOI of the paper.
 #'
 #' @examples
@@ -9,6 +13,12 @@
 #'
 #' @export
 create_replication_template <- function(doi) {
+  .Deprecated(
+    msg = paste0(
+      "create_replication_template() is deprecated. ",
+      "See vignette('folder-replication-checklist', package = 'replicateEverything')."
+    )
+  )
   meta <- get_doi_metadata(doi)
   doi_clean <- normalize_doi(doi)
   registry_folder <- resolve_paper_path(doi_clean)

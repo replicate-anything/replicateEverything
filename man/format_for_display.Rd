@@ -44,3 +44,4 @@ format_for_display(replication_object(result), "10.1177/00491241211036161", "fig
 }
 
 }
+\keyword{internal}

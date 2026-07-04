@@ -7,14 +7,17 @@
 load_index()
 }
 \value{
-A data frame containing replication metadata.
+A data frame containing replication metadata (\code{folder}, \code{doi},
+\code{title}, \code{journal}, \code{year}, \code{authors}, \code{repo}, and \code{handle} when present).
 }
 \description{
-Load the replication registry index
+Returns \code{index.csv} from the configured registry root or from GitHub.
+When the index has no \code{handle} column, one is derived from each row's
+\code{folder} field.
 }
 \examples{
 \dontrun{
-head(load_index())
+head(load_index()[, c("handle", "doi", "title")])
 }
 
 }

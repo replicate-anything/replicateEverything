@@ -41,3 +41,4 @@ render_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 }
 
 }
+\keyword{internal}

@@ -51,7 +51,7 @@ infer_result_format <- function(object, type) {
 #' result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_result")
 #' replication_object(result)
 #'
-#' @export
+#' @keywords internal
 replication_object <- function(x) {
   if (inherits(x, "stata_replication_result")) {
     path <- x$output_path %||% x$smcl_path %||% NULL

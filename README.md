@@ -12,7 +12,7 @@
 ## Key features
 
 - **Discovery** — search the registry, look up papers by DOI, and inspect available replications
-- **One-line replication** — run a single figure or table, or reproduce an entire paper with `replicate_paper()`
+- **One-line replication** — run a single figure or table, or reproduce an entire paper with `run_replication(doi, "everything")`
 - **Registry-backed materials** — fetch data and code from GitHub without manual downloads
 - **Folder-backed studies** — dedicated study repositories with `code/`, `data/`, and `artifacts/`
 - **Package-backed studies** — standalone R packages linked from lightweight registry stubs
@@ -55,7 +55,7 @@ list_replications("10.1177/00491241211036161")
 run_replication("10.1177/00491241211036161", "fig_1")
 
 # Reproduce every registered result
-replicate_paper("10.1177/00491241211036161")
+run_replication("10.1177/00491241211036161", "everything")
 ```
 
 For a tour of every main function, see [Meet the functions](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.html). For a worked example with output, see the [replication vignette](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
@@ -275,12 +275,12 @@ and `build_report()`.
 | List replications | `list_replications()`, `list_replication_groups()` |
 | View source code | `get_code()` |
 | Run one replication | `run_replication()` |
-| Replicate full paper | `replicate_paper()` |
+| Replicate full paper | `run_replication(doi, "everything")` |
 | Build folder study artifacts | `build_study_artifacts()` |
 | Prepare folder study | `prepare_folder_paper()` |
 | Sync folder study to registry | `sync_folder_paper()` |
 | Validate folder study | `check_folder_replication()` |
-| Validate package study | `check_package_replication()`, `add_paper()` |
+| Validate package study | `check_package_replication()` |
 | Registry health check | `audit_everything()` |
 | Shiny demo | `run_shiny_app()`, `save_local_shiny()` |
 

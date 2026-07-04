@@ -18,3 +18,4 @@ and optional \code{sibling_path} / \code{load_local}.
 \description{
 Install instructions for a package-backed study
 }
+\keyword{internal}

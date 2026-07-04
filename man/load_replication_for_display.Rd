@@ -39,3 +39,4 @@ or \code{"live"}), and optional \code{error} or \code{missing}.
 \description{
 Centralizes artifact-vs-live logic for Shiny and other front ends.
 }
+\keyword{internal}

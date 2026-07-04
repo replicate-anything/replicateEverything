@@ -17,3 +17,4 @@ Character string.
 \description{
 User-facing message for installing a study replication package
 }
+\keyword{internal}

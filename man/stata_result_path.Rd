@@ -15,3 +15,4 @@ Character path or \code{NULL}.
 \description{
 Accepts a \code{stata_replication_result} list or a plain character path.
 }
+\keyword{internal}

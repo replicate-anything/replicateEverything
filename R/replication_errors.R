@@ -10,7 +10,7 @@
 #' err <- simpleError("Replication failed", call = quote(run_replication()))
 #' replication_error_message(err)
 #'
-#' @export
+#' @keywords internal
 replication_error_message <- function(x) {
   if (inherits(x, "study_package_error")) {
     return(conditionMessage(x))
@@ -53,7 +53,7 @@ replication_error_message <- function(x) {
 #' try_render_for_display("10.1177/00491241211036161", "fig_1")
 #' }
 #'
-#' @export
+#' @keywords internal
 try_render_for_display <- function(
   doi,
   what,

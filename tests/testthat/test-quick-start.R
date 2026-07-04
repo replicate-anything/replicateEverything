@@ -41,10 +41,10 @@ test_that("quick start: run_replication returns a figure object", {
   })
 })
 
-test_that("quick start: replicate_paper runs all registered replications", {
+test_that("quick start: run_replication everything runs all registered replications", {
   with_fixture_opts({
     invisible(capture.output({
-      results <- replicate_paper(fixture_doi)
+      results <- run_replication(fixture_doi, "everything")
     }))
     expect_type(results, "list")
     expect_equal(length(results), 2)

@@ -49,7 +49,7 @@ local_artifact_path <- function(doi, what, repo = NULL, language = NULL) {
 #' artifact_available("10.1177/00491241211036161", "fig_1")
 #' }
 #'
-#' @export
+#' @keywords internal
 artifact_available <- function(doi, what, repo = NULL, language = NULL) {
   local_path <- local_artifact_path(doi, what, repo = repo, language = language)
   if (!is.null(local_path)) {
@@ -77,7 +77,7 @@ artifact_available <- function(doi, what, repo = NULL, language = NULL) {
 #' validate_artifact("10.1177/00491241211036161", "fig_1")
 #' }
 #'
-#' @export
+#' @keywords internal
 validate_artifact <- function(doi, what, repo = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo)
 
@@ -129,7 +129,7 @@ validate_artifact <- function(doi, what, repo = NULL, language = NULL) {
 #' validate_paper_artifacts("10.1177/00491241211036161")
 #' }
 #'
-#' @export
+#' @keywords internal
 validate_paper_artifacts <- function(doi, repo = NULL) {
   meta <- get_replication_meta(doi, repo = repo)
   missing <- character(0)
