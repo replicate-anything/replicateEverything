@@ -5,7 +5,7 @@ Get artifact URL or local path for a replication
 ## Usage
 
 ``` r
-get_artifact_path(doi, what, repo = NULL, folder = NULL)
+get_artifact_path(doi, what, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments

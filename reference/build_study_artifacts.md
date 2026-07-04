@@ -43,3 +43,11 @@ Invisibly, a list with `artifact_dir`, `manifest`, and per-id status.
 
 Registry papers use `registry/scripts/build_artifacts.R` instead;
 folder-backed studies keep materials in their own repository.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+build_study_artifacts(".", install_deps = TRUE)
+} # }
+```

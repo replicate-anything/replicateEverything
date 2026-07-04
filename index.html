@@ -122,8 +122,8 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Look up bibliographic metadata</span></span>
-<span><span class="fu"><a href="reference/get_doi_metadata.html">get_doi_metadata</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span>
+<span><span class="co"># Browse the registry index</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="reference/load_index.html">load_index</a></span><span class="op">(</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"doi"</span>, <span class="st">"title"</span>, <span class="st">"year"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Search the registry by title keyword</span></span>
 <span><span class="fu"><a href="reference/search_papers.html">search_papers</a></span><span class="op">(</span><span class="st">"causes"</span><span class="op">)</span></span>
@@ -136,7 +136,7 @@
 <span></span>
 <span><span class="co"># Reproduce every registered result</span></span>
 <span><span class="fu"><a href="reference/replicate_paper.html">replicate_paper</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
-<p>For a worked example with output, see the <a href="https://replicate-anything.github.io/replicateEverything/articles/replication-example.html">replication vignette</a>.</p>
+<p>For a tour of every main function, see <a href="https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.html">Meet the functions</a>. For a worked example with output, see the <a href="https://replicate-anything.github.io/replicateEverything/articles/replication-example.html">replication vignette</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
@@ -326,24 +326,16 @@ tests/testthat/</code></pre>
 </tr></thead>
 <tbody>
 <tr>
-<td>Search registry</td>
+<td>Browse registry</td>
 <td>
-<code><a href="reference/search_papers.html">search_papers()</a></code>, <code><a href="reference/load_index.html">load_index()</a></code>
+<code><a href="reference/load_index.html">load_index()</a></code>, <code><a href="reference/search_papers.html">search_papers()</a></code>
 </td>
-</tr>
-<tr>
-<td>DOI metadata</td>
-<td>
-<code><a href="reference/get_doi_metadata.html">get_doi_metadata()</a></code>, <code><a href="reference/normalize_doi.html">normalize_doi()</a></code>
-</td>
-</tr>
-<tr>
-<td>Find repository</td>
-<td><code><a href="reference/find_repo.html">find_repo()</a></code></td>
 </tr>
 <tr>
 <td>List replications</td>
-<td><code><a href="reference/list_replications.html">list_replications()</a></code></td>
+<td>
+<code><a href="reference/list_replications.html">list_replications()</a></code>, <code><a href="reference/list_replication_groups.html">list_replication_groups()</a></code>
+</td>
 </tr>
 <tr>
 <td>View source code</td>
@@ -351,31 +343,11 @@ tests/testthat/</code></pre>
 </tr>
 <tr>
 <td>Run one replication</td>
-<td>
-<code><a href="reference/run_replication.html">run_replication()</a></code>, <code><a href="reference/render_replication.html">render_replication()</a></code>
-</td>
+<td><code><a href="reference/run_replication.html">run_replication()</a></code></td>
 </tr>
 <tr>
 <td>Replicate full paper</td>
 <td><code><a href="reference/replicate_paper.html">replicate_paper()</a></code></td>
-</tr>
-<tr>
-<td>Format for display</td>
-<td>
-<code><a href="reference/format_for_display.html">format_for_display()</a></code>, <code><a href="reference/render_for_display.html">render_for_display()</a></code>
-</td>
-</tr>
-<tr>
-<td>Precomputed outputs</td>
-<td>
-<code><a href="reference/load_artifact.html">load_artifact()</a></code>, <code><a href="reference/save_artifact.html">save_artifact()</a></code>, <code><a href="reference/artifact_available.html">artifact_available()</a></code>
-</td>
-</tr>
-<tr>
-<td>Validate</td>
-<td>
-<code><a href="reference/validate_replication.html">validate_replication()</a></code>, <code><a href="reference/validate_artifact.html">validate_artifact()</a></code>
-</td>
 </tr>
 <tr>
 <td>Build folder study artifacts</td>
@@ -383,15 +355,11 @@ tests/testthat/</code></pre>
 </tr>
 <tr>
 <td>Prepare folder study</td>
-<td>
-<code><a href="reference/prepare_folder_paper.html">prepare_folder_paper()</a></code>, <code><a href="reference/write_folder_registry_stub.html">write_folder_registry_stub()</a></code>
-</td>
+<td><code><a href="reference/prepare_folder_paper.html">prepare_folder_paper()</a></code></td>
 </tr>
 <tr>
 <td>Sync folder study to registry</td>
-<td>
-<code><a href="reference/sync_folder_paper.html">sync_folder_paper()</a></code>, <code><a href="reference/add_folder_paper.html">add_folder_paper()</a></code>
-</td>
+<td><code><a href="reference/sync_folder_paper.html">sync_folder_paper()</a></code></td>
 </tr>
 <tr>
 <td>Validate folder study</td>
@@ -404,14 +372,14 @@ tests/testthat/</code></pre>
 </td>
 </tr>
 <tr>
+<td>Registry health check</td>
+<td><code><a href="reference/audit_everything.html">audit_everything()</a></code></td>
+</tr>
+<tr>
 <td>Shiny demo</td>
 <td>
 <code><a href="reference/run_shiny_app.html">run_shiny_app()</a></code>, <code><a href="reference/save_local_shiny.html">save_local_shiny()</a></code>
 </td>
-</tr>
-<tr>
-<td>Contribute</td>
-<td><code><a href="reference/create_replication_template.html">create_replication_template()</a></code></td>
 </tr>
 </tbody>
 </table>
@@ -430,7 +398,7 @@ tests/testthat/</code></pre>
 </h2>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Fetch metadata</strong> — <code>get_doi_metadata("10.1177/00491241211036161")</code>
+<strong>Browse the registry</strong> — <code><a href="reference/load_index.html">load_index()</a></code> or <code>search_papers("keyword")</code>
 </li>
 <li>
 <strong>Scaffold a folder</strong> — <code>create_replication_template("10.1177/00491241211036161")</code>

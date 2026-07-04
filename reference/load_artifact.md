@@ -5,7 +5,7 @@ Load a precomputed artifact for a replication
 ## Usage
 
 ``` r
-load_artifact(doi, what, repo = NULL, folder = NULL)
+load_artifact(doi, what, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -16,7 +16,7 @@ load_artifact(doi, what, repo = NULL, folder = NULL)
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
 
 - repo:
 
@@ -25,6 +25,10 @@ load_artifact(doi, what, repo = NULL, folder = NULL)
 - folder:
 
   Optional registry folder name from `index.csv`.
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 ## Value
 

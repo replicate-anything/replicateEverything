@@ -10,6 +10,7 @@ but never throws; failures are returned as `simpleError` objects.
 try_render_for_display(
   doi,
   what,
+  language = NULL,
   install_deps = FALSE,
   repo = NULL,
   folder = NULL
@@ -24,7 +25,11 @@ try_render_for_display(
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 - install_deps:
 

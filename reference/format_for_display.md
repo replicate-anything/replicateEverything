@@ -11,6 +11,7 @@ format_for_display(
   object,
   doi,
   what,
+  language = NULL,
   install_deps = FALSE,
   repo = NULL,
   folder = NULL
@@ -29,7 +30,11 @@ format_for_display(
 
 - what:
 
-  Replication identifier.
+  Replication identifier (logical id).
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 - install_deps:
 

@@ -5,7 +5,14 @@ Render a replication and apply formatting for display
 ## Usage
 
 ``` r
-render_for_display(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
+render_for_display(
+  doi,
+  what,
+  language = NULL,
+  install_deps = FALSE,
+  repo = NULL,
+  folder = NULL
+)
 ```
 
 ## Arguments
@@ -16,7 +23,11 @@ render_for_display(doi, what, install_deps = FALSE, repo = NULL, folder = NULL)
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 - install_deps:
 

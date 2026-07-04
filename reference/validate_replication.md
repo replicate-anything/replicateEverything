@@ -5,7 +5,7 @@ Validate that a replication can be rendered
 ## Usage
 
 ``` r
-validate_replication(doi, what, install_deps = FALSE)
+validate_replication(doi, what, language = NULL, install_deps = FALSE)
 ```
 
 ## Arguments

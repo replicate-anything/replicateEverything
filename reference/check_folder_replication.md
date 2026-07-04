@@ -37,3 +37,12 @@ check_folder_replication(
 ## Value
 
 A list with `ok` (logical), `checks` (data frame), and `study_path`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+check_folder_replication(".")
+check_folder_replication(".", full_replication = TRUE)
+} # }
+```

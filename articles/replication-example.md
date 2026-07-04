@@ -5,14 +5,18 @@
 library(replicateEverything)
 ```
 
+See
+[`vignette("meet-the-functions", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.md)
+for a tour of every main function.
+
 ## Quick start
 
 ``` r
 
-# Look up bibliographic metadata
-get_doi_metadata("10.1177/00491241211036161")
+# Browse the registry index
+head(load_index()[, c("doi", "title", "year")])
 
-# Search the registry by title keyword
+# Search by title keyword
 search_papers("causes")
 
 # See what can be replicated for a paper

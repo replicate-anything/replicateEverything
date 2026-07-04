@@ -5,7 +5,7 @@ Validate that a precomputed artifact exists
 ## Usage
 
 ``` r
-validate_artifact(doi, what, repo = NULL)
+validate_artifact(doi, what, repo = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -16,11 +16,15 @@ validate_artifact(doi, what, repo = NULL)
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
 
 - repo:
 
   Optional repository slug.
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 ## Value
 

@@ -51,3 +51,11 @@ prepare_folder_paper(
 Invisibly, the result of
 [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
 with `registry_stub_path` and `registry_index_path` when successful.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+prepare_folder_paper(".", registry_root = "../registry")
+} # }
+```

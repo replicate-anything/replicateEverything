@@ -23,7 +23,7 @@ audit_run_one(
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
 
 - patience:
 

@@ -5,7 +5,7 @@ Check whether a precomputed artifact is available
 ## Usage
 
 ``` r
-artifact_available(doi, what, repo = NULL)
+artifact_available(doi, what, repo = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -16,11 +16,15 @@ artifact_available(doi, what, repo = NULL)
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
 
 - repo:
 
   Optional repository slug.
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 ## Value
 

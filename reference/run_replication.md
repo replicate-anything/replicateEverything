@@ -8,6 +8,7 @@ Executes a specific replication (figure or table) for a paper.
 run_replication(
   doi,
   what,
+  language = NULL,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
@@ -23,18 +24,17 @@ run_replication(
 
 - what:
 
-  Character. Replication identifier (e.g., "fig_1").
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
+
+- language:
+
+  Optional `"R"` or `"stata"`. Defaults to R when both engines exist for
+  the same logical replication.
 
 - install_deps:
 
   Logical. Install missing CRAN dependencies when `TRUE`. Defaults to
   `FALSE`.
-
-- format:
-
-  Logical or `"if_available"`. When `TRUE` or `"if_available"`, apply
-  formatting when the replication entry defines a `format` step.
-  Defaults to `FALSE`.
 
 - repo:
 
@@ -61,5 +61,6 @@ display artifacts and Shiny).
 if (FALSE) { # \dontrun{
 run_replication("10.1177/00491241211036161", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
+run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 } # }
 ```

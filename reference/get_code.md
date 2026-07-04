@@ -9,7 +9,7 @@ helpers in separate files are labeled and omitted for Stata.
 ## Usage
 
 ``` r
-get_code(doi, what, repo = NULL, folder = NULL)
+get_code(doi, what, language = NULL, repo = NULL, folder = NULL)
 ```
 
 ## Arguments
@@ -20,7 +20,11 @@ get_code(doi, what, repo = NULL, folder = NULL)
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id).
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 - repo:
 
@@ -45,5 +49,6 @@ as reading `code/*.R` from the registry repo).
 ``` r
 if (FALSE) { # \dontrun{
 head(get_code("10.1177/00491241211036161", "fig_1"))
+get_code("10.1017/S0003055403000534", "tab_1", language = "stata")
 } # }
 ```

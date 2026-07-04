@@ -97,9 +97,9 @@ in the registry is an example: each table has <code>tab_N</code> (R) and
 <strong><code>replication.yml</code></strong> marks an entry with
 <code>engine: stata</code> (or a <code>.do</code> file path).</li>
 <li>
-<strong><code><a href="../reference/run_replication.html">run_replication()</a></code> /
-<code><a href="../reference/render_replication.html">render_replication()</a></code></strong> detect the engine and call
-<strong><code><a href="../reference/run_stata_replication.html">run_stata_replication()</a></code></strong>.</li>
+<strong><code><a href="../reference/run_replication.html">run_replication()</a></code></strong> detects the engine
+and runs Stata in batch mode when <code>language = "stata"</code> (or
+when Stata is the only engine).</li>
 <li>R locates Stata via
 <strong><code><a href="../reference/find_stata_executable.html">find_stata_executable()</a></code></strong>, writes a small
 runner, and invokes Stata batch mode
@@ -113,9 +113,9 @@ reads the Stata log and builds an HTML table for Shiny /
 <code>format = TRUE</code>.</li>
 </ol>
 <p>The returned object is <strong>not</strong> a Stata dataset inside R;
-it is a <strong>handle to Stata output on disk</strong> (usually a
-<code>.log</code> file). Use <code><a href="../reference/replication_object.html">replication_object()</a></code> to
-extract it.</p>
+with <code>format = FALSE</code> you get a handle to Stata output on
+disk (usually a <code>.log</code> file). Use <code>format = TRUE</code>
+for an HTML table when a <code>format:</code> step is registered.</p>
 </div>
 <div class="section level2">
 <h2 id="finding-stata">Finding Stata<a class="anchor" aria-label="anchor" href="#finding-stata"></a>
@@ -150,17 +150,20 @@ options(replicateEverything.stata_executable = …).</p>
 <h2 id="running-from-r">Running from R<a class="anchor" aria-label="anchor" href="#running-from-r"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/configure_local_monorepo.html">configure_local_monorepo</a></span><span class="op">(</span><span class="st">"/path/to/replicate_everything"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
+<span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything/registry"</span>,</span>
+<span>  replicateEverything.study_folders_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything"</span>,</span>
+<span>  replicateEverything.use_sibling_packages <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Stata only</span></span>
-<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1_stata"</span><span class="op">)</span></span>
+<span><span class="co"># Table 1 in R (default when both engines exist)</span></span>
+<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Formatted HTML table (uses format_stata.R in the study repo)</span></span>
-<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1_stata"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co"># Same table in Stata</span></span>
+<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1"</span>, language <span class="op">=</span> <span class="st">"stata"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Inspect the raw result object</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/render_replication.html">render_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1_stata"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="fu"><a href="../reference/replication_object.html">replication_object</a></span><span class="op">(</span><span class="va">result</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># Legacy suffixed ids still work</span></span>
+<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1_stata"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>List engines available for a study:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">reps</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span>
@@ -263,8 +266,12 @@ one logical table and run <strong>both</strong> engines when listed.</p>
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Optional: local monorepo + Stata path</span></span>
-<span><span class="fu"><a href="../reference/configure_local_monorepo.html">configure_local_monorepo</a></span><span class="op">(</span><span class="st">"c:/path/to/replicate_everything"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.stata_executable <span class="op">=</span> <span class="st">"C:/Program Files/Stata18/StataMP-64.exe"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
+<span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"c:/path/to/replicate_everything/registry"</span>,</span>
+<span>  replicateEverything.study_folders_root <span class="op">=</span> <span class="st">"c:/path/to/replicate_everything"</span>,</span>
+<span>  replicateEverything.use_sibling_packages <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  replicateEverything.stata_executable <span class="op">=</span> <span class="st">"C:/Program Files/Stata18/StataMP-64.exe"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># R translation</span></span>
 <span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>

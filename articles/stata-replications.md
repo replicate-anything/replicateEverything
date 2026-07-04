@@ -17,11 +17,9 @@ example: each table has `tab_N` (R) and `tab_N_stata` (Stata).
 
 1.  **`replication.yml`** marks an entry with `engine: stata` (or a
     `.do` file path).
-2.  **[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
-    /
-    [`render_replication()`](https://replicate-anything.github.io/replicateEverything/reference/render_replication.md)**
-    detect the engine and call
-    **[`run_stata_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_stata_replication.md)**.
+2.  **[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)**
+    detects the engine and runs Stata in batch mode when
+    `language = "stata"` (or when Stata is the only engine).
 3.  R locates Stata via
     **[`find_stata_executable()`](https://replicate-anything.github.io/replicateEverything/reference/find_stata_executable.md)**,
     writes a small runner, and invokes Stata batch mode
@@ -32,10 +30,10 @@ example: each table has `tab_N` (R) and `tab_N_stata` (Stata).
 5.  If the entry defines `format: code/format_stata.R`, R reads the
     Stata log and builds an HTML table for Shiny / `format = TRUE`.
 
-The returned object is **not** a Stata dataset inside R; it is a
-**handle to Stata output on disk** (usually a `.log` file). Use
-[`replication_object()`](https://replicate-anything.github.io/replicateEverything/reference/replication_object.md)
-to extract it.
+The returned object is **not** a Stata dataset inside R; with
+`format = FALSE` you get a handle to Stata output on disk (usually a
+`.log` file). Use `format = TRUE` for an HTML table when a `format:`
+step is registered.
 
 ## Finding Stata
 
@@ -73,17 +71,20 @@ checks, in order:
 
 ``` r
 
-configure_local_monorepo("/path/to/replicate_everything")
+options(
+  replicateEverything.registry_root = "/path/to/replicate_everything/registry",
+  replicateEverything.study_folders_root = "/path/to/replicate_everything",
+  replicateEverything.use_sibling_packages = TRUE
+)
 
-# Stata only
-run_replication("10.1257/aer.91.5.1369", "tab_1_stata")
+# Table 1 in R (default when both engines exist)
+run_replication("10.1257/aer.91.5.1369", "tab_1")
 
-# Formatted HTML table (uses format_stata.R in the study repo)
+# Same table in Stata
+run_replication("10.1257/aer.91.5.1369", "tab_1", language = "stata", format = TRUE)
+
+# Legacy suffixed ids still work
 run_replication("10.1257/aer.91.5.1369", "tab_1_stata", format = TRUE)
-
-# Inspect the raw result object
-result <- render_replication("10.1257/aer.91.5.1369", "tab_1_stata")
-str(replication_object(result))
 ```
 
 List engines available for a study:
@@ -179,8 +180,12 @@ treat `group` as one logical table and run **both** engines when listed.
 library(replicateEverything)
 
 # Optional: local monorepo + Stata path
-configure_local_monorepo("c:/path/to/replicate_everything")
-options(replicateEverything.stata_executable = "C:/Program Files/Stata18/StataMP-64.exe")
+options(
+  replicateEverything.registry_root = "c:/path/to/replicate_everything/registry",
+  replicateEverything.study_folders_root = "c:/path/to/replicate_everything",
+  replicateEverything.use_sibling_packages = TRUE,
+  replicateEverything.stata_executable = "C:/Program Files/Stata18/StataMP-64.exe"
+)
 
 # R translation
 run_replication("10.1257/aer.91.5.1369", "tab_1", format = TRUE)

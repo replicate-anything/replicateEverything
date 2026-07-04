@@ -1,11 +1,12 @@
 # Replicate all results from a paper
 
-Runs all registered replications (figures and tables) for a given paper.
+Runs one replication per logical figure/table group, using the default
+engine (R when both R and Stata exist).
 
 ## Usage
 
 ``` r
-replicate_paper(doi, install_deps = FALSE)
+replicate_paper(doi, language = NULL, install_deps = FALSE)
 ```
 
 ## Arguments
@@ -13,6 +14,10 @@ replicate_paper(doi, install_deps = FALSE)
 - doi:
 
   Character. DOI of the paper.
+
+- language:
+
+  Optional `"R"` or `"stata"` for all groups.
 
 - install_deps:
 

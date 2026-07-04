@@ -25,3 +25,12 @@ sync_folder_paper(location = ".", registry_root = NULL)
 ## Value
 
 Invisibly, a list with `stub_path`, `index_updated`, and `folder`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+options(replicateEverything.registry_root = "../registry")
+sync_folder_paper(".")
+} # }
+```

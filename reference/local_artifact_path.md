@@ -5,7 +5,7 @@ Get the local artifact file path for a replication, if available
 ## Usage
 
 ``` r
-local_artifact_path(doi, what, repo = NULL)
+local_artifact_path(doi, what, repo = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -16,11 +16,15 @@ local_artifact_path(doi, what, repo = NULL)
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
 
 - repo:
 
   Optional repository slug.
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 ## Value
 

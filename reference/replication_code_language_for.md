@@ -5,7 +5,13 @@ Code language for a replication (for Shiny syntax highlighting)
 ## Usage
 
 ``` r
-replication_code_language_for(doi, what, repo = NULL, folder = NULL)
+replication_code_language_for(
+  doi,
+  what,
+  language = NULL,
+  repo = NULL,
+  folder = NULL
+)
 ```
 
 ## Arguments
@@ -16,7 +22,11 @@ replication_code_language_for(doi, what, repo = NULL, folder = NULL)
 
 - what:
 
-  Character. Replication identifier (e.g., `"fig_1"`).
+  Character. Replication identifier (logical id, e.g. `"tab_1"`).
+
+- language:
+
+  Optional `"R"` or `"stata"`.
 
 - repo:
 

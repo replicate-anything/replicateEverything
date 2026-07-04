@@ -23,7 +23,11 @@ Key behaviour:
 library(replicateEverything)
 
 # Point at a local monorepo checkout (optional)
-configure_local_monorepo("/path/to/replicate_everything")
+options(
+  replicateEverything.registry_root = "/path/to/replicate_everything/registry",
+  replicateEverything.study_folders_root = "/path/to/replicate_everything",
+  replicateEverything.use_sibling_packages = TRUE
+)
 
 audit <- audit_everything(patience = 20)
 print(audit)
@@ -62,7 +66,11 @@ audit <- if (run_live) {
       }
     }
     if (nzchar(monorepo)) {
-      configure_local_monorepo(monorepo)
+      options(
+        replicateEverything.registry_root = file.path(monorepo, "registry"),
+        replicateEverything.study_folders_root = monorepo,
+        replicateEverything.use_sibling_packages = TRUE
+      )
     }
     audit_everything(patience = 20, verbose = FALSE)
   }, error = function(e) {
@@ -266,8 +274,7 @@ if (nrow(fails) == 0) {
 Common reasons a run fails or times out:
 
 - **Missing study package or folder** — install the study repo locally
-  or set
-  [`configure_local_monorepo()`](https://replicate-anything.github.io/replicateEverything/reference/configure_local_monorepo.md).
+  or set `replicateEverything.study_folders_root` to your monorepo root.
 - **Stata not installed** — Stata-backed entries fail until Stata is
   found; see the *Stata replications* vignette.
 - **Network / data** — folder-backed studies may need data files
@@ -280,7 +287,11 @@ Re-run locally and refresh the package vignette snapshot:
 ``` r
 
 Sys.setenv(REPLICATE_AUDIT_LIVE = "true")
-configure_local_monorepo("/path/to/replicate_everything")
+options(
+  replicateEverything.registry_root = "/path/to/replicate_everything/registry",
+  replicateEverything.study_folders_root = "/path/to/replicate_everything",
+  replicateEverything.use_sibling_packages = TRUE
+)
 audit <- audit_everything(patience = 20)
 saveRDS(audit, "inst/vignette-data/audit_latest.rds")
 

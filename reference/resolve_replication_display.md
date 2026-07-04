@@ -9,6 +9,7 @@ resolve_replication_display(
   doi,
   what,
   result,
+  language = NULL,
   source = c("artifact", "live"),
   install_deps = FALSE,
   repo = NULL,

@@ -63,8 +63,8 @@ Requires R (\>= 4.1.0).
 
 library(replicateEverything)
 
-# Look up bibliographic metadata
-get_doi_metadata("10.1177/00491241211036161")
+# Browse the registry index
+head(load_index()[, c("doi", "title", "year")])
 
 # Search the registry by title keyword
 search_papers("causes")
@@ -79,6 +79,8 @@ run_replication("10.1177/00491241211036161", "fig_1")
 replicate_paper("10.1177/00491241211036161")
 ```
 
+For a tour of every main function, see [Meet the
+functions](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.html).
 For a worked example with output, see the [replication
 vignette](https://replicate-anything.github.io/replicateEverything/articles/replication-example.html).
 
@@ -323,23 +325,18 @@ Linked study packages should export:
 
 | Task | Function |
 |----|----|
-| Search registry | [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md), [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md) |
-| DOI metadata | [`get_doi_metadata()`](https://replicate-anything.github.io/replicateEverything/reference/get_doi_metadata.md), [`normalize_doi()`](https://replicate-anything.github.io/replicateEverything/reference/normalize_doi.md) |
-| Find repository | [`find_repo()`](https://replicate-anything.github.io/replicateEverything/reference/find_repo.md) |
-| List replications | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md) |
+| Browse registry | [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md), [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md) |
+| List replications | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md) |
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
-| Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md), [`render_replication()`](https://replicate-anything.github.io/replicateEverything/reference/render_replication.md) |
+| Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Replicate full paper | [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md) |
-| Format for display | [`format_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/format_for_display.md), [`render_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/render_for_display.md) |
-| Precomputed outputs | [`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md), [`save_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/save_artifact.md), [`artifact_available()`](https://replicate-anything.github.io/replicateEverything/reference/artifact_available.md) |
-| Validate | [`validate_replication()`](https://replicate-anything.github.io/replicateEverything/reference/validate_replication.md), [`validate_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/validate_artifact.md) |
 | Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
-| Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md), [`write_folder_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_folder_registry_stub.md) |
-| Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md), [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md) |
+| Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md) |
+| Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
 | Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
 | Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md), [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md) |
+| Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |
 | Shiny demo | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
-| Contribute | [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md) |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN
 dependencies automatically.
@@ -356,7 +353,9 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 
 ## Contributor workflow
 
-1.  **Fetch metadata** — `get_doi_metadata("10.1177/00491241211036161")`
+1.  **Browse the registry** —
+    [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md)
+    or `search_papers("keyword")`
 2.  **Scaffold a folder** —
     `create_replication_template("10.1177/00491241211036161")`
 3.  **Add your data and code** — place processed data in `data/` and
@@ -540,6 +539,9 @@ Find papers and inspect replication metadata.
 - [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
   : List available replications for a paper
 
+- [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
+  : List one replication entry per logical group
+
 - [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
   : Retrieve replication code for a paper
 
@@ -636,6 +638,8 @@ Format analysis output for HTML tables and plots.
 
 ### Articles
 
+- [Meet the
+  functions](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.md):
 - [Replication Examples Using
   Code](https://replicate-anything.github.io/replicateEverything/articles/replication-example.md):
 - [Shiny demo

@@ -7,7 +7,3 @@ Default registry repository slug
 ``` r
 DEFAULT_REGISTRY_REPO
 ```
-
-## Format
-
-An object of class `character` of length 1.

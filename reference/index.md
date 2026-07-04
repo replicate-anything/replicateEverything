@@ -98,6 +98,9 @@ Find papers and inspect replication metadata.
 - [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
   : List available replications for a paper
 
+- [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
+  : List one replication entry per logical group
+
 - [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
   : Retrieve replication code for a paper
 

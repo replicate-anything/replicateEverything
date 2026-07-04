@@ -25,3 +25,12 @@ check_package_replication(location, full_replication = FALSE)
 ## Value
 
 A list with `ok` (logical), `checks` (data frame), and `package_path`.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+check_package_replication("../rep-10.1371_journal.pone.0278337")
+check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
+} # }
+```

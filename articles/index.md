@@ -2,6 +2,8 @@
 
 ### Articles
 
+- [Meet the
+  functions](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.md):
 - [Replication Examples Using
   Code](https://replicate-anything.github.io/replicateEverything/articles/replication-example.md):
 - [Shiny demo

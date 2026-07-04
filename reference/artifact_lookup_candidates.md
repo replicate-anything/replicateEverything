@@ -5,7 +5,13 @@ Human-readable list of artifact URLs/paths tried for a replication
 ## Usage
 
 ``` r
-artifact_lookup_candidates(doi, what, repo = NULL, folder = NULL)
+artifact_lookup_candidates(
+  doi,
+  what,
+  repo = NULL,
+  folder = NULL,
+  language = NULL
+)
 ```
 
 ## Arguments
