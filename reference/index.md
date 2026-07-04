@@ -20,8 +20,6 @@ Find papers and inspect replication metadata.
   : List available replications for a paper
 - [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
   : List one replication entry per logical group
-- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
-  : Retrieve replication code for a paper
 
 ## Run replications
 
@@ -29,10 +27,8 @@ Run tables and figures from registry scripts.
 
 - [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
   : Run a single replication or all replications for a paper
-- [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
-  : Replicate all results from a paper
-- [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
-  : Create a replication template
+- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  : Retrieve replication code for a paper
 
 ## Shiny demo
 

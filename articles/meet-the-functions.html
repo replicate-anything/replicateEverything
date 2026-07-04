@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,62 +74,46 @@
 
     
     
-<p>This vignette walks through the <strong>main exported
-functions</strong> in <strong>replicateEverything</strong>. For full
-contributor checklists see the folder and package replication articles;
-for Stata-specific behaviour see <em>Stata replications</em>.</p>
-<div class="section level2">
-<h2 id="local-development-setup">Local development setup<a class="anchor" aria-label="anchor" href="#local-development-setup"></a>
-</h2>
-<p>When you work inside a monorepo checkout (sibling
-<code>registry/</code> and <code>rep-*</code> study folders), point the
-package at local paths before calling discovery or run functions:</p>
+<p><strong>replicateEverything</strong> has two sides. On the
+<strong>consumer</strong> side you browse the registry, run a table or
+figure, and inspect the code that produced it. On the
+<strong>producer</strong> side you set up a study repository, validate
+it, and register it so others can replicate your work.</p>
+<p>This vignette walks through the main exported functions on each side.
+For full contributor checklists see the folder and package replication
+articles; for Stata-specific behaviour see <em>Stata
+replications</em>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
-<span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything/registry"</span>,</span>
-<span>  replicateEverything.study_folders_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything"</span>,</span>
-<span>  replicateEverything.use_sibling_packages <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Without these options the package reads the public registry from
-GitHub and clones study materials on demand.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span></code></pre></div>
-</div>
 <div class="section level2">
-<h2 id="discovery">Discovery<a class="anchor" aria-label="anchor" href="#discovery"></a>
+<h2 id="using-replicateeverything">Using replicateEverything<a class="anchor" aria-label="anchor" href="#using-replicateeverything"></a>
 </h2>
+<p>These functions are for <strong>readers and replicators</strong>: you
+have a DOI (or a registry handle), you want to see what is available,
+run it, and read the scripts.</p>
 <div class="section level3">
-<h3 id="load_index">
-<code>load_index()</code><a class="anchor" aria-label="anchor" href="#load_index"></a>
+<h3 id="find-a-paper-in-the-registry">Find a paper in the registry<a class="anchor" aria-label="anchor" href="#find-a-paper-in-the-registry"></a>
 </h3>
-<p>Returns the registry <code>index.csv</code> as a data frame (DOI,
-title, journal, year, authors, study repo).</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<p>Start with the index. <code><a href="../reference/load_index.html">load_index()</a></code> returns registry
+<code>index.csv</code> as a data frame (DOI, title, journal, year,
+authors, study repo).</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/load_index.html">load_index</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">idx</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"doi"</span>, <span class="st">"title"</span>, <span class="st">"year"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
 <p>Example output:</p>
 <pre><code><span><span class="co">#&gt;                              doi                                    title year</span></span>
 <span><span class="co">#&gt; 1 10.1177/00491241211036161   Bounding Causes of Effects with Randomized... 2022</span></span>
 <span><span class="co">#&gt; 2 10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War        2003</span></span></code></pre>
-</div>
-<div class="section level3">
-<h3 id="search_papers">
-<code>search_papers()</code><a class="anchor" aria-label="anchor" href="#search_papers"></a>
-</h3>
-<p>Keyword search over titles (and authors) in the index.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/search_papers.html">search_papers()</a></code> keyword-searches titles and authors.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/search_papers.html">search_papers</a></span><span class="op">(</span><span class="st">"insurgency"</span><span class="op">)</span></span></code></pre></div>
 <p>Example output:</p>
 <pre><code><span><span class="co">#&gt;                              doi                                  title</span></span>
 <span><span class="co">#&gt; 1 10.1017/S0003055403000534 Ethnicity, Insurgency, and Civil War</span></span></code></pre>
-</div>
-<div class="section level3">
-<h3 id="list_replications">
-<code>list_replications()</code><a class="anchor" aria-label="anchor" href="#list_replications"></a>
-</h3>
-<p>Lists every registered table and figure for one paper, including
-engine (<code>r</code> / <code>stata</code>) when declared.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<p>For one paper, <code><a href="../reference/list_replications.html">list_replications()</a></code> lists every
+registered table and figure, including engine (<code>r</code> /
+<code>stata</code>) when declared.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
 <p>Example output (abbreviated):</p>
 <pre><code><span><span class="co">#&gt; [[1]]</span></span>
@@ -137,145 +121,126 @@ engine (<code>r</code> / <code>stata</code>) when declared.</p>
 <span><span class="co">#&gt; [1] "fig_1"</span></span>
 <span><span class="co">#&gt; $type</span></span>
 <span><span class="co">#&gt; [1] "figure"</span></span></code></pre>
-</div>
-<div class="section level3">
-<h3 id="list_replication_groups">
-<code>list_replication_groups()</code><a class="anchor" aria-label="anchor" href="#list_replication_groups"></a>
-</h3>
-<p>Like <code><a href="../reference/list_replications.html">list_replications()</a></code>, but returns <strong>one entry
-per logical group</strong>. When both R and Stata exist for the same
-table, the default is R.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/list_replication_groups.html">list_replication_groups()</a></code> returns <strong>one entry per
+logical group</strong>. When both R and Stata exist for the same table,
+the default is R.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_replication_groups.html">list_replication_groups</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="get_code">
-<code>get_code()</code><a class="anchor" aria-label="anchor" href="#get_code"></a>
+<h3 id="run-a-replication">Run a replication<a class="anchor" aria-label="anchor" href="#run-a-replication"></a>
 </h3>
-<p>Returns the replication script for the Code tab in Shiny (R source or
-merged Stata <code>.do</code> files).</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_code.html">get_code</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-</div>
-</div>
-<div class="section level2">
-<h2 id="run-replications">Run replications<a class="anchor" aria-label="anchor" href="#run-replications"></a>
-</h2>
-<div class="section level3">
-<h3 id="run_replication">
-<code>run_replication()</code><a class="anchor" aria-label="anchor" href="#run_replication"></a>
-</h3>
-<p>Runs one table or figure. By default you get the <strong>analysis
-object</strong> (e.g. <code>ggplot</code>, model, or
-<code>data.frame</code>). Pass <code>format = TRUE</code> for
+<p><code><a href="../reference/run_replication.html">run_replication()</a></code> is the main entry point. Pass a DOI
+(or registry handle) and a replication id (<code>"fig_1"</code>,
+<code>"tab_1"</code>, and so on). By default you get the
+<strong>analysis object</strong> — a <code>ggplot</code>, model, or
+<code>data.frame</code>. Pass <code>format = TRUE</code> for
 display-ready HTML or a formatted plot.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"tab_1"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Stata engine when both exist:</span></span>
 <span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, <span class="st">"tab_1"</span>, language <span class="op">=</span> <span class="st">"stata"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="run_replication----what-everything">
-<code>run_replication(..., what = "everything")</code><a class="anchor" aria-label="anchor" href="#run_replication----what-everything"></a>
-</h3>
-<p>Runs every logical replication group for a paper (R by default where
-bilingual).</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<p>To reproduce an entire paper, set <code>what = "everything"</code>.
+The function runs every logical replication group (R by default where
+both engines exist).</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="shiny-demo">Shiny demo<a class="anchor" aria-label="anchor" href="#shiny-demo"></a>
-</h2>
 <div class="section level3">
-<h3 id="run_shiny_app">
-<code>run_shiny_app()</code><a class="anchor" aria-label="anchor" href="#run_shiny_app"></a>
+<h3 id="view-the-replication-code">View the replication code<a class="anchor" aria-label="anchor" href="#view-the-replication-code"></a>
 </h3>
-<p>Launches the bundled Shiny app from the installed package.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/get_code.html">get_code()</a></code> returns the script behind a replication — R
+source or merged Stata <code>.do</code> files. Use it when you want to
+see <em>how</em> a result was produced, not only the output. The bundled
+Shiny app shows the same text on its Code tab.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_code.html">get_code</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="browse-interactively-in-shiny">Browse interactively in Shiny<a class="anchor" aria-label="anchor" href="#browse-interactively-in-shiny"></a>
+</h3>
+<p>The Shiny app is the consumer interface in a browser: pick a paper,
+switch between tables and figures, run replications, and copy the
+<code><a href="../reference/run_replication.html">run_replication()</a></code> call.</p>
+<p><code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code> launches the bundled app from the
+installed package.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_shiny_app.html">run_shiny_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="save_local_shiny">
-<code>save_local_shiny()</code><a class="anchor" aria-label="anchor" href="#save_local_shiny"></a>
-</h3>
-<p>Copies <code>app.R</code> and assets into a directory for Shiny
-Server (never overwrites an existing <code>local.R</code>).</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code> copies <code>app.R</code> and assets
+into a directory for Shiny Server (it never overwrites an existing
+<code>local.R</code>).</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
 <p>See
 <code><a href="../articles/shiny-app.html">vignette("shiny-app", package = "replicateEverything")</a></code> for
-deployment details.</p>
+deployment details. A live demo runs at <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">shiny2.wzb.eu/ipi/replicate/</a>.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="contribute-folder-backed-studies">Contribute: folder-backed studies<a class="anchor" aria-label="anchor" href="#contribute-folder-backed-studies"></a>
+<h2 id="ready-to-contribute-to-replicateeverything">Ready to contribute to replicateEverything?<a class="anchor" aria-label="anchor" href="#ready-to-contribute-to-replicateeverything"></a>
 </h2>
+<p>These functions are for <strong>authors and maintainers</strong>: you
+have (or are building) a study repository with
+<code>replication.yml</code>, code, data, and artifacts, and you want to
+validate it and register it.</p>
+<p>When you work inside a monorepo checkout (sibling
+<code>registry/</code> and <code>rep-*</code> study folders), point the
+package at local paths before calling discovery or run functions:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
+<span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything/registry"</span>,</span>
+<span>  replicateEverything.study_folders_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything"</span>,</span>
+<span>  replicateEverything.use_sibling_packages <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Without these options the package reads the public registry from
+GitHub and clones study materials on demand.</p>
+<div class="section level3">
+<h3 id="folder-backed-studies">Folder-backed studies<a class="anchor" aria-label="anchor" href="#folder-backed-studies"></a>
+</h3>
 <p>Study repos hold <code>replication.yml</code>, <code>code/</code>,
 <code>data/</code>, and <code>artifacts/</code>. See
 <code><a href="../articles/folder-replication-checklist.html">vignette("folder-replication-checklist")</a></code>.</p>
-<div class="section level3">
-<h3 id="build_study_artifacts">
-<code>build_study_artifacts()</code><a class="anchor" aria-label="anchor" href="#build_study_artifacts"></a>
-</h3>
-<p>Runs every replication and writes PNG/HTML under
-<code>artifacts/</code> plus <code>manifest.json</code>.</p>
+<p><code><a href="../reference/build_study_artifacts.html">build_study_artifacts()</a></code> runs every replication and
+writes PNG/HTML under <code>artifacts/</code> plus
+<code>manifest.json</code>.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/build_study_artifacts.html">build_study_artifacts</a></span><span class="op">(</span><span class="st">"."</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="check_folder_replication">
-<code>check_folder_replication()</code><a class="anchor" aria-label="anchor" href="#check_folder_replication"></a>
-</h3>
-<p>Transparent checklist: layout, yaml, artifacts, tests, optional live
-runs.</p>
+<p><code><a href="../reference/check_folder_replication.html">check_folder_replication()</a></code> runs a transparent checklist:
+layout, yaml, artifacts, tests, and optional live runs.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_folder_replication.html">check_folder_replication</a></span><span class="op">(</span><span class="st">"."</span>, full_replication <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="prepare_folder_paper">
-<code>prepare_folder_paper()</code><a class="anchor" aria-label="anchor" href="#prepare_folder_paper"></a>
-</h3>
-<p>Builds artifacts (optional), runs checks, and writes
-<code>registry/replication.yml</code> and
+<p><code><a href="../reference/prepare_folder_paper.html">prepare_folder_paper()</a></code> builds artifacts (optional), runs
+checks, and writes <code>registry/replication.yml</code> and
 <code>registry/index.csv</code> in the study repo.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/prepare_folder_paper.html">prepare_folder_paper</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">FALSE</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="sync_folder_paper">
-<code>sync_folder_paper()</code><a class="anchor" aria-label="anchor" href="#sync_folder_paper"></a>
-</h3>
-<p>Copies prepared stub files into a local registry checkout.</p>
+<p><code><a href="../reference/sync_folder_paper.html">sync_folder_paper()</a></code> copies prepared stub files into a
+local registry checkout.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/sync_folder_paper.html">sync_folder_paper</a></span><span class="op">(</span><span class="st">"."</span><span class="op">)</span></span></code></pre></div>
 </div>
-</div>
-<div class="section level2">
-<h2 id="contribute-package-backed-studies">Contribute: package-backed studies<a class="anchor" aria-label="anchor" href="#contribute-package-backed-studies"></a>
-</h2>
+<div class="section level3">
+<h3 id="package-backed-studies">Package-backed studies<a class="anchor" aria-label="anchor" href="#package-backed-studies"></a>
+</h3>
 <p>Package-backed studies export <code><a href="../reference/run_replication.html">run_replication()</a></code>,
-<code><a href="../reference/get_code.html">get_code()</a></code>, and related helpers from the study package.
-Validate with:</p>
+<code><a href="../reference/get_code.html">get_code()</a></code>, and related helpers from the study package
+itself. Validate with <code><a href="../reference/check_package_replication.html">check_package_replication()</a></code>.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371_journal.pone.0278337"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371_journal.pone.0278337"</span>, full_replication <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>See <code><a href="../articles/package-replication-checklist.html">vignette("package-replication-checklist")</a></code> for layout
-and <code><a href="../reference/check_package_replication.html">check_package_replication()</a></code>.</p>
+and API requirements.</p>
 </div>
-<div class="section level2">
-<h2 id="registry-audit">Registry audit<a class="anchor" aria-label="anchor" href="#registry-audit"></a>
-</h2>
 <div class="section level3">
-<h3 id="audit_everything">
-<code>audit_everything()</code><a class="anchor" aria-label="anchor" href="#audit_everything"></a>
+<h3 id="registry-audit">Registry audit<a class="anchor" aria-label="anchor" href="#registry-audit"></a>
 </h3>
-<p>Attempts every table and figure in the registry (all engines), with a
-per-object time limit.</p>
+<p><code><a href="../reference/audit_everything.html">audit_everything()</a></code> attempts every table and figure in
+the registry (all engines), with a per-object time limit. Use it to
+check registry health after changes.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, dois <span class="op">=</span> <span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit</span><span class="op">)</span></span></code></pre></div>
@@ -299,21 +264,21 @@ shipped with the package.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
+<td><strong>Consumer</strong></td>
+<td></td>
+</tr>
+<tr class="even">
 <td>Browse registry</td>
 <td>
 <code><a href="../reference/load_index.html">load_index()</a></code>, <code><a href="../reference/search_papers.html">search_papers()</a></code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>What can I replicate?</td>
 <td>
 <code><a href="../reference/list_replications.html">list_replications()</a></code>,
 <code><a href="../reference/list_replication_groups.html">list_replication_groups()</a></code>
 </td>
-</tr>
-<tr class="odd">
-<td>View code</td>
-<td><code><a href="../reference/get_code.html">get_code()</a></code></td>
 </tr>
 <tr class="even">
 <td>Run one result</td>
@@ -324,26 +289,37 @@ shipped with the package.</p>
 <td><code>run_replication(doi, "everything")</code></td>
 </tr>
 <tr class="even">
+<td>View code</td>
+<td><code><a href="../reference/get_code.html">get_code()</a></code></td>
+</tr>
+<tr class="odd">
 <td>Interactive browser</td>
 <td>
 <code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code>, <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code>
 </td>
 </tr>
+<tr class="even">
+<td><strong>Contributor</strong></td>
+<td></td>
+</tr>
 <tr class="odd">
-<td>Folder study workflow</td>
+<td>Build folder artifacts</td>
+<td><code><a href="../reference/build_study_artifacts.html">build_study_artifacts()</a></code></td>
+</tr>
+<tr class="even">
+<td>Validate folder study</td>
 <td>
-<code><a href="../reference/build_study_artifacts.html">build_study_artifacts()</a></code>,
 <code><a href="../reference/check_folder_replication.html">check_folder_replication()</a></code>,
 <code><a href="../reference/prepare_folder_paper.html">prepare_folder_paper()</a></code>,
 <code><a href="../reference/sync_folder_paper.html">sync_folder_paper()</a></code>
 </td>
 </tr>
-<tr class="even">
-<td>Package study workflow</td>
+<tr class="odd">
+<td>Validate package study</td>
 <td><code><a href="../reference/check_package_replication.html">check_package_replication()</a></code></td>
 </tr>
-<tr class="odd">
-<td>Health check</td>
+<tr class="even">
+<td>Registry health check</td>
 <td><code><a href="../reference/audit_everything.html">audit_everything()</a></code></td>
 </tr>
 </tbody>

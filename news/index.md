@@ -1,21 +1,34 @@
 # Changelog
 
+## replicateEverything 0.5.0
+
+### Breaking changes
+
+- Removed deprecated `replicate_paper()` and
+  `create_replication_template()`. Use
+  `run_replication(doi, "everything")` and the folder/package
+  replication checklists instead.
+- Pre-built vignette HTML is shipped again in `inst/doc/` so installs
+  that skip vignette builds still include all articles.
+
+### Documentation
+
+- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  appears under **Run replications** in the pkgdown reference index.
+- **Meet the functions** vignette reorganized into consumer and
+  contributor sections.
+
 ## replicateEverything 0.4.0
 
 ### Public API
 
-- Slim export surface (~16 functions): discovery, run, Shiny,
+- Slim export surface (~14 functions): discovery, run, Shiny,
   contribute, and audit helpers only.
 - `run_replication(doi, what = "everything")` replaces
-  [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
-  for full-paper runs.
+  `replicate_paper()` for full-paper runs.
 - Registry `index.csv` includes a `handle` column;
   [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md)
   and run functions accept handles (e.g. `"bounding-causes"`).
-- [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
-  and
-  [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
-  are deprecated.
 - [`validate_replication()`](https://replicate-anything.github.io/replicateEverything/reference/validate_replication.md)
   and other internal helpers are no longer exported.
 - New vignette: [Meet the
@@ -58,8 +71,7 @@
   [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
   /
   [`render_replication()`](https://replicate-anything.github.io/replicateEverything/reference/render_replication.md),
-  or reproduce an entire paper with
-  [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md).
+  or reproduce an entire paper with `replicate_paper()`.
 - Load, validate, and save precomputed artifacts
   ([`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md),
   [`save_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/save_artifact.md),
@@ -69,10 +81,8 @@
   [`render_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/render_for_display.md)).
 - Package-backed replications: install and call standalone study
   packages from the registry or a local monorepo.
-- Contributor tooling:
-  [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
-  scaffolds a new replication folder with `replication.yml`, data, and
-  code stubs.
+- Contributor tooling: `create_replication_template()` scaffolds a new
+  replication folder with `replication.yml`, data, and code stubs.
 - Registry search and metadata helpers:
   [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md),
   [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md),

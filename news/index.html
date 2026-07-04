@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,15 +44,28 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="replicateeverything-050">replicateEverything 0.5.0<a class="anchor" aria-label="anchor" href="#replicateeverything-050"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-5-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-5-0"></a></h3>
+<ul><li>Removed deprecated <code>replicate_paper()</code> and <code>create_replication_template()</code>. Use <code>run_replication(doi, "everything")</code> and the folder/package replication checklists instead.</li>
+<li>Pre-built vignette HTML is shipped again in <code>inst/doc/</code> so installs that skip vignette builds still include all articles.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-5-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-5-0"></a></h3>
+<ul><li>
+<code><a href="../reference/get_code.html">get_code()</a></code> appears under <strong>Run replications</strong> in the pkgdown reference index.</li>
+<li>
+<strong>Meet the functions</strong> vignette reorganized into consumer and contributor sections.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="replicateeverything-040">replicateEverything 0.4.0<a class="anchor" aria-label="anchor" href="#replicateeverything-040"></a></h2>
 <div class="section level3">
 <h3 id="public-api-0-4-0">Public API<a class="anchor" aria-label="anchor" href="#public-api-0-4-0"></a></h3>
-<ul><li>Slim export surface (~16 functions): discovery, run, Shiny, contribute, and audit helpers only.</li>
+<ul><li>Slim export surface (~14 functions): discovery, run, Shiny, contribute, and audit helpers only.</li>
 <li>
-<code>run_replication(doi, what = "everything")</code> replaces <code><a href="../reference/replicate_paper.html">replicate_paper()</a></code> for full-paper runs.</li>
+<code>run_replication(doi, what = "everything")</code> replaces <code>replicate_paper()</code> for full-paper runs.</li>
 <li>Registry <code>index.csv</code> includes a <code>handle</code> column; <code><a href="../reference/search_papers.html">search_papers()</a></code> and run functions accept handles (e.g. <code>"bounding-causes"</code>).</li>
-<li>
-<code><a href="../reference/replicate_paper.html">replicate_paper()</a></code> and <code><a href="../reference/create_replication_template.html">create_replication_template()</a></code> are deprecated.</li>
 <li>
 <code><a href="../reference/validate_replication.html">validate_replication()</a></code> and other internal helpers are no longer exported.</li>
 <li>New vignette: <a href="articles/meet-the-functions.html">Meet the functions</a>.</li>
@@ -83,11 +96,11 @@
 <div class="section level3">
 <h3 id="major-features-0-2-0">Major features<a class="anchor" aria-label="anchor" href="#major-features-0-2-0"></a></h3>
 <ul><li>Connect to the public <a href="https://github.com/replicate-anything/registry" class="external-link">replication registry</a> to discover and run computational replications by DOI.</li>
-<li>Run a single figure or table with <code><a href="../reference/run_replication.html">run_replication()</a></code> / <code><a href="../reference/render_replication.html">render_replication()</a></code>, or reproduce an entire paper with <code><a href="../reference/replicate_paper.html">replicate_paper()</a></code>.</li>
+<li>Run a single figure or table with <code><a href="../reference/run_replication.html">run_replication()</a></code> / <code><a href="../reference/render_replication.html">render_replication()</a></code>, or reproduce an entire paper with <code>replicate_paper()</code>.</li>
 <li>Load, validate, and save precomputed artifacts (<code><a href="../reference/load_artifact.html">load_artifact()</a></code>, <code><a href="../reference/save_artifact.html">save_artifact()</a></code>, <code><a href="../reference/validate_artifact.html">validate_artifact()</a></code>).</li>
 <li>Optional display pipeline via registered <code>format_*</code> functions (<code><a href="../reference/format_for_display.html">format_for_display()</a></code>, <code><a href="../reference/render_for_display.html">render_for_display()</a></code>).</li>
 <li>Package-backed replications: install and call standalone study packages from the registry or a local monorepo.</li>
-<li>Contributor tooling: <code><a href="../reference/create_replication_template.html">create_replication_template()</a></code> scaffolds a new replication folder with <code>replication.yml</code>, data, and code stubs.</li>
+<li>Contributor tooling: <code>create_replication_template()</code> scaffolds a new replication folder with <code>replication.yml</code>, data, and code stubs.</li>
 <li>Registry search and metadata helpers: <code><a href="../reference/search_papers.html">search_papers()</a></code>, <code><a href="../reference/load_index.html">load_index()</a></code>, <code><a href="../reference/get_doi_metadata.html">get_doi_metadata()</a></code>, <code><a href="../reference/list_replications.html">list_replications()</a></code>, <code><a href="../reference/get_code.html">get_code()</a></code>.</li>
 <li>Local registry development via <code>options(replicateEverything.registry_root = ...)</code> and <code>options(replicateEverything.index = ...)</code>.</li>
 </ul></div>

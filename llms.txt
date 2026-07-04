@@ -34,8 +34,11 @@ demo](https://shiny2.wzb.eu/ipi/replicate/).
   locally;
   [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
   to deploy on Shiny Server
-- **Contributor tooling** — scaffold a new replication folder with
-  [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
+- **Contributor tooling** — validate and register folder- or
+  package-backed studies
+  ([`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md),
+  [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
+  [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md))
 
 ## Project status
 
@@ -355,8 +358,10 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 1.  **Browse the registry** —
     [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md)
     or `search_papers("keyword")`
-2.  **Scaffold a folder** —
-    `create_replication_template("10.1177/00491241211036161")`
+2.  **Set up a study repo** — follow
+    [`vignette("folder-replication-checklist")`](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md)
+    or
+    [`vignette("package-replication-checklist")`](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md)
 3.  **Add your data and code** — place processed data in `data/` and
     scripts in `code/`
 4.  **Test locally** — run scripts in the R console or with
@@ -460,8 +465,6 @@ Find papers and inspect replication metadata.
   : List available replications for a paper
 - [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
   : List one replication entry per logical group
-- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
-  : Retrieve replication code for a paper
 
 ## Run replications
 
@@ -469,10 +472,8 @@ Run tables and figures from registry scripts.
 
 - [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
   : Run a single replication or all replications for a paper
-- [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
-  : Replicate all results from a paper
-- [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
-  : Create a replication template
+- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  : Retrieve replication code for a paper
 
 ## Shiny demo
 

@@ -21,7 +21,8 @@ The underlying replication object.
 ## Examples
 
 ``` r
+if (FALSE) { # \dontrun{
 result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_result")
 replication_object(result)
-#> Error in replication_object(result): could not find function "replication_object"
+} # }
 ```

@@ -23,6 +23,10 @@ list_replication_groups(doi, repo = NULL, folder = NULL, language = NULL)
 
   Optional registry folder name from `index.csv`.
 
+- language:
+
+  Optional `"R"` or `"stata"` for each group.
+
 ## Value
 
 List of replication entries.

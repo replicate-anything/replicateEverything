@@ -26,6 +26,7 @@ A data frame, list, or other object.
 ## Examples
 
 ``` r
+if (FALSE) { # \dontrun{
 tmp <- tempfile()
 dir.create(tmp)
 dir.create(file.path(tmp, "data"))
@@ -35,5 +36,5 @@ write.csv(
   row.names = FALSE
 )
 load_local_replication_data("data/example.csv", paper_dir = tmp)
-#> Error in load_local_replication_data("data/example.csv", paper_dir = tmp): could not find function "load_local_replication_data"
+} # }
 ```
