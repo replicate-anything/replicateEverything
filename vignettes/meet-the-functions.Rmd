@@ -11,31 +11,21 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-This vignette walks through the **main exported functions** in **replicateEverything**. For full contributor checklists see the folder and package replication articles; for Stata-specific behaviour see *Stata replications*.
+**replicateEverything** has two sides. On the **consumer** side you browse the registry, run a table or figure, and inspect the code that produced it. On the **producer** side you set up a study repository, validate it, and register it so others can replicate your work.
 
-## Local development setup
-
-When you work inside a monorepo checkout (sibling `registry/` and `rep-*` study folders), point the package at local paths before calling discovery or run functions:
-
-```{r}
-options(
-  replicateEverything.registry_root = "/path/to/replicate_everything/registry",
-  replicateEverything.study_folders_root = "/path/to/replicate_everything",
-  replicateEverything.use_sibling_packages = TRUE
-)
-```
-
-Without these options the package reads the public registry from GitHub and clones study materials on demand.
+This vignette walks through the main exported functions on each side. For full contributor checklists see the folder and package replication articles; for Stata-specific behaviour see *Stata replications*.
 
 ```{r setup}
 library(replicateEverything)
 ```
 
-## Discovery
+## Using replicateEverything
 
-### `load_index()`
+These functions are for **readers and replicators**: you have a DOI (or a registry handle), you want to see what is available, run it, and read the scripts.
 
-Returns the registry `index.csv` as a data frame (DOI, title, journal, year, authors, study repo).
+### Find a paper in the registry
+
+Start with the index. `load_index()` returns registry `index.csv` as a data frame (DOI, title, journal, year, authors, study repo).
 
 ```{r}
 idx <- load_index()
@@ -50,9 +40,7 @@ Example output:
 #> 2 10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War        2003
 ```
 
-### `search_papers()`
-
-Keyword search over titles (and authors) in the index.
+`search_papers()` keyword-searches titles and authors.
 
 ```{r}
 search_papers("insurgency")
@@ -65,9 +53,7 @@ Example output:
 #> 1 10.1017/S0003055403000534 Ethnicity, Insurgency, and Civil War
 ```
 
-### `list_replications()`
-
-Lists every registered table and figure for one paper, including engine (`r` / `stata`) when declared.
+For one paper, `list_replications()` lists every registered table and figure, including engine (`r` / `stata`) when declared.
 
 ```{r}
 list_replications("10.1177/00491241211036161")
@@ -83,27 +69,15 @@ Example output (abbreviated):
 #> [1] "figure"
 ```
 
-### `list_replication_groups()`
-
-Like `list_replications()`, but returns **one entry per logical group**. When both R and Stata exist for the same table, the default is R.
+`list_replication_groups()` returns **one entry per logical group**. When both R and Stata exist for the same table, the default is R.
 
 ```{r}
 list_replication_groups("10.1257/aer.91.5.1369")
 ```
 
-### `get_code()`
+### Run a replication
 
-Returns the replication script for the Code tab in Shiny (R source or merged Stata `.do` files).
-
-```{r}
-cat(get_code("10.1177/00491241211036161", "fig_1"), sep = "\n")
-```
-
-## Run replications
-
-### `run_replication()`
-
-Runs one table or figure. By default you get the **analysis object** (e.g. `ggplot`, model, or `data.frame`). Pass `format = TRUE` for display-ready HTML or a formatted plot.
+`run_replication()` is the main entry point. Pass a DOI (or registry handle) and a replication id (`"fig_1"`, `"tab_1"`, and so on). By default you get the **analysis object** — a `ggplot`, model, or `data.frame`. Pass `format = TRUE` for display-ready HTML or a formatted plot.
 
 ```{r}
 run_replication("10.1177/00491241211036161", "fig_1")
@@ -114,87 +88,97 @@ run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1257/aer.91.5.1369", "tab_1", language = "stata", format = TRUE)
 ```
 
-### `run_replication(..., what = "everything")`
-
-Runs every logical replication group for a paper (R by default where bilingual).
+To reproduce an entire paper, set `what = "everything"`. The function runs every logical replication group (R by default where both engines exist).
 
 ```{r}
 run_replication("10.1177/00491241211036161", "everything")
 ```
 
-## Shiny demo
+### View the replication code
 
-### `run_shiny_app()`
+`get_code()` returns the script behind a replication — R source or merged Stata `.do` files. Use it when you want to see *how* a result was produced, not only the output. The bundled Shiny app shows the same text on its Code tab.
 
-Launches the bundled Shiny app from the installed package.
+```{r}
+cat(get_code("10.1177/00491241211036161", "fig_1"), sep = "\n")
+```
+
+### Browse interactively in Shiny
+
+The Shiny app is the consumer interface in a browser: pick a paper, switch between tables and figures, run replications, and copy the `run_replication()` call.
+
+`run_shiny_app()` launches the bundled app from the installed package.
 
 ```{r}
 run_shiny_app()
 ```
 
-### `save_local_shiny()`
-
-Copies `app.R` and assets into a directory for Shiny Server (never overwrites an existing `local.R`).
+`save_local_shiny()` copies `app.R` and assets into a directory for Shiny Server (it never overwrites an existing `local.R`).
 
 ```{r}
 save_local_shiny("/srv/shiny/replicate")
 ```
 
-See `vignette("shiny-app", package = "replicateEverything")` for deployment details.
+See `vignette("shiny-app", package = "replicateEverything")` for deployment details. A live demo runs at [shiny2.wzb.eu/ipi/replicate/](https://shiny2.wzb.eu/ipi/replicate/).
 
-## Contribute: folder-backed studies
+## Ready to contribute to replicateEverything?
+
+These functions are for **authors and maintainers**: you have (or are building) a study repository with `replication.yml`, code, data, and artifacts, and you want to validate it and register it.
+
+When you work inside a monorepo checkout (sibling `registry/` and `rep-*` study folders), point the package at local paths before calling discovery or run functions:
+
+```{r}
+options(
+  replicateEverything.registry_root = "/path/to/replicate_everything/registry",
+  replicateEverything.study_folders_root = "/path/to/replicate_everything",
+  replicateEverything.use_sibling_packages = TRUE
+)
+```
+
+Without these options the package reads the public registry from GitHub and clones study materials on demand.
+
+### Folder-backed studies
 
 Study repos hold `replication.yml`, `code/`, `data/`, and `artifacts/`. See `vignette("folder-replication-checklist")`.
 
-### `build_study_artifacts()`
-
-Runs every replication and writes PNG/HTML under `artifacts/` plus `manifest.json`.
+`build_study_artifacts()` runs every replication and writes PNG/HTML under `artifacts/` plus `manifest.json`.
 
 ```{r}
 build_study_artifacts(".", install_deps = TRUE)
 ```
 
-### `check_folder_replication()`
-
-Transparent checklist: layout, yaml, artifacts, tests, optional live runs.
+`check_folder_replication()` runs a transparent checklist: layout, yaml, artifacts, tests, and optional live runs.
 
 ```{r}
 check_folder_replication(".", full_replication = FALSE)
 ```
 
-### `prepare_folder_paper()`
-
-Builds artifacts (optional), runs checks, and writes `registry/replication.yml` and `registry/index.csv` in the study repo.
+`prepare_folder_paper()` builds artifacts (optional), runs checks, and writes `registry/replication.yml` and `registry/index.csv` in the study repo.
 
 ```{r}
 prepare_folder_paper(".", build_artifacts = FALSE, registry_root = "../registry")
 ```
 
-### `sync_folder_paper()`
-
-Copies prepared stub files into a local registry checkout.
+`sync_folder_paper()` copies prepared stub files into a local registry checkout.
 
 ```{r}
 options(replicateEverything.registry_root = "../registry")
 sync_folder_paper(".")
 ```
 
-## Contribute: package-backed studies
+### Package-backed studies
 
-Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package. Validate with:
+Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package itself. Validate with `check_package_replication()`.
 
 ```{r}
 check_package_replication("../rep-10.1371_journal.pone.0278337")
 check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
 ```
 
-See `vignette("package-replication-checklist")` for layout and `check_package_replication()`.
+See `vignette("package-replication-checklist")` for layout and API requirements.
 
-## Registry audit
+### Registry audit
 
-### `audit_everything()`
-
-Attempts every table and figure in the registry (all engines), with a per-object time limit.
+`audit_everything()` attempts every table and figure in the registry (all engines), with a per-object time limit. Use it to check registry health after changes.
 
 ```{r}
 audit <- audit_everything(patience = 20, dois = "10.1177/00491241211036161")
@@ -213,12 +197,15 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 
 | Task | Function |
 |------|----------|
+| **Consumer** | |
 | Browse registry | `load_index()`, `search_papers()` |
 | What can I replicate? | `list_replications()`, `list_replication_groups()` |
-| View code | `get_code()` |
 | Run one result | `run_replication()` |
 | Run whole paper | `run_replication(doi, "everything")` |
+| View code | `get_code()` |
 | Interactive browser | `run_shiny_app()`, `save_local_shiny()` |
-| Folder study workflow | `build_study_artifacts()`, `check_folder_replication()`, `prepare_folder_paper()`, `sync_folder_paper()` |
-| Package study workflow | `check_package_replication()` |
-| Health check | `audit_everything()` |
+| **Contributor** | |
+| Build folder artifacts | `build_study_artifacts()` |
+| Validate folder study | `check_folder_replication()`, `prepare_folder_paper()`, `sync_folder_paper()` |
+| Validate package study | `check_package_replication()` |
+| Registry health check | `audit_everything()` |

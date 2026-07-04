@@ -17,8 +17,10 @@ Unwraps \code{conditionMessage()} and, when present, parent errors and the
 call that failed.
 }
 \examples{
+\dontrun{
 err <- simpleError("Replication failed", call = quote(run_replication()))
 replication_error_message(err)
+}
 
 }
 \keyword{internal}

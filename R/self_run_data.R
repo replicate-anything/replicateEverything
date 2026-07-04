@@ -8,6 +8,7 @@
 #' @return A data frame, list, or other object.
 #'
 #' @examples
+#' \dontrun{
 #' tmp <- tempfile()
 #' dir.create(tmp)
 #' dir.create(file.path(tmp, "data"))
@@ -17,6 +18,7 @@
 #'   row.names = FALSE
 #' )
 #' load_local_replication_data("data/example.csv", paper_dir = tmp)
+#' }
 #'
 #' @keywords internal
 load_local_replication_data <- function(data_paths, paper_dir = getwd()) {

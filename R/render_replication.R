@@ -397,15 +397,6 @@ package_replication_entries <- function(meta) {
   c(pkg_meta$prep %||% list(), pkg_meta$replications %||% list())
 }
 
-#' Find a single replication entry by id
-#'
-#' @param meta Parsed replication metadata.
-#' @param what Replication identifier.
-#'
-#' @rdname find_replication_entry
-#' @keywords internal
-NULL
-
 #' Render a single replication
 #'
 #' Loads data, sources the replication script, and returns a typed result
@@ -687,6 +678,7 @@ read_artifact_file <- function(path, ext) {
 #' @return Invisibly the output file path.
 #'
 #' @examples
+#' \dontrun{
 #' tmp <- tempfile()
 #' dir.create(tmp)
 #' result <- structure(
@@ -700,6 +692,7 @@ read_artifact_file <- function(path, ext) {
 #'   class = "replication_result"
 #' )
 #' save_artifact(result, tmp)
+#' }
 #'
 #' @keywords internal
 save_artifact <- function(

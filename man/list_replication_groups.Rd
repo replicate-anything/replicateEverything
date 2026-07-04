@@ -12,6 +12,8 @@ list_replication_groups(doi, repo = NULL, folder = NULL, language = NULL)
 \item{repo}{Optional repository slug.}
 
 \item{folder}{Optional registry folder name from \code{index.csv}.}
+
+\item{language}{Optional \code{"R"} or \code{"stata"} for each group.}
 }
 \value{
 List of replication entries.

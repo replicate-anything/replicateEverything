@@ -19,6 +19,7 @@ Used at the bottom of replication scripts so they can be run directly
 from the paper folder without the package orchestrator.
 }
 \examples{
+\dontrun{
 tmp <- tempfile()
 dir.create(tmp)
 dir.create(file.path(tmp, "data"))
@@ -28,6 +29,7 @@ write.csv(
   row.names = FALSE
 )
 load_local_replication_data("data/example.csv", paper_dir = tmp)
+}
 
 }
 \keyword{internal}

@@ -4,7 +4,9 @@
 #' @return Character HTML with common entities decoded for browser display.
 #'
 #' @examples
+#' \dontrun{
 #' normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
+#' }
 #'
 #' @keywords internal
 normalize_html_table <- function(html) {

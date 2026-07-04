@@ -18,7 +18,9 @@ across package functions. The function removes common DOI URL prefixes
 and trims whitespace.
 }
 \examples{
+\dontrun{
 normalize_doi("https://doi.org/10.1177/00491241211036161")
+}
 
 }
 \keyword{internal}

@@ -155,6 +155,7 @@ find_replication_entry <- function(meta, what, language = NULL, paper_meta = NUL
 #' engines exist).
 #'
 #' @inheritParams list_replications
+#' @param language Optional \code{"R"} or \code{"stata"} for each group.
 #' @return List of replication entries.
 #'
 #' @examples

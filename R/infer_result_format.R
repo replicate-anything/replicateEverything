@@ -48,8 +48,10 @@ infer_result_format <- function(object, type) {
 #' @return The underlying replication object.
 #'
 #' @examples
+#' \dontrun{
 #' result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_result")
 #' replication_object(result)
+#' }
 #'
 #' @keywords internal
 replication_object <- function(x) {

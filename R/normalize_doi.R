@@ -9,7 +9,9 @@
 #' @return A cleaned DOI string.
 #'
 #' @examples
+#' \dontrun{
 #' normalize_doi("https://doi.org/10.1177/00491241211036161")
+#' }
 #'
 #' @keywords internal
 normalize_doi <- function(doi){

@@ -1842,17 +1842,18 @@ contribute_tab_ui <- function() {
 
 replication_run_snippet <- function(doi, what, language = NULL) {
   lang <- tolower(trimws(as.character(language %||% "")))
-  lang_line <- if (nzchar(lang) && !identical(lang, "r")) {
-    paste0("  language = ", encodeString(if (identical(lang, "stata")) "stata" else language, quote = '"'), ",\n")
-  } else {
-    ""
+  args <- c(
+    paste0("  doi = ", encodeString(doi, quote = '"')),
+    paste0("  what = ", encodeString(what, quote = '"'))
+  )
+  if (nzchar(lang) && !identical(lang, "r")) {
+    lang_val <- if (identical(lang, "stata")) "stata" else language
+    args <- c(args, paste0("  language = ", encodeString(lang_val, quote = '"')))
   }
   paste0(
     "replicateEverything::run_replication(\n",
-    "  doi = ", encodeString(doi, quote = '"'), ",\n",
-    "  what = ", encodeString(what, quote = '"'), ",\n",
-    lang_line,
-    ")"
+    paste(args, collapse = ",\n"),
+    "\n)"
   )
 }
 

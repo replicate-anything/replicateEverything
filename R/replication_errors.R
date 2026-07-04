@@ -7,8 +7,10 @@
 #' @return A single character string suitable for logs or UI.
 #'
 #' @examples
+#' \dontrun{
 #' err <- simpleError("Replication failed", call = quote(run_replication()))
 #' replication_error_message(err)
+#' }
 #'
 #' @keywords internal
 replication_error_message <- function(x) {

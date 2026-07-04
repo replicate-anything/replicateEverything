@@ -9,7 +9,7 @@ Description: Provides tools for discovering and running computational replicatio
     empirical research papers. The package connects to a replication registry, retrieves
     replication materials (data, code, and metadata), and reproduces figures and tables
     from published studies in a standardized workflow. Includes a bundled Shiny demo
-    app (live demo at https://shiny2.wzb.eu/ipi/replicate/; also
+    app (live demo at <https://shiny2.wzb.eu/ipi/replicate/>; also
     `run_shiny_app()`, `save_local_shiny()`).
 License: MIT + file LICENSE
 Encoding: UTF-8

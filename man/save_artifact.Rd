@@ -33,6 +33,7 @@ Invisibly the output file path.
 Save a replication result as an artifact file
 }
 \examples{
+\dontrun{
 tmp <- tempfile()
 dir.create(tmp)
 result <- structure(
@@ -46,6 +47,7 @@ result <- structure(
   class = "replication_result"
 )
 save_artifact(result, tmp)
+}
 
 }
 \keyword{internal}

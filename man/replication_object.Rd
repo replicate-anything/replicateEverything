@@ -16,8 +16,10 @@ The underlying replication object.
 Extract a plain object from a replication result envelope
 }
 \examples{
+\dontrun{
 result <- list(id = "fig_1", object = data.frame(x = 1), class = "replication_result")
 replication_object(result)
+}
 
 }
 \keyword{internal}

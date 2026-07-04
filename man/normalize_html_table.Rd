@@ -16,7 +16,9 @@ Character HTML with common entities decoded for browser display.
 Decode HTML entities in kableExtra / modelsummary table output
 }
 \examples{
+\dontrun{
 normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
+}
 
 }
 \keyword{internal}
