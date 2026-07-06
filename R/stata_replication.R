@@ -2,13 +2,14 @@
 #'
 #' @param rep Replication entry from \code{replication.yml}.
 #' @param paper_meta Optional paper-level metadata.
-#' @return \code{"r"} or \code{"stata"}.
+#' @return \code{"r"}, \code{"stata"}, or \code{"python"}.
 #' @keywords internal
 replication_engine <- function(rep, paper_meta = NULL) {
   eng <- rep$engine %||% NULL
   if (!is.null(eng) && length(eng) > 0L) {
     value <- tolower(as.character(eng[[1]]))
-    if (value %in% c("stata", "r")) {
+    if (value %in% c("stata", "r", "python", "py")) {
+      if (value %in% c("py")) return("python")
       return(value)
     }
   }
@@ -17,15 +18,21 @@ replication_engine <- function(rep, paper_meta = NULL) {
     lang <- paper_meta$language %||% NULL
     if (!is.null(lang) && length(lang) > 0L) {
       value <- tolower(as.character(lang[[1]]))
-      if (value %in% c("stata", "r")) {
+      if (value %in% c("stata", "r", "python", "py")) {
+        if (value %in% c("py")) return("python")
         return(value)
       }
     }
   }
 
   code <- as.character(rep$code %||% "")
-  if (length(code) == 1L && grepl("\\.do$", code, ignore.case = TRUE)) {
-    return("stata")
+  if (length(code) == 1L) {
+    if (grepl("\\.do$", code, ignore.case = TRUE)) {
+      return("stata")
+    }
+    if (grepl("\\.(py|ipynb)$", code, ignore.case = TRUE)) {
+      return("python")
+    }
   }
 
   "r"
@@ -371,7 +378,7 @@ stata_log_error <- function(log_path) {
   }
   start <- max(1L, err_idx[[1]] - 3L)
   end <- min(length(lines), err_idx[[1]] + 1L)
-  paste(lines[start:end], collapse = "\n")
+  strip_ansi_escapes(paste(lines[start:end], collapse = "\n"))
 }
 
 #' @keywords internal
@@ -381,9 +388,9 @@ stata_log_tail <- function(log_path, n = 40L) {
   }
   lines <- readLines(log_path, warn = FALSE, encoding = "UTF-8")
   if (length(lines) <= n) {
-    return(paste(lines, collapse = "\n"))
+    return(strip_ansi_escapes(paste(lines, collapse = "\n")))
   }
-  paste(lines[(length(lines) - n + 1L):length(lines)], collapse = "\n")
+  strip_ansi_escapes(paste(lines[(length(lines) - n + 1L):length(lines)], collapse = "\n"))
 }
 
 #' @keywords internal
@@ -406,7 +413,37 @@ describe_directory <- function(path, label = "Directory") {
 }
 
 #' @keywords internal
+stata_dependency_hint <- function(text) {
+  if (is.null(text) || !nzchar(text)) {
+    return("")
+  }
+  hints <- character(0)
+  if (grepl("ftools", text, ignore.case = TRUE)) {
+    hints <- c(hints, "ssc install ftools, replace", "ftools, compile")
+  }
+  if (grepl("reghdfe", text, ignore.case = TRUE)) {
+    hints <- c(hints, "ssc install reghdfe, replace")
+  }
+  if (grepl("eststo|estout", text, ignore.case = TRUE)) {
+    hints <- c(hints, "ssc install estout, replace")
+  }
+  hints <- unique(hints)
+  if (length(hints) == 0L) {
+    return("")
+  }
+  paste0(
+    "Suggested Stata setup:\n",
+    paste0("  ", hints, collapse = "\n"),
+    "\n"
+  )
+}
+
 stata_run_failed_message <- function(run) {
+  log_text <- paste(
+    run$stata_error %||% "",
+    run$log_tail %||% "",
+    sep = "\n"
+  )
   paste0(
     "Stata replication failed.\n",
     "Stata ran: ", if (isTRUE(run$ran)) "yes" else "no", "\n",
@@ -435,7 +472,8 @@ stata_run_failed_message <- function(run) {
       paste0("Log tail:\n", run$log_tail, "\n")
     } else {
       ""
-    }
+    },
+    stata_dependency_hint(log_text)
   )
 }
 
@@ -801,8 +839,12 @@ smcl_to_html <- function(smcl_path) {
 #' @return \code{"stata"} or \code{"r"}.
 #' @keywords internal
 replication_code_language <- function(rep, paper_meta = NULL) {
-  if (identical(replication_engine(rep, paper_meta), "stata")) {
+  eng <- replication_engine(rep, paper_meta)
+  if (identical(eng, "stata")) {
     return("stata")
+  }
+  if (identical(eng, "python")) {
+    return("python")
   }
   "r"
 }

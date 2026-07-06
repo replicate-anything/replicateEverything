@@ -18,6 +18,17 @@ infer_result_format <- function(object, type) {
     return("stata_output")
   }
 
+  if (inherits(object, "python_replication_result")) {
+    path <- object$output_path %||% NULL
+    if (!is.null(path) && grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", path, ignore.case = TRUE)) {
+      return("png")
+    }
+    if (!is.null(object$preview)) {
+      return("data.frame")
+    }
+    return("text")
+  }
+
   if (is.list(object) && !is.data.frame(object)) {
     return("rds")
   }

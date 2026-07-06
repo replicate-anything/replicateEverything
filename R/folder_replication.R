@@ -968,3 +968,26 @@ read_registry_stub_yaml <- function(folder, registry_root = NULL) {
   )
   read_yaml_url(legacy_url)
 }
+
+#' Run an expression with \code{REPLICATE_STUDY_ROOT} set for folder studies
+#'
+#' @param study_root Normalized study repository path, or \code{NULL} to skip.
+#' @param expr Expression to evaluate.
+#' @return Value of \code{expr}.
+#' @keywords internal
+with_replicate_study_root <- function(study_root, expr) {
+  old <- Sys.getenv("REPLICATE_STUDY_ROOT", unset = NA_character_)
+  on.exit({
+    if (is.na(old)) {
+      Sys.unsetenv("REPLICATE_STUDY_ROOT")
+    } else {
+      Sys.setenv(REPLICATE_STUDY_ROOT = old)
+    }
+  }, add = TRUE)
+  if (!is.null(study_root) && length(study_root) == 1L && nzchar(study_root)) {
+    Sys.setenv(
+      REPLICATE_STUDY_ROOT = normalizePath(study_root, winslash = "/", mustWork = FALSE)
+    )
+  }
+  force(expr)
+}

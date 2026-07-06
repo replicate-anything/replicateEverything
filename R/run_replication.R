@@ -117,6 +117,24 @@ run_all_replications <- function(
   message("Replicating: ", meta$paper$title)
   message("")
 
+  prep_steps <- list_prep_steps(doi_key, repo = repo, folder = folder)
+  if (length(prep_steps) > 0L) {
+    message("Pipeline steps:")
+    for (prep in prep_steps) {
+      step_id <- as.character(prep$id)
+      message("  - ", step_id)
+      run_replication_one(
+        doi_key,
+        step_id,
+        install_deps = install_deps,
+        format = FALSE,
+        repo = repo,
+        folder = folder
+      )
+    }
+    message("")
+  }
+
   groups <- list_replication_groups(
     doi_key,
     repo = repo,

@@ -203,15 +203,27 @@ registry_artifact_rel_paths <- function(what, rep = NULL, ctx = NULL) {
 #' @keywords internal
 manifest_artifact_paths <- function(what, ctx) {
   read_manifest <- function(manifest) {
-    if (is.null(manifest) || is.null(manifest$replications)) {
+    if (is.null(manifest)) {
       return(character(0))
     }
-    reps <- manifest$replications
-    entry <- reps[[what]] %||% NULL
-    if (is.null(entry) || is.null(entry$artifact) || !nzchar(entry$artifact)) {
-      return(character(0))
+    paths <- character(0)
+    if (!is.null(manifest$replications)) {
+      entry <- manifest$replications[[what]] %||% NULL
+      if (!is.null(entry)) {
+        if (is.character(entry) && length(entry) == 1L && nzchar(entry)) {
+          paths <- c(paths, entry)
+        } else if (!is.null(entry$artifact) && nzchar(entry$artifact)) {
+          paths <- c(paths, as.character(entry$artifact))
+        }
+      }
     }
-    as.character(entry$artifact)
+    if (!is.null(manifest$artifacts)) {
+      flat <- manifest$artifacts[[what]] %||% NULL
+      if (!is.null(flat) && nzchar(as.character(flat))) {
+        paths <- c(paths, as.character(flat))
+      }
+    }
+    unique(paths[nzchar(paths)])
   }
 
   paths <- character(0)
@@ -458,6 +470,87 @@ render_replication <- function(
 
   rep <- find_replication_entry(meta, what, language = language)
 
+  if (is_prep_entry(rep)) {
+    study_root <- ensure_study_folder_local(meta, ctx)
+    out_path <- prep_output_path(rep, ctx, meta = meta)
+    if (!is.null(out_path) && file.exists(out_path)) {
+      return(structure(
+        list(
+          id = what,
+          entry_id = rep$id,
+          language = replication_engine(rep, meta$paper),
+          type = rep$type %||% "step",
+          object = preview_data_file(out_path),
+          output_path = out_path,
+          status = paste0("Using existing output: ", basename(out_path)),
+          format = "data.frame",
+          has_format = FALSE,
+          meta = rep,
+          source = "prep"
+        ),
+        class = "replication_result"
+      ))
+    }
+    status_msg <- NULL
+    if (is_stata_replication(rep, meta$paper)) {
+      ensure_stata_available(rep)
+      run_stata_replication(rep, ctx, meta = meta)
+      status_msg <- "Stata pipeline step finished."
+    } else if (is_python_replication(rep, meta$paper)) {
+      ensure_python_available(rep)
+      run_python_replication(rep, ctx, meta = meta)
+      status_msg <- "Python pipeline step finished."
+    } else {
+      ensure_replication_dependencies(
+        rep,
+        paper_meta = meta$paper,
+        install_missing = install_deps
+      )
+      with_replicate_study_root(study_root, {
+        env <- new.env(parent = globalenv())
+        source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)
+        fn <- get_analysis_function(env, what, rep$type %||% "step")
+        if (!is.null(rep$data)) {
+          data <- load_replication_data(rep$data, ctx, meta = meta)
+          retry_with_missing_package(fn(data), install_missing = install_deps)
+        } else {
+          retry_with_missing_package(fn(), install_missing = install_deps)
+        }
+      })
+      status_msg <- "Pipeline step finished."
+    }
+    out_path <- prep_output_path(rep, ctx, meta = meta)
+    preview <- if (!is.null(out_path) && file.exists(out_path)) {
+      preview_data_file(out_path)
+    } else {
+      list(id = what, note = "Prep step completed (no preview available).")
+    }
+    return(structure(
+      list(
+        id = what,
+        entry_id = rep$id,
+        language = replication_engine(rep, meta$paper),
+        type = rep$type %||% "step",
+        object = preview,
+        output_path = out_path,
+        status = status_msg,
+        format = "data.frame",
+        has_format = FALSE,
+        meta = rep,
+        source = "prep"
+      ),
+      class = "replication_result"
+    ))
+  }
+
+  ensure_prep_dependencies(
+    meta,
+    rep,
+    ctx,
+    doi = doi,
+    install_deps = install_deps
+  )
+
   if (is_stata_replication(rep, meta$paper)) {
     ensure_stata_available(rep)
     obj <- run_stata_replication(rep, ctx, meta = meta)
@@ -477,6 +570,26 @@ render_replication <- function(
     ))
   }
 
+  if (is_python_replication(rep, meta$paper)) {
+    ensure_python_available(rep)
+    obj <- run_python_replication(rep, ctx, meta = meta)
+    obj_type <- rep$type %||% "figure"
+    return(structure(
+      list(
+        id = what,
+        entry_id = rep$id,
+        language = "python",
+        type = obj_type,
+        object = obj,
+        format = infer_result_format(obj, obj_type),
+        has_format = format_specified(rep),
+        meta = rep,
+        source = "python"
+      ),
+      class = "replication_result"
+    ))
+  }
+
   ensure_replication_dependencies(
     rep,
     paper_meta = meta$paper,
@@ -485,14 +598,16 @@ render_replication <- function(
 
   data <- load_replication_data(rep$data, ctx, meta = meta)
 
+  study_root <- ensure_study_folder_local(meta, ctx)
   env <- new.env(parent = globalenv())
-  source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)
-
-  analysis_fn <- get_analysis_function(env, what, rep$type)
-  result <- retry_with_missing_package(
-    analysis_fn(data),
-    install_missing = install_deps
-  )
+  result <- with_replicate_study_root(study_root, {
+    source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)
+    analysis_fn <- get_analysis_function(env, what, rep$type)
+    retry_with_missing_package(
+      analysis_fn(data),
+      install_missing = install_deps
+    )
+  })
 
   structure(
     list(
@@ -641,6 +756,9 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
     error = function(e) NULL
   )
   rel <- registry_artifact_rel_paths(if (is.null(rep)) what else rep$id, rep, ctx)
+  registry_url <- function(base, rel) {
+    paste0(sub("/$", "", base), "/", sub("^/", "", rel))
+  }
   vapply(rel, function(r) {
     if (!is.null(ctx$local_root)) {
       local <- file.path(ctx$local_root, r)
@@ -648,7 +766,7 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
         return(local)
       }
     }
-    paste0(ctx$base_url, "/", r)
+    registry_url(ctx$base_url, r)
   }, character(1))
 }
 
@@ -788,5 +906,5 @@ save_artifact <- function(
 
 #' @keywords internal
 `%||%` <- function(a, b) {
-  if (is.null(a)) b else a
+  if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
 }

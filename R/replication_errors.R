@@ -13,12 +13,24 @@
 #' }
 #'
 #' @keywords internal
+strip_ansi_escapes <- function(x) {
+  if (!is.character(x) || !length(x)) {
+    return(x)
+  }
+  tryCatch({
+    x <- gsub("\x1b\\[[0-9;]*m", "", x, perl = TRUE)
+    gsub("\x1b\\]8;[^\x1b]*\x1b\\\\", "", x, perl = TRUE)
+  }, error = function(e) {
+    gsub("\x1b", "", x, fixed = TRUE)
+  })
+}
+
 replication_error_message <- function(x) {
   if (inherits(x, "study_package_error")) {
-    return(conditionMessage(x))
+    return(strip_ansi_escapes(conditionMessage(x)))
   }
   if (is.character(x)) {
-    return(paste(x, collapse = "\n"))
+    return(strip_ansi_escapes(paste(x, collapse = "\n")))
   }
   if (!inherits(x, "condition")) {
     return(as.character(x))
@@ -39,7 +51,7 @@ replication_error_message <- function(x) {
     )
   }
 
-  paste(parts, collapse = "\n\n")
+  strip_ansi_escapes(paste(parts, collapse = "\n\n"))
 }
 
 #' Run a replication and return a result or error object

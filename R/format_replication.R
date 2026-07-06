@@ -225,15 +225,18 @@ render_for_display <- function(
 }
 
 #' @keywords internal
-resolve_registry_file <- function(path, ctx, meta = NULL) {
+resolve_registry_file <- function(path, ctx, meta = NULL, local_only = FALSE) {
   if (is.null(ctx$local_root) && !is.null(meta)) {
     ctx$local_root <- ensure_study_folder_local(meta, ctx)
   }
   if (!is.null(ctx$local_root)) {
     local_path <- file.path(ctx$local_root, path)
-    if (file.exists(local_path)) {
+    if (file.exists(local_path) || isTRUE(local_only)) {
       return(local_path)
     }
+  }
+  if (isTRUE(local_only)) {
+    return(NULL)
   }
   download_registry_file(paste0(ctx$base_url, "/", path))
 }

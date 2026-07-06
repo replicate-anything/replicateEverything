@@ -17,7 +17,10 @@ normalize_replication_language <- function(language) {
   if (lang %in% c("stata")) {
     return("stata")
   }
-  stop('language must be "R" or "stata"', call. = FALSE)
+  if (lang %in% c("python", "py")) {
+    return("python")
+  }
+  stop('language must be "R", "stata", or "python"', call. = FALSE)
 }
 
 #' Logical replication id (group) for a yaml entry

@@ -30,6 +30,8 @@ reference:
   contents:
   - run_replication
   - get_code
+  - run_prep_step
+  - list_prep_steps
 - title: Shiny demo
   desc: Browse studies and run replications interactively.
   contents:

@@ -67,6 +67,23 @@ app_welcome_intro <- function() {
   )
 }
 
+find_shiny_monorepo_root <- function() {
+  wd <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  candidates <- unique(c(
+    wd,
+    normalizePath(file.path(wd, ".."), winslash = "/", mustWork = FALSE),
+    normalizePath(file.path(wd, "../.."), winslash = "/", mustWork = FALSE),
+    normalizePath(file.path(wd, "../../.."), winslash = "/", mustWork = FALSE)
+  ))
+  for (root in candidates) {
+    if (dir.exists(file.path(root, "registry", "index.csv")) &&
+        dir.exists(file.path(root, "replicateEverything"))) {
+      return(root)
+    }
+  }
+  NULL
+}
+
 #' Use a sibling registry/ package when developing in the monorepo;
 #' otherwise fall back to GitHub (production default).
 configure_registry_source <- function() {
@@ -75,7 +92,10 @@ configure_registry_source <- function() {
     return(invisible(TRUE))
   }
 
-  sibling_root <- normalizePath(file.path(".."), winslash = "/", mustWork = FALSE)
+  sibling_root <- find_shiny_monorepo_root()
+  if (is.null(sibling_root)) {
+    sibling_root <- normalizePath(file.path(".."), winslash = "/", mustWork = FALSE)
+  }
   sibling_registry <- file.path(sibling_root, "registry")
   sibling_pkg <- file.path(sibling_root, "replicateEverything")
 
@@ -95,7 +115,8 @@ configure_registry_source <- function() {
   if (dir.exists(sibling_pkg) && requireNamespace("devtools", quietly = TRUE)) {
     options(
       replicateEverything.use_sibling_packages = TRUE,
-      replicateEverything.replication_packages_root = sibling_root
+      replicateEverything.replication_packages_root = sibling_root,
+      replicateEverything.study_folders_root = sibling_root
     )
     devtools::load_all(sibling_pkg, quiet = TRUE)
     options(replicate_shiny.use_local_replicate_everything = TRUE)
@@ -103,6 +124,19 @@ configure_registry_source <- function() {
       get("load_sibling_replication_packages", envir = asNamespace("replicateEverything"))(sibling_root)
     }
     message("Replicate Everything: using local package at ", sibling_pkg)
+  } else if (requireNamespace("replicateEverything", quietly = TRUE)) {
+    monorepo <- tryCatch(
+      get("auto_detect_monorepo_root", envir = asNamespace("replicateEverything"))(),
+      error = function(e) NULL
+    )
+    if (!is.null(monorepo)) {
+      options(
+        replicateEverything.study_folders_root = monorepo,
+        replicateEverything.replication_packages_root = monorepo,
+        replicateEverything.use_sibling_packages = TRUE
+      )
+      message("Replicate Everything: using monorepo study folders at ", monorepo)
+    }
   }
 
   invisible(TRUE)
@@ -206,7 +240,54 @@ resolve_study_doi_input <- function(doi_input, from_registry = FALSE) {
 
 ensure_replicate_everything()
 
-`%||%` <- function(a, b) if (is.null(a)) b else a
+doi_resolved_url <- function(doi) {
+  if (is.null(doi) || !length(doi) || !nzchar(trimws(as.character(doi)))) {
+    return(NULL)
+  }
+  normalized <- tryCatch(
+    replicate_fn("normalize_doi", doi),
+    error = function(e) trimws(as.character(doi))
+  )
+  if (!nzchar(normalized)) {
+    return(NULL)
+  }
+  paste0("https://doi.org/", normalized)
+}
+
+doi_link_ui <- function(doi, label = NULL) {
+  url <- doi_resolved_url(doi)
+  if (is.null(url)) {
+    return("")
+  }
+  display <- label
+  if (is.null(display) || !nzchar(display)) {
+    display <- tryCatch(
+      replicate_fn("normalize_doi", doi),
+      error = function(e) as.character(doi)
+    )
+  }
+  tags$a(
+    href = url,
+    target = "_blank",
+    rel = "noopener noreferrer",
+    as.character(display)
+  )
+}
+
+`%||%` <- function(a, b) {
+  if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
+}
+
+coalesce_chr <- function(...) {
+  for (x in list(...)) {
+    if (is.null(x)) next
+    x <- as.character(x)
+    if (length(x) == 1L && !is.na(x) && nzchar(trimws(x))) {
+      return(x)
+    }
+  }
+  NULL
+}
 
 is_figure_replication <- function(type) {
   identical(as.character(type), "figure")
@@ -214,6 +295,48 @@ is_figure_replication <- function(type) {
 
 is_table_replication <- function(type) {
   identical(as.character(type), "table")
+}
+
+is_step_replication <- function(type) {
+  identical(as.character(type), "step")
+}
+
+entry_engine <- function(x) {
+  eng <- tolower(as.character(x$engine %||% ""))
+  if (identical(eng, "stata")) return("stata")
+  if (identical(eng, "python") || identical(eng, "py")) return("python")
+  if (identical(eng, "r")) return("r")
+  id <- as.character(x$id %||% "")
+  code <- as.character(x$code %||% "")
+  if (grepl("_stata$", id, ignore.case = TRUE) || grepl("\\.do$", code, ignore.case = TRUE)) {
+    return("stata")
+  }
+  if (grepl("\\.(py|ipynb)$", code, ignore.case = TRUE)) {
+    return("python")
+  }
+  "r"
+}
+
+prep_step_title <- function(prep_df, step_id) {
+  if (is.null(prep_df) || !nrow(prep_df)) {
+    return(NULL)
+  }
+  match <- prep_df[prep_df$id == step_id, , drop = FALSE]
+  if (nrow(match) == 0) {
+    return(NULL)
+  }
+  match$label_full[[1]] %||% match$label[[1]]
+}
+
+prep_step_language <- function(step_id, prep_steps) {
+  if (is.null(prep_steps) || !length(prep_steps)) {
+    return("r")
+  }
+  match <- prep_steps[vapply(prep_steps, function(x) identical(as.character(x$id), step_id), logical(1))]
+  if (length(match) == 0L) {
+    return("r")
+  }
+  entry_engine(match[[1]])
 }
 
 is_artifact_source <- function(source) {
@@ -246,7 +369,8 @@ replication_row_for_id <- function(replications_df, replication_id) {
     replications_df$group == replication_id |
       replications_df$id == replication_id |
       replications_df$r_id == replication_id |
-      replications_df$stata_id == replication_id,
+      replications_df$stata_id == replication_id |
+      replications_df$python_id == replication_id,
     ,
     drop = FALSE
   ]
@@ -257,13 +381,24 @@ replication_row_for_id <- function(replications_df, replication_id) {
 }
 
 selected_replication_title <- function(state) {
+  prep_title <- prep_step_title(state$prep_df, state$selected_replication)
+  if (!is.null(coalesce_chr(prep_title))) {
+    return(prep_title)
+  }
   row <- replication_row_for_id(state$replications_df, state$selected_replication)
   if (!is.null(row)) {
-    return(row$label_full[[1]] %||% row$label[[1]])
+    title <- coalesce_chr(row$label_full[[1]], row$label[[1]])
+    if (!is.null(title)) {
+      return(title)
+    }
   }
-  replication_stub_label(
-    state$selected_type %||% "table",
-    state$selected_replication %||% ""
+  coalesce_chr(
+    replication_stub_label(
+      state$selected_type %||% "table",
+      state$selected_replication %||% ""
+    ),
+    state$selected_replication,
+    "this item"
   )
 }
 
@@ -481,14 +616,31 @@ engine_icon_stata <- function() {
   )
 }
 
-engine_icons_display <- function(has_r = FALSE, has_stata = FALSE) {
-  if (!has_r && !has_stata) {
+engine_icon_python <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    tags$rect(x = "1.5", y = "4", width = "21", height = "16", rx = "2.5", fill = "#3776AB"),
+    tags$text(
+      x = "12", y = "15.5", `text-anchor` = "middle",
+      fill = "#FFD43B", `font-size` = "8", `font-weight` = "700",
+      `font-family` = "Arial, sans-serif"
+    , "Py")
+  )
+}
+
+engine_icons_display <- function(has_r = FALSE, has_stata = FALSE, has_python = FALSE) {
+  if (!has_r && !has_stata && !has_python) {
     return(tags$span(class = "text-muted small", "—"))
   }
   tags$div(
     class = "engine-icons-cell",
     if (has_r) tags$span(class = "engine-badge", title = "R", engine_icon_r()),
-    if (has_stata) tags$span(class = "engine-badge", title = "Stata", engine_icon_stata())
+    if (has_stata) tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
+    if (has_python) tags$span(class = "engine-badge", title = "Python", engine_icon_python())
   )
 }
 
@@ -537,7 +689,15 @@ contribute_step_title <- function(text, kind = c("folder", "package", "registry"
 }
 
 replication_stub_label <- function(type, id) {
-  prefix <- switch(as.character(type), figure = "Fig", table = "Table", "Item")
+  prefix <- switch(
+    as.character(type),
+    figure = "Fig",
+    table = "Table",
+    step = "Step",
+    prep = "Step",
+    pipeline = "Step",
+    "Item"
+  )
   num <- sub("^[^0-9]*([0-9]+).*", "\\1", as.character(id))
   if (!nzchar(num)) {
     num <- as.character(id)
@@ -546,16 +706,55 @@ replication_stub_label <- function(type, id) {
 }
 
 replication_display_label <- function(x) {
+  yaml_label <- x$label %||% NULL
+  if (!is.null(yaml_label)) {
+    lab <- trimws(as.character(yaml_label[[1]] %||% yaml_label))
+    if (length(lab) == 1L && !is.na(lab) && nzchar(lab)) {
+      desc <- x$description %||% NULL
+      if (!is.null(desc) && length(desc) > 0L) {
+        d <- trimws(as.character(desc[[1]] %||% desc))
+        if (length(d) == 1L && !is.na(d) && nzchar(d)) {
+          return(paste0(lab, ": ", d))
+        }
+      }
+      return(lab)
+    }
+  }
   stub <- replication_stub_label(x$type, x$id)
   desc <- x$description %||% NULL
   if (is.null(desc) || length(desc) == 0) {
     return(stub)
   }
-  desc <- trimws(as.character(desc[[1]]))
-  if (!nzchar(desc)) {
+  desc <- trimws(as.character(desc[[1]] %||% desc))
+  if (length(desc) != 1L || is.na(desc) || !nzchar(desc)) {
     return(stub)
   }
   paste0(stub, ": ", desc)
+}
+
+prep_to_df <- function(prep_steps) {
+  if (is.null(prep_steps) || length(prep_steps) == 0) {
+    return(NULL)
+  }
+  rows <- lapply(prep_steps, function(x) {
+    if (!is.list(x) || is.null(x$id)) {
+      return(NULL)
+    }
+    label <- as.character(x$label %||% x$id)
+    desc <- as.character(x$description %||% "")
+    label_full <- if (nzchar(desc)) paste0(label, ": ", desc) else label
+    data.frame(
+      id = as.character(x$id),
+      label = truncate_label(label_full, 28L),
+      label_full = label_full,
+      engine = entry_engine(x),
+      type = "step",
+      stringsAsFactors = FALSE
+    )
+  })
+  rows <- rows[!vapply(rows, is.null, logical(1))]
+  if (length(rows) == 0) return(NULL)
+  do.call(rbind, rows)
 }
 
 replications_to_df <- function(reps) {
@@ -565,18 +764,15 @@ replications_to_df <- function(reps) {
   }, logical(1))]
   reps <- reps[vapply(reps, function(x) {
     type <- as.character(x$type %||% "")
-    type %in% c("figure", "table")
+    if (!type %in% c("figure", "table")) {
+      return(FALSE)
+    }
+    code <- as.character(x$code %||% "")
+    nzchar(code)
   }, logical(1))]
   if (length(reps) == 0) return(NULL)
 
-  rep_engine <- function(x) {
-    eng <- tolower(as.character(x$engine %||% ""))
-    if (identical(eng, "stata")) return("stata")
-    if (identical(eng, "r")) return("r")
-    if (grepl("_stata$", as.character(x$id), ignore.case = TRUE)) return("stata")
-    if (grepl("\\.do$", as.character(x$code %||% ""), ignore.case = TRUE)) return("stata")
-    "r"
-  }
+  rep_engine <- entry_engine
 
   rep_group <- function(x) {
     grp <- as.character(x$group %||% "")
@@ -589,12 +785,14 @@ replications_to_df <- function(reps) {
     group_reps <- reps[vapply(reps, function(x) identical(rep_group(x), group), logical(1))]
     r_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "r"), logical(1))]
     stata_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "stata"), logical(1))]
-    primary <- if (length(r_reps)) r_reps[[1]] else group_reps[[1]]
+    python_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "python"), logical(1))]
+    primary <- if (length(r_reps)) r_reps[[1]] else if (length(python_reps)) python_reps[[1]] else group_reps[[1]]
     data.frame(
       group = group,
       id = as.character(primary$id),
       r_id = if (length(r_reps)) as.character(r_reps[[1]]$id) else NA_character_,
       stata_id = if (length(stata_reps)) as.character(stata_reps[[1]]$id) else NA_character_,
+      python_id = if (length(python_reps)) as.character(python_reps[[1]]$id) else NA_character_,
       label = truncate_label(replication_display_label(primary), 25L),
       label_full = replication_display_label(primary),
       type = as.character(primary$type),
@@ -605,10 +803,13 @@ replications_to_df <- function(reps) {
   do.call(rbind, rows)
 }
 
-resolve_group_replication_id <- function(row, engine = c("r", "stata")) {
+resolve_group_replication_id <- function(row, engine = c("r", "stata", "python")) {
   engine <- match.arg(engine)
   if (engine == "stata" && !is.na(row$stata_id) && nzchar(row$stata_id)) {
     return(row$stata_id)
+  }
+  if (engine == "python" && !is.na(row$python_id) && nzchar(row$python_id)) {
+    return(row$python_id)
   }
   if (engine == "r" && !is.na(row$r_id) && nzchar(row$r_id)) {
     return(row$r_id)
@@ -683,7 +884,7 @@ format_study_citation <- function(row) {
       tags$em("Working paper")
     },
     if (nzchar(doi)) {
-      tagList(" ", tags$span(class = "text-muted", doi))
+      tagList(" ", doi_link_ui(doi_raw %||% doi))
     }
   )
   list(
@@ -839,11 +1040,54 @@ replication_display_count <- function(reps) {
   }, logical(1)))
 }
 
+read_local_registry_stub <- function(folder) {
+  registry_root <- getOption("replicateEverything.registry_root", NULL)
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    return(NULL)
+  }
+  path <- file.path(registry_root, "papers", paste0(folder, ".yml"))
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+  read_yaml_from_url(path)
+}
+
+read_local_study_replication_index <- function(stub, folder, repo = DEFAULT_REGISTRY_REPO) {
+  doi <- stub$paper$doi %||% NULL
+  if (is.null(doi) || !length(doi)) {
+    return(NULL)
+  }
+  ctx <- tryCatch(
+    replicate_fn(
+      "paper_context",
+      replicate_fn("normalize_doi", doi),
+      repo = repo,
+      folder = folder
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(ctx) || is.null(ctx$local_root) || !dir.exists(ctx$local_root)) {
+    return(NULL)
+  }
+  local_yml <- file.path(ctx$local_root, "replication.yml")
+  if (!file.exists(local_yml)) {
+    return(NULL)
+  }
+  study_meta <- read_yaml_from_url(local_yml)
+  if (is.null(study_meta) || length(study_meta$replications %||% list()) == 0L) {
+    return(NULL)
+  }
+  c(study_meta$prep %||% list(), study_meta$replications %||% list())
+}
+
 fetch_study_replications_index <- function(folder, repo = DEFAULT_REGISTRY_REPO) {
-  registry_url <- registry_stub_yaml_url(folder, DEFAULT_REGISTRY_REPO)
-  stub <- read_yaml_from_url(registry_url)
+  stub <- read_local_registry_stub(folder)
   if (is.null(stub)) {
-    stop("Could not read registry stub at ", registry_url, call. = FALSE)
+    registry_url <- registry_stub_yaml_url(folder, repo %||% DEFAULT_REGISTRY_REPO)
+    stub <- read_yaml_from_url(registry_url)
+  }
+  if (is.null(stub)) {
+    stop("Could not read registry stub for folder ", folder, call. = FALSE)
   }
 
   reps <- stub$replications %||% list()
@@ -864,6 +1108,10 @@ fetch_study_replications_index <- function(folder, repo = DEFAULT_REGISTRY_REPO)
   )
 
   if (is_folder_study) {
+    local_reps <- read_local_study_replication_index(stub, folder, repo = repo)
+    if (!is.null(local_reps) && length(local_reps) > 0L) {
+      return(local_reps)
+    }
     study_repo <- as.character((stub$repo %||% stub$paper$study_repo)[[1]])
     ref <- as.character((stub$paper$study_ref %||% stub$study_ref %||% list("main"))[[1]])
     study_url <- sprintf(
@@ -1072,9 +1320,27 @@ fetch_replications_yaml <- function(folder, repo = DEFAULT_REGISTRY_REPO) {
   fetch_study_replications_index(folder, repo)
 }
 
+split_replication_entries <- function(reps) {
+  if (is.null(reps) || !length(reps)) {
+    return(list(prep = list(), replications = list()))
+  }
+  is_display <- vapply(reps, function(x) {
+    type <- as.character(x$type %||% "")
+    type %in% c("figure", "table")
+  }, logical(1))
+  is_prep <- vapply(reps, function(x) {
+    type <- tolower(as.character(x$type %||% ""))
+    type %in% c("step", "prep", "pipeline")
+  }, logical(1))
+  list(
+    prep = reps[is_prep],
+    replications = reps[is_display]
+  )
+}
+
 get_replications_meta <- function(doi, folder = NULL, repo = NULL) {
   if (is.null(doi) || !nzchar(doi)) {
-    return(list(replications = NULL, error = NULL, diagnostics = NULL))
+    return(list(replications = NULL, prep = list(), error = NULL, diagnostics = NULL))
   }
   doi <- replicate_fn("normalize_doi", doi)
   ctx <- list(
@@ -1128,9 +1394,12 @@ get_replications_meta <- function(doi, folder = NULL, repo = NULL) {
     diagnostics$error_message <- conditionMessage(load_error)
   }
 
+  split <- split_replication_entries(replications %||% list())
+
   list(
-    replications = replications,
-    error = if (replication_display_count(replications) == 0L) load_error else NULL,
+    replications = split$replications,
+    prep = split$prep,
+    error = if (replication_display_count(split$replications) == 0L) load_error else NULL,
     diagnostics = diagnostics
   )
 }
@@ -1186,7 +1455,20 @@ format_replication_error <- function(error) {
     }
     as.character(error)
   }, error = function(e) {
-    paste("Could not format error message:", conditionMessage(e))
+    raw <- if (inherits(error, "condition")) {
+      conditionMessage(error)
+    } else {
+      paste(as.character(error), collapse = "\n")
+    }
+    if (
+      requireNamespace("replicateEverything", quietly = TRUE) &&
+      exists("strip_ansi_escapes", envir = asNamespace("replicateEverything"), inherits = FALSE)
+    ) {
+      raw <- replicate_fn("strip_ansi_escapes", raw)
+    } else {
+      raw <- gsub("\x1b", "", raw, fixed = TRUE)
+    }
+    raw
   })
 }
 
@@ -2403,6 +2685,7 @@ server <- function(input, output, session) {
     selected_type = NULL,
     selected_source = "artifact",
     selected_result = NULL,
+    prep_download_path = NULL,
     progress = NULL,
     replications_load_error = NULL,
     replications_index_diagnostics = NULL,
@@ -2421,12 +2704,22 @@ server <- function(input, output, session) {
   ))
 
   replication_has_engine <- function(reps, engine) {
-    col <- if (engine == "stata") "stata_id" else "r_id"
+    col <- switch(
+      engine,
+      stata = "stata_id",
+      python = "python_id",
+      "r_id"
+    )
     any(!is.na(reps[[col]]) & nzchar(reps[[col]]))
   }
 
   row_has_engine <- function(row, engine) {
-    col <- if (engine == "stata") "stata_id" else "r_id"
+    col <- switch(
+      engine,
+      stata = "stata_id",
+      python = "python_id",
+      "r_id"
+    )
     val <- row[[col]][[1]]
     !is.na(val) && nzchar(val)
   }
@@ -2434,15 +2727,17 @@ server <- function(input, output, session) {
   default_row_engine <- function(row) {
     if (row_has_engine(row, "r")) return("r")
     if (row_has_engine(row, "stata")) return("stata")
+    if (row_has_engine(row, "python")) return("python")
     "r"
   }
 
   group_engine <- function(group, row = NULL) {
     eng <- state$group_engines[[group]]
-    if (identical(eng, "stata") || identical(eng, "r")) {
+    if (identical(eng, "stata") || identical(eng, "r") || identical(eng, "python")) {
       if (!is.null(row)) {
         if (identical(eng, "stata") && !row_has_engine(row, "stata")) return(default_row_engine(row))
         if (identical(eng, "r") && !row_has_engine(row, "r")) return(default_row_engine(row))
+        if (identical(eng, "python") && !row_has_engine(row, "python")) return(default_row_engine(row))
       }
       return(eng)
     }
@@ -2453,6 +2748,9 @@ server <- function(input, output, session) {
   }
 
   selected_replication_language <- function() {
+    if (is_step_replication(state$selected_type)) {
+      return(prep_step_language(state$selected_replication, state$prep_steps))
+    }
     row <- replication_row_for_id(state$replications_df, state$selected_replication)
     if (is.null(row)) {
       return("r")
@@ -2515,6 +2813,8 @@ server <- function(input, output, session) {
       )
     })
     state$replications <- meta$replications
+    state$prep_steps <- meta$prep %||% list()
+    state$prep_df <- prep_to_df(state$prep_steps)
     state$replications_load_error <- meta$error
     if (
       is.null(state$replications_load_error) &&
@@ -2628,6 +2928,11 @@ server <- function(input, output, session) {
     } else {
       tags$em("Working paper")
     }
+    doi_value <- if (nrow(row) > 0) {
+      row$doi[[1]]
+    } else {
+      paper$doi %||% state$doi
+    }
     tagList(
       card(
         card_header(if (!is.null(state$local_study_meta) && nrow(row) == 0) {
@@ -2637,7 +2942,7 @@ server <- function(input, output, session) {
         }),
         h4(paper$title %||% state$doi),
         p(
-          strong("DOI: "), state$doi, br(),
+          strong("DOI: "), doi_link_ui(doi_value), br(),
           strong("Authors: "), format_authors_summary(paper$authors %||% ""), br(),
           if (!is.null(paper$year) && nzchar(as.character(paper$year))) {
             tagList(strong("Year: "), paper$year, br())
@@ -2705,7 +3010,10 @@ server <- function(input, output, session) {
     }
     engine_picks <- tagList(
       if (row_has_engine(row, "r")) engine_pick_btn("r"),
-      if (row_has_engine(row, "stata")) engine_pick_btn("stata")
+      if (row_has_engine(row, "stata")) engine_pick_btn("stata"),
+      if (row_has_engine(row, "python") && !row_has_engine(row, "r") && !row_has_engine(row, "stata")) {
+        tags$span(class = "engine-badge", title = "Python", engine_icon_python())
+      }
     )
     tags$div(
       class = row_class,
@@ -2778,6 +3086,47 @@ server <- function(input, output, session) {
     active <- state$selected_replication
 
     tagList(
+      if (!is.null(state$prep_df) && nrow(state$prep_df) > 0) {
+        tagList(
+          tags$h6(class = "text-muted mb-2", "Pipeline steps"),
+          lapply(seq_len(nrow(state$prep_df)), function(i) {
+            row <- state$prep_df[i, , drop = FALSE]
+            step_id <- row$id[[1]]
+            step_engine <- row$engine[[1]] %||% "r"
+            safe_id <- gsub("[^a-zA-Z0-9]", "_", step_id)
+            engine_badge <- switch(
+              step_engine,
+              stata = tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
+              python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
+              tags$span(class = "engine-badge", title = "R", engine_icon_r())
+            )
+            tags$div(
+              class = paste(
+                "replication-row d-flex align-items-center rounded",
+                if (identical(state$selected_replication, step_id)) {
+                  "bg-light border border-primary"
+                } else {
+                  ""
+                }
+              ),
+              engine_badge,
+              tags$span(row$label[[1]], class = "replication-label", title = row$label_full[[1]]),
+              tags$div(
+                class = "replication-actions",
+                actionButton(
+                  paste0("prep_run_", safe_id),
+                  "Run",
+                  class = "btn-outline-primary btn-sm",
+                  onclick = sprintf(
+                    "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
+                    step_id
+                  )
+                )
+              )
+            )
+          })
+        )
+      },
       if (nrow(figs) > 0) {
         tagList(
           tags$h6(class = "text-muted mb-2", "Figures"),
@@ -2830,12 +3179,29 @@ server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   observeEvent(input$replication_action, {
-    req(input$replication_action, state$replications_df)
+    req(input$replication_action, state$doi)
     parts <- strsplit(input$replication_action, ":", fixed = TRUE)[[1]]
     req(length(parts) == 2)
     action <- parts[[1]]
     group_or_id <- parts[[2]]
 
+    if (!is.null(state$prep_df) && nrow(state$prep_df) > 0 &&
+        group_or_id %in% state$prep_df$id) {
+      state$selected_replication <- group_or_id
+      state$selected_type <- "step"
+      state$selected_result <- NULL
+      if (action == "replicate") {
+        run_live_replication(
+          state$doi,
+          group_or_id,
+          prep_step_language(group_or_id, state$prep_steps)
+        )
+      }
+      updateTabsetPanel(session, "result_tabs", selected = "Output")
+      return()
+    }
+
+    req(state$replications_df)
     row <- resolve_replication_row(group_or_id)
 
     state$selected_replication <- row$group[[1]]
@@ -2847,7 +3213,7 @@ server <- function(input, output, session) {
       load_selected_artifact(fallback_live = FALSE)
     } else if (action == "replicate") {
       tryCatch(
-        run_live_replication(state$doi, state$selected_replication, selected_replication_language()),
+        run_live_replication(state$doi, resolve_group_replication_id(row, selected_replication_language()), selected_replication_language()),
         error = function(e) {
           state$selected_result <- e
           state$selected_source <- "live"
@@ -2963,7 +3329,12 @@ server <- function(input, output, session) {
     req(state$selected_replication)
     caption <- selected_replication_title(state)
     source_line <- replication_source_label(state$selected_source, caption)
-    if (is_figure_replication(state$selected_type)) {
+    if (is_step_replication(state$selected_type)) {
+      tagList(
+        p(class = "text-muted", source_line),
+        uiOutput("selected_prep_ui")
+      )
+    } else if (is_figure_replication(state$selected_type)) {
       tagList(
         p(class = "text-muted", source_line),
         uiOutput("selected_figure_ui")
@@ -2974,9 +3345,90 @@ server <- function(input, output, session) {
         uiOutput("selected_table_ui")
       )
     } else {
-      helpText("Select a table or figure to view output.")
+      helpText("Select a pipeline step, table, or figure to view output.")
     }
   })
+
+  output$selected_prep_ui <- renderUI({
+    tryCatch({
+      if (inherits(state$selected_result, "error")) {
+        return(replication_error_ui(
+          state$selected_result,
+          doi = state$doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo
+        ))
+      }
+      if (is.null(state$selected_result)) {
+        return(helpText("Click Run to execute this pipeline step."))
+      }
+      raw <- state$selected_result
+      status <- NULL
+      output_path <- NULL
+      obj <- raw
+      if (is.list(raw) && !is.null(raw$object)) {
+        status <- raw$status %||% NULL
+        output_path <- raw$output_path %||% NULL
+        obj <- replicate_fn("replication_object", raw)
+      }
+      state$prep_download_path <- output_path
+      tagList(
+        if (!is.null(status) && nzchar(status)) {
+          tags$div(class = "alert alert-success mb-2", status)
+        },
+        if (!is.null(output_path) && nzchar(output_path) && file.exists(output_path)) {
+          tagList(
+            tags$p(class = "mb-1", tags$strong("Output file: "), tags$code(basename(output_path))),
+            downloadButton("prep_download", "Download output", class = "btn-sm btn-outline-secondary mb-2")
+          )
+        },
+        if (is.data.frame(obj)) {
+          tagList(
+            tags$p(class = "text-muted mb-1", "Preview (first rows):"),
+            tableOutput("selected_prep_table")
+          )
+        } else if (is.list(obj) && !is.null(obj$note)) {
+          tags$p(class = "mb-0", obj$note)
+        } else {
+          tags$pre(class = "mb-0", utils::capture.output(print(obj)))
+        }
+      )
+    }, error = function(e) {
+      replication_error_ui(
+        e,
+        doi = state$doi,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      )
+    })
+  })
+
+  output$selected_prep_table <- renderTable({
+    req(state$selected_result)
+    raw <- state$selected_result
+    obj <- if (is.list(raw) && !is.null(raw$object)) {
+      replicate_fn("replication_object", raw)
+    } else {
+      raw
+    }
+    req(is.data.frame(obj))
+    obj
+  }, striped = TRUE, bordered = TRUE, spacing = "s")
+
+  output$prep_download <- downloadHandler(
+    filename = function() {
+      path <- state$prep_download_path
+      if (is.null(path) || !nzchar(path)) {
+        return("prep_output.dat")
+      }
+      basename(path)
+    },
+    content = function(file) {
+      path <- state$prep_download_path
+      req(!is.null(path), file.exists(path))
+      file.copy(path, file, overwrite = TRUE)
+    }
+  )
 
   output$selected_figure_ui <- renderUI({
     tryCatch({
