@@ -2786,6 +2786,29 @@ server <- function(input, output, session) {
     group_engine(row$group[[1]], row)
   }
 
+  selected_replication_id_and_language <- function() {
+    if (is_step_replication(state$selected_type)) {
+      lang <- selected_replication_language()
+      return(list(id = state$selected_replication, language = lang))
+    }
+    row <- replication_row_for_id(state$replications_df, state$selected_replication)
+    if (is.null(row)) {
+      return(list(id = state$selected_replication, language = "r"))
+    }
+    lang <- selected_replication_language()
+    resolved_id <- resolve_group_replication_id(row, lang)
+    resolved_lang <- if (!is.na(row$r_id) && identical(resolved_id, row$r_id)) {
+      "r"
+    } else if (!is.na(row$stata_id) && identical(resolved_id, row$stata_id)) {
+      "stata"
+    } else if (!is.na(row$python_id) && identical(resolved_id, row$python_id)) {
+      "python"
+    } else {
+      lang
+    }
+    list(id = resolved_id, language = resolved_lang)
+  }
+
   load_study <- function(doi_input, from_registry = FALSE) {
     doi_input <- trimws(as.character(doi_input %||% ""))
     if (!isTRUE(from_registry) && !nzchar(doi_input)) {
@@ -3114,9 +3137,35 @@ server <- function(input, output, session) {
     active <- state$selected_replication
 
     tagList(
+      if (nrow(tabs) > 0) {
+        tagList(
+          tags$h6(class = "text-muted mb-2", "Tables"),
+          lapply(seq_len(nrow(tabs)), function(i) {
+            row <- tabs[i, , drop = FALSE]
+            replication_row(
+              row,
+              active_id = active,
+              engine = group_engine(row$group[[1]], row)
+            )
+          })
+        )
+      },
+      if (nrow(figs) > 0) {
+        tagList(
+          tags$h6(class = "text-muted mb-2 mt-2", "Figures"),
+          lapply(seq_len(nrow(figs)), function(i) {
+            row <- figs[i, , drop = FALSE]
+            replication_row(
+              row,
+              active_id = active,
+              engine = group_engine(row$group[[1]], row)
+            )
+          })
+        )
+      },
       if (!is.null(state$prep_df) && nrow(state$prep_df) > 0) {
         tagList(
-          tags$h6(class = "text-muted mb-2", "Pipeline steps"),
+          tags$h6(class = "text-muted mb-2 mt-2", "Pipeline steps"),
           lapply(seq_len(nrow(state$prep_df)), function(i) {
             row <- state$prep_df[i, , drop = FALSE]
             step_id <- row$id[[1]]
@@ -3151,32 +3200,6 @@ server <- function(input, output, session) {
                   )
                 )
               )
-            )
-          })
-        )
-      },
-      if (nrow(figs) > 0) {
-        tagList(
-          tags$h6(class = "text-muted mb-2", "Figures"),
-          lapply(seq_len(nrow(figs)), function(i) {
-            row <- figs[i, , drop = FALSE]
-            replication_row(
-              row,
-              active_id = active,
-              engine = group_engine(row$group[[1]], row)
-            )
-          })
-        )
-      },
-      if (nrow(tabs) > 0) {
-        tagList(
-          tags$h6(class = "text-muted mb-2 mt-2", "Tables"),
-          lapply(seq_len(nrow(tabs)), function(i) {
-            row <- tabs[i, , drop = FALSE]
-            replication_row(
-              row,
-              active_id = active,
-              engine = group_engine(row$group[[1]], row)
             )
           })
         )
@@ -3241,7 +3264,10 @@ server <- function(input, output, session) {
       load_selected_artifact(fallback_live = FALSE)
     } else if (action == "replicate") {
       tryCatch(
-        run_live_replication(state$doi, resolve_group_replication_id(row, selected_replication_language()), selected_replication_language()),
+        {
+          target <- selected_replication_id_and_language()
+          run_live_replication(state$doi, target$id, target$language)
+        },
         error = function(e) {
           state$selected_result <- e
           state$selected_source <- "live"
@@ -3256,11 +3282,12 @@ server <- function(input, output, session) {
     req(state$doi, state$selected_replication)
     withProgress(message = "Loading precomputed result...", value = 0.4, {
       state$progress <- "Loading artifact"
+      target <- selected_replication_id_and_language()
       loaded <- replicate_fn(
         "load_replication_for_display",
         state$doi,
-        state$selected_replication,
-        language = selected_replication_language(),
+        target$id,
+        language = target$language,
         prefer = "artifact",
         fallback_live = fallback_live,
         install_deps = TRUE,
@@ -3569,14 +3596,15 @@ server <- function(input, output, session) {
 
   output$replication_code_ui <- renderUI({
     req(state$selected_replication, state$doi)
-    lang <- selected_replication_language()
-    simple_code <- replication_run_snippet(state$doi, state$selected_replication, lang)
+    target <- selected_replication_id_and_language()
+    lang <- target$language
+    simple_code <- replication_run_snippet(state$doi, target$id, lang)
     full_code <- tryCatch(
       paste(
         replicate_fn(
           "get_code",
           state$doi,
-          state$selected_replication,
+          target$id,
           language = lang,
           folder = state$registry_folder,
           repo = state$registry_repo
@@ -3589,7 +3617,7 @@ server <- function(input, output, session) {
       full_code <- tryCatch(
         paste(
           fetch_replication_code_shiny(
-            state$selected_replication,
+            target$id,
             state$registry_folder,
             state$registry_repo
           ),
@@ -3609,7 +3637,7 @@ server <- function(input, output, session) {
       replicate_fn(
         "replication_code_language_for",
         state$doi,
-        state$selected_replication,
+        target$id,
         language = lang,
         folder = state$registry_folder,
         repo = state$registry_repo

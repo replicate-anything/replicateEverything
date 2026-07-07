@@ -5,6 +5,9 @@ audit_replication_engine <- function(rep) {
   if (identical(eng, "stata")) {
     return("stata")
   }
+  if (identical(eng, "python") || identical(eng, "py")) {
+    return("python")
+  }
   if (identical(eng, "r")) {
     return("r")
   }
@@ -15,6 +18,9 @@ audit_replication_engine <- function(rep) {
   code <- as.character(rep$code %||% "")
   if (length(code) == 1L && grepl("\\.do$", code, ignore.case = TRUE)) {
     return("stata")
+  }
+  if (length(code) == 1L && grepl("\\.(py|ipynb)$", code, ignore.case = TRUE)) {
+    return("python")
   }
   "r"
 }
@@ -52,7 +58,7 @@ audit_jobs_from_replications <- function(reps) {
   }, logical(1))]
   reps <- reps[vapply(reps, function(x) {
     type <- as.character(x$type %||% "")
-    type %in% c("figure", "table")
+    type %in% c("figure", "table", "step", "prep", "pipeline")
   }, logical(1))]
   if (!length(reps)) {
     return(NULL)
@@ -64,7 +70,7 @@ audit_jobs_from_replications <- function(reps) {
       identical(audit_replication_group(x), group)
     }, logical(1))]
     jobs <- list()
-    for (eng in c("r", "stata")) {
+    for (eng in c("r", "stata", "python")) {
       eng_reps <- group_reps[vapply(group_reps, function(x) {
         identical(audit_replication_engine(x), eng)
       }, logical(1))]
@@ -118,6 +124,7 @@ audit_error_snippet <- function(x, max_chars = 240L) {
 audit_run_one <- function(
   doi,
   what,
+  engine = NULL,
   patience = 20,
   install_deps = FALSE,
   repo = NULL,
@@ -136,6 +143,7 @@ audit_run_one <- function(
       result <- render_replication(
         doi,
         what,
+        language = engine,
         install_deps = install_deps,
         repo = repo,
         folder = folder
@@ -262,13 +270,13 @@ audit_everything <- function(
         doi = doi,
         title = title,
         object = NA_character_,
-        object_label = "(no tables or figures)",
+        object_label = "(no tables, figures, or steps)",
         type = NA_character_,
         engine = NA_character_,
         success = FALSE,
         seconds = NA_real_,
         timed_out = FALSE,
-        error_snippet = "No table or figure replications listed for this study.",
+        error_snippet = "No table, figure, or pipeline step replications listed for this study.",
         stringsAsFactors = FALSE
       )
       next
@@ -288,6 +296,7 @@ audit_everything <- function(
       run <- audit_run_one(
         doi,
         what,
+        engine = engine,
         patience = patience,
         install_deps = install_deps,
         repo = repo,

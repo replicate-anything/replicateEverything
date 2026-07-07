@@ -7,6 +7,7 @@
 audit_run_one(
   doi,
   what,
+  engine = NULL,
   patience = 20,
   install_deps = FALSE,
   repo = NULL,

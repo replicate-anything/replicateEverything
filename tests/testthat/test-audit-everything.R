@@ -8,12 +8,13 @@ test_that("audit_jobs_from_replications lists each engine", {
       engine = "stata",
       code = "code/tab_1.do"
     ),
-    list(id = "fig_1", type = "figure", label = "Figure 1", code = "code/fig_1.R")
+    list(id = "fig_1", type = "figure", label = "Figure 1", code = "code/fig_1.R"),
+    list(id = "prep_data", type = "step", label = "Prepare data", engine = "python", code = "code/steps/prep.ipynb")
   )
   jobs <- audit_jobs_from_replications(reps)
-  expect_equal(nrow(jobs), 3L)
-  expect_setequal(jobs$what, c("tab_1", "tab_1_stata", "fig_1"))
-  expect_setequal(jobs$engine, c("r", "stata", "r"))
+  expect_equal(nrow(jobs), 4L)
+  expect_setequal(jobs$what, c("tab_1", "tab_1_stata", "fig_1", "prep_data"))
+  expect_setequal(jobs$engine, c("r", "stata", "r", "python"))
 })
 
 test_that("audit_error_snippet truncates long messages", {
