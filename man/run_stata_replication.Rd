@@ -4,7 +4,7 @@
 \alias{run_stata_replication}
 \title{Run a Stata-backed replication entry}
 \usage{
-run_stata_replication(rep, ctx, meta = NULL)
+run_stata_replication(rep, ctx, meta = NULL, install_deps = FALSE)
 }
 \arguments{
 \item{rep}{Replication entry.}
@@ -12,6 +12,9 @@ run_stata_replication(rep, ctx, meta = NULL)
 \item{ctx}{Paper context.}
 
 \item{meta}{Optional parsed replication metadata for study resolution.}
+
+\item{install_deps}{When \code{TRUE}, run study Stata dependency install scripts
+before the replication and retry once after package-missing failures.}
 }
 \value{
 A \code{stata_replication_result} list.

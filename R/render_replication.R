@@ -520,7 +520,7 @@ render_replication <- function(
     status_msg <- NULL
     if (is_stata_replication(rep, meta$paper)) {
       ensure_stata_available(rep)
-      run_stata_replication(rep, ctx, meta = meta)
+      run_stata_replication(rep, ctx, meta = meta, install_deps = install_deps)
       status_msg <- "Stata pipeline step finished."
     } else if (is_python_replication(rep, meta$paper)) {
       ensure_python_available(rep)
@@ -579,7 +579,7 @@ render_replication <- function(
 
   if (is_stata_replication(rep, meta$paper)) {
     ensure_stata_available(rep)
-    obj <- run_stata_replication(rep, ctx, meta = meta)
+    obj <- run_stata_replication(rep, ctx, meta = meta, install_deps = install_deps)
     return(structure(
       list(
         id = what,

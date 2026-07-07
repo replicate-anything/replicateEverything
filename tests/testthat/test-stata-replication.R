@@ -36,6 +36,21 @@ test_that("get_replication_meta finds local Stata study without options", {
   testthat::expect_equal(tab1[[1]]$engine[[1]], "stata")
 })
 
+test_that("stata_deps_install_scripts finds default helper do-file", {
+  study <- file.path(
+    testthat::test_path(".."), "..", "..",
+    "rep-10.1017-s0003055426101749"
+  )
+  skip_if_not(dir.exists(study), "Jiang study repo missing")
+  scripts <- replicateEverything:::stata_deps_install_scripts(study)
+  expect_true(any(grepl("install_stata_deps\\.do$", scripts)))
+})
+
+test_that("stata_log_suggests_missing_dependency detects reghdfe errors", {
+  text <- "install it:\n - install from SSC\nr(9);"
+  expect_true(replicateEverything:::stata_log_suggests_missing_dependency(text))
+})
+
 test_that("replication_engine detects Stata entries", {
   rep <- list(
     id = "tab_1",
