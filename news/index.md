@@ -17,6 +17,11 @@
   appears under **Run replications** in the pkgdown reference index.
 - **Meet the functions** vignette reorganized into consumer and
   contributor sections.
+- Bundled AI skills under `inst/ai/skills/` with
+  [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md),
+  [`ai_skill_path()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill_path.md),
+  and
+  [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md).
 
 ## replicateEverything 0.4.0
 

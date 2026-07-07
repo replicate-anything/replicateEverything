@@ -7,7 +7,3 @@ Required exported API for package-backed replication studies
 ``` r
 PACKAGE_REPLICATION_API
 ```
-
-## Format
-
-An object of class `character` of length 7.

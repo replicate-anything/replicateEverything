@@ -39,6 +39,9 @@ demo](https://shiny2.wzb.eu/ipi/replicate/).
   ([`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md),
   [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
   [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md))
+- **Bundled AI skills** — markdown workflow guides for assistants
+  ([`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md),
+  [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md))
 
 ## Project status
 
@@ -337,11 +340,32 @@ Linked study packages should export:
 | Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
 | Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
 | Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
+| List bundled AI skills | [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md), [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md) |
 | Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |
 | Shiny demo | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN
 dependencies automatically.
+
+### AI skills
+
+This package ships AI-readable workflow guides under `inst/ai/skills/`.
+Use them with ChatGPT, Claude, Cursor, Copilot, or other assistants.
+
+``` r
+
+ai_skills()
+# [1] "APSR_to_replicateEverything"
+
+cat(ai_skill("APSR_to_replicateEverything"))
+```
+
+Installed path:
+
+``` r
+
+system.file("ai", "skills", "APSR_to_replicateEverything.md", package = "replicateEverything")
+```
 
 ### Local registry development
 
