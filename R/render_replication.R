@@ -853,7 +853,7 @@ save_artifact <- function(
 
   rep <- result$meta %||% list()
   object <- replication_object(result)
-  format_type <- result$format
+  format_type <- infer_result_format(object, result$type %||% rep$type %||% "unknown")
 
   if (format_specified(rep)) {
     if (is.null(doi) || !nzchar(doi)) {
@@ -867,7 +867,7 @@ save_artifact <- function(
       repo = repo,
       folder = folder
     )
-    format_type <- infer_result_format(object, result$type)
+    format_type <- infer_result_format(object, result$type %||% rep$type %||% "unknown")
   }
 
   ext <- switch(
@@ -897,6 +897,13 @@ save_artifact <- function(
     html <- normalize_html_table(html)
     writeLines(html, out_path, useBytes = TRUE)
   } else if (format_type == "data.frame") {
+    if (!is.data.frame(object) && !is.matrix(object)) {
+      stop(
+        "Cannot save ", result$id, " as a table artifact: expected a data frame, got ",
+        paste(class(object), collapse = "/"),
+        call. = FALSE
+      )
+    }
     html <- paste0(
       "<table class=\"table table-striped table-bordered\">",
       .df_to_html(object),
@@ -907,7 +914,11 @@ save_artifact <- function(
     src <- object$output_path %||% object$smcl_path
     file.copy(src, out_path, overwrite = TRUE)
   } else if (format_type == "png" && is.character(object) && length(object) == 1L && file.exists(object)) {
-    file.copy(object, out_path, overwrite = TRUE)
+    src <- normalizePath(object, winslash = "/", mustWork = FALSE)
+    dest <- normalizePath(out_path, winslash = "/", mustWork = FALSE)
+    if (!identical(src, dest)) {
+      file.copy(object, out_path, overwrite = TRUE)
+    }
   } else if (format_type == "plot" && !is.null(object)) {
     png(out_path, width = 800, height = 600)
     on.exit(dev.off(), add = TRUE)

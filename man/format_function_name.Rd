@@ -4,10 +4,12 @@
 \alias{format_function_name}
 \title{Resolve the format function name for a replication entry}
 \usage{
-format_function_name(rep)
+format_function_name(rep, paper_meta = NULL)
 }
 \arguments{
 \item{rep}{A single replication entry from \code{replication.yml}.}
+
+\item{paper_meta}{Optional paper-level metadata (used for Stata format names).}
 }
 \description{
 Resolve the format function name for a replication entry

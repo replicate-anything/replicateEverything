@@ -8,7 +8,8 @@ build_study_artifacts(
   location = ".",
   install_deps = TRUE,
   ids = NULL,
-  registry_root = NULL
+  registry_root = NULL,
+  force_prep = FALSE
 )
 }
 \arguments{
@@ -21,14 +22,17 @@ the working directory contains \code{replication.yml}.}
 \code{NULL}, builds every figure and table in \code{replication.yml}.}
 
 \item{registry_root}{Optional registry checkout path for monorepo dev.}
+
+\item{force_prep}{Logical. Re-run prep steps even when outputs already exist.}
 }
 \value{
 Invisibly, a list with \code{artifact_dir}, \code{manifest}, and per-id status.
 }
 \description{
-Runs every registered table and figure, saves formatted outputs under
-\verb{artifacts/}, and writes \code{artifacts/manifest.json}. Intended to be run from
-the study repository root (or pass the path explicitly).
+Runs pipeline prep steps from \code{replication.yml} when present, then every
+registered table and figure, saves formatted outputs under \verb{artifacts/}, and
+writes \code{artifacts/manifest.json}. Intended to be run from the study
+repository root (or pass the path explicitly).
 }
 \details{
 Registry papers use \code{registry/scripts/build_artifacts.R} instead; folder-backed

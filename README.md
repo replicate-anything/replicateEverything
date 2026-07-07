@@ -20,6 +20,7 @@
 - **Display pipeline** — optional `format_*` steps turn analysis objects into HTML tables and ggplot figures
 - **Shiny demo** — [live app](https://shiny2.wzb.eu/ipi/replicate/); `run_shiny_app()` locally; `save_local_shiny()` to deploy on Shiny Server
 - **Contributor tooling** — validate and register folder- or package-backed studies (`prepare_folder_paper()`, `check_folder_replication()`, `check_package_replication()`)
+- **Bundled AI skills** — markdown workflow guides for assistants (`ai_skills()`, `ai_skill()`)
 
 ## Project status
 
@@ -281,10 +282,28 @@ and `build_report()`.
 | Sync folder study to registry | `sync_folder_paper()` |
 | Validate folder study | `check_folder_replication()` |
 | Validate package study | `check_package_replication()` |
+| List bundled AI skills | `ai_skills()`, `ai_skill()` |
 | Registry health check | `audit_everything()` |
 | Shiny demo | `run_shiny_app()`, `save_local_shiny()` |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN dependencies automatically.
+
+### AI skills
+
+This package ships AI-readable workflow guides under `inst/ai/skills/`. Use them with ChatGPT, Claude, Cursor, Copilot, or other assistants.
+
+```r
+ai_skills()
+# [1] "APSR_to_replicateEverything"
+
+cat(ai_skill("APSR_to_replicateEverything"))
+```
+
+Installed path:
+
+```r
+system.file("ai", "skills", "APSR_to_replicateEverything.md", package = "replicateEverything")
+```
 
 ### Local registry development
 

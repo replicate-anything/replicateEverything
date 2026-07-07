@@ -18,16 +18,111 @@ default_format_name <- function(rep_id) {
 #' Resolve the format function name for a replication entry
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
+#' @param paper_meta Optional paper-level metadata (used for Stata format names).
 #' @keywords internal
-format_function_name <- function(rep) {
+format_function_name <- function(rep, paper_meta = NULL) {
   if (!format_specified(rep)) {
     return(NULL)
   }
   fmt <- as.character(rep$format[[1]])
   if (grepl("[/\\\\]", fmt) || grepl("\\.R$", fmt, ignore.case = TRUE)) {
-    return(default_format_name(rep$id))
+    base <- default_format_name(rep$id)
+    if (is_stata_replication(rep, paper_meta)) {
+      return(paste0(base, "_stata"))
+    }
+    return(base)
   }
   fmt
+}
+
+#' Candidate format function names for a replication entry
+#'
+#' @param rep A single replication entry from \code{replication.yml}.
+#' @param paper_meta Optional paper-level metadata.
+#' @keywords internal
+format_function_candidates <- function(rep, paper_meta = NULL) {
+  candidates <- character(0)
+  primary <- format_function_name(rep, paper_meta)
+  if (!is.null(primary) && nzchar(primary)) {
+    candidates <- c(candidates, primary)
+  }
+  base <- default_format_name(rep$id)
+  candidates <- c(candidates, paste0(base, "_stata"), base)
+  unique(candidates[nzchar(candidates)])
+}
+
+#' Escape text for safe inclusion in HTML
+#' @keywords internal
+html_escape_text <- function(text) {
+  if (requireNamespace("htmltools", quietly = TRUE)) {
+    return(htmltools::htmlEscape(text))
+  }
+  text <- gsub("&", "&amp;", text, fixed = TRUE)
+  text <- gsub("<", "&lt;", text, fixed = TRUE)
+  text <- gsub(">", "&gt;", text, fixed = TRUE)
+  text
+}
+
+#' Default display formatting when no \code{format_*} function is defined
+#'
+#' @param object Analysis or Stata output object.
+#' @param rep Replication entry.
+#' @param paper_meta Optional paper-level metadata.
+#' @keywords internal
+default_format_object <- function(object, rep, paper_meta = NULL) {
+  if (inherits(object, "ggplot")) {
+    return(object)
+  }
+  if (is.null(object)) {
+    return(NULL)
+  }
+  if (is.character(object) && length(object) == 1L &&
+      grepl("<table|<html|<!DOCTYPE|<pre", object, ignore.case = TRUE)) {
+    return(object)
+  }
+  if (inherits(object, "prep_output_preview")) {
+    path <- object$path %||% NULL
+    if (!is.null(path) && nzchar(path) && file.exists(path)) {
+      if (grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", path, ignore.case = TRUE)) {
+        return(path)
+      }
+      if (identical(tolower(tools::file_ext(path)), "html")) {
+        return(paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n"))
+      }
+    }
+    return(object)
+  }
+  if (is_stata_replication(rep, paper_meta)) {
+    path <- stata_result_path(object)
+    if (!is.null(path) && nzchar(path) && file.exists(path)) {
+      object <- normalize_stata_result_object(object)
+      ext <- stata_output_extension(path)
+      if (identical(ext, "smcl")) {
+        return(smcl_to_html(path))
+      }
+      lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
+      text <- html_escape_text(paste(lines, collapse = "\n"))
+      return(paste0('<pre class="stata-output replication-table">', text, "</pre>"))
+    }
+  }
+  object
+}
+
+#' Resolve a format function, falling back to a no-op default
+#'
+#' @param env Environment sourced from replication scripts.
+#' @param rep Replication entry.
+#' @param paper_meta Optional paper-level metadata.
+#' @keywords internal
+resolve_format_function <- function(env, rep, paper_meta = NULL) {
+  for (fn_name in format_function_candidates(rep, paper_meta)) {
+    if (exists(fn_name, envir = env, inherits = FALSE)) {
+      return(get(fn_name, envir = env, inherits = FALSE))
+    }
+  }
+  function(object) {
+    default_format_object(object, rep, paper_meta)
+  }
 }
 
 #' Resolve optional path to a format script
@@ -149,17 +244,7 @@ format_for_display <- function(
   env <- new.env(parent = globalenv())
   source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = TRUE, meta = meta)
 
-  fn_name <- format_function_name(rep)
-  if (!exists(fn_name, envir = env, inherits = FALSE)) {
-    stop(
-      "Format function ", fn_name, " not found. ",
-      "Define it in ", rep$code,
-      if (!is.null(format_script_path(rep))) paste0(" or ", format_script_path(rep)) else "",
-      "."
-    )
-  }
-
-  fmt_fn <- get(fn_name, envir = env, inherits = FALSE)
+  fmt_fn <- resolve_format_function(env, rep, paper_meta = meta$paper)
   fmt_object <- if (is_stata_replication(rep, meta$paper)) {
     normalize_stata_result_object(object)
   } else {
@@ -174,12 +259,7 @@ format_for_display <- function(
       if (!is_stata_replication(rep, meta$paper)) {
         stop(e)
       }
-      path <- stata_result_path(fmt_object)
-      if (!is.null(path) && file.exists(path) &&
-          identical(stata_output_extension(path), "smcl")) {
-        return(smcl_to_html(path))
-      }
-      stop(e)
+      default_format_object(fmt_object, rep, paper_meta = meta$paper)
     }
   )
 }

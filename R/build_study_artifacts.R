@@ -1,8 +1,9 @@
 #' Build display artifacts for a folder-backed study
 #'
-#' Runs every registered table and figure, saves formatted outputs under
-#' `artifacts/`, and writes `artifacts/manifest.json`. Intended to be run from
-#' the study repository root (or pass the path explicitly).
+#' Runs pipeline prep steps from `replication.yml` when present, then every
+#' registered table and figure, saves formatted outputs under `artifacts/`, and
+#' writes `artifacts/manifest.json`. Intended to be run from the study
+#' repository root (or pass the path explicitly).
 #'
 #' Registry papers use `registry/scripts/build_artifacts.R` instead; folder-backed
 #' studies keep materials in their own repository.
@@ -13,6 +14,7 @@
 #' @param ids Optional character vector of replication ids to build. When
 #'   `NULL`, builds every figure and table in `replication.yml`.
 #' @param registry_root Optional registry checkout path for monorepo dev.
+#' @param force_prep Logical. Re-run prep steps even when outputs already exist.
 #' @return Invisibly, a list with `artifact_dir`, `manifest`, and per-id status.
 #'
 #' @examples
@@ -25,7 +27,8 @@ build_study_artifacts <- function(
   location = ".",
   install_deps = TRUE,
   ids = NULL,
-  registry_root = NULL
+  registry_root = NULL,
+  force_prep = FALSE
 ) {
   study_root <- resolve_study_location(location)
   meta <- read_study_replication_yaml(study_root)
@@ -70,60 +73,42 @@ build_study_artifacts <- function(
   old_opts <- options(run_opts)
   on.exit(options(old_opts), add = TRUE)
 
+  ctx <- paper_context(doi, folder = folder)
+  prep_steps <- prep_steps_for_build(
+    meta,
+    if (is.null(ids)) NULL else display_reps
+  )
+  prep_result <- run_build_prep_steps(
+    meta,
+    ctx,
+    doi,
+    prep_steps,
+    install_deps = install_deps,
+    force = force_prep,
+    study_root = study_root
+  )
+
+  display_result <- build_display_artifact_entries(
+    display_reps,
+    doi = doi,
+    artifact_dir = artifact_dir,
+    folder = folder,
+    install_deps = install_deps,
+    study_root = study_root
+  )
+
+  failures <- c(prep_result$failures, display_result$failures)
+
   manifest <- c(
     list(
       generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
       folder = folder,
       doi = doi,
-      replications = list()
+      prep = prep_result$statuses,
+      replications = display_result$manifest
     ),
     folder_manifest_metadata(study_root, meta)
   )
-
-  failures <- character(0)
-
-  for (rep in display_reps) {
-    rep_id <- rep$id
-    message("Building ", rep_id, " ...")
-
-    status <- tryCatch({
-      result <- render_replication(
-        doi,
-        rep_id,
-        install_deps = install_deps,
-        folder = folder
-      )
-      out <- save_artifact(
-        result,
-        artifact_dir,
-        doi = doi,
-        folder = folder,
-        install_deps = install_deps
-      )
-      out_file <- file.path(artifact_dir, basename(out))
-      if (!file.exists(out_file)) {
-        stop("Artifact file was not created: ", out_file)
-      }
-      validate_artifact(doi, rep_id)
-      list(
-        status = "ok",
-        artifact = file.path("artifacts", basename(out)),
-        format = switch(
-          tools::file_ext(out_file),
-          html = "html",
-          png = "ggplot",
-          rds = "rds",
-          result$format
-        )
-      )
-    }, error = function(e) {
-      msg <- portable_path_in_text(conditionMessage(e), study_root)
-      failures <<- c(failures, paste0(rep_id, ": ", msg))
-      list(status = "error", message = msg)
-    })
-
-    manifest$replications[[rep_id]] <- status
-  }
 
   manifest_path <- file.path(artifact_dir, "manifest.json")
   jsonlite::write_json(manifest, manifest_path, pretty = TRUE, auto_unbox = TRUE)

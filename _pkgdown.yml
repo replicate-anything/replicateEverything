@@ -41,10 +41,14 @@ reference:
   desc: Validate folder-backed studies and sync to the registry.
   contents:
   - build_study_artifacts
+  - build_package_artifacts
   - check_folder_replication
   - prepare_folder_paper
   - sync_folder_paper
   - check_package_replication
+  - ai_skills
+  - ai_skill
+  - ai_skill_path
 - title: Registry audit
   desc: Run all registry replications and inspect results.
   contents:

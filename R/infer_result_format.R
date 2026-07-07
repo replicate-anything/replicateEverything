@@ -29,6 +29,16 @@ infer_result_format <- function(object, type) {
     return("text")
   }
 
+  if (inherits(object, "prep_output_preview")) {
+    path <- object$path %||% NULL
+    if (!is.null(path) && nzchar(path) && file.exists(path)) {
+      if (grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", path, ignore.case = TRUE)) {
+        return("png")
+      }
+    }
+    return("unknown")
+  }
+
   if (is.list(object) && !is.data.frame(object)) {
     return("rds")
   }
@@ -73,11 +83,34 @@ replication_object <- function(x) {
     }
     return(x)
   }
+  if (inherits(x, "python_replication_result")) {
+    path <- x$output_path %||% NULL
+    if (!is.null(path) && file.exists(path) &&
+        grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", path, ignore.case = TRUE)) {
+      return(path)
+    }
+    return(x)
+  }
+  if (inherits(x, "prep_output_preview")) {
+    path <- x$path %||% NULL
+    if (!is.null(path) && nzchar(path) && file.exists(path) &&
+        grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", path, ignore.case = TRUE)) {
+      return(path)
+    }
+    return(x)
+  }
   if (is.list(x) && !is.null(x$object)) {
     obj <- x$object
     if (inherits(obj, "stata_replication_result")) {
       path <- obj$output_path %||% obj$smcl_path %||% NULL
       if (!is.null(path) && stata_output_is_image(path)) {
+        return(path)
+      }
+    }
+    if (inherits(obj, "python_replication_result")) {
+      path <- obj$output_path %||% NULL
+      if (!is.null(path) && file.exists(path) &&
+          grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", path, ignore.case = TRUE)) {
         return(path)
       }
     }

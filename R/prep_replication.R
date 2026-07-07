@@ -5,10 +5,15 @@
 #' @keywords internal
 is_prep_entry <- function(rep) {
   type <- tolower(as.character(rep$type %||% ""))
+  if (type %in% c("table", "figure")) {
+    return(FALSE)
+  }
   if (type %in% c("step", "prep", "pipeline")) {
     return(TRUE)
   }
-  !is.null(rep$output) && nzchar(as.character(rep$output %||% ""))
+  !is.null(rep$output) &&
+    is.null(rep$artifact) &&
+    nzchar(as.character(rep$output %||% ""))
 }
 
 #' List pipeline prep steps for a paper
@@ -164,6 +169,148 @@ replication_requires_prep <- function(rep) {
     return(character(0))
   }
   vapply(req, function(x) as.character(x), character(1))
+}
+
+#' Collect prep step ids required by replication entries (transitive)
+#'
+#' @param meta Parsed replication metadata.
+#' @param replications List of replication entries.
+#' @return Character vector of prep ids in \code{prep:} block order.
+#' @keywords internal
+collect_required_prep_ids <- function(meta, replications) {
+  if (length(replications) == 0L) {
+    return(character(0))
+  }
+  prep_ids <- character(0)
+  queue <- unique(unlist(lapply(replications, replication_requires_prep), use.names = FALSE))
+  while (length(queue) > 0L) {
+    id <- queue[[1L]]
+    queue <- queue[-1L]
+    if (id %in% prep_ids) {
+      next
+    }
+    prep <- tryCatch(find_prep_entry(meta, id), error = function(e) NULL)
+    if (is.null(prep)) {
+      next
+    }
+    prep_ids <- c(prep_ids, id)
+    queue <- unique(c(replication_requires_prep(prep), queue))
+  }
+  all_prep <- meta$prep %||% list()
+  if (length(all_prep) == 0L) {
+    return(prep_ids)
+  }
+  yaml_order <- vapply(all_prep, function(x) as.character(x$id), character(1))
+  ordered <- prep_ids[prep_ids %in% yaml_order]
+  ordered[order(match(ordered, yaml_order))]
+}
+
+#' Prep steps to run before building display artifacts
+#'
+#' When \code{display_reps} is \code{NULL}, returns every entry in \code{prep:}.
+#' Otherwise returns only prep steps required by the given replications.
+#'
+#' @param meta Parsed replication metadata.
+#' @param display_reps Optional list of table/figure entries being built.
+#' @keywords internal
+prep_steps_for_build <- function(meta, display_reps = NULL) {
+  all_prep <- meta$prep %||% list()
+  if (length(all_prep) == 0L) {
+    return(list())
+  }
+  if (is.null(display_reps)) {
+    return(all_prep)
+  }
+  required_ids <- collect_required_prep_ids(meta, display_reps)
+  if (length(required_ids) == 0L) {
+    return(list())
+  }
+  all_prep[vapply(all_prep, function(x) {
+    as.character(x$id) %in% required_ids
+  }, logical(1))]
+}
+
+#' Relative path for prep output in build manifests
+#' @keywords internal
+prep_manifest_output_path <- function(path, root = NULL) {
+  if (is.null(path) || length(path) == 0L || !nzchar(as.character(path[[1]]))) {
+    return(NULL)
+  }
+  path <- normalizePath(as.character(path[[1]]), winslash = "/", mustWork = FALSE)
+  if (!is.null(root) && nzchar(root)) {
+    root <- normalizePath(root, winslash = "/", mustWork = FALSE)
+    prefix <- paste0(root, "/")
+    if (startsWith(path, prefix)) {
+      return(sub(paste0("^", gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", root), "/?"), "", path))
+    }
+  }
+  path
+}
+
+#' Run pipeline prep steps during artifact builds
+#'
+#' @param meta Parsed replication metadata.
+#' @param ctx Paper context.
+#' @param doi Normalized DOI.
+#' @param prep_steps List of prep entries to run.
+#' @param install_deps Passed to \code{render_replication()}.
+#' @param force Re-run prep even when outputs already exist.
+#' @param study_root Optional study or package root for portable manifest paths.
+#' @return List with \code{statuses} (named list) and \code{failures}.
+#' @keywords internal
+run_build_prep_steps <- function(
+  meta,
+  ctx,
+  doi,
+  prep_steps,
+  install_deps = FALSE,
+  force = FALSE,
+  study_root = NULL
+) {
+  statuses <- list()
+  failures <- character(0)
+  if (length(prep_steps) == 0L) {
+    return(list(statuses = statuses, failures = failures))
+  }
+
+  for (prep in prep_steps) {
+    step_id <- as.character(prep$id)
+    message("Running prep step: ", step_id, " ...")
+    status <- tryCatch({
+      if (!force && prep_output_ready(prep, ctx, meta = meta)) {
+        path <- prep_output_path(prep, ctx, meta = meta)
+        list(
+          status = "cached",
+          output = prep_manifest_output_path(path, study_root)
+        )
+      } else {
+        result <- render_replication(
+          doi,
+          step_id,
+          install_deps = install_deps,
+          repo = ctx$repo %||% NULL,
+          folder = ctx$folder %||% NULL
+        )
+        path <- result$output_path %||% prep_output_path(prep, ctx, meta = meta)
+        list(
+          status = "ok",
+          output = prep_manifest_output_path(path, study_root),
+          source = result$source %||% "prep"
+        )
+      }
+    }, error = function(e) {
+      msg <- if (!is.null(study_root) && nzchar(study_root)) {
+        portable_path_in_text(conditionMessage(e), study_root)
+      } else {
+        conditionMessage(e)
+      }
+      failures <<- c(failures, paste0(step_id, ": ", msg))
+      list(status = "error", message = msg)
+    })
+    statuses[[step_id]] <- status
+  }
+
+  list(statuses = statuses, failures = failures)
 }
 
 #' Ensure prep dependencies exist before running a replication

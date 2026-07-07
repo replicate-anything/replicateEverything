@@ -9,6 +9,7 @@
 
 * `get_code()` appears under **Run replications** in the pkgdown reference index.
 * **Meet the functions** vignette reorganized into consumer and contributor sections.
+* Bundled AI skills under `inst/ai/skills/` with `ai_skills()`, `ai_skill_path()`, and `ai_skill()`.
 
 # replicateEverything 0.4.0
 

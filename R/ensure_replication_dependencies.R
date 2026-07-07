@@ -20,7 +20,10 @@ ensure_replication_dependencies <- function(
   }
 
   if (!is.null(replication_meta) && !is.null(replication_meta$dependencies)) {
-    deps <- c(deps, unlist(replication_meta$dependencies, use.names = FALSE))
+    # Entry-level dependencies are engine-specific (Stata SSC, pip, etc.).
+    if (identical(replication_engine(replication_meta, paper_meta), "r")) {
+      deps <- c(deps, unlist(replication_meta$dependencies, use.names = FALSE))
+    }
   }
 
   deps <- unique(na.omit(as.character(deps)))

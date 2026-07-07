@@ -151,16 +151,22 @@ run_python_replication <- function(rep, ctx, meta = NULL) {
 #' @keywords internal
 run_python_script <- function(python, script_path, run_dir, log_path) {
   script_path <- normalizePath(script_path, winslash = "/", mustWork = TRUE)
+  quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
+  old_root <- Sys.getenv("REPLICATE_STUDY_ROOT", unset = NA)
+  on.exit({
+    if (is.na(old_root)) {
+      Sys.unsetenv("REPLICATE_STUDY_ROOT")
+    } else {
+      Sys.setenv(REPLICATE_STUDY_ROOT = old_root)
+    }
+  }, add = TRUE)
+  Sys.setenv(REPLICATE_STUDY_ROOT = run_dir)
   system2(
     python,
-    script_path,
+    args = shQuote(script_path, type = quote_type),
     stdout = log_path,
     stderr = log_path,
-    wait = TRUE,
-    env = c(
-      Sys.getenv(),
-      paste0("REPLICATE_STUDY_ROOT=", run_dir)
-    )
+    wait = TRUE
   )
 }
 
@@ -178,13 +184,21 @@ run_python_notebook <- function(python, notebook_path, run_dir, log_path) {
     "--output-dir", shQuote(dirname(notebook_path)),
     shQuote(normalizePath(notebook_path, winslash = "/", mustWork = TRUE))
   )
+  old_root <- Sys.getenv("REPLICATE_STUDY_ROOT", unset = NA)
+  on.exit({
+    if (is.na(old_root)) {
+      Sys.unsetenv("REPLICATE_STUDY_ROOT")
+    } else {
+      Sys.setenv(REPLICATE_STUDY_ROOT = old_root)
+    }
+  }, add = TRUE)
+  Sys.setenv(REPLICATE_STUDY_ROOT = run_dir)
   status <- system2(
     python,
     args,
     stdout = log_path,
     stderr = log_path,
-    wait = TRUE,
-    env = c(Sys.getenv(), paste0("REPLICATE_STUDY_ROOT=", run_dir))
+    wait = TRUE
   )
   if (!identical(status, 0L)) {
     return(status)
