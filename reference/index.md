@@ -29,6 +29,10 @@ Run tables and figures from registry scripts.
   : Run a single replication or all replications for a paper
 - [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
   : Retrieve replication code for a paper
+- [`run_prep_step()`](https://replicate-anything.github.io/replicateEverything/reference/run_prep_step.md)
+  : Run a single prep step
+- [`list_prep_steps()`](https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.md)
+  : List pipeline prep steps for a paper
 
 ## Shiny demo
 

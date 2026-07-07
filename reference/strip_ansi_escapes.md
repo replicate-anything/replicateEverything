@@ -6,7 +6,7 @@ and, when present, parent errors and the call that failed.
 ## Usage
 
 ``` r
-replication_error_message(x)
+strip_ansi_escapes(x)
 ```
 
 ## Arguments

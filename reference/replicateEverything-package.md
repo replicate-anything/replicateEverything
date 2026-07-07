@@ -75,8 +75,6 @@ Useful links:
 
 Authors:
 
-- Vermon Washington <vermon.washington@wzb.eu>
-
 - Macartan Humphreys <macartan.humphreys@wzb.eu>
 
 - Cord Masche <cord.masche@wzb.eu>
