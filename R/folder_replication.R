@@ -956,6 +956,10 @@ read_registry_stub_yaml <- function(folder, registry_root = NULL) {
     if (file.exists(path)) {
       return(tryCatch(yaml::read_yaml(path), error = function(e) NULL))
     }
+    draft_path <- file.path(registry_root, "drafts", paste0(folder, ".yml"))
+    if (file.exists(draft_path)) {
+      return(tryCatch(yaml::read_yaml(draft_path), error = function(e) NULL))
+    }
   }
   meta <- read_yaml_url(registry_paper_yaml_url(folder))
   if (!is.null(meta)) {
@@ -967,6 +971,65 @@ read_registry_stub_yaml <- function(folder, registry_root = NULL) {
     folder
   )
   read_yaml_url(legacy_url)
+}
+
+#' Build a minimal folder-study stub when the registry yaml is missing
+#'
+#' Used when a study is loaded by DOI after its registry stub was moved to
+#' \code{drafts/} or is not yet published. Looks up the study repo from
+#' \code{index.csv}, then tries standard \code{rep-<doi>} GitHub paths.
+#'
+#' @param doi Normalized DOI.
+#' @param folder Registry folder name when known.
+#' @keywords internal
+infer_folder_study_stub <- function(doi, folder = NULL) {
+  idx <- tryCatch(load_index(), error = function(e) NULL)
+  if (!is.null(idx) && "repo" %in% names(idx)) {
+    row <- NULL
+    if ("doi" %in% names(idx)) {
+      norm <- vapply(idx$doi, normalize_doi, character(1))
+      row <- idx[norm == doi, , drop = FALSE]
+    }
+    if ((is.null(row) || nrow(row) == 0L) && !is.null(folder) && nzchar(folder) &&
+        "folder" %in% names(idx)) {
+      row <- idx[idx$folder == folder, , drop = FALSE]
+    }
+    if (!is.null(row) && nrow(row) > 0L && nzchar(row$repo[[1]])) {
+      slug <- as.character(row$repo[[1]])
+      if (!identical(slug, DEFAULT_REGISTRY_REPO)) {
+        return(list(
+          repo = slug,
+          paper = list(
+            doi = row$doi[[1]] %||% doi,
+            materials = "folder",
+            study_repo = slug,
+            study_ref = "main"
+          )
+        ))
+      }
+    }
+  }
+
+  slug_candidates <- unique(c(
+    paste0("replicate-anything/", study_folder_from_doi(doi)),
+    paste0("replicate-anything/", tolower(study_folder_from_doi(doi))),
+    if (!is.null(folder) && nzchar(folder)) {
+      c(
+        paste0("replicate-anything/", folder),
+        paste0("replicate-anything/", tolower(folder))
+      )
+    } else {
+      character(0)
+    }
+  ))
+  slug_candidates <- slug_candidates[nzchar(slug_candidates)]
+  for (slug in slug_candidates) {
+    yml <- read_yaml_url(folder_study_yaml_urls(slug))
+    if (!is.null(yml)) {
+      return(c(list(repo = slug), yml))
+    }
+  }
+  NULL
 }
 
 #' Run an expression with \code{REPLICATE_STUDY_ROOT} set for folder studies

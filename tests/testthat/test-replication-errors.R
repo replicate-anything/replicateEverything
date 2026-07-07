@@ -14,6 +14,54 @@ test_that("replication_error_message strips Stata-style hyperlinks", {
   expect_equal(replication_error_message(err), "file not found: ./data/raw/foo")
 })
 
+test_that("get_artifact_path resolves python figure when language is stata", {
+  skip_on_cran()
+  skip_if_not_installed("httr")
+  withr::local_options(list(
+    replicateEverything.registry_root = "c:/WZB Dropbox/Macartan Humphreys/5_github/replicate_everything/registry",
+    replicateEverything.study_folders_root = NULL,
+    replicateEverything.use_sibling_packages = FALSE
+  ))
+  path <- get_artifact_path(
+    "10.1017/S0003055426101749",
+    "fig_2",
+    folder = "10.1017S0003055426101749",
+    language = "stata"
+  )
+  expect_false(is.null(path))
+  expect_true(
+    grepl("fig_2\\.png$", path) ||
+      grepl("fig_2\\.png$", basename(path))
+  )
+})
+
+test_that("get_artifact_path resolves by id when replication entry lookup fails", {
+  skip_on_cran()
+  skip_if_not_installed("httr")
+  withr::local_options(list(
+    replicateEverything.registry_root = NULL,
+    replicateEverything.study_folders_root = NULL,
+    replicateEverything.use_sibling_packages = FALSE
+  ))
+  path <- get_artifact_path(
+    "10.1017/S0003055426101749",
+    "fig_2_not_in_meta",
+    folder = "10.1017S0003055426101749",
+    language = "stata"
+  )
+  expect_null(path)
+})
+
+test_that("infer_folder_study_stub finds study repo from rep slug", {
+  skip_on_cran()
+  stub <- infer_folder_study_stub("10.1017/S0003055426101749")
+  expect_false(is.null(stub))
+  expect_equal(
+    tolower(as.character(stub$repo[[1]])),
+    "replicate-anything/rep-10.1017-s0003055426101749"
+  )
+})
+
 test_that("manifest_artifact_paths reads flat artifacts map", {
   tmp <- tempfile()
   dir.create(tmp)

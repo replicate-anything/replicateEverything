@@ -503,6 +503,23 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
 }
 
 load_registry_index <- function() {
+  registry_root <- getOption("replicateEverything.registry_root", NULL)
+  if (!is.null(registry_root) && dir.exists(registry_root)) {
+    local_csv <- file.path(registry_root, "index.csv")
+    if (file.exists(local_csv)) {
+      df <- tryCatch({
+        idx <- utils::read.csv(local_csv, stringsAsFactors = FALSE)
+        idx$doi <- replicate_fn("normalize_doi", idx$doi)
+        if (!"repo" %in% names(idx)) idx$repo <- DEFAULT_REGISTRY_REPO
+        options(replicateEverything.index = idx)
+        idx
+      }, error = function(e) NULL)
+      if (!is.null(df)) {
+        return(df)
+      }
+    }
+  }
+
   df <- tryCatch({
     idx <- replicateEverything::load_index()
     idx$doi <- replicate_fn("normalize_doi", idx$doi)
@@ -1046,10 +1063,14 @@ read_local_registry_stub <- function(folder) {
     return(NULL)
   }
   path <- file.path(registry_root, "papers", paste0(folder, ".yml"))
-  if (!file.exists(path)) {
-    return(NULL)
+  if (file.exists(path)) {
+    return(read_yaml_from_url(path))
   }
-  read_yaml_from_url(path)
+  draft_path <- file.path(registry_root, "drafts", paste0(folder, ".yml"))
+  if (file.exists(draft_path)) {
+    return(read_yaml_from_url(draft_path))
+  }
+  NULL
 }
 
 read_local_study_replication_index <- function(stub, folder, repo = DEFAULT_REGISTRY_REPO) {
@@ -2676,6 +2697,13 @@ ui <- tagList(
 
 server <- function(input, output, session) {
   options(shiny.sanitize.errors = FALSE)
+
+  registry_index <<- load_registry_index()
+  updateSelectInput(
+    session,
+    "study_select",
+    choices = c("Choose a study…" = "", nice_doi_choices(registry_index))
+  )
 
   state <- reactiveValues(
     doi = NULL,

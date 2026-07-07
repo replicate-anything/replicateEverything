@@ -68,6 +68,9 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
   }
 
   stub <- read_registry_stub_yaml(folder, registry_root = registry_root)
+  if (is.null(stub)) {
+    stub <- infer_folder_study_stub(doi, folder = folder)
+  }
   ctx_stub <- list(repo = index_repo, folder = folder)
 
   is_folder_study <- !is.null(stub) && is_folder_study_replication(stub, ctx_stub)
@@ -82,12 +85,9 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
   if (is_folder_study) {
     study_ref <- study_repo_ref(stub)
     local_root <- resolve_study_folder_path(stub, ctx_stub)
-    base_url <- paste0(
-      "https://raw.githubusercontent.com/",
-      materials_repo,
-      "/",
-      study_ref,
-      "/"
+    base_url <- registry_url(
+      paste0("https://raw.githubusercontent.com/", materials_repo),
+      paste0(study_ref, "/")
     )
   } else if (is_package_study) {
     pkg_repo <- as.character((stub$repo %||% stub$paper$package_repo %||% index_repo)[[1]])

@@ -261,6 +261,15 @@ manifest_artifact_paths <- function(what, ctx) {
   unique(paths[nzchar(paths)])
 }
 
+#' Join a registry base URL with a relative path without duplicate slashes.
+#'
+#' @param base Character base URL.
+#' @param rel Character relative path.
+#' @keywords internal
+registry_url <- function(base, rel) {
+  paste0(sub("/$", "", base), "/", sub("^/", "", rel))
+}
+
 #' @keywords internal
 url_exists <- function(url) {
   resp <- tryCatch(
@@ -268,6 +277,21 @@ url_exists <- function(url) {
       url,
       httr::user_agent("replicateEverything"),
       httr::timeout(10)
+    ),
+    error = function(e) NULL
+  )
+  if (!is.null(resp) && httr::status_code(resp) < 400L) {
+    return(TRUE)
+  }
+  ext <- tolower(tools::file_ext(url))
+  if (!ext %in% c("png", "svg", "jpg", "jpeg", "html", "rds")) {
+    return(FALSE)
+  }
+  resp <- tryCatch(
+    httr::GET(
+      url,
+      httr::user_agent("replicateEverything"),
+      httr::timeout(15)
     ),
     error = function(e) NULL
   )
@@ -304,7 +328,7 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
   }
   if (is.null(result)) {
     for (rel in rel_paths) {
-      url <- paste0(ctx$base_url, "/", rel)
+      url <- registry_url(ctx$base_url, rel)
       if (url_exists(url)) {
         result <- url
         break
@@ -312,7 +336,9 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
     }
   }
 
-  assign(cache_key, result %||% NA_character_, envir = .artifact_path_cache)
+  if (!is.null(result)) {
+    assign(cache_key, result, envir = .artifact_path_cache)
+  }
   result
 }
 
@@ -644,7 +670,7 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = 
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
   rep <- tryCatch(
-    find_replication_entry(meta, what, language = language),
+    find_replication_entry(meta, what, language = NULL),
     error = function(e) NULL
   )
 
@@ -667,7 +693,7 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = 
   }
 
   if (is.null(rep)) {
-    return(NULL)
+    return(resolve_registry_artifact_path(what, ctx, rep = NULL, doi = doi))
   }
   resolve_registry_artifact_path(rep$id, ctx, rep, doi = doi)
 }
@@ -687,7 +713,7 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
   rep <- tryCatch(
-    find_replication_entry(meta, what, language = language),
+    find_replication_entry(meta, what, language = NULL),
     error = function(e) NULL
   )
 
@@ -752,7 +778,7 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
   }
 
   rep <- tryCatch(
-    find_replication_entry(meta, what, language = language),
+    find_replication_entry(meta, what, language = NULL),
     error = function(e) NULL
   )
   rel <- registry_artifact_rel_paths(if (is.null(rep)) what else rep$id, rep, ctx)
