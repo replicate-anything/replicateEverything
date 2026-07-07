@@ -148,6 +148,174 @@ using_local_replicate_everything <- function() {
   isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))
 }
 
+find_replicate_everything_source_root <- function() {
+  candidates <- character(0)
+  if (using_local_replicate_everything()) {
+    monorepo <- find_shiny_monorepo_root()
+    if (!is.null(monorepo)) {
+      candidates <- c(candidates, file.path(monorepo, "replicateEverything"))
+    }
+  }
+  opt_root <- getOption("replicateEverything.package_source_root", NULL)
+  if (!is.null(opt_root) && nzchar(opt_root)) {
+    candidates <- c(candidates, opt_root)
+  }
+  pkg_path <- tryCatch(
+    system.file(package = "replicateEverything"),
+    error = function(e) ""
+  )
+  if (nzchar(pkg_path)) {
+    candidates <- c(
+      candidates,
+      normalizePath(file.path(pkg_path, ".."), winslash = "/", mustWork = FALSE),
+      normalizePath(file.path(pkg_path, "../.."), winslash = "/", mustWork = FALSE)
+    )
+  }
+  candidates <- unique(candidates[nzchar(candidates)])
+  for (root in candidates) {
+    desc_path <- file.path(root, "DESCRIPTION")
+    if (!file.exists(desc_path)) {
+      next
+    }
+    desc <- tryCatch(readLines(desc_path, n = 10L, warn = FALSE), error = function(e) character(0))
+    if (any(grepl("^Package:\\s*replicateEverything\\s*$", desc))) {
+      return(normalizePath(root, winslash = "/", mustWork = FALSE))
+    }
+  }
+  NULL
+}
+
+find_git_root <- function(start_path) {
+  if (is.null(start_path) || !nzchar(start_path)) {
+    return(NULL)
+  }
+  cur <- normalizePath(start_path, winslash = "/", mustWork = FALSE)
+  for (i in seq_len(6L)) {
+    if (dir.exists(file.path(cur, ".git"))) {
+      return(cur)
+    }
+    parent <- dirname(cur)
+    if (identical(parent, cur)) {
+      break
+    }
+    cur <- parent
+  }
+  NULL
+}
+
+git_command_output <- function(repo_root, ...) {
+  if (is.null(repo_root) || !nzchar(repo_root)) {
+    return(character(0))
+  }
+  args <- c(...)
+  if (.Platform$OS.type == "windows") {
+    cmd <- paste(
+      c(
+        "git",
+        "-C",
+        shQuote(normalizePath(repo_root, winslash = "/", mustWork = FALSE)),
+        args
+      ),
+      collapse = " "
+    )
+    return(tryCatch(suppressWarnings(system(cmd, intern = TRUE)), error = function(e) character(0)))
+  }
+  tryCatch(
+    system2("git", c("-C", repo_root, args), stdout = TRUE, stderr = FALSE),
+    error = function(e) character(0)
+  )
+}
+
+git_head_info <- function(start_path) {
+  repo_root <- find_git_root(start_path)
+  if (is.null(repo_root)) {
+    return(list(sha = NULL, branch = NULL, dirty = FALSE, repo_root = NULL))
+  }
+  sha <- git_command_output(repo_root, "rev-parse", "--short", "HEAD")
+  branch <- git_command_output(repo_root, "rev-parse", "--abbrev-ref", "HEAD")
+  status <- git_command_output(repo_root, "status", "--porcelain")
+  list(
+    sha = if (length(sha)) as.character(sha[[1]]) else NULL,
+    branch = if (length(branch)) as.character(branch[[1]]) else NULL,
+    dirty = length(status) > 0L,
+    repo_root = repo_root
+  )
+}
+
+replicate_everything_build_info <- function() {
+  version <- tryCatch(
+    as.character(utils::packageVersion("replicateEverything")),
+    error = function(e) "unknown"
+  )
+  source_root <- find_replicate_everything_source_root()
+  git <- git_head_info(source_root)
+  install_path <- tryCatch(
+    normalizePath(
+      system.file(package = "replicateEverything"),
+      winslash = "/",
+      mustWork = FALSE
+    ),
+    error = function(e) NA_character_
+  )
+  list(
+    version = version,
+    sha = git$sha,
+    branch = git$branch,
+    dirty = git$dirty,
+    local_dev = using_local_replicate_everything(),
+    source_root = source_root,
+    git_root = git$repo_root,
+    install_path = if (length(install_path) == 1L && nzchar(install_path)) install_path else NA_character_
+  )
+}
+
+replicate_everything_build_label <- function() {
+  info <- replicate_everything_build_info()
+  parts <- c(paste0("replicateEverything ", info$version))
+  if (!is.null(info$sha) && nzchar(info$sha)) {
+    sha_label <- info$sha
+    if (isTRUE(info$dirty)) {
+      sha_label <- paste0(sha_label, "+")
+    }
+    parts <- c(parts, sha_label)
+  }
+  if (!is.null(info$branch) && nzchar(info$branch) && !identical(info$branch, "HEAD")) {
+    parts <- c(parts, info$branch)
+  }
+  if (isTRUE(info$local_dev)) {
+    parts <- c(parts, "dev load")
+  } else if (is.na(info$sha) || !nzchar(info$sha %||% "")) {
+    parts <- c(parts, "installed")
+  }
+  paste(parts, collapse = " · ")
+}
+
+app_build_footer_ui <- function() {
+  info <- replicate_everything_build_info()
+  tags$footer(
+    class = "app-footer text-muted small px-3 py-2 border-top",
+    tags$div(
+      class = "d-flex flex-wrap justify-content-between gap-2",
+      tags$span(replicate_everything_build_label()),
+      if (!is.null(info$source_root) && nzchar(info$source_root)) {
+        tags$span(
+          class = "text-truncate",
+          style = "max-width: 55%;",
+          "Package: ",
+          tags$code(info$source_root)
+        )
+      } else if (!is.na(info$install_path) && nzchar(info$install_path)) {
+        tags$span(
+          class = "text-truncate",
+          style = "max-width: 55%;",
+          "Installed: ",
+          tags$code(info$install_path)
+        )
+      }
+    )
+  )
+}
+
 ensure_replicate_everything <- function() {
   if (!requireNamespace("replicateEverything", quietly = TRUE)) {
     stop(
@@ -2602,6 +2770,14 @@ ui <- tagList(
       color: #495057;
       white-space: nowrap;
     }
+    .app-footer {
+      background: #f8f9fa;
+      margin-top: 0.5rem;
+    }
+    .app-footer code {
+      font-size: 0.75rem;
+      color: inherit;
+    }
   "))),
   registry_health_bar_ui(registry_audit_summary),
   navbarPage(
@@ -2689,10 +2865,16 @@ ui <- tagList(
         ". See the ",
         tags$a(href = SHINY_VIGNETTE_URL, "Shiny demo app", target = "_blank"),
         " vignette for details."
+      ),
+      tags$p(
+        class = "text-muted small mb-0",
+        tags$strong("This session: "),
+        replicate_everything_build_label()
       )
     )
   )
-  )
+  ),
+  app_build_footer_ui()
 )
 
 server <- function(input, output, session) {
