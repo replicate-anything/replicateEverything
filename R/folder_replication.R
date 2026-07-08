@@ -802,8 +802,25 @@ materialize_folder_study_from_github <- function(repo, ref = "main") {
   safe_ref <- gsub("[^a-zA-Z0-9._-]", "_", ref)
   cache_dir <- file.path(cache_root, safe_repo, safe_ref)
   marker <- file.path(cache_dir, "replication.yml")
+  sha_file <- file.path(cache_dir, ".replicate_ref_sha")
+  remote_sha <- github_ref_sha(repo, ref)
+
   if (file.exists(marker)) {
-    return(normalizePath(cache_dir, winslash = "/", mustWork = FALSE))
+    cached_sha <- if (file.exists(sha_file)) {
+      trimws(readLines(sha_file, warn = FALSE, n = 1L)[1])
+    } else {
+      NA_character_
+    }
+    # Reuse the cache when we cannot check the remote (offline / rate-limited)
+    # or when the cached checkout already matches the current remote commit.
+    # Otherwise the cache is stale (e.g. built before new data was committed);
+    # drop it so we re-download the current tree.
+    reusable <- is.na(remote_sha) ||
+      (!is.na(cached_sha) && nzchar(cached_sha) && identical(cached_sha, remote_sha))
+    if (reusable) {
+      return(normalizePath(cache_dir, winslash = "/", mustWork = FALSE))
+    }
+    unlink(cache_dir, recursive = TRUE)
   }
 
   dir.create(cache_root, recursive = TRUE, showWarnings = FALSE)
@@ -827,7 +844,51 @@ materialize_folder_study_from_github <- function(repo, ref = "main") {
       call. = FALSE
     )
   }
+  if (!is.na(remote_sha) && nzchar(remote_sha)) {
+    tryCatch(
+      writeLines(remote_sha, sha_file),
+      error = function(e) NULL
+    )
+  }
   normalizePath(cache_dir, winslash = "/", mustWork = FALSE)
+}
+
+#' Current commit SHA for a GitHub repository ref
+#'
+#' Queries the GitHub API for the commit SHA of \code{ref}. Used to decide
+#' whether a cached study checkout is stale. Returns \code{NA_character_} when
+#' the SHA cannot be determined (offline, rate-limited, or missing ref), in
+#' which case callers keep any existing cache rather than failing.
+#'
+#' @param repo GitHub slug \code{org/repo}.
+#' @param ref Branch, tag, or commit.
+#' @return Character SHA or \code{NA_character_}.
+#' @keywords internal
+github_ref_sha <- function(repo, ref = "main") {
+  if (length(repo) != 1L || is.na(repo) || !nzchar(repo)) {
+    return(NA_character_)
+  }
+  url <- sprintf("https://api.github.com/repos/%s/commits/%s", repo, ref)
+  resp <- tryCatch(
+    httr::GET(
+      url,
+      httr::add_headers(Accept = "application/vnd.github.sha"),
+      httr::user_agent("replicateEverything"),
+      httr::timeout(15)
+    ),
+    error = function(e) NULL
+  )
+  if (is.null(resp) || httr::status_code(resp) >= 400L) {
+    return(NA_character_)
+  }
+  sha <- tryCatch(
+    trimws(httr::content(resp, as = "text", encoding = "UTF-8")),
+    error = function(e) ""
+  )
+  if (length(sha) != 1L || !nzchar(sha) || grepl("\\s", sha)) {
+    return(NA_character_)
+  }
+  sha
 }
 
 #' Ensure a folder-backed study is available on local disk
