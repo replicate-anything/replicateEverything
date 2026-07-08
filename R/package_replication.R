@@ -426,7 +426,7 @@ fetch_package_replication_yaml <- function(meta, ctx) {
 #' \code{replication.yml} URLs were checked. The study index should come from
 #' the package repo (e.g.
 #' \code{replicate-anything/rep-10.1371_journal.pone.0278337}), not only the
-#' registry stub under \code{papers/<folder>/}.
+#' registry stub under \code{studies/<folder>.yml}.
 #'
 #' @param doi Character DOI.
 #' @param repo Optional registry repo slug from \code{index.csv}.

@@ -63,11 +63,11 @@ For a tour of every main function, see [Meet the functions](https://replicate-an
 
 ## How it works
 
-The [registry](https://github.com/replicate-anything/registry) indexes studies via lightweight stub files in `papers/<folder>.yml`. **Folder-backed** studies keep code, data, and artifacts in a dedicated study repository; **package-backed** studies keep them in an R package. `replicateEverything` reads the stub, loads the full `replication.yml` from the study repo or package, and runs the registered scripts.
+The [registry](https://github.com/replicate-anything/registry) indexes studies via lightweight stub files in `studies/<folder>.yml`. **Folder-backed** studies keep code, data, and artifacts in a dedicated study repository; **package-backed** studies keep them in an R package. `replicateEverything` reads the stub, loads the full `replication.yml` from the study repo or package, and runs the registered scripts.
 
 ```
 Registry                         Study repo or package
-  papers/<folder>.yml  ───────►  replication.yml
+  studies/<folder>.yml  ───────►  replication.yml
   index.csv                      data/  code/  artifacts/
               ↓
       replicateEverything
@@ -80,7 +80,7 @@ Registry                         Study repo or package
 Each indexed paper has one stub file:
 
 ```
-papers/
+studies/
   10.1177_00491241211036161.yml
   10.1371_journal.pone.0278337.yml
 ```
@@ -177,7 +177,7 @@ if (sys.nframe() == 0) {
 
 ## Folder-backed replications
 
-Studies maintained as a **simple Git repository** (`code/`, `data/`, `artifacts/`) can be linked from the registry. Keep a stub in `papers/<folder>.yml` only:
+Studies maintained as a **simple Git repository** (`code/`, `data/`, `artifacts/`) can be linked from the registry. Keep a stub in `studies/<folder>.yml` only:
 
 ```yaml
 paper:
@@ -222,7 +222,7 @@ See `vignette("folder-replication-checklist", package = "replicateEverything")` 
 
 ## Package-backed replications
 
-Studies maintained as standalone R packages can be linked from the registry. Keep a stub file `papers/<folder>.yml` that points to the package (no materials in the registry):
+Studies maintained as standalone R packages can be linked from the registry. Keep a stub file `studies/<folder>.yml` that points to the package (no materials in the registry):
 
 ```yaml
 paper:
@@ -320,7 +320,7 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 2. **Set up a study repo** — follow `vignette("folder-replication-checklist")` or `vignette("package-replication-checklist")`
 3. **Add your data and code** — place processed data in `data/` and scripts in `code/`
 4. **Test locally** — run scripts in the R console or with `run_replication()`
-5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `papers/`, and open a pull request
+5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `studies/`, and open a pull request
 
 For **folder-backed** studies, run `prepare_folder_paper()` to build artifacts, validate, and write `registry/replication.yml` + `registry/index.csv` in the study repo; then `sync_folder_paper()` or copy those files into the registry.
 
@@ -328,7 +328,7 @@ For **package-backed** studies, use `add_paper()` after `check_package_replicati
 
 ```bash
 git clone https://github.com/replicate-anything/registry
-mv 10.1177_00491241211036161 registry/papers/
+mv 10.1177_00491241211036161 registry/studies/
 cd registry
 git add .
 git commit -m "Add replication for 10.1177/00491241211036161"

@@ -19,7 +19,7 @@ A list with \code{repo}, \code{folder}, \code{base_url},
 \code{is_folder_study}, and related fields.
 }
 \description{
-Registry stubs live as \code{papers/<folder>.yml} files.
+Registry stubs live as \code{studies/<folder>.yml} files.
 For folder-backed external studies, materials live at the study repo root.
 For package-backed studies, the registry stub path is still exposed but
 materials are resolved via the study package API.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/render_replication.R
 \name{registry_artifact_rel_paths}
 \alias{registry_artifact_rel_paths}
-\title{Relative artifact paths to try under registry \code{papers/<folder>/}}
+\title{Relative artifact paths to try under registry \code{studies/<folder>/}}
 \usage{
 registry_artifact_rel_paths(what, rep = NULL, ctx = NULL)
 }
@@ -14,6 +14,6 @@ registry_artifact_rel_paths(what, rep = NULL, ctx = NULL)
 \item{ctx}{Optional paper context (for \code{manifest.json}).}
 }
 \description{
-Relative artifact paths to try under registry \code{papers/<folder>/}
+Relative artifact paths to try under registry \code{studies/<folder>/}
 }
 \keyword{internal}

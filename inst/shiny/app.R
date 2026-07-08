@@ -11,7 +11,7 @@ LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
 
 registry_stub_yaml_url <- function(folder, repo = DEFAULT_REGISTRY_REPO) {
-  sprintf("https://raw.githubusercontent.com/%s/main/papers/%s.yml", repo, folder)
+  sprintf("https://raw.githubusercontent.com/%s/main/studies/%s.yml", repo, folder)
 }
 APP_HEX_LOGO <- "logo-hex.png"
 
@@ -650,17 +650,31 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
       ),
       tags$p(
         class = "small mb-0",
-        "Registry papers: build ", tags$code("artifacts/"), " with ",
-        tags$code("registry/scripts/build_artifacts.R"), ". ",
-        "Package-backed studies: run ", tags$code("build_report()"), " in the study R package ",
-        "(writes ", tags$code("inst/report/artifacts/"), ")."
+        "Folder-backed studies: run ",
+        tags$code("build_study_artifacts()"),
+        " in the study repository (writes paths declared as ",
+        tags$code("artifact:"),
+        " in ",
+        tags$code("replication.yml"),
+        "). ",
+        "Registry studies: build ",
+        tags$code("artifacts/"),
+        " with ",
+        tags$code("registry/scripts/build_artifacts.R"),
+        ". ",
+        "Package-backed studies: run ",
+        tags$code("build_report()"),
+        " in the study R package ",
+        "(writes ",
+        tags$code("inst/report/artifacts/"),
+        ")."
       ),
       if (length(candidates) > 0) {
         tagList(
-          tags$p(class = "mb-1", tags$strong("Checked:")),
+          tags$p(class = "mb-1", tags$strong("Expected artifact:")),
           tags$ul(
             class = "small mb-0",
-            lapply(head(candidates, 6), function(path) {
+            lapply(candidates, function(path) {
               tags$li(tags$code(path))
             })
           )
@@ -832,27 +846,27 @@ engine_icons_display <- function(has_r = FALSE, has_stata = FALSE, has_python = 
 study_engine_availability <- function(reps) {
   has_r <- FALSE
   has_stata <- FALSE
+  has_python <- FALSE
   if (is.null(reps) || !length(reps)) {
-    return(list(r = FALSE, stata = FALSE))
+    return(list(r = FALSE, stata = FALSE, python = FALSE))
   }
   for (x in reps) {
-    eng <- tolower(as.character(x$engine %||% ""))
-    id <- as.character(x$id %||% "")
-    code <- as.character(x$code %||% "")
-    if (identical(eng, "stata") || grepl("_stata$", id, ignore.case = TRUE) ||
-        grepl("\\.do$", code, ignore.case = TRUE)) {
+    eng <- entry_engine(x)
+    if (identical(eng, "stata")) {
       has_stata <- TRUE
+    } else if (identical(eng, "python")) {
+      has_python <- TRUE
     } else {
       has_r <- TRUE
     }
   }
-  list(r = has_r, stata = has_stata)
+  list(r = has_r, stata = has_stata, python = has_python)
 }
 
 study_engine_availability_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO) {
   folder <- row$folder[[1]] %||% NULL
   if (is.null(folder) || !nzchar(folder)) {
-    return(list(r = TRUE, stata = FALSE))
+    return(list(r = TRUE, stata = FALSE, python = FALSE))
   }
   reps <- tryCatch(
     fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
@@ -1230,7 +1244,10 @@ read_local_registry_stub <- function(folder) {
   if (is.null(registry_root) || !dir.exists(registry_root)) {
     return(NULL)
   }
-  path <- file.path(registry_root, "papers", paste0(folder, ".yml"))
+  path <- file.path(registry_root, "studies", paste0(folder, ".yml"))
+  if (!file.exists(path)) {
+    path <- file.path(registry_root, "papers", paste0(folder, ".yml"))
+  }
   if (file.exists(path)) {
     return(read_yaml_from_url(path))
   }
@@ -2007,7 +2024,7 @@ contribute_tab_ui <- function() {
     "Rscript scripts/build_artifacts.R\n",
     "\n",
     "# one paper only:\n",
-    "Rscript scripts/build_artifacts.R papers/10.1017S0003055403000534\n",
+    "Rscript scripts/build_artifacts.R studies/10.1017S0003055403000534\n",
     "\n",
     "Rscript scripts/validate_artifacts.R"
   )
@@ -2205,7 +2222,7 @@ contribute_tab_ui <- function() {
         ),
         tags$li(
           "Add a registry paper stub ",
-          code("papers/<folder>.yml"),
+          code("studies/<folder>.yml"),
           " with ",
           contribute_hint(code("materials: folder"), example_folder_stub, "Registry stub fields"),
           " pointing at your study repository."
@@ -2284,7 +2301,7 @@ contribute_tab_ui <- function() {
       tags$ul(
         tags$li(
           "Add ",
-          code("papers/<folder>.yml"),
+          code("studies/<folder>.yml"),
           " with ",
           contribute_hint(code("materials: package"), example_package_stub, "Package registry stub"),
           " and the package name."
@@ -3111,7 +3128,7 @@ server <- function(input, output, session) {
         ),
         tags$div(
           class = "study-engine-col",
-          engine_icons_display(engines$r, engines$stata)
+          engine_icons_display(engines$r, engines$stata, engines$python)
         ),
         tags$div(
           class = "study-run-col",

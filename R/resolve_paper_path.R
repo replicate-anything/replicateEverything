@@ -5,7 +5,7 @@
 #'
 #' @param doi Character. DOI of the paper.
 #'
-#' @return Character folder name under \code{papers/}.
+#' @return Character folder name under \code{studies/}.
 #' @keywords internal
 resolve_paper_path <- function(doi) {
   doi <- normalize_doi(doi)
@@ -25,7 +25,7 @@ resolve_paper_path <- function(doi) {
 
 #' Build base URLs and paths for a paper in the registry
 #'
-#' Registry stubs live as \code{papers/<folder>.yml} files.
+#' Registry stubs live as \code{studies/<folder>.yml} files.
 #' For folder-backed external studies, materials live at the study repo root.
 #' For package-backed studies, the registry stub path is still exposed but
 #' materials are resolved via the study package API.
@@ -62,7 +62,7 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     NULL
   }
   registry_local_root <- if (!is.null(registry_root)) {
-    file.path(registry_root, "papers")
+    registry_studies_dir(registry_root)
   } else {
     NULL
   }
@@ -105,7 +105,7 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     base_url <- paste0(
       "https://raw.githubusercontent.com/",
       DEFAULT_REGISTRY_REPO,
-      "/main/papers/"
+      "/main/studies/"
     )
   }
 

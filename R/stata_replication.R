@@ -482,7 +482,7 @@ stata_deps_install_scripts <- function(study_root, meta = NULL, rep = NULL) {
     vals <- unlist(items, use.names = FALSE)
     vals <- as.character(vals)
     vals <- vals[nzchar(vals)]
-    vapply(vals, function(rel) {
+    paths <- lapply(vals, function(rel) {
       if (grepl("[/\\\\]", rel) || grepl("\\.do$", rel, ignore.case = TRUE)) {
         path <- file.path(study_root, rel)
         if (file.exists(path)) {
@@ -490,7 +490,8 @@ stata_deps_install_scripts <- function(study_root, meta = NULL, rep = NULL) {
         }
       }
       character(0)
-    }, character(0))
+    })
+    unlist(paths, use.names = FALSE)
   }
 
   if (!is.null(meta)) {

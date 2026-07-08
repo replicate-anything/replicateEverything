@@ -70,7 +70,7 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   }
   if (is.null(meta)) {
     legacy_url <- sprintf(
-      "https://raw.githubusercontent.com/%s/main/papers/%s/replication.yml",
+      "https://raw.githubusercontent.com/%s/main/studies/%s/replication.yml",
       DEFAULT_REGISTRY_REPO,
       ctx$folder
     )
@@ -170,30 +170,34 @@ get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
 #' @keywords internal
 .artifact_path_cache <- new.env(parent = emptyenv())
 
-#' Relative artifact paths to try under registry \code{papers/<folder>/}
+#' Relative artifact paths to try for a replication
+#'
+#' When \code{replication.yml} specifies \code{artifact:}, that path is the only
+#' candidate. Otherwise uses \code{manifest.json}, then type-based defaults.
 #'
 #' @param what Replication id.
 #' @param rep Optional replication entry.
-#' @param ctx Optional paper context (for `manifest.json`).
+#' @param ctx Optional paper context (for \code{manifest.json}).
 #' @keywords internal
 registry_artifact_rel_paths <- function(what, rep = NULL, ctx = NULL) {
+  if (!is.null(rep) && !is.null(rep$artifact) && nzchar(as.character(rep$artifact[[1]]))) {
+    return(unique(as.character(rep$artifact)))
+  }
+
   paths <- character(0)
   if (!is.null(ctx)) {
     paths <- c(paths, manifest_artifact_paths(what, ctx))
   }
-  if (!is.null(rep) && !is.null(rep$artifact) && nzchar(rep$artifact)) {
-    art <- as.character(rep$artifact)
-    paths <- c(
-      paths,
-      art,
-      sub("^inst/report/", "", art),
-      sub("^inst/", "", art)
-    )
+  paths <- unique(paths[nzchar(paths)])
+  if (length(paths) > 0L) {
+    return(paths)
   }
-  for (ext in c("html", "png", "rds", "svg")) {
-    paths <- c(paths, paste0("artifacts/", what, ".", ext))
+
+  if (!is.null(rep)) {
+    return(default_artifact_path(rep, rep$id %||% what))
   }
-  unique(paths[nzchar(paths)])
+
+  character(0)
 }
 
 #' Artifact paths recorded in \code{artifacts/manifest.json}
@@ -782,14 +786,14 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
     error = function(e) NULL
   )
   rel <- registry_artifact_rel_paths(if (is.null(rep)) what else rep$id, rep, ctx)
-  registry_url <- function(base, rel) {
-    paste0(sub("/$", "", base), "/", sub("^/", "", rel))
+  if (length(rel) == 0L) {
+    return(character(0))
   }
   vapply(rel, function(r) {
     if (!is.null(ctx$local_root)) {
       local <- file.path(ctx$local_root, r)
       if (file.exists(local)) {
-        return(local)
+        return(normalizePath(local, winslash = "/", mustWork = FALSE))
       }
     }
     registry_url(ctx$base_url, r)

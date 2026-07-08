@@ -15,7 +15,7 @@ registry_paper_yaml_path(registry_root, folder)
 Character path (flat layout path even when missing).
 }
 \description{
-Prefers \code{papers/<folder>.yml}; falls back to legacy
-\code{papers/<folder>/replication.yml} when present.
+Prefers \code{studies/<folder>.yml}; falls back to legacy
+\code{papers/<folder>.yml} or \code{papers/<folder>/replication.yml} when present.
 }
 \keyword{internal}

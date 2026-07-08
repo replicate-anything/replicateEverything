@@ -17,7 +17,7 @@ add_paper(
 \item{full_replication}{If \code{TRUE}, also run every table and figure live.}
 
 \item{registry_root}{Path to the registry repository root (contains
-\verb{papers/} and \code{index.csv}). Defaults to
+\verb{studies/} and \code{index.csv}). Defaults to
 \code{getOption("replicateEverything.registry_root")}.}
 
 \item{dry_run}{If \code{TRUE}, run checks only; do not write registry files.}
@@ -28,7 +28,7 @@ Invisibly, the result of \code{\link[=check_package_replication]{check_package_r
 }
 \description{
 Validates a study replication package with \code{\link[=check_package_replication]{check_package_replication()}},
-then writes a lightweight registry stub (\verb{papers/<folder>.yml})
+then writes a lightweight registry stub (\verb{studies/<folder>.yml})
 and updates \code{index.csv}.
 }
 \details{

@@ -143,8 +143,8 @@ test_that("sync_folder_paper copies stub into registry checkout", {
 
     tmp <- withr::local_tempdir()
     reg <- file.path(tmp, "registry")
-    papers <- file.path(reg, "papers")
-    dir.create(papers, recursive = TRUE)
+    studies <- file.path(reg, "studies")
+    dir.create(studies, recursive = TRUE)
     writeLines(
       "folder,doi,title,journal,year,authors,repo",
       file.path(reg, "index.csv")
@@ -156,7 +156,7 @@ test_that("sync_folder_paper copies stub into registry checkout", {
 
     synced <- sync_folder_paper(copy_root, registry_root = reg)
     expect_true(file.exists(synced$stub_path))
-    expect_true(file.exists(file.path(papers, paste0(synced$folder, ".yml"))))
+    expect_true(file.exists(file.path(studies, paste0(synced$folder, ".yml"))))
   })
 })
 

@@ -190,9 +190,8 @@ test_that("find_replication_entry reads package yaml when registry stub is minim
   stub <- file.path(
     monorepo_root,
     "registry",
-    "papers",
-    "10.1371_journal.pone.0278337",
-    "replication.yml"
+    "studies",
+    "10.1371_journal.pone.0278337.yml"
   )
   skip_if_not(file.exists(stub), "registry stub missing")
   skip_if_not(

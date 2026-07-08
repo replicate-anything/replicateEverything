@@ -366,14 +366,14 @@ for a tour of every main function.</p>
 <h2>How it works</h2>
 <p>The <a href="https://github.com/replicate-anything/registry">registry</a>
 indexes studies with lightweight stub files in
-<code>papers/&lt;folder&gt;.yml</code> and <code>index.csv</code>.
+<code>studies/&lt;folder&gt;.yml</code> and <code>index.csv</code>.
 <strong>Replication materials live in separate study
 repositories</strong>, not inside the registry.</p>
 <p><code>replicateEverything</code> reads the stub, fetches the full
 <code>replication.yml</code> from the study repo or package, loads data,
 sources analysis scripts, and returns typed result objects.</p>
 <pre><code>Registry (index only)              Study repository
-  papers/&lt;folder&gt;.yml  ───────►    replication.yml
+  studies/&lt;folder&gt;.yml  ───────►    replication.yml
   index.csv                        data/
                                    code/
                                    artifacts/   (folder-backed)
@@ -400,7 +400,7 @@ package:</p>
   replication.yml
   inst/report/artifacts/</code></pre>
 <p>In both cases the registry holds only a <strong>stub</strong>
-(<code>papers/&lt;folder&gt;.yml</code>) pointing at the study repo. See
+(<code>studies/&lt;folder&gt;.yml</code>) pointing at the study repo. See
 the folder and package replication checklists for contributor
 workflows.</p>
 </div>

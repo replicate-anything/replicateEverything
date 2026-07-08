@@ -253,7 +253,10 @@ Reference: `rep-10.1017-s0003055426101749/code/tables/tab_1.do`.
 
 - `use "${processed}/..."` + `do "${maindir}/code/helpers/setup_analysis.do"`
 - Temp files under `${result}/`, never cwd
-- `esttab` output to log → formatted by `code/helpers/format_stata.R` → `artifacts/tab_N.html`
+- **Export publication table with `esttab ... using "${result}/tab_N_table.html", html replace`** (matches author `esttab ... using *_out_*.txt` in `DO18_main_analyses.do`)
+- `code/helpers/format_stata.R` reads the esttab HTML for Shiny — **not** the full Stata log
+
+Authors always ran two `esttab` calls: one to the console, one to a file (`1_out_main.txt`, `2_out_interaction_bystep.txt`, …) with `booktabs`. Our study repos use the file export (HTML variant) for display.
 
 ### Split monolithic `.do`
 
@@ -335,7 +338,7 @@ replications:
     code: code/tables/tab_1.do
     format: code/helpers/format_stata.R
     output: artifacts/staging/tab_1_stata.log
-    artifact: artifacts/tab_1.html
+    artifact: artifacts/tab_1.html   # sole display artifact path (Shiny reads this only)
 
   - id: fig_2
     type: figure
@@ -352,7 +355,9 @@ replications:
       - scipy
 ```
 
-**Figure vs prep routing:** Display figures need **both** `output:` and `artifact:`. Entries with `output:` but no `artifact:` are treated as prep/pipeline steps and will not build display artifacts correctly.
+**Figure vs prep routing:** Display figures need **both** `output:` and `artifact:`. Entries with `output:` but no `artifact:` are treated as prep/pipeline steps.
+
+**Artifact wiring:** `artifact:` in `replication.yml` is the **only** path Shiny/`get_artifact_path()` uses (no extension guessing). Stata tables: export with `esttab ... using "${result}/tab_N_table.html", html replace` in `mk_tab_N.do`; `format_stata.R` reads that file, not the full log.
 
 | Engine | yaml `engine` | `code` extension | `dependencies` installs |
 |--------|---------------|------------------|-------------------------|
@@ -362,7 +367,7 @@ replications:
 
 ## Step 9 — Registry stub
 
-`registry/papers/10.1017S0003055426101749.yml` (or `registry/drafts/` while WIP):
+`registry/studies/10.1017S0003055426101749.yml` (or `registry/drafts/` while WIP):
 
 ```yaml
 paper:
@@ -471,7 +476,7 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 | Python fig shows as engine `r` in audit | Set `engine: python`; audit must pass `language` to `render_replication()` |
 | Shiny "not available for language r" on `fig_2` | Resolve engine-specific id (`fig_2` + `python`) before Run/Display |
 | Fig 2 Display fails but PNG on GitHub | Deploy latest `replicateEverything`; `infer_folder_study_stub()` for draft stubs |
-| Table Display missing | Build `tab_*.html` via `build_study_artifacts()` — not auto-created from Stata logs alone |
+| Table Display shows full Stata log (setup, reghdfe, SSC install) | Add `esttab ... using "${result}/tab_N_table.html", html replace` to `mk_tab_N.do` (from author's `using *_out_*.txt`); point `format_stata.R` at esttab HTML, not raw log |
 | Missing Python packages on server | List PyPI names under entry `dependencies:`; run with `install_deps=TRUE` |
 | Notebook prep fails | Add `jupyter`, `nbconvert` to prep step `dependencies` |
 | `.dta` not in git | Expected — document in `data/raw/README.md`; run prep on server or cache processed data |

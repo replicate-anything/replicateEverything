@@ -10,7 +10,7 @@ resolve_paper_path(doi)
 \item{doi}{Character. DOI of the paper.}
 }
 \value{
-Character folder name under \code{papers/}.
+Character folder name under \code{studies/}.
 }
 \description{
 Uses the registry index \code{folder} column when available, otherwise

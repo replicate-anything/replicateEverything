@@ -69,11 +69,23 @@ test_that("write_folder_registry_stub creates registry sync files", {
   expect_equal(nrow(index), 1L)
 })
 
-test_that("registry_paper_yaml_path prefers flat stub files", {
+test_that("registry_study_yaml_path prefers flat stub files", {
   tmp <- withr::local_tempdir()
-  papers <- file.path(tmp, "papers")
-  dir.create(papers, recursive = TRUE)
-  flat <- file.path(papers, "10.9999_example.yml")
+  studies <- file.path(tmp, "studies")
+  dir.create(studies, recursive = TRUE)
+  flat <- file.path(studies, "10.9999_example.yml")
+  writeLines("paper:\n  doi: 10.9999/example", flat)
+  expect_equal(
+    registry_study_yaml_path(tmp, "10.9999_example"),
+    flat
+  )
+})
+
+test_that("registry_paper_yaml_path alias resolves studies stubs", {
+  tmp <- withr::local_tempdir()
+  studies <- file.path(tmp, "studies")
+  dir.create(studies, recursive = TRUE)
+  flat <- file.path(studies, "10.9999_example.yml")
   writeLines("paper:\n  doi: 10.9999/example", flat)
   expect_equal(
     registry_paper_yaml_path(tmp, "10.9999_example"),

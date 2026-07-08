@@ -13,6 +13,16 @@ test_that("default artifact path uses html for legacy tables", {
   expect_equal(default_artifact_path(rep, "tab_1"), "artifacts/tab_1.html")
 })
 
+test_that("registry_artifact_rel_paths uses only replication.yml artifact when set", {
+  rep <- list(
+    id = "tab_2",
+    type = "table",
+    artifact = "artifacts/tab_2.html"
+  )
+  paths <- registry_artifact_rel_paths("tab_2", rep, NULL)
+  expect_equal(paths, "artifacts/tab_2.html")
+})
+
 test_that("get_artifact_path resolves figure png under local folder-backed study", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555_test")
@@ -28,7 +38,7 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
     ),
     file.path(study_dir, "replication.yml")
   )
-  dir.create(file.path(local_root, "papers"), recursive = TRUE)
+  dir.create(file.path(local_root, "studies"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
@@ -38,7 +48,7 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
       "  study_folder: rep-10.5555_test",
       "repo: replicate-anything/rep-10.5555_test"
     ),
-    file.path(local_root, "papers", "10.5555_test.yml")
+    file.path(local_root, "studies", "10.5555_test.yml")
   )
   png_path <- file.path(study_dir, "artifacts", "fig_1.png")
   writeBin(as.raw(0), png_path)
@@ -88,7 +98,7 @@ test_that("validate_artifact fails when file is missing", {
     ),
     file.path(study_dir, "replication.yml")
   )
-  dir.create(file.path(local_root, "papers"), recursive = TRUE)
+  dir.create(file.path(local_root, "studies"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
@@ -98,7 +108,7 @@ test_that("validate_artifact fails when file is missing", {
       "  study_folder: rep-10.5555_missing",
       "repo: replicate-anything/rep-10.5555_missing"
     ),
-    file.path(local_root, "papers", "10.5555_missing.yml")
+    file.path(local_root, "studies", "10.5555_missing.yml")
   )
 
   local_index <- data.frame(

@@ -121,7 +121,7 @@ read_package_replication_yaml <- function(pkg_root) {
 #' Registry folder name from a DOI
 #' @keywords internal
 doi_to_registry_folder <- function(doi) {
-  gsub("/", "_", normalize_doi(doi))
+  resolve_paper_path(doi)
 }
 
 #' Build the lightweight registry stub yaml list from package metadata
