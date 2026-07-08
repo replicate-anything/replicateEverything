@@ -1075,8 +1075,13 @@ replications_to_df <- function(reps) {
     if (!type %in% c("figure", "table")) {
       return(FALSE)
     }
-    code <- as.character(x$code %||% "")
-    nzchar(code)
+    # A displayable entry is runnable or has a precomputed artifact. Folder
+    # studies declare a `code:` path; package-backed studies declare `make:`
+    # (an R function) instead. Either, or a declared `artifact:`, qualifies.
+    has_code <- nzchar(as.character(x$code %||% ""))
+    has_make <- nzchar(as.character(x$make %||% ""))
+    has_artifact <- nzchar(as.character(x$artifact %||% ""))
+    has_code || has_make || has_artifact
   }, logical(1))]
   if (length(reps) == 0) return(NULL)
 
