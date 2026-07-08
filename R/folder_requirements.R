@@ -253,7 +253,14 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
     grepl('<pre[^>]*class="[^"]*stata-output', html, ignore.case = TRUE)
 }
 
-#' Expected artifact path relative to study root
+#' Artifact path relative to study root (single source of truth)
+#'
+#' Returns the \code{artifact:} entry from \code{replication.yml} when declared,
+#' otherwise the type-based default from \code{default_artifact_path()}. This is
+#' the one rule used by both \code{save_artifact()} (build) and artifact lookup
+#' (Shiny), so builds write exactly where lookup reads.
+#'
+#' @param rep A single replication entry from \code{replication.yml}.
 #' @keywords internal
 study_artifact_rel_path <- function(rep) {
   artifact <- rep$artifact %||% NULL

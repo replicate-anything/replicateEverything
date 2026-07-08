@@ -2,9 +2,12 @@
 % Please edit documentation in R/folder_replication.R
 \name{registry_paper_yaml_path}
 \alias{registry_paper_yaml_path}
-\title{Path to a registry paper stub yaml file}
+\alias{registry_study_yaml_path}
+\title{Path to a registry study stub yaml file}
 \usage{
 registry_paper_yaml_path(registry_root, folder)
+
+registry_study_yaml_path(registry_root, folder)
 }
 \arguments{
 \item{registry_root}{Registry checkout root.}
@@ -12,10 +15,10 @@ registry_paper_yaml_path(registry_root, folder)
 \item{folder}{Registry folder name.}
 }
 \value{
-Character path (flat layout path even when missing).
+Character path (flat layout path under \code{studies/} when missing).
 }
 \description{
-Prefers \code{studies/<folder>.yml}; falls back to legacy
-\code{papers/<folder>.yml} or \code{papers/<folder>/replication.yml} when present.
+Prefers \code{studies/<folder>.yml}; falls back to legacy \code{papers/}
+layouts when present.
 }
 \keyword{internal}

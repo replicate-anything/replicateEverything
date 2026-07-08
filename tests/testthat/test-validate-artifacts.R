@@ -13,14 +13,24 @@ test_that("default artifact path uses html for legacy tables", {
   expect_equal(default_artifact_path(rep, "tab_1"), "artifacts/tab_1.html")
 })
 
-test_that("registry_artifact_rel_paths uses only replication.yml artifact when set", {
+test_that("study_artifact_rel_path uses replication.yml artifact when set", {
   rep <- list(
     id = "tab_2",
     type = "table",
     artifact = "artifacts/tab_2.html"
   )
-  paths <- registry_artifact_rel_paths("tab_2", rep, NULL)
-  expect_equal(paths, "artifacts/tab_2.html")
+  expect_equal(study_artifact_rel_path(rep), "artifacts/tab_2.html")
+})
+
+test_that("study_artifact_rel_path falls back to the type-based default", {
+  expect_equal(
+    study_artifact_rel_path(list(id = "fig_1", type = "figure")),
+    "artifacts/fig_1.png"
+  )
+  expect_equal(
+    study_artifact_rel_path(list(id = "tab_1", type = "table")),
+    "artifacts/tab_1.html"
+  )
 })
 
 test_that("get_artifact_path resolves figure png under local folder-backed study", {

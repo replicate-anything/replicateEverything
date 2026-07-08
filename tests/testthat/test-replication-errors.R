@@ -62,21 +62,28 @@ test_that("infer_folder_study_stub finds study repo from rep slug", {
   )
 })
 
-test_that("manifest_artifact_paths reads flat artifacts map", {
+test_that("resolve_registry_artifact_path prefers the local declared artifact", {
   tmp <- tempfile()
   dir.create(tmp)
   dir.create(file.path(tmp, "artifacts"))
-  manifest <- list(
-    artifacts = list(fig_2 = "artifacts/fig_2.png")
+  png_path <- file.path(tmp, "artifacts", "fig_2.png")
+  writeBin(as.raw(0), png_path)
+
+  rep <- list(id = "fig_2", type = "figure", artifact = "artifacts/fig_2.png")
+  ctx <- list(local_root = tmp, base_url = "https://example.com/main")
+
+  resolved <- resolve_registry_artifact_path("fig_2", ctx, rep)
+  expect_equal(
+    normalizePath(resolved, winslash = "/", mustWork = FALSE),
+    normalizePath(png_path, winslash = "/", mustWork = FALSE)
   )
-  jsonlite::write_json(
-    manifest,
-    file.path(tmp, "artifacts", "manifest.json"),
-    auto_unbox = TRUE
+})
+
+test_that("resolve_registry_artifact_path returns the registry URL when no local file", {
+  ctx <- list(local_root = NULL, base_url = "https://example.com/main")
+  rep <- list(id = "fig_2", type = "figure", artifact = "artifacts/fig_2.png")
+  expect_equal(
+    resolve_registry_artifact_path("fig_2", ctx, rep),
+    "https://example.com/main/artifacts/fig_2.png"
   )
-  paths <- manifest_artifact_paths(
-    "fig_2",
-    list(local_root = tmp, base_url = "https://example.com/main/")
-  )
-  expect_true(any(grepl("fig_2\\.png$", paths)))
 })

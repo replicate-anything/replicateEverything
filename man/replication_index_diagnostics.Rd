@@ -21,7 +21,7 @@ When a package-backed study lists no tables/figures, this shows which
 \code{replication.yml} URLs were checked. The study index should come from
 the package repo (e.g.
 \code{replicate-anything/rep-10.1371_journal.pone.0278337}), not only the
-registry stub under \code{studies/<folder>/}.
+registry stub under \code{studies/<folder>.yml}.
 }
 \examples{
 \dontrun{

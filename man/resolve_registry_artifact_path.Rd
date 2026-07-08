@@ -2,21 +2,29 @@
 % Please edit documentation in R/render_replication.R
 \name{resolve_registry_artifact_path}
 \alias{resolve_registry_artifact_path}
-\title{Resolve a precomputed artifact under the registry paper folder}
+\title{Resolve a precomputed artifact under the registry study folder}
 \usage{
 resolve_registry_artifact_path(what, ctx, rep = NULL, doi = NULL)
 }
 \arguments{
-\item{what}{Replication id.}
+\item{what}{Replication id (used only when \code{rep} is unavailable).}
 
 \item{ctx}{Paper context.}
 
-\item{rep}{Optional replication entry.}
+\item{rep}{Replication entry from \code{replication.yml}.}
 
-\item{doi}{Optional DOI for caching.}
+\item{doi}{Unused; retained for backward compatibility.}
 }
 \description{
-Package-backed studies may ship display artifacts in \code{inst/report/artifacts/}
-on the study package (not under the registry paper folder).
+The artifact location comes from a single rule -- \code{study_artifact_rel_path()}
+(the \code{artifact:} entry in \code{replication.yml}, or the type-based
+default). Builds write to that same path, so lookup is deterministic: return
+the local file when present, otherwise the registry URL. Availability of the
+remote file is decided by the actual fetch in \code{load_artifact_file_path()},
+not by a separate existence probe.
+}
+\details{
+Package-backed studies ship display artifacts on the study package and are
+resolved elsewhere (see \code{get_artifact_path()}).
 }
 \keyword{internal}

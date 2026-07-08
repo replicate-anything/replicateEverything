@@ -167,104 +167,6 @@ get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
 #' @keywords internal
 .replication_meta_cache <- new.env(parent = emptyenv())
 
-#' @keywords internal
-.artifact_path_cache <- new.env(parent = emptyenv())
-
-#' Relative artifact paths to try for a replication
-#'
-#' When \code{replication.yml} specifies \code{artifact:}, that path is the only
-#' candidate. Otherwise uses \code{manifest.json}, then type-based defaults.
-#'
-#' @param what Replication id.
-#' @param rep Optional replication entry.
-#' @param ctx Optional paper context (for \code{manifest.json}).
-#' @keywords internal
-registry_artifact_rel_paths <- function(what, rep = NULL, ctx = NULL) {
-  if (!is.null(rep) && !is.null(rep$artifact) && nzchar(as.character(rep$artifact[[1]]))) {
-    return(unique(as.character(rep$artifact)))
-  }
-
-  paths <- character(0)
-  if (!is.null(ctx)) {
-    paths <- c(paths, manifest_artifact_paths(what, ctx))
-  }
-  paths <- unique(paths[nzchar(paths)])
-  if (length(paths) > 0L) {
-    return(paths)
-  }
-
-  if (!is.null(rep)) {
-    return(default_artifact_path(rep, rep$id %||% what))
-  }
-
-  character(0)
-}
-
-#' Artifact paths recorded in \code{artifacts/manifest.json}
-#'
-#' @param what Replication id.
-#' @param ctx Paper context.
-#' @keywords internal
-manifest_artifact_paths <- function(what, ctx) {
-  read_manifest <- function(manifest) {
-    if (is.null(manifest)) {
-      return(character(0))
-    }
-    paths <- character(0)
-    if (!is.null(manifest$replications)) {
-      entry <- manifest$replications[[what]] %||% NULL
-      if (!is.null(entry)) {
-        if (is.character(entry) && length(entry) == 1L && nzchar(entry)) {
-          paths <- c(paths, entry)
-        } else if (!is.null(entry$artifact) && nzchar(entry$artifact)) {
-          paths <- c(paths, as.character(entry$artifact))
-        }
-      }
-    }
-    if (!is.null(manifest$artifacts)) {
-      flat <- manifest$artifacts[[what]] %||% NULL
-      if (!is.null(flat) && nzchar(as.character(flat))) {
-        paths <- c(paths, as.character(flat))
-      }
-    }
-    unique(paths[nzchar(paths)])
-  }
-
-  paths <- character(0)
-  if (!is.null(ctx$local_root)) {
-    local_manifest <- file.path(ctx$local_root, "artifacts", "manifest.json")
-    if (file.exists(local_manifest)) {
-      manifest <- tryCatch(
-        jsonlite::fromJSON(local_manifest, simplifyVector = FALSE),
-        error = function(e) NULL
-      )
-      paths <- c(paths, read_manifest(manifest))
-    }
-  }
-
-  manifest_url <- paste0(ctx$base_url, "/artifacts/manifest.json")
-  resp <- tryCatch(
-    httr::GET(
-      manifest_url,
-      httr::user_agent("replicateEverything"),
-      httr::timeout(15)
-    ),
-    error = function(e) NULL
-  )
-  if (!is.null(resp) && httr::status_code(resp) < 400L) {
-    manifest <- tryCatch(
-      jsonlite::fromJSON(
-        httr::content(resp, as = "text", encoding = "UTF-8"),
-        simplifyVector = FALSE
-      ),
-      error = function(e) NULL
-    )
-    paths <- c(paths, read_manifest(manifest))
-  }
-
-  unique(paths[nzchar(paths)])
-}
-
 #' Join a registry base URL with a relative path without duplicate slashes.
 #'
 #' @param base Character base URL.
@@ -274,90 +176,40 @@ registry_url <- function(base, rel) {
   paste0(sub("/$", "", base), "/", sub("^/", "", rel))
 }
 
-#' @keywords internal
-url_exists <- function(url) {
-  resp <- tryCatch(
-    httr::HEAD(
-      url,
-      httr::user_agent("replicateEverything"),
-      httr::timeout(10)
-    ),
-    error = function(e) NULL
-  )
-  if (!is.null(resp) && httr::status_code(resp) < 400L) {
-    return(TRUE)
-  }
-  ext <- tolower(tools::file_ext(url))
-  if (!ext %in% c("png", "svg", "jpg", "jpeg", "html", "rds")) {
-    return(FALSE)
-  }
-  resp <- tryCatch(
-    httr::GET(
-      url,
-      httr::user_agent("replicateEverything"),
-      httr::timeout(15)
-    ),
-    error = function(e) NULL
-  )
-  !is.null(resp) && httr::status_code(resp) < 400L
-}
-
-#' Resolve a precomputed artifact under the registry paper folder
+#' Resolve a precomputed artifact under the registry study folder
 #'
-#' Package-backed studies may ship display artifacts in \code{inst/report/artifacts/}
-#' on the study package (not under the registry paper folder).
+#' The artifact location comes from a single rule -- \code{study_artifact_rel_path()}
+#' (the \code{artifact:} entry in \code{replication.yml}, or the type-based
+#' default). Builds write to that same path, so lookup is deterministic: return
+#' the local file when present, otherwise the registry URL. Availability of the
+#' remote file is decided by the actual fetch in \code{load_artifact_file_path()},
+#' not by a separate existence probe.
 #'
-#' @param what Replication id.
+#' Package-backed studies ship display artifacts on the study package and are
+#' resolved elsewhere (see \code{get_artifact_path()}).
+#'
+#' @param what Replication id (used only when \code{rep} is unavailable).
 #' @param ctx Paper context.
-#' @param rep Optional replication entry.
-#' @param doi Optional DOI for caching.
+#' @param rep Replication entry from \code{replication.yml}.
+#' @param doi Unused; retained for backward compatibility.
 #' @keywords internal
 resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
-  cache_key <- paste(doi %||% ctx$folder %||% "", what, sep = "|")
-  if (exists(cache_key, envir = .artifact_path_cache, inherits = FALSE)) {
-    cached <- get(cache_key, envir = .artifact_path_cache)
-    return(if (is.na(cached)) NULL else cached)
+  if (is.null(rep)) {
+    return(NULL)
+  }
+  rel <- study_artifact_rel_path(rep)
+  if (!nzchar(rel)) {
+    return(NULL)
   }
 
-  result <- NULL
-  rel_paths <- registry_artifact_rel_paths(what, rep, ctx)
-
-  for (rel in rel_paths) {
-    if (!is.null(ctx$local_root)) {
-      local <- file.path(ctx$local_root, rel)
-      if (file.exists(local)) {
-        result <- local
-        break
-      }
+  if (!is.null(ctx$local_root)) {
+    local <- file.path(ctx$local_root, rel)
+    if (file.exists(local)) {
+      return(local)
     }
   }
 
-  if (is.null(result) && length(rel_paths) > 0L) {
-    if (length(rel_paths) == 1L) {
-      # replication.yml declares exactly one artifact: path, so the remote
-      # location is deterministic. Return it without a separate existence
-      # probe -- the actual fetch in load_artifact_file_path() (longer timeout,
-      # same request that renders it) decides availability. Probing separately
-      # caused present files to be reported missing when a HEAD/GET probe timed
-      # out or behaved differently than the fetch.
-      result <- registry_url(ctx$base_url, rel_paths[[1]])
-    } else {
-      # Legacy studies without an explicit artifact: may have several candidate
-      # extensions; probe to disambiguate which one exists.
-      for (rel in rel_paths) {
-        url <- registry_url(ctx$base_url, rel)
-        if (url_exists(url)) {
-          result <- url
-          break
-        }
-      }
-    }
-  }
-
-  if (!is.null(result)) {
-    assign(cache_key, result, envir = .artifact_path_cache)
-  }
-  result
+  registry_url(ctx$base_url, rel)
 }
 
 #' @keywords internal
@@ -799,19 +651,20 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
     find_replication_entry(meta, what, language = NULL),
     error = function(e) NULL
   )
-  rel <- registry_artifact_rel_paths(if (is.null(rep)) what else rep$id, rep, ctx)
-  if (length(rel) == 0L) {
+  if (is.null(rep)) {
     return(character(0))
   }
-  vapply(rel, function(r) {
-    if (!is.null(ctx$local_root)) {
-      local <- file.path(ctx$local_root, r)
-      if (file.exists(local)) {
-        return(normalizePath(local, winslash = "/", mustWork = FALSE))
-      }
+  rel <- study_artifact_rel_path(rep)
+  if (!nzchar(rel)) {
+    return(character(0))
+  }
+  if (!is.null(ctx$local_root)) {
+    local <- file.path(ctx$local_root, rel)
+    if (file.exists(local)) {
+      return(normalizePath(local, winslash = "/", mustWork = FALSE))
     }
-    registry_url(ctx$base_url, r)
-  }, character(1))
+  }
+  registry_url(ctx$base_url, rel)
 }
 
 #' @keywords internal
@@ -888,7 +741,7 @@ save_artifact <- function(
     format_type <- infer_result_format(object, result$type %||% rep$type %||% "unknown")
   }
 
-  ext <- switch(
+  natural_ext <- switch(
     format_type,
     ggplot = "png",
     html = "html",
@@ -899,7 +752,24 @@ save_artifact <- function(
     "rds"
   )
 
-  out_path <- file.path(output_dir, paste0(result$id, ".", ext))
+  # Single source of truth for the artifact location: study_artifact_rel_path()
+  # (the artifact: entry in replication.yml, or the type-based default). Builds
+  # write exactly where lookup reads. The filename and extension come from that
+  # rule; a mismatch with what the result actually serializes to is a study
+  # configuration error and is reported here rather than silently written to a
+  # path lookup will never check.
+  rel <- study_artifact_rel_path(rep)
+  declared_ext <- tolower(tools::file_ext(rel))
+  if (nzchar(declared_ext) && !identical(declared_ext, natural_ext)) {
+    stop(
+      "artifact: for ", result$id, " declares a .", declared_ext,
+      " file but the result serializes as .", natural_ext,
+      ". Fix the artifact: extension in replication.yml.",
+      call. = FALSE
+    )
+  }
+  ext <- if (nzchar(declared_ext)) declared_ext else natural_ext
+  out_path <- file.path(output_dir, basename(rel))
 
   if (format_type == "ggplot") {
     if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -943,8 +813,6 @@ save_artifact <- function(
     print(object)
   } else {
     saveRDS(object, out_path)
-    ext <- "rds"
-    out_path <- file.path(output_dir, paste0(result$id, ".", ext))
   }
 
   invisible(out_path)

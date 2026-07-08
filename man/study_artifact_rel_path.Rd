@@ -2,11 +2,17 @@
 % Please edit documentation in R/folder_requirements.R
 \name{study_artifact_rel_path}
 \alias{study_artifact_rel_path}
-\title{Expected artifact path relative to study root}
+\title{Artifact path relative to study root (single source of truth)}
 \usage{
 study_artifact_rel_path(rep)
 }
+\arguments{
+\item{rep}{A single replication entry from \code{replication.yml}.}
+}
 \description{
-Expected artifact path relative to study root
+Returns the \code{artifact:} entry from \code{replication.yml} when declared,
+otherwise the type-based default from \code{default_artifact_path()}. This is
+the one rule used by both \code{save_artifact()} (build) and artifact lookup
+(Shiny), so builds write exactly where lookup reads.
 }
 \keyword{internal}
