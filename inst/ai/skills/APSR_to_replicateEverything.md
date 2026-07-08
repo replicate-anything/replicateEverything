@@ -42,14 +42,15 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 - [ ] 2. Inventory engines (Stata / R / Python) and pipeline order
 - [ ] 3. Create study repo layout (see Target layout)
 - [ ] 4. Stage data in data/raw/; gitignore large .dta
-- [ ] 5. Extract pipeline → code/steps/ + prep: in replication.yml
-- [ ] 6. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
-- [ ] 7. Port figures → code/figures/fig_N.{R,py}; helpers → code/helpers/
-- [ ] 8. Write replication.yml (prep + replications + requires:)
-- [ ] 9. Registry stub + index.csv row (or drafts/ while WIP)
-- [ ] 10. testthat smoke tests
-- [ ] 11. Build artifacts/ + manifest.json; commit PNG/HTML
-- [ ] 12. Validate engines + Shiny (Display + Run)
+- [ ] 5. Add dependency automation (Stata install script, R CRAN, Python pip)
+- [ ] 6. Extract pipeline → code/steps/ + prep: in replication.yml
+- [ ] 7. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
+- [ ] 8. Port figures → code/figures/fig_N.{R,py}; helpers → code/helpers/
+- [ ] 9. Write replication.yml (stata_dependencies + prep + replications)
+- [ ] 10. Registry stub + index.csv row (or drafts/ while WIP)
+- [ ] 11. testthat smoke tests
+- [ ] 12. Build artifacts/ + manifest.json (`build_study_artifacts(..., install_deps = TRUE)`)
+- [ ] 13. Validate engines + Shiny (Display + Run)
 ```
 
 ## Step 1 — Read the delivery
@@ -111,6 +112,92 @@ artifacts/staging/
 
 Prep outputs → `data/processed/` (e.g. `all_asperson_fulldata.dta`).
 
+## Step 3b — Zero-touch dependencies (required)
+
+Goal: a fresh machine or Shiny server should run prep + tables + figures **without manual `ssc install`, `install.packages()`, or `pip install`**. Wire three layers:
+
+| Engine | Where to declare | How it installs |
+|--------|------------------|-----------------|
+| **Stata** | Top-level `stata_dependencies:` + `code/helpers/install_stata_deps.do` | `install_deps=TRUE` runs the `.do` via batch Stata; every Stata runner also calls it via `init_study_paths.do` |
+| **R** | `paper.dependencies:` (CRAN only) | `build_study_artifacts(install_deps=TRUE)` or `run_replication(..., install_deps=TRUE)` |
+| **Python** | Entry-level `dependencies:` on `engine: python` rows (PyPI names) | Same `install_deps=TRUE` → `python -m pip install` before script/notebook |
+
+**Do not** put Stata SSC package names (`reghdfe`, `estout`, `ftools`) in R `dependencies` — replicateEverything only installs CRAN packages for `engine: r` entries and paper-level R deps.
+
+### Stata: `install_stata_deps.do`
+
+Create `code/helpers/install_stata_deps.do` — idempotent, batch-safe, first run needs internet:
+
+```stata
+* Pin SSC reghdfe 5.x (author stack). Reghdfe 6.x from GitHub needs "require" — avoid.
+version 17
+cap which require
+if !_rc {
+    cap ado uninstall reghdfe
+    cap ado uninstall ftools
+}
+cap which ftools
+if _rc ssc install ftools, replace
+cap noisily ftools, compile
+cap which reghdfe
+if _rc ssc install reghdfe, replace
+cap which estout
+if _rc ssc install estout, replace
+```
+
+Reference: `rep-10.1017-s0003055426101749/code/helpers/install_stata_deps.do`.
+
+### Stata: `init_study_paths.do`
+
+Create `code/helpers/init_study_paths.do` — walk up to `replication.yml`, set `global maindir/rawdir/processed/result`, mkdir, then `do install_stata_deps.do`.
+
+**Every** Stata runner (tables **and** prep steps) must start with:
+
+```stata
+do "code/helpers/init_study_paths.do"
+```
+
+Do **not** rely on authors running `ssc install` by hand or on README instructions alone.
+
+### replication.yml dependency block
+
+```yaml
+paper:
+  dependencies:
+    - ggplot2
+    - dplyr
+    - readr
+
+stata_dependencies:
+  - code/helpers/install_stata_deps.do
+
+replications:
+  - id: fig_2
+    engine: python
+    dependencies:
+      - pandas
+      - matplotlib
+      - seaborn
+      - scipy
+```
+
+Optional: `requirements: code/helpers/requirements.txt` on a Python entry instead of (or in addition to) `dependencies:`.
+
+### Build command (CI / server / local)
+
+```r
+devtools::load_all("<monorepo>/replicateEverything")
+options(
+  replicateEverything.registry_root = "<monorepo>/registry",
+  replicateEverything.study_folders_root = "<monorepo>"
+)
+build_study_artifacts("rep-10.1017-s0003055426101749", install_deps = TRUE)
+```
+
+`install_deps = TRUE` is the default for `build_study_artifacts()`. It runs prep steps first, then tables/figures, installing Stata SSC + CRAN + pip as needed.
+
+**Prerequisites on the machine:** Stata (batch), R 4.x, Python 3.10+ on PATH (or `Sys.setenv(PYTHON=...)`). Internet on first run for SSC/CRAN/pip.
+
 ## Step 4 — Prep steps (`prep:` block)
 
 Map README step 0 (and similar) to `type: step` entries:
@@ -134,6 +221,13 @@ prep:
     inputs:
       - data/processed/all_asperson_fulldata.dta
     output: data/raw/promotion_results.csv
+    dependencies:
+      - pandas
+      - numpy
+      - scikit-learn
+      - imbalanced-learn
+      - jupyter
+      - nbconvert
 ```
 
 Downstream replications use `requires: [construct_analysis_dataset]`.
@@ -148,9 +242,10 @@ Downstream replications use `requires: [construct_analysis_dataset]`.
 
 Every Stata runner must:
 
-1. Walk up to find `replication.yml` → set `global maindir`
-2. Set `global rawdir`, `global processed`, `global result` (honour `REPLICATE_STATA_RESULT`)
-3. `cd` to `${result}`, open log, `do` the mk file, close log
+1. `do "code/helpers/init_study_paths.do"` (sets globals, mkdir, installs SSC deps)
+2. `cd` to `${result}`, open log, `do` the mk file, close log
+
+`init_study_paths.do` walks up to `replication.yml`, sets `global maindir`, `rawdir`, `processed`, `result` (honours `REPLICATE_STATA_RESULT`), and runs `install_stata_deps.do`.
 
 Reference: `rep-10.1017-s0003055426101749/code/tables/tab_1.do`.
 
@@ -175,12 +270,7 @@ Authors often use `version 18`. If the machine has Stata 17, change to `version 
 
 ### Stata packages
 
-```stata
-ssc install reghdfe, replace
-ssc install estout, replace
-ssc install ftools, replace
-ftools, compile
-```
+**Do not document manual `ssc install` as the primary path.** Use `stata_dependencies:` + `install_stata_deps.do` (Step 3b). Pin package versions when authors used older stacks (e.g. SSC `reghdfe` 5.x vs GitHub 6.x + `require`).
 
 ## Step 6 — R figures
 
@@ -230,6 +320,9 @@ paper:
 
 repo: replicate-anything/rep-10.1017-s0003055426101749
 
+stata_dependencies:
+  - code/helpers/install_stata_deps.do
+
 prep: [ ... ]
 
 replications:
@@ -252,13 +345,20 @@ replications:
     data: data/raw/10fold_training_results.csv
     output: artifacts/fig_2.png
     artifact: artifacts/fig_2.png
+    dependencies:
+      - pandas
+      - matplotlib
+      - seaborn
+      - scipy
 ```
 
-| Engine | yaml `engine` | `code` extension |
-|--------|---------------|------------------|
-| Stata | `stata` | `.do` |
-| R | `r` | `.R` |
-| Python | `python` | `.py` or `.ipynb` |
+**Figure vs prep routing:** Display figures need **both** `output:` and `artifact:`. Entries with `output:` but no `artifact:` are treated as prep/pipeline steps and will not build display artifacts correctly.
+
+| Engine | yaml `engine` | `code` extension | `dependencies` installs |
+|--------|---------------|------------------|-------------------------|
+| Stata | `stata` | `.do` | (use `stata_dependencies:` — not entry `dependencies`) |
+| R | `r` | `.R` | CRAN via `install_deps=TRUE` |
+| Python | `python` | `.py` or `.ipynb` | pip via `install_deps=TRUE` |
 
 ## Step 9 — Registry stub
 
@@ -301,12 +401,19 @@ devtools::load_all("<monorepo>/replicateEverything")
 
 ## Step 11 — Build artifacts
 
-**Figures:** run replication with format; commit `artifacts/fig_*.png`.
-
-**Tables:** Stata run + `format = TRUE` produces `artifacts/tab_*.html`:
+Use `build_study_artifacts()` with `install_deps = TRUE` (default) so prep, Stata SSC, CRAN, and pip all install on a fresh machine:
 
 ```r
-run_replication("10.1017/S0003055426101749", "tab_1", language = "stata", format = TRUE)
+build_study_artifacts("rep-10.1017-s0003055426101749", install_deps = TRUE)
+```
+
+This runs prep steps, then every table/figure, writes `artifacts/*` and `artifacts/manifest.json`.
+
+**Per-item debugging:**
+
+```r
+run_replication("10.1017/S0003055426101749", "tab_1", language = "stata", format = TRUE, install_deps = TRUE)
+run_replication("10.1017/S0003055426101749", "fig_2", language = "python", install_deps = TRUE)
 ```
 
 Update `artifacts/manifest.json`:
@@ -355,21 +462,31 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 | Monolithic `DO18_main_analyses.do` | Split into `mk_tab_N.do`; shared setup in `code/helpers/setup_analysis.do` |
 | Temp `.dta` in author cwd | Save under `${result}/` via `global result` |
 | `version 18` on Stata 17 | Use `version 17` |
-| `eststo` / `reghdfe` not found | `ssc install estout`, `reghdfe`, `ftools` |
+| `reghdfe` / `estout` not found | Add `stata_dependencies:` + `install_stata_deps.do`; call `init_study_paths.do` in every Stata runner |
+| `reghdfe` 6.x / `require` package conflict | Pin SSC `reghdfe` 5.x in `install_stata_deps.do`; uninstall GitHub 6.x stack |
+| Stata names in R `dependencies` | Only CRAN packages in `paper.dependencies` / R entry `dependencies` — not `reghdfe`, `estout` |
+| `format_tab_N not found` for Stata tables | Use `format: code/helpers/format_stata.R` (shared formatter); replicateEverything falls back to `format_tab_N_stata` |
+| Figure with `output:` only (no `artifact:`) | Treated as prep — add `artifact:` for display figures |
+| Python fig prints `[1] "…/fig_2.png"` during build | Fixed in replicateEverything ≥0.5: PNG paths must copy, not `print()` — deploy current package |
 | Python fig shows as engine `r` in audit | Set `engine: python`; audit must pass `language` to `render_replication()` |
 | Shiny "not available for language r" on `fig_2` | Resolve engine-specific id (`fig_2` + `python`) before Run/Display |
 | Fig 2 Display fails but PNG on GitHub | Deploy latest `replicateEverything`; `infer_folder_study_stub()` for draft stubs |
-| Table Display missing | Build `tab_*.html` — not auto-created from Stata logs |
-| `.dta` not in git | Expected — document in `data/raw/README.md` |
-| Server missing processed data | Run prep step on server or ship `data/processed/`; set `study_data_root` if needed |
-| Dropbox spaces in paths | Test Stata batch runs early; Shiny git footer needs quoted paths on Windows |
+| Table Display missing | Build `tab_*.html` via `build_study_artifacts()` — not auto-created from Stata logs alone |
+| Missing Python packages on server | List PyPI names under entry `dependencies:`; run with `install_deps=TRUE` |
+| Notebook prep fails | Add `jupyter`, `nbconvert` to prep step `dependencies` |
+| `.dta` not in git | Expected — document in `data/raw/README.md`; run prep on server or cache processed data |
+| Server missing processed data | `build_study_artifacts()` runs prep first; or ship `data/processed/` |
+| Dropbox spaces in paths | replicateEverything uses `Sys.setenv()` + `shQuote()` for Python/Stata — test batch runs early |
+| `reghdfe` split across lines with blank line | Stata treats blank line as command end — use one line or `///` without blank lines |
 
 ## Deployed Shiny server
 
 1. Install/update `replicateEverything` from GitHub (not an old `win-library` copy).
-2. Restart Shiny after `devtools::load_all()` or package reinstall.
+2. Restart Shiny after package reinstall.
 3. Check footer: `replicateEverything 0.5.0 · <sha> · installed` — confirms which build is live.
-4. Stata + Python must be on PATH; large `.dta` must exist under study cache or be built by prep.
+4. **Stata + Python on PATH**; large `.dta` under study cache or built by prep.
+5. First replication run: `install_deps=TRUE` (default in Shiny live display) installs SSC/CRAN/pip automatically when study has `stata_dependencies`, `paper.dependencies`, and Python entry `dependencies` wired correctly.
+6. Stata first run needs **internet once** for SSC; document offline fallback in study README if needed.
 
 ## Additional references
 

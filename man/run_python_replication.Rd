@@ -4,7 +4,7 @@
 \alias{run_python_replication}
 \title{Execute a Python script or notebook}
 \usage{
-run_python_replication(rep, ctx, meta = NULL)
+run_python_replication(rep, ctx, meta = NULL, install_deps = FALSE)
 }
 \arguments{
 \item{rep}{Replication entry.}
@@ -12,6 +12,8 @@ run_python_replication(rep, ctx, meta = NULL)
 \item{ctx}{Paper context.}
 
 \item{meta}{Parsed metadata.}
+
+\item{install_deps}{When \code{TRUE}, install pip dependencies before running.}
 }
 \description{
 Execute a Python script or notebook

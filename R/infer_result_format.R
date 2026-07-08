@@ -47,9 +47,14 @@ infer_result_format <- function(object, type) {
     return("data.frame")
   }
 
-  if (is.character(object) && length(object) == 1 &&
-      grepl("^\\s*<", object)) {
-    return("html")
+  if (is.character(object) && length(object) == 1L && nzchar(object)) {
+    if (file.exists(object) &&
+        grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", object, ignore.case = TRUE)) {
+      return("png")
+    }
+    if (grepl("^\\s*<", object)) {
+      return("html")
+    }
   }
 
   if (inherits(object, "html")) {

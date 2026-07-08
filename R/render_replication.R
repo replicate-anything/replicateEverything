@@ -524,7 +524,7 @@ render_replication <- function(
       status_msg <- "Stata pipeline step finished."
     } else if (is_python_replication(rep, meta$paper)) {
       ensure_python_available(rep)
-      run_python_replication(rep, ctx, meta = meta)
+      run_python_replication(rep, ctx, meta = meta, install_deps = install_deps)
       status_msg <- "Python pipeline step finished."
     } else {
       ensure_replication_dependencies(
@@ -598,7 +598,7 @@ render_replication <- function(
 
   if (is_python_replication(rep, meta$paper)) {
     ensure_python_available(rep)
-    obj <- run_python_replication(rep, ctx, meta = meta)
+    obj <- run_python_replication(rep, ctx, meta = meta, install_deps = install_deps)
     obj_type <- rep$type %||% "figure"
     return(structure(
       list(

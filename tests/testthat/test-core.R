@@ -118,6 +118,9 @@ test_that("read_data_path handles csv and rds", {
 test_that("infer_result_format detects common outputs", {
   expect_equal(infer_result_format(data.frame(x = 1), "table"), "data.frame")
   expect_equal(infer_result_format("<table></table>", "table"), "html")
+  png_path <- tempfile(fileext = ".png")
+  writeLines(charToRaw(""), png_path)
+  expect_equal(infer_result_format(png_path, "figure"), "png")
 })
 
 test_that("render_replication works against local fixture", {

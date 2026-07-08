@@ -61,13 +61,103 @@ python_run_dir <- function(rep, ctx, meta = NULL) {
   normalizePath(getwd(), winslash = "/", mustWork = FALSE)
 }
 
+#' Ensure Python pip dependencies for a replication entry
+#'
+#' Installs packages listed under entry-level \code{dependencies} (engine
+#' \code{python} only) or a \code{requirements} file path when
+#' \code{install_missing = TRUE}.
+#'
+#' @keywords internal
+ensure_python_dependencies <- function(
+  replication_meta,
+  paper_meta = NULL,
+  ctx = NULL,
+  meta = NULL,
+  install_missing = FALSE
+) {
+  if (!identical(replication_engine(replication_meta, paper_meta), "python")) {
+    return(invisible(TRUE))
+  }
+
+  req_rel <- replication_meta$requirements %||% NULL
+  req_path <- NULL
+  if (!is.null(req_rel) && nzchar(as.character(req_rel))) {
+    if (!is.null(ctx)) {
+      req_path <- resolve_registry_file(as.character(req_rel), ctx, meta = meta)
+    } else {
+      req_path <- as.character(req_rel)
+    }
+  }
+
+  deps <- character(0)
+  if (!is.null(replication_meta$dependencies)) {
+    deps <- c(deps, unlist(replication_meta$dependencies, use.names = FALSE))
+  }
+  deps <- unique(na.omit(as.character(deps)))
+  deps <- deps[nzchar(deps)]
+
+  if (length(deps) == 0 && (is.null(req_path) || !file.exists(req_path))) {
+    return(invisible(TRUE))
+  }
+
+  if (!isTRUE(install_missing)) {
+    return(invisible(TRUE))
+  }
+
+  python <- find_python_executable()
+  quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
+
+  if (!is.null(req_path) && file.exists(req_path)) {
+    message("Installing Python requirements from ", basename(req_path), " ...")
+    status <- system2(
+      python,
+      c("-m", "pip", "install", "-q", "-r", shQuote(req_path, type = quote_type)),
+      stdout = TRUE,
+      stderr = TRUE
+    )
+    if (!identical(status, 0L)) {
+      stop(
+        "Failed to install Python requirements from ", req_path,
+        call. = FALSE
+      )
+    }
+  }
+
+  if (length(deps) > 0L) {
+    message("Installing Python dependencies: ", paste(deps, collapse = ", "))
+    status <- system2(
+      python,
+      c("-m", "pip", "install", "-q", deps),
+      stdout = TRUE,
+      stderr = TRUE
+    )
+    if (!identical(status, 0L)) {
+      stop(
+        "Failed to install Python dependencies: ",
+        paste(deps, collapse = ", "),
+        call. = FALSE
+      )
+    }
+  }
+
+  invisible(TRUE)
+}
+
 #' Execute a Python script or notebook
 #'
 #' @param rep Replication entry.
 #' @param ctx Paper context.
 #' @param meta Parsed metadata.
+#' @param install_deps When \code{TRUE}, install pip dependencies before running.
 #' @keywords internal
-run_python_replication <- function(rep, ctx, meta = NULL) {
+run_python_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
+  ensure_python_dependencies(
+    rep,
+    paper_meta = meta$paper %||% NULL,
+    ctx = ctx,
+    meta = meta,
+    install_missing = install_deps
+  )
   python <- find_python_executable()
   code_rel <- as.character(rep$code %||% "")
   if (!nzchar(code_rel)) {
