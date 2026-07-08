@@ -4,6 +4,13 @@
 
 ### Bug fixes
 
+- Study Stata dependency scripts (`install_stata_deps.do` etc.) now run
+  at most once per study per session instead of before every prep step
+  and table, so repeated live runs no longer re-trigger a slow SSC
+  reinstall/recompile. A missing-dependency retry still forces a re-run.
+  Set `options(replicateEverything.install_stata_deps = FALSE)` to skip
+  study dependency installation entirely when you manage Stata packages
+  yourself.
 - Cached GitHub study checkouts now refresh when the remote commit
   changes.
   [`materialize_folder_study_from_github()`](https://replicate-anything.github.io/replicateEverything/reference/materialize_folder_study_from_github.md)
