@@ -142,9 +142,9 @@
 <div class="section level2">
 <h2 id="how-it-works">How it works<a class="anchor" aria-label="anchor" href="#how-it-works"></a>
 </h2>
-<p>The <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a> indexes studies via lightweight stub files in <code>papers/&lt;folder&gt;.yml</code>. <strong>Folder-backed</strong> studies keep code, data, and artifacts in a dedicated study repository; <strong>package-backed</strong> studies keep them in an R package. <code>replicateEverything</code> reads the stub, loads the full <code>replication.yml</code> from the study repo or package, and runs the registered scripts.</p>
+<p>The <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a> indexes studies via lightweight stub files in <code>studies/&lt;folder&gt;.yml</code>. <strong>Folder-backed</strong> studies keep code, data, and artifacts in a dedicated study repository; <strong>package-backed</strong> studies keep them in an R package. <code>replicateEverything</code> reads the stub, loads the full <code>replication.yml</code> from the study repo or package, and runs the registered scripts.</p>
 <pre><code>Registry                         Study repo or package
-  papers/&lt;folder&gt;.yml  ───────►  replication.yml
+  studies/&lt;folder&gt;.yml  ───────►  replication.yml
   index.csv                      data/  code/  artifacts/
               ↓
       replicateEverything
@@ -154,7 +154,7 @@
 <h3 id="registry-layout">Registry layout<a class="anchor" aria-label="anchor" href="#registry-layout"></a>
 </h3>
 <p>Each indexed paper has one stub file:</p>
-<pre><code>papers/
+<pre><code>studies/
   10.1177_00491241211036161.yml
   10.1371_journal.pone.0278337.yml</code></pre>
 <p>Folder-backed study repositories follow:</p>
@@ -245,7 +245,7 @@ tests/testthat/</code></pre>
 <div class="section level2">
 <h2 id="folder-backed-replications">Folder-backed replications<a class="anchor" aria-label="anchor" href="#folder-backed-replications"></a>
 </h2>
-<p>Studies maintained as a <strong>simple Git repository</strong> (<code>code/</code>, <code>data/</code>, <code>artifacts/</code>) can be linked from the registry. Keep a stub in <code>papers/&lt;folder&gt;.yml</code> only:</p>
+<p>Studies maintained as a <strong>simple Git repository</strong> (<code>code/</code>, <code>data/</code>, <code>artifacts/</code>) can be linked from the registry. Keep a stub in <code>studies/&lt;folder&gt;.yml</code> only:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> https://doi.org/10.1177/00491241211036161</span></span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Bounding Causes of Effects With Mediators</span></span>
@@ -283,7 +283,7 @@ tests/testthat/</code></pre>
 <div class="section level2">
 <h2 id="package-backed-replications">Package-backed replications<a class="anchor" aria-label="anchor" href="#package-backed-replications"></a>
 </h2>
-<p>Studies maintained as standalone R packages can be linked from the registry. Keep a stub file <code>papers/&lt;folder&gt;.yml</code> that points to the package (no materials in the registry):</p>
+<p>Studies maintained as standalone R packages can be linked from the registry. Keep a stub file <code>studies/&lt;folder&gt;.yml</code> that points to the package (no materials in the registry):</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> https://doi.org/10.1371/journal.pone.0278337</span></span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> </span><span class="st">"Public support for global vaccine sharing in the COVID-19 pandemic"</span></span>
@@ -428,12 +428,12 @@ tests/testthat/</code></pre>
 <strong>Test locally</strong> — run scripts in the R console or with <code><a href="reference/run_replication.html">run_replication()</a></code>
 </li>
 <li>
-<strong>Submit to the registry</strong> — clone <a href="https://github.com/replicate-anything/registry" class="external-link">replicate-anything/registry</a>, move your paper folder into <code>papers/</code>, and open a pull request</li>
+<strong>Submit to the registry</strong> — clone <a href="https://github.com/replicate-anything/registry" class="external-link">replicate-anything/registry</a>, move your paper folder into <code>studies/</code>, and open a pull request</li>
 </ol>
 <p>For <strong>folder-backed</strong> studies, run <code><a href="reference/prepare_folder_paper.html">prepare_folder_paper()</a></code> to build artifacts, validate, and write <code>registry/replication.yml</code> + <code>registry/index.csv</code> in the study repo; then <code><a href="reference/sync_folder_paper.html">sync_folder_paper()</a></code> or copy those files into the registry.</p>
 <p>For <strong>package-backed</strong> studies, use <code><a href="reference/add_paper.html">add_paper()</a></code> after <code><a href="reference/check_package_replication.html">check_package_replication()</a></code> passes instead of copying code and data into the registry.</p>
 <div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/registry</span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">mv</span> 10.1177_00491241211036161 registry/papers/</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">mv</span> 10.1177_00491241211036161 registry/studies/</span>
 <span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="bu">cd</span> registry</span>
 <span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="fu">git</span> add .</span>
 <span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Add replication for 10.1177/00491241211036161"</span></span>
@@ -530,7 +530,7 @@ tests/testthat/</code></pre>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

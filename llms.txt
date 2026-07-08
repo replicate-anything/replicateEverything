@@ -92,14 +92,14 @@ vignette](https://replicate-anything.github.io/replicateEverything/articles/repl
 ## How it works
 
 The [registry](https://github.com/replicate-anything/registry) indexes
-studies via lightweight stub files in `papers/<folder>.yml`.
+studies via lightweight stub files in `studies/<folder>.yml`.
 **Folder-backed** studies keep code, data, and artifacts in a dedicated
 study repository; **package-backed** studies keep them in an R package.
 `replicateEverything` reads the stub, loads the full `replication.yml`
 from the study repo or package, and runs the registered scripts.
 
     Registry                         Study repo or package
-      papers/<folder>.yml  ───────►  replication.yml
+      studies/<folder>.yml  ───────►  replication.yml
       index.csv                      data/  code/  artifacts/
                   ↓
           replicateEverything
@@ -110,7 +110,7 @@ from the study repo or package, and runs the registered scripts.
 
 Each indexed paper has one stub file:
 
-    papers/
+    studies/
       10.1177_00491241211036161.yml
       10.1371_journal.pone.0278337.yml
 
@@ -218,7 +218,7 @@ if (sys.nframe() == 0) {
 
 Studies maintained as a **simple Git repository** (`code/`, `data/`,
 `artifacts/`) can be linked from the registry. Keep a stub in
-`papers/<folder>.yml` only:
+`studies/<folder>.yml` only:
 
 ``` yaml
 paper:
@@ -269,7 +269,7 @@ for the full workflow.
 ## Package-backed replications
 
 Studies maintained as standalone R packages can be linked from the
-registry. Keep a stub file `papers/<folder>.yml` that points to the
+registry. Keep a stub file `studies/<folder>.yml` that points to the
 package (no materials in the registry):
 
 ``` yaml
@@ -392,7 +392,7 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
     [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
 5.  **Submit to the registry** — clone
     [replicate-anything/registry](https://github.com/replicate-anything/registry),
-    move your paper folder into `papers/`, and open a pull request
+    move your paper folder into `studies/`, and open a pull request
 
 For **folder-backed** studies, run
 [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
@@ -409,7 +409,7 @@ passes instead of copying code and data into the registry.
 
 ``` bash
 git clone https://github.com/replicate-anything/registry
-mv 10.1177_00491241211036161 registry/papers/
+mv 10.1177_00491241211036161 registry/studies/
 cd registry
 git add .
 git commit -m "Add replication for 10.1177/00491241211036161"
