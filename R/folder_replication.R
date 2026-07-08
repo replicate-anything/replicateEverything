@@ -766,13 +766,13 @@ move_directory <- function(from, to) {
     unlink(to, recursive = TRUE)
   }
   dir.create(dirname(to), recursive = TRUE, showWarnings = FALSE)
-  if (file.rename(from, to)) {
+  # rename is atomic on the same filesystem; across devices (e.g. /tmp -> NFS
+  # cache) it fails with EXDEV and emits a warning — fall back to copy+delete.
+  renamed <- suppressWarnings(file.rename(from, to))
+  if (isTRUE(renamed)) {
     return(invisible(TRUE))
   }
-  dir.create(to, recursive = TRUE, showWarnings = FALSE)
-  entries <- list.files(from, full.names = TRUE, all.files = TRUE, no.. = TRUE)
-  ok <- file.copy(from = entries, to = to, recursive = TRUE, copy.mode = TRUE)
-  if (!all(ok)) {
+  if (!file.copy(from, to, recursive = TRUE, copy.mode = TRUE)) {
     stop("Failed to copy study repository into cache.", call. = FALSE)
   }
   unlink(from, recursive = TRUE)
@@ -838,7 +838,11 @@ materialize_folder_study_from_github <- function(repo, ref = "main") {
   dir.create(cache_root, recursive = TRUE, showWarnings = FALSE)
   zip_url <- study_repo_archive_url(repo, ref)
   zip_file <- download_registry_file(zip_url)
-  unzip_parent <- tempfile("study-unzip-")
+  # Unzip on the same filesystem as the cache so rename into cache_dir is
+  # atomic when possible (/tmp on another mount causes EXDEV on Linux servers).
+  unzip_scratch <- file.path(cache_root, ".unzip-tmp")
+  dir.create(unzip_scratch, recursive = TRUE, showWarnings = FALSE)
+  unzip_parent <- tempfile("study-unzip-", tmpdir = unzip_scratch)
   dir.create(unzip_parent)
   on.exit(unlink(unzip_parent, recursive = TRUE), add = TRUE)
   utils::unzip(zip_file, exdir = unzip_parent)
