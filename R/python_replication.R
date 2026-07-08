@@ -54,7 +54,13 @@ ensure_python_available <- function(rep = NULL) {
 #' @inheritParams stata_run_dir
 #' @keywords internal
 python_run_dir <- function(rep, ctx, meta = NULL) {
-  study_root <- resolve_study_folder_path(ctx, meta = meta)
+  study_root <- resolve_study_folder_path(meta, ctx)
+  if (is.null(study_root) || !nzchar(study_root) || !dir.exists(study_root)) {
+    study_root <- tryCatch(
+      ensure_study_folder_local(meta, ctx),
+      error = function(e) NULL
+    )
+  }
   if (!is.null(study_root) && nzchar(study_root) && dir.exists(study_root)) {
     return(normalizePath(study_root, winslash = "/", mustWork = FALSE))
   }
@@ -364,6 +370,11 @@ run_python_script <- function(python, script_path, run_dir, log_path) {
     }
   }, add = TRUE)
   Sys.setenv(REPLICATE_STUDY_ROOT = run_dir)
+  if (dir.exists(run_dir)) {
+    old_wd <- getwd()
+    on.exit(setwd(old_wd), add = TRUE)
+    setwd(run_dir)
+  }
   system2(
     python,
     args = shQuote(script_path, type = quote_type),
@@ -396,6 +407,11 @@ run_python_notebook <- function(python, notebook_path, run_dir, log_path) {
     }
   }, add = TRUE)
   Sys.setenv(REPLICATE_STUDY_ROOT = run_dir)
+  if (dir.exists(run_dir)) {
+    old_wd <- getwd()
+    on.exit(setwd(old_wd), add = TRUE)
+    setwd(run_dir)
+  }
   status <- system2(
     python,
     args,

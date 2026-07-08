@@ -2,6 +2,7 @@
 
 ## Bug fixes
 
+* Python replications now run from the resolved study folder (the local sibling or the materialized GitHub clone) instead of falling back to the R working directory. On a Shiny server this fixes `FileNotFoundError` where `REPLICATE_STUDY_ROOT` pointed at the app directory (e.g. `ShinyApps/replicate/data/raw/...`) rather than the study repo clone. The Python process now also runs with its working directory set to the study root, matching Stata.
 * Python dependency handling now probes whether each declared package is already importable (`python -c "import ..."`) before shelling out to `pip`, so live runs skip redundant installs and no longer fail on locked-down servers where the packages are pre-installed but `pip install` is forbidden. Also fixed the pip exit-status check, which previously misread `system2()` captured output as the status code.
 * `ai_skills()` no longer lists `README.md` as a skill; `inst/ai/skills/` now bundles both `folder_replication` and `APSR_to_replicateEverything`.
 

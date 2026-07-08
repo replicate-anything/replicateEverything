@@ -1,0 +1,8 @@
+Run Python replications from the resolved study folder
+
+python_run_dir() fell back to getwd() when no local sibling study folder
+was found, so on a Shiny server REPLICATE_STUDY_ROOT pointed at the app
+directory and scripts read data from the wrong path (e.g.
+ShinyApps/replicate/data/raw/...), causing FileNotFoundError. Fall back to
+ensure_study_folder_local() (the materialized GitHub clone) like Stata does,
+and run the Python process with its working directory set to the study root.
