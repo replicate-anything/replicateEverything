@@ -515,13 +515,30 @@ install_stata_dependencies <- function(
   staging_dir = NULL,
   meta = NULL,
   rep = NULL,
-  install_deps = FALSE
+  install_deps = FALSE,
+  force = FALSE
 ) {
   if (!isTRUE(install_deps)) {
     return(invisible(FALSE))
   }
+  if (!isTRUE(getOption("replicateEverything.install_stata_deps", TRUE))) {
+    return(invisible(FALSE))
+  }
   scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
   if (length(scripts) == 0L) {
+    return(invisible(FALSE))
+  }
+  deps_key <- paste0(
+    normalizePath(study_root, winslash = "/", mustWork = FALSE),
+    "::",
+    paste(sort(basename(scripts)), collapse = ",")
+  )
+  # A single live Run installs deps before the prep step and again before the
+  # table; and re-running the study's install script is expensive (it may
+  # recompile / reinstall SSC packages over the network every time). Once the
+  # scripts have run successfully in this session, skip them unless forced
+  # (e.g. a missing-dependency retry).
+  if (!isTRUE(force) && stata_deps_installed_this_session(deps_key)) {
     return(invisible(FALSE))
   }
   for (script in scripts) {
@@ -533,7 +550,31 @@ install_stata_dependencies <- function(
       timeout = 1200L
     )
   }
+  mark_stata_deps_installed(deps_key)
   invisible(TRUE)
+}
+
+# Session-scoped record of study dependency scripts already run, so repeated
+# replications of one study do not re-run the (potentially slow) install.
+.stata_deps_installed <- new.env(parent = emptyenv())
+
+#' Whether a study's Stata dependency scripts already ran this session
+#'
+#' @param deps_key Character key identifying the study + its install scripts.
+#' @return Logical scalar.
+#' @keywords internal
+stata_deps_installed_this_session <- function(deps_key) {
+  isTRUE(.stata_deps_installed[[deps_key]])
+}
+
+#' Record that a study's Stata dependency scripts ran successfully
+#'
+#' @param deps_key Character key identifying the study + its install scripts.
+#' @return Invisibly \code{NULL}.
+#' @keywords internal
+mark_stata_deps_installed <- function(deps_key) {
+  assign(deps_key, TRUE, envir = .stata_deps_installed)
+  invisible(NULL)
 }
 
 stata_run_failed_message <- function(run) {
@@ -871,7 +912,8 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
         staging_dir = staging_dir,
         meta = meta,
         rep = rep,
-        install_deps = TRUE
+        install_deps = TRUE,
+        force = TRUE
       )
       stata_run <- tryCatch(
         run_replication_do(),
