@@ -803,9 +803,18 @@ materialize_folder_study_from_github <- function(repo, ref = "main") {
   cache_dir <- file.path(cache_root, safe_repo, safe_ref)
   marker <- file.path(cache_dir, "replication.yml")
   sha_file <- file.path(cache_dir, ".replicate_ref_sha")
-  remote_sha <- github_ref_sha(repo, ref)
+  cache_key <- paste0(safe_repo, "@", safe_ref)
 
   if (file.exists(marker)) {
+    # A single live Run resolves the study folder several times (prep, table,
+    # format). Once we have confirmed this study's cache is fresh, skip the
+    # remote check for a short window so we do not re-hit the GitHub API for
+    # the same repo repeatedly. Controlled by
+    # options(replicateEverything.study_cache_ttl = <seconds>); 0 disables.
+    if (study_cache_recently_verified(cache_key)) {
+      return(normalizePath(cache_dir, winslash = "/", mustWork = FALSE))
+    }
+    remote_sha <- github_ref_sha(repo, ref)
     cached_sha <- if (file.exists(sha_file)) {
       trimws(readLines(sha_file, warn = FALSE, n = 1L)[1])
     } else {
@@ -818,9 +827,12 @@ materialize_folder_study_from_github <- function(repo, ref = "main") {
     reusable <- is.na(remote_sha) ||
       (!is.na(cached_sha) && nzchar(cached_sha) && identical(cached_sha, remote_sha))
     if (reusable) {
+      mark_study_cache_verified(cache_key)
       return(normalizePath(cache_dir, winslash = "/", mustWork = FALSE))
     }
     unlink(cache_dir, recursive = TRUE)
+  } else {
+    remote_sha <- github_ref_sha(repo, ref)
   }
 
   dir.create(cache_root, recursive = TRUE, showWarnings = FALSE)
@@ -850,7 +862,57 @@ materialize_folder_study_from_github <- function(repo, ref = "main") {
       error = function(e) NULL
     )
   }
+  mark_study_cache_verified(cache_key)
   normalizePath(cache_dir, winslash = "/", mustWork = FALSE)
+}
+
+# Session-scoped record of study caches confirmed fresh, so repeated study
+# folder resolutions within one run do not each trigger a GitHub API call.
+.study_cache_verified <- new.env(parent = emptyenv())
+
+#' Seconds a study-cache freshness check stays valid within a session
+#'
+#' Configurable via \code{options(replicateEverything.study_cache_ttl)}. A value
+#' of \code{0} disables the session skip so every resolution re-checks the
+#' remote.
+#'
+#' @return Numeric seconds (defaults to 300).
+#' @keywords internal
+study_cache_ttl_seconds <- function() {
+  val <- suppressWarnings(
+    as.numeric(getOption("replicateEverything.study_cache_ttl", 300))[1]
+  )
+  if (length(val) != 1L || is.na(val) || val < 0) {
+    return(300)
+  }
+  val
+}
+
+#' Whether a study cache was confirmed fresh within the session TTL
+#'
+#' @param cache_key Character key \code{"<safe_repo>@<safe_ref>"}.
+#' @return Logical scalar.
+#' @keywords internal
+study_cache_recently_verified <- function(cache_key) {
+  ttl <- study_cache_ttl_seconds()
+  if (ttl <= 0) {
+    return(FALSE)
+  }
+  last <- .study_cache_verified[[cache_key]]
+  if (is.null(last)) {
+    return(FALSE)
+  }
+  as.numeric(Sys.time() - last, units = "secs") < ttl
+}
+
+#' Record that a study cache was just confirmed fresh
+#'
+#' @param cache_key Character key \code{"<safe_repo>@<safe_ref>"}.
+#' @return Invisibly \code{NULL}.
+#' @keywords internal
+mark_study_cache_verified <- function(cache_key) {
+  assign(cache_key, Sys.time(), envir = .study_cache_verified)
+  invisible(NULL)
 }
 
 #' Current commit SHA for a GitHub repository ref
