@@ -10,8 +10,13 @@ SHINY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/
 LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
 
-registry_stub_yaml_url <- function(folder, repo = DEFAULT_REGISTRY_REPO) {
-  sprintf("https://raw.githubusercontent.com/%s/main/studies/%s.yml", repo, folder)
+registry_stub_yaml_url <- function(folder) {
+  # The registry stub (studies/<folder>.yml) always lives in the registry repo,
+  # never in a study's own repository.
+  sprintf(
+    "https://raw.githubusercontent.com/%s/main/studies/%s.yml",
+    DEFAULT_REGISTRY_REPO, folder
+  )
 }
 APP_HEX_LOGO <- "logo-hex.png"
 
@@ -533,15 +538,13 @@ replication_row_for_id <- function(replications_df, replication_id) {
   if (is.null(replications_df) || is.null(replication_id) || !nzchar(replication_id)) {
     return(NULL)
   }
-  match <- replications_df[
-    replications_df$group == replication_id |
-      replications_df$id == replication_id |
-      replications_df$r_id == replication_id |
-      replications_df$stata_id == replication_id |
-      replications_df$python_id == replication_id,
-    ,
-    drop = FALSE
-  ]
+  eq <- function(col) !is.na(col) & col == replication_id
+  hit <- eq(replications_df$group) |
+    eq(replications_df$id) |
+    eq(replications_df$r_id) |
+    eq(replications_df$stata_id) |
+    eq(replications_df$python_id)
+  match <- replications_df[which(hit), , drop = FALSE]
   if (nrow(match) == 0) {
     return(NULL)
   }
@@ -635,15 +638,75 @@ artifact_missing <- function(result) {
   replicate_fn("artifact_display_missing", result)
 }
 
+#' Probe a resolved artifact candidate (local path or URL)
+#'
+#' Returns whether the file exists at the resolved location and, when it does,
+#' whether it can actually be loaded for display. Used by the "not available"
+#' panel to explain the mismatch when a file exists but did not render.
+artifact_candidate_report <- function(path) {
+  is_url <- grepl("^https?://", path, ignore.case = TRUE)
+
+  if (!is_url) {
+    exists <- file.exists(path)
+    return(list(
+      path = path,
+      exists = exists,
+      status = if (exists) "local file present" else "local file not found",
+      loadable = exists
+    ))
+  }
+
+  resp <- tryCatch(
+    httr::GET(path, httr::user_agent("replicateEverything"), httr::timeout(15)),
+    error = function(e) e
+  )
+  if (inherits(resp, "error")) {
+    return(list(path = path, exists = NA, status = paste0("network error: ", conditionMessage(resp)), loadable = FALSE))
+  }
+  code <- httr::status_code(resp)
+  if (code >= 400L) {
+    return(list(path = path, exists = FALSE, status = paste0("HTTP ", code), loadable = FALSE))
+  }
+
+  loaded <- tryCatch(
+    replicate_fn("load_artifact_file_path", path),
+    error = function(e) e
+  )
+  loadable <- !inherits(loaded, "error") &&
+    !isTRUE(replicate_fn("artifact_content_missing", loaded))
+  list(
+    path = path,
+    exists = TRUE,
+    status = paste0("HTTP ", code, if (loadable) ", loads OK" else ", present but did not load"),
+    loadable = loadable
+  )
+}
+
 artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "output") {
   candidates <- tryCatch(
     replicate_fn("artifact_lookup_candidates", doi, what, folder = folder, repo = repo),
     error = function(e) character(0)
   )
+  reports <- lapply(candidates, function(p) tryCatch(artifact_candidate_report(p), error = function(e) NULL))
+  reports <- Filter(Negate(is.null), reports)
+  exists_but_unloaded <- Filter(function(r) isTRUE(r$exists) && !isTRUE(r$loadable), reports)
+
   tagList(
     tags$div(
       class = "alert alert-secondary",
       tags$strong(paste0("No precomputed ", kind, " available.")),
+      if (length(exists_but_unloaded) > 0) {
+        tags$div(
+          class = "alert alert-warning small",
+          tags$strong("But the artifact file does exist. "),
+          "It was found at the location below but could not be loaded into this session. ",
+          "Likely causes: a transient network/proxy/TLS problem reaching ",
+          tags$code("raw.githubusercontent.com"),
+          ", or the running app is on a stale build. ",
+          "Reload the page; if it persists, reinstall the package and relaunch, or click ",
+          tags$strong("Run"), " to regenerate it live."
+        )
+      },
       tags$p(
         "The registry lists this replication, but the artifact file is not available yet.",
         " Click ", tags$strong("Run"), " to generate it live."
@@ -669,13 +732,23 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
         tags$code("inst/report/artifacts/"),
         ")."
       ),
-      if (length(candidates) > 0) {
+      if (length(reports) > 0) {
         tagList(
           tags$p(class = "mb-1", tags$strong("Expected artifact:")),
           tags$ul(
             class = "small mb-0",
-            lapply(candidates, function(path) {
-              tags$li(tags$code(path))
+            lapply(reports, function(r) {
+              badge_class <- if (isTRUE(r$exists) && isTRUE(r$loadable)) {
+                "text-success"
+              } else if (isTRUE(r$exists)) {
+                "text-warning"
+              } else {
+                "text-danger"
+              }
+              tags$li(
+                tags$code(r$path),
+                tags$span(class = paste("ms-2", badge_class), paste0("[", r$status, "]"))
+              )
             })
           )
         )
@@ -1325,7 +1398,7 @@ read_local_study_replication_index <- function(stub, folder, repo = DEFAULT_REGI
 fetch_study_replications_index <- function(folder, repo = DEFAULT_REGISTRY_REPO) {
   stub <- read_local_registry_stub(folder)
   if (is.null(stub)) {
-    registry_url <- registry_stub_yaml_url(folder, repo %||% DEFAULT_REGISTRY_REPO)
+    registry_url <- registry_stub_yaml_url(folder)
     stub <- read_yaml_from_url(registry_url)
   }
   if (is.null(stub)) {
@@ -1399,7 +1472,7 @@ fetch_replication_code_shiny <- function(what, folder, repo = DEFAULT_REGISTRY_R
     stop("Replication ", what, " has no make/code entry.", call. = FALSE)
   }
 
-  registry_url <- registry_stub_yaml_url(folder, repo)
+  registry_url <- registry_stub_yaml_url(folder)
   stub <- read_yaml_from_url(registry_url)
   pkg_repo <- stub$repo %||% stub$paper$package_repo %||% NULL
   if (is.null(pkg_repo) || !nzchar(as.character(pkg_repo[[1]]))) {
@@ -1448,7 +1521,7 @@ fetch_replication_code_shiny <- function(what, folder, repo = DEFAULT_REGISTRY_R
 build_replication_index_diagnostics <- function(doi, folder = NULL, repo = NULL, replications_loaded = NULL) {
   index_repo <- repo %||% DEFAULT_REGISTRY_REPO
   registry_url <- if (!is.null(folder) && nzchar(folder)) {
-    registry_stub_yaml_url(folder, DEFAULT_REGISTRY_REPO)
+    registry_stub_yaml_url(folder)
   } else {
     ""
   }
@@ -2756,7 +2829,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: 1fr auto auto auto;
+      grid-template-columns: 1fr 3rem 4.5rem 6rem;
       gap: 12px;
       align-items: start;
     }
