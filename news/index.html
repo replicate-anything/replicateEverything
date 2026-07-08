@@ -46,6 +46,12 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="replicateeverything-050">replicateEverything 0.5.0<a class="anchor" aria-label="anchor" href="#replicateeverything-050"></a></h2>
 <div class="section level3">
+<h3 id="bug-fixes-0-5-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-0"></a></h3>
+<ul><li>Python dependency handling now probes whether each declared package is already importable (<code>python -c "import ..."</code>) before shelling out to <code>pip</code>, so live runs skip redundant installs and no longer fail on locked-down servers where the packages are pre-installed but <code>pip install</code> is forbidden. Also fixed the pip exit-status check, which previously misread <code><a href="https://rdrr.io/r/base/system2.html" class="external-link">system2()</a></code> captured output as the status code.</li>
+<li>
+<code><a href="../reference/ai_skills.html">ai_skills()</a></code> no longer lists <code>README.md</code> as a skill; <code>inst/ai/skills/</code> now bundles both <code>folder_replication</code> and <code>APSR_to_replicateEverything</code>.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="breaking-changes-0-5-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-5-0"></a></h3>
 <ul><li>Removed deprecated <code>replicate_paper()</code> and <code>create_replication_template()</code>. Use <code>run_replication(doi, "everything")</code> and the folder/package replication checklists instead.</li>
 <li>Pre-built vignette HTML is shipped again in <code>inst/doc/</code> so installs that skip vignette builds still include all articles.</li>

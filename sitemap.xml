@@ -143,6 +143,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_source_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/paper_context.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_github_slug.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/pip_install.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/portable_path_in_text.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/prep_manifest_output_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/prep_output_path.html</loc></url>
@@ -153,7 +154,9 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/prepare_package_replication.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/preview_data_file.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/python_dep_import_name.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/python_executable_candidates.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/python_missing_dependencies.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/python_run_dir.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/raw_to_github_browse.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/read_lines_url.html</loc></url>
