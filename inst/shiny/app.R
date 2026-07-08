@@ -843,6 +843,42 @@ engine_icons_display <- function(has_r = FALSE, has_stata = FALSE, has_python = 
   )
 }
 
+repo_icon_folder <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "#5c6b7a",
+    tags$path(
+      d = "M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"
+    )
+  )
+}
+
+study_repo_url_for_row <- function(row) {
+  slug <- if ("repo" %in% names(row)) as.character(row$repo[[1]] %||% "") else ""
+  if (length(slug) != 1L || is.na(slug) || !nzchar(slug)) {
+    return(NA_character_)
+  }
+  paste0("https://github.com/", slug)
+}
+
+repo_link_display <- function(repo_url) {
+  if (length(repo_url) != 1L || is.na(repo_url) || !nzchar(repo_url)) {
+    return(tags$span(class = "text-muted small", "—"))
+  }
+  tags$a(
+    href = repo_url,
+    target = "_blank",
+    rel = "noopener",
+    class = "study-repo-link",
+    title = "Open study repository",
+    repo_icon_folder()
+  )
+}
+
 study_engine_availability <- function(reps) {
   has_r <- FALSE
   has_stata <- FALSE
@@ -2720,7 +2756,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr auto auto auto;
       gap: 12px;
       align-items: start;
     }
@@ -2736,6 +2772,18 @@ ui <- tagList(
     .study-run-col {
       text-align: right;
       white-space: nowrap;
+    }
+    .study-repo-col {
+      text-align: center;
+      white-space: nowrap;
+    }
+    .study-repo-link {
+      display: inline-flex;
+      line-height: 0;
+      opacity: 0.9;
+    }
+    .study-repo-link:hover {
+      opacity: 1;
     }
     .study-citation {
       padding: 0.5rem 0;
@@ -3127,6 +3175,10 @@ server <- function(input, output, session) {
           tags$div(class = "text-muted", style = "font-size: 0.9rem;", cite$line2)
         ),
         tags$div(
+          class = "study-repo-col",
+          repo_link_display(study_repo_url_for_row(row))
+        ),
+        tags$div(
           class = "study-engine-col",
           engine_icons_display(engines$r, engines$stata, engines$python)
         ),
@@ -3149,9 +3201,10 @@ server <- function(input, output, session) {
     tagList(
       tags$div(
         class = "study-list-header",
-        tags$div("Citation"),
-        tags$div(class = "study-engine-col", "Code"),
-        tags$div(class = "study-run-col", "")
+        tags$div("Study"),
+        tags$div(class = "study-repo-col", "Repo"),
+        tags$div(class = "study-engine-col", "Languages"),
+        tags$div(class = "study-run-col", "Replication")
       ),
       rows
     )
