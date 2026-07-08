@@ -4,6 +4,16 @@
 
 ### Bug fixes
 
+- Cached GitHub study checkouts now refresh when the remote commit
+  changes.
+  [`materialize_folder_study_from_github()`](https://replicate-anything.github.io/replicateEverything/reference/materialize_folder_study_from_github.md)
+  records the downloaded commit SHA and compares it against the current
+  remote SHA (via the GitHub API); a stale cache (e.g. one built before
+  new data files were committed) is re-downloaded automatically. When
+  the remote SHA cannot be determined (offline or rate-limited) the
+  existing cache is kept. This fixes live Stata/Python runs failing with
+  “file not found” for data that exists in the repo but was missing from
+  an out-of-date server cache.
 - Python replications now run from the resolved study folder (the local
   sibling or the materialized GitHub clone) instead of falling back to
   the R working directory. On a Shiny server this fixes
