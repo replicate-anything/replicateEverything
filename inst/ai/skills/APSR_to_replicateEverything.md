@@ -41,7 +41,7 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 - [ ] 1. Read README.txt + Codebook.pdf; list main-text tables/figures
 - [ ] 2. Inventory engines (Stata / R / Python) and pipeline order
 - [ ] 3. Create study repo layout (see Target layout)
-- [ ] 4. Stage data in data/raw/; gitignore large .dta
+- [ ] 4. Stage data in data/raw/; commit data ≤50MB, gitignore only >50MB (list by name)
 - [ ] 5. Add dependency automation (Stata install script, R CRAN, Python pip)
 - [ ] 6. Extract pipeline → code/steps/ + prep: in replication.yml
 - [ ] 7. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
@@ -62,7 +62,7 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 | `DO*.do` | Stata — often one file for many tables |
 | `(RCODE)_*.R` | R figures / post-processing |
 | `(Python)_*.ipynb` | RF, correlation plots, ML outputs |
-| `*.dta` | Analysis datasets (large; gitignore) |
+| `*.dta` | Analysis datasets (commit if ≤50MB; gitignore only if >50MB) |
 | `*.csv` | Exported results / conjoint / RF outputs |
 
 **Main text first.** Keep the raw author delivery in a monorepo source folder (e.g. `10.1017-S0003055426101749/`) — **not** inside the study repo.
@@ -75,11 +75,11 @@ Mark **artifact-only** outputs (schematics, morphs) with `artifact:` + `note:` a
 rep-<doi-hyphenated>/
   replication.yml
   README.md
-  .gitignore                 # *.dta in raw/processed; staging logs
+  .gitignore                 # logs + staging; only >50MB inputs (by name)
   data/
-    raw/                     # downloaded .dta + shipped CSVs
+    raw/                     # .dta + shipped CSVs (committed if ≤50MB)
     raw/README.md
-    processed/               # step outputs (gitignored .dta)
+    processed/               # step outputs (committed if ≤50MB)
   code/
     steps/                   # pipeline: dataset construction, notebooks
     tables/                  # tab_N.do runners + mk_tab_N.do
@@ -97,20 +97,39 @@ rep-<doi-hyphenated>/
 
 ## Step 3 — Data staging
 
+Live replication (Shiny **Run**, and any fresh clone) runs from a **clone of the
+study repo**. Uncommitted inputs are missing from the clone and steps fail with
+"file not found". So **commit data by default**; only exclude files too large for git.
+
 1. Copy `.dta` from delivery → `data/raw/`.
 2. Copy shipped `.csv` → `data/raw/`.
-3. Gitignore large binaries:
+3. Decide per file by size (GitHub warns at 50 MB, hard-rejects at 100 MB):
+
+| File size | Handling |
+|-----------|----------|
+| **≤ 50 MB** | Commit under `data/` — live runs work from any clone. |
+| **> 50 MB** | Keep out of git. Stage under `registry/data/<folder>/` for manual deploy to the server, document the source in `data/raw/README.md`, rely on precomputed `artifacts/`, and list the file explicitly in `.gitignore`. |
+
+4. `.gitignore` (keep data; exclude only logs, staging, and oversized files by name):
 
 ```gitignore
-data/raw/*.dta
-data/processed/*.dta
-artifacts/staging/
+.Rproj.user/
 *.log
+artifacts/staging/
+
+# Commit data so live replication works from a clone. Only exclude inputs
+# too large for git (>50 MB): keep those out, stage under registry/data/<folder>/,
+# deploy to the server manually, and list each such file explicitly below.
 ```
 
-4. Document required downloads in `data/raw/README.md`.
+**Do not** blanket-ignore `data/raw/*.dta` / `data/processed/*.dta` — it silently
+drops all inputs and breaks live replication (the app then reports "file not
+found" or falls back to a stale artifact).
 
-Prep outputs → `data/processed/` (e.g. `all_asperson_fulldata.dta`).
+5. Document any downloads / oversized files in `data/raw/README.md`.
+
+Prep outputs → `data/processed/` (e.g. `all_asperson_fulldata.dta`); commit them
+too when ≤ 50 MB so tables run without re-running heavy prep.
 
 ## Step 3b — Zero-touch dependencies (required)
 
@@ -479,7 +498,8 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 | Table Display shows full Stata log (setup, reghdfe, SSC install) | Add `esttab ... using "${result}/tab_N_table.html", html replace` to `mk_tab_N.do` (from author's `using *_out_*.txt`); point `format_stata.R` at esttab HTML, not raw log |
 | Missing Python packages on server | List PyPI names under entry `dependencies:`; run with `install_deps=TRUE` |
 | Notebook prep fails | Add `jupyter`, `nbconvert` to prep step `dependencies` |
-| `.dta` not in git | Expected — document in `data/raw/README.md`; run prep on server or cache processed data |
+| Live Run "file not found" for a `.dta` | Input was gitignored, so the clone lacks it. Commit inputs ≤50MB; don't blanket-ignore `data/*/*.dta` |
+| `.dta` >50MB not in git | Expected — stage under `registry/data/<folder>/`, deploy to server, document in `data/raw/README.md` |
 | Server missing processed data | `build_study_artifacts()` runs prep first; or ship `data/processed/` |
 | Dropbox spaces in paths | replicateEverything uses `Sys.setenv()` + `shQuote()` for Python/Stata — test batch runs early |
 | `reghdfe` split across lines with blank line | Stata treats blank line as command end — use one line or `///` without blank lines |
@@ -489,7 +509,7 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 1. Install/update `replicateEverything` from GitHub (not an old `win-library` copy).
 2. Restart Shiny after package reinstall.
 3. Check footer: `replicateEverything 0.5.0 · <sha> · installed` — confirms which build is live.
-4. **Stata + Python on PATH**; large `.dta` under study cache or built by prep.
+4. **Stata + Python on PATH**. Committed inputs (≤50MB) arrive with the clone; only >50MB files must be deployed manually or rebuilt by prep.
 5. First replication run: `install_deps=TRUE` (default in Shiny live display) installs SSC/CRAN/pip automatically when study has `stata_dependencies`, `paper.dependencies`, and Python entry `dependencies` wired correctly.
 6. Stata first run needs **internet once** for SSC; document offline fallback in study README if needed.
 

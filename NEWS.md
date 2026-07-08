@@ -1,5 +1,10 @@
 # replicateEverything 0.5.0
 
+## Bug fixes
+
+* Python dependency handling now probes whether each declared package is already importable (`python -c "import ..."`) before shelling out to `pip`, so live runs skip redundant installs and no longer fail on locked-down servers where the packages are pre-installed but `pip install` is forbidden. Also fixed the pip exit-status check, which previously misread `system2()` captured output as the status code.
+* `ai_skills()` no longer lists `README.md` as a skill; `inst/ai/skills/` now bundles both `folder_replication` and `APSR_to_replicateEverything`.
+
 ## Breaking changes
 
 * Removed deprecated `replicate_paper()` and `create_replication_template()`. Use `run_replication(doi, "everything")` and the folder/package replication checklists instead.

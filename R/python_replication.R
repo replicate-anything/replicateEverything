@@ -61,6 +61,110 @@ python_run_dir <- function(rep, ctx, meta = NULL) {
   normalizePath(getwd(), winslash = "/", mustWork = FALSE)
 }
 
+#' Map a PyPI dependency spec to its Python import name
+#'
+#' Strips version specifiers, extras, and environment markers, then applies a
+#' small set of well-known name overrides (e.g. \code{scikit-learn} ->
+#' \code{sklearn}). Defaults to the distribution name with hyphens converted to
+#' underscores.
+#'
+#' @param dep Character dependency spec (e.g. \code{"pandas>=1.5"}).
+#' @return Character import name (may be empty).
+#' @keywords internal
+python_dep_import_name <- function(dep) {
+  base <- trimws(as.character(dep))
+  base <- sub(";.*$", "", base)
+  base <- sub("\\[.*\\]", "", base)
+  base <- sub("[<>=!~ ].*$", "", base)
+  base <- trimws(base)
+  overrides <- c(
+    "scikit-learn" = "sklearn",
+    "scikit-image" = "skimage",
+    "pillow" = "PIL",
+    "opencv-python" = "cv2",
+    "opencv-python-headless" = "cv2",
+    "beautifulsoup4" = "bs4",
+    "pyyaml" = "yaml",
+    "python-dateutil" = "dateutil"
+  )
+  key <- tolower(base)
+  if (key %in% names(overrides)) {
+    return(unname(overrides[[key]]))
+  }
+  gsub("-", "_", base)
+}
+
+#' Dependencies not importable by the target Python
+#'
+#' Probes with \code{python -c "import ..."}. Tries all imports at once first
+#' (fast path when everything is already installed); only when that fails does
+#' it probe each dependency individually to identify the missing ones. This lets
+#' callers skip \code{pip install} entirely when packages are already present --
+#' avoiding redundant local installs and spurious failures on locked-down
+#' servers that forbid \code{pip}.
+#'
+#' @param python Path to the Python executable.
+#' @param deps Character vector of PyPI dependency specs.
+#' @return Character subset of \code{deps} that are not importable.
+#' @keywords internal
+python_missing_dependencies <- function(python, deps) {
+  deps <- unique(deps[nzchar(deps)])
+  if (length(deps) == 0L) {
+    return(character(0))
+  }
+  imports <- vapply(deps, python_dep_import_name, character(1))
+  keep <- nzchar(imports)
+  deps <- deps[keep]
+  imports <- imports[keep]
+  if (length(deps) == 0L) {
+    return(character(0))
+  }
+  quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
+  importable <- function(mods) {
+    code <- paste0("import ", paste(mods, collapse = ", "))
+    status <- tryCatch(
+      system2(
+        python,
+        c("-c", shQuote(code, type = quote_type)),
+        stdout = FALSE,
+        stderr = FALSE
+      ),
+      error = function(e) 1L
+    )
+    identical(status, 0L)
+  }
+  if (importable(imports)) {
+    return(character(0))
+  }
+  missing <- character(0)
+  for (i in seq_along(deps)) {
+    if (!importable(imports[i])) {
+      missing <- c(missing, deps[i])
+    }
+  }
+  missing
+}
+
+#' Run \code{pip} and return its exit status and output
+#'
+#' Uses \code{stdout/stderr = TRUE}, so the return value of \code{system2()} is
+#' captured output; the exit code lives in its \code{"status"} attribute.
+#'
+#' @param python Path to the Python executable.
+#' @param args Character vector of arguments following \code{-m pip}.
+#' @return List with integer \code{status} and character \code{output}.
+#' @keywords internal
+pip_install <- function(python, args) {
+  out <- suppressWarnings(
+    system2(python, c("-m", "pip", args), stdout = TRUE, stderr = TRUE)
+  )
+  status <- attr(out, "status")
+  list(
+    status = if (is.null(status)) 0L else as.integer(status),
+    output = as.character(out)
+  )
+}
+
 #' Ensure Python pip dependencies for a replication entry
 #'
 #' Installs packages listed under entry-level \code{dependencies} (engine
@@ -106,37 +210,46 @@ ensure_python_dependencies <- function(
 
   python <- find_python_executable()
   quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
+  err_tail <- function(output) {
+    if (length(output) == 0L) {
+      return("")
+    }
+    paste0(":\n", paste(utils::tail(output, 15L), collapse = "\n"))
+  }
 
   if (!is.null(req_path) && file.exists(req_path)) {
     message("Installing Python requirements from ", basename(req_path), " ...")
-    status <- system2(
+    res <- pip_install(
       python,
-      c("-m", "pip", "install", "-q", "-r", shQuote(req_path, type = quote_type)),
-      stdout = TRUE,
-      stderr = TRUE
+      c("install", "-q", "-r", shQuote(req_path, type = quote_type))
     )
-    if (!identical(status, 0L)) {
+    if (!identical(res$status, 0L)) {
       stop(
         "Failed to install Python requirements from ", req_path,
+        err_tail(res$output),
         call. = FALSE
       )
     }
   }
 
   if (length(deps) > 0L) {
-    message("Installing Python dependencies: ", paste(deps, collapse = ", "))
-    status <- system2(
-      python,
-      c("-m", "pip", "install", "-q", deps),
-      stdout = TRUE,
-      stderr = TRUE
-    )
-    if (!identical(status, 0L)) {
-      stop(
-        "Failed to install Python dependencies: ",
-        paste(deps, collapse = ", "),
-        call. = FALSE
-      )
+    missing <- python_missing_dependencies(python, deps)
+    if (length(missing) == 0L) {
+      message("Python dependencies already satisfied: ", paste(deps, collapse = ", "))
+    } else {
+      message("Installing Python dependencies: ", paste(missing, collapse = ", "))
+      res <- pip_install(python, c("install", "-q", missing))
+      if (!identical(res$status, 0L)) {
+        still_missing <- python_missing_dependencies(python, missing)
+        if (length(still_missing) > 0L) {
+          stop(
+            "Failed to install Python dependencies: ",
+            paste(still_missing, collapse = ", "),
+            err_tail(res$output),
+            call. = FALSE
+          )
+        }
+      }
     }
   }
 

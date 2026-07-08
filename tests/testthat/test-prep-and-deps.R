@@ -89,3 +89,17 @@ test_that("collect_required_prep_ids follows transitive requires", {
   )
   expect_equal(ids, c("step_a", "step_b"))
 })
+
+test_that("python_dep_import_name strips specifiers and maps known names", {
+  imp <- replicateEverything:::python_dep_import_name
+  expect_equal(imp("pandas"), "pandas")
+  expect_equal(imp("pandas>=1.5"), "pandas")
+  expect_equal(imp("numpy==1.26.0"), "numpy")
+  expect_equal(imp("scikit-learn"), "sklearn")
+  expect_equal(imp("pillow"), "PIL")
+  expect_equal(imp("opencv-python"), "cv2")
+  expect_equal(imp("pyyaml"), "yaml")
+  expect_equal(imp("beautifulsoup4"), "bs4")
+  expect_equal(imp("requests[security]"), "requests")
+  expect_equal(imp("some-dist ; python_version >= '3.9'"), "some_dist")
+})

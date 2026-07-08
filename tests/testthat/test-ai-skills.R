@@ -1,6 +1,8 @@
 test_that("bundled AI skills are discoverable", {
   skills <- ai_skills()
   expect_true("APSR_to_replicateEverything" %in% skills)
+  expect_true("folder_replication" %in% skills)
+  expect_false("README" %in% skills)
 
   path <- ai_skill_path("APSR_to_replicateEverything")
   expect_true(file.exists(path))

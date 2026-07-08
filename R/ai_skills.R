@@ -26,6 +26,7 @@ ai_skills <- function(package = "replicateEverything") {
     return(character(0))
   }
   files <- list.files(path, pattern = "\\.md$", full.names = FALSE)
+  files <- files[tolower(files) != "readme.md"]
   sort(tools::file_path_sans_ext(files))
 }
 
