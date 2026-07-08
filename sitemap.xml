@@ -127,7 +127,6 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/local_artifact_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/lookup_study_folders_option.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/make_function_name.html</loc></url>
-<url><loc>https://replicate-anything.github.io/replicateEverything/reference/manifest_artifact_paths.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/materialize_folder_study_from_github.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/move_directory.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_doi.html</loc></url>
@@ -164,13 +163,16 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/read_registry_stub_yaml.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/read_study_replication_yaml.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/read_yaml_url.html</loc></url>
-<url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_artifact_rel_paths.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_audit_rds_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_audit_summary_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_paper_yaml_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_paper_yaml_url.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_papers_subdir_legacy.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_stub_from_folder_meta.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_stub_from_package_meta.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_studies_dir.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_studies_subdir.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_study_yaml_url_legacy.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_url.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/render_for_display.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/render_replication.html</loc></url>
