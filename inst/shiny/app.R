@@ -3812,6 +3812,10 @@ server <- function(input, output, session) {
 
   output$selected_figure_ui <- renderUI({
     tryCatch({
+      req(state$selected_replication, state$doi)
+      if (is.null(state$selected_result) && is_artifact_source(state$selected_source)) {
+        load_selected_artifact(fallback_live = FALSE)
+      }
       resolved <- resolved_selected_display()
       if (!resolved$ok && !is.null(resolved$error)) {
         return(replication_error_ui(
