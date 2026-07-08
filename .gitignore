@@ -10,3 +10,4 @@ Rplots.pdf
 /Meta/
 *.log
 replicate_*.log
+.git-commit-msg.tmp
