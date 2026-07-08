@@ -321,6 +321,7 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
 
   result <- NULL
   rel_paths <- registry_artifact_rel_paths(what, rep, ctx)
+
   for (rel in rel_paths) {
     if (!is.null(ctx$local_root)) {
       local <- file.path(ctx$local_root, rel)
@@ -330,12 +331,25 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
       }
     }
   }
-  if (is.null(result)) {
-    for (rel in rel_paths) {
-      url <- registry_url(ctx$base_url, rel)
-      if (url_exists(url)) {
-        result <- url
-        break
+
+  if (is.null(result) && length(rel_paths) > 0L) {
+    if (length(rel_paths) == 1L) {
+      # replication.yml declares exactly one artifact: path, so the remote
+      # location is deterministic. Return it without a separate existence
+      # probe -- the actual fetch in load_artifact_file_path() (longer timeout,
+      # same request that renders it) decides availability. Probing separately
+      # caused present files to be reported missing when a HEAD/GET probe timed
+      # out or behaved differently than the fetch.
+      result <- registry_url(ctx$base_url, rel_paths[[1]])
+    } else {
+      # Legacy studies without an explicit artifact: may have several candidate
+      # extensions; probe to disambiguate which one exists.
+      for (rel in rel_paths) {
+        url <- registry_url(ctx$base_url, rel)
+        if (url_exists(url)) {
+          result <- url
+          break
+        }
       }
     }
   }
