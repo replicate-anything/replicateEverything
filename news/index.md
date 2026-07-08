@@ -13,7 +13,13 @@
   the remote SHA cannot be determined (offline or rate-limited) the
   existing cache is kept. This fixes live Stata/Python runs failing with
   “file not found” for data that exists in the repo but was missing from
-  an out-of-date server cache.
+  an out-of-date server cache. The remote check is on-demand (only when
+  a study is actually run/fetched from GitHub) and is skipped for a
+  short, per-session window after a study is confirmed fresh, so
+  repeated resolutions within one run make at most one API call per
+  study; tune with
+  `options(replicateEverything.study_cache_ttl = <seconds>)` (default
+  300; 0 to always check).
 - Python replications now run from the resolved study folder (the local
   sibling or the materialized GitHub clone) instead of falling back to
   the R working directory. On a Shiny server this fixes
