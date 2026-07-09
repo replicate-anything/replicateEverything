@@ -492,7 +492,7 @@ stata_study_dependency_guidance <- function(study_root, meta = NULL) {
     )
     lines <- c(
       lines,
-      "  Or live run with install_deps = TRUE (Shiny Run does this automatically)."
+      "  Maintainer: install_study_dependencies(<doi>) or run the install script once on this machine."
     )
   }
   if (length(probe)) {
