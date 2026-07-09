@@ -385,26 +385,11 @@ shiny_app_stale_banner_ui <- function() {
 }
 
 app_build_footer_ui <- function() {
-  info <- replicate_everything_build_info()
-  sha_bits <- character(0)
-  if (nzchar(info$package_sha %||% "")) {
-    sha_bits <- c(sha_bits, paste0("pkg ", tags$code(info$package_sha)))
-  }
-  if (nzchar(info$app_sha %||% "")) {
-    sha_bits <- c(sha_bits, paste0("app ", tags$code(info$app_sha)))
-  }
   tags$footer(
     class = "app-footer text-muted small px-3 py-2 border-top",
     tags$div(
       class = "d-flex flex-wrap justify-content-between gap-2",
-      tags$span(replicate_everything_build_label()),
-      if (length(sha_bits) > 0L) {
-        tags$span(
-          class = "text-truncate",
-          style = "max-width: 55%;",
-          do.call(tagList, sha_bits)
-        )
-      }
+      tags$span(replicate_everything_build_label())
     )
   )
 }
