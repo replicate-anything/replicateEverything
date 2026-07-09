@@ -247,6 +247,76 @@ git_head_info <- function(start_path) {
   )
 }
 
+short_build_sha <- function(sha) {
+  sha <- as.character(sha[[1]] %||% sha)
+  if (length(sha) != 1L || is.na(sha) || !nzchar(sha)) {
+    return(NA_character_)
+  }
+  sha <- sub("^\\++", "", sha)
+  substr(sha, 1L, 7L)
+}
+
+read_build_sha_file <- function(path) {
+  if (length(path) != 1L || is.na(path) || !nzchar(path) || !file.exists(path)) {
+    return(NA_character_)
+  }
+  line <- tryCatch(
+    trimws(readLines(path, n = 1L, warn = FALSE, encoding = "UTF-8")),
+    error = function(e) ""
+  )
+  if (!length(line) || !nzchar(line)) {
+    return(NA_character_)
+  }
+  short_build_sha(line)
+}
+
+shiny_deploy_dir <- function() {
+  app_env <- Sys.getenv("SHINY_APP_DIR", unset = "")
+  if (length(app_env) == 1L && nzchar(app_env) && dir.exists(app_env)) {
+    return(normalizePath(app_env, winslash = "/", mustWork = FALSE))
+  }
+  normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+}
+
+shiny_app_bundle_sha <- function() {
+  for (path in c(
+    file.path(shiny_deploy_dir(), "BUNDLE_SHA"),
+    system.file("shiny", "BUNDLE_SHA", package = "replicateEverything")
+  )) {
+    sha <- read_build_sha_file(path)
+    if (nzchar(sha)) {
+      return(sha)
+    }
+  }
+  NA_character_
+}
+
+package_build_sha <- function() {
+  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
+    return(NA_character_)
+  }
+  ns <- asNamespace("replicateEverything")
+  if (exists("package_build_info", envir = ns, inherits = FALSE)) {
+    sha <- tryCatch(
+      get("package_build_info", envir = ns)()$sha,
+      error = function(e) NA_character_
+    )
+    if (nzchar(sha %||% "")) {
+      return(sha)
+    }
+  }
+  desc <- tryCatch(
+    utils::packageDescription("replicateEverything"),
+    error = function(e) NULL
+  )
+  if (!is.null(desc) && nzchar(desc$RemoteSha %||% "")) {
+    return(short_build_sha(desc$RemoteSha))
+  }
+  read_build_sha_file(
+    system.file("shiny", "BUNDLE_SHA", package = "replicateEverything")
+  )
+}
+
 replicate_everything_build_info <- function() {
   version <- tryCatch(
     as.character(utils::packageVersion("replicateEverything")),
@@ -254,67 +324,85 @@ replicate_everything_build_info <- function() {
   )
   source_root <- find_replicate_everything_source_root()
   git <- git_head_info(source_root)
-  install_path <- tryCatch(
-    normalizePath(
-      system.file(package = "replicateEverything"),
-      winslash = "/",
-      mustWork = FALSE
-    ),
-    error = function(e) NA_character_
-  )
+  package_sha <- package_build_sha()
+  app_sha <- shiny_app_bundle_sha()
   list(
     version = version,
-    sha = git$sha,
+    package_sha = package_sha,
+    app_sha = app_sha,
+    sha = package_sha,
     branch = git$branch,
     dirty = git$dirty,
     local_dev = using_local_replicate_everything(),
     source_root = source_root,
     git_root = git$repo_root,
-    install_path = if (length(install_path) == 1L && nzchar(install_path)) install_path else NA_character_
+    app_stale = isTRUE(
+      nzchar(app_sha %||% "") &&
+        nzchar(package_sha %||% "") &&
+        !identical(app_sha, package_sha)
+    )
   )
 }
 
 replicate_everything_build_label <- function() {
   info <- replicate_everything_build_info()
   parts <- c(paste0("replicateEverything ", info$version))
-  if (!is.null(info$sha) && nzchar(info$sha)) {
-    sha_label <- info$sha
+  if (nzchar(info$package_sha %||% "")) {
+    sha_label <- info$package_sha
     if (isTRUE(info$dirty)) {
       sha_label <- paste0(sha_label, "+")
     }
-    parts <- c(parts, sha_label)
+    parts <- c(parts, paste0("pkg ", sha_label))
+  }
+  if (nzchar(info$app_sha %||% "")) {
+    parts <- c(parts, paste0("app ", info$app_sha))
   }
   if (!is.null(info$branch) && nzchar(info$branch) && !identical(info$branch, "HEAD")) {
     parts <- c(parts, info$branch)
   }
   if (isTRUE(info$local_dev)) {
     parts <- c(parts, "dev load")
-  } else if (is.na(info$sha) || !nzchar(info$sha %||% "")) {
-    parts <- c(parts, "installed")
   }
   paste(parts, collapse = " · ")
 }
 
+shiny_app_stale_banner_ui <- function() {
+  info <- replicate_everything_build_info()
+  if (!isTRUE(info$app_stale)) {
+    return(NULL)
+  }
+  tags$div(
+    class = "alert alert-warning py-2 px-3 mb-0 rounded-0 border-0 border-bottom",
+    tags$strong("Shiny app bundle is older than the installed package. "),
+    "Package SHA ",
+    tags$code(info$package_sha),
+    " vs app ",
+    tags$code(info$app_sha),
+    ". Run ",
+    tags$code("replicateEverything::save_local_shiny('<deploy-dir>')"),
+    " after updating the package, then restart Shiny Server / Connect."
+  )
+}
+
 app_build_footer_ui <- function() {
   info <- replicate_everything_build_info()
+  sha_bits <- character(0)
+  if (nzchar(info$package_sha %||% "")) {
+    sha_bits <- c(sha_bits, paste0("pkg ", tags$code(info$package_sha)))
+  }
+  if (nzchar(info$app_sha %||% "")) {
+    sha_bits <- c(sha_bits, paste0("app ", tags$code(info$app_sha)))
+  }
   tags$footer(
     class = "app-footer text-muted small px-3 py-2 border-top",
     tags$div(
       class = "d-flex flex-wrap justify-content-between gap-2",
       tags$span(replicate_everything_build_label()),
-      if (!is.null(info$source_root) && nzchar(info$source_root)) {
+      if (length(sha_bits) > 0L) {
         tags$span(
           class = "text-truncate",
           style = "max-width: 55%;",
-          "Package: ",
-          tags$code(info$source_root)
-        )
-      } else if (!is.na(info$install_path) && nzchar(info$install_path)) {
-        tags$span(
-          class = "text-truncate",
-          style = "max-width: 55%;",
-          "Installed: ",
-          tags$code(info$install_path)
+          do.call(tagList, sha_bits)
         )
       }
     )
@@ -3252,6 +3340,7 @@ ui <- tagList(
       color: inherit;
     }
   "))),
+  shiny_app_stale_banner_ui(),
   registry_health_bar_ui(registry_audit_summary),
   navbarPage(
   id = "main_nav",

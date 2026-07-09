@@ -1,3 +1,15 @@
+# replicateEverything 0.5.1
+
+## Bug fixes
+
+* Shiny footer shows package and app **commit SHA** (`pkg` / `app`) instead of the library install path, so it is easy to see when a deployed `app.R` is stale relative to the installed package. `save_local_shiny()` writes `BUNDLE_SHA` into the deploy directory; a warning banner appears when `app` and `pkg` SHAs differ.
+* Fixed Python live Run regression (`object 'deps' not found` in `run_python_replication()`).
+* Shiny dependency-error UI no longer calls internal `replication_error_message()` as a global function.
+
+## New functions
+
+* [package_build_info()] — version plus GitHub `RemoteSha` or bundled `BUNDLE_SHA`.
+
 # replicateEverything 0.5.0
 
 ## Policy

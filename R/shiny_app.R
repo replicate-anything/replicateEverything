@@ -133,7 +133,11 @@ save_local_shiny <- function(
     copy_file(example, file.path(dest, "local.R.example"))
   }
 
-  message("Shiny app written to ", dest)
+  bundle_sha <- write_shiny_bundle_sha(dest, package = package)
+  message(
+    "Shiny app written to ", dest,
+    " (BUNDLE_SHA=", bundle_sha, "). Restart Shiny workers after deploy."
+  )
   invisible(dest)
 }
 
