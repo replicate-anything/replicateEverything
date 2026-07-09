@@ -344,6 +344,13 @@ render_replication <- function(
 ) {
   doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  assert_study_ready_for_replication(
+    doi,
+    meta = meta,
+    repo = repo,
+    folder = folder,
+    install_deps = install_deps
+  )
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
   if (is_package_replication(meta)) {

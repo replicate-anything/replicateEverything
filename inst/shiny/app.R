@@ -984,6 +984,30 @@ study_audit_ui <- function(audit, compact = FALSE) {
   )
 }
 
+dependency_hint_modal <- function(session, doi, audit = NULL, title = "Missing dependencies") {
+  hint <- tryCatch(
+    replicate_fn(
+      "maintainer_dependency_hint",
+      doi = doi,
+      audit = audit
+    ),
+    error = function(e) conditionMessage(e)
+  )
+  showModal(modalDialog(
+    title = title,
+    tags$p(
+      class = "text-muted small",
+      "Live Run checks dependencies only and does not install packages."
+    ),
+    tags$pre(
+      style = "white-space: pre-wrap; font-size: 0.82rem; max-height: 420px; overflow-y: auto;",
+      hint
+    ),
+    easyClose = TRUE,
+    footer = modalButton("Close")
+  ))
+}
+
 registry_health_bar_ui <- function(summary) {
   if (is.null(summary)) {
     return(NULL)
@@ -1978,6 +2002,19 @@ format_replication_error <- function(error) {
 }
 
 replication_error_ui <- function(error, doi = NULL, folder = NULL, repo = NULL) {
+  if (inherits(error, "dependency_error")) {
+    msg <- replication_error_message(error)
+    return(tags$div(
+      class = "alert alert-warning replication-error",
+      tags$strong("Dependencies missing"),
+      tags$p(class = "text-muted small mb-2", "Live Run does not install packages. Use the maintainer commands below."),
+      tags$pre(
+        class = "replication-error-message",
+        style = "white-space: pre-wrap;",
+        msg
+      )
+    ))
+  }
   if (!is.null(doi) && nzchar(doi)) {
     install_ui <- study_package_install_ui(doi, folder = folder, repo = repo, error = error)
     if (!is.null(install_ui)) {
@@ -3179,7 +3216,7 @@ ui <- tagList(
           tags$h4(class = "mb-0", "2. Tables & figures"),
           actionButton(
             "check_system_compat",
-            "Compatibility",
+            "Check compatibility",
             class = "btn btn-link btn-sm py-0 px-1 text-muted"
           )
         ),
@@ -3490,7 +3527,7 @@ server <- function(input, output, session) {
     withProgress(message = "Checking system compatibility...", value = 0.5, {
       state$study_audit <- tryCatch(
         replicate_fn(
-          "study_system_compatibility",
+          "check_study_compatibility",
           state$doi,
           folder = state$registry_folder,
           repo = state$registry_repo,
@@ -3500,6 +3537,10 @@ server <- function(input, output, session) {
         error = function(e) list(error = conditionMessage(e))
       )
     })
+    audit <- state$study_audit
+    if (!is.null(audit) && is.null(audit$error) && isTRUE(audit$install_needed)) {
+      dependency_hint_modal(session, state$doi, audit = audit)
+    }
   })
 
   output$study_compat_result <- renderUI({
@@ -3944,6 +3985,32 @@ server <- function(input, output, session) {
   })
 
   run_live_replication <- function(doi, what, language = "r") {
+    audit <- tryCatch(
+      replicate_fn(
+        "check_study_compatibility",
+        doi,
+        folder = state$registry_folder,
+        repo = state$registry_repo,
+        materialize_study = TRUE,
+        include_registry_audit = FALSE
+      ),
+      error = function(e) list(error = conditionMessage(e), ready = FALSE)
+    )
+    if (!is.null(audit$error) || !isTRUE(audit$ready)) {
+      dependency_hint_modal(session, doi, audit = audit)
+      hint <- tryCatch(
+        replicate_fn("maintainer_dependency_hint", doi = doi, audit = audit),
+        error = function(e) conditionMessage(e)
+      )
+      state$selected_result <- structure(
+        list(message = hint),
+        class = c("dependency_error", "error", "condition")
+      )
+      state$selected_source <- "live"
+      state$progress <- NULL
+      return(invisible(NULL))
+    }
+
     tryCatch({
       withProgress(message = "Running live replication...", value = 0.2, {
         state$progress <- "Running replication"

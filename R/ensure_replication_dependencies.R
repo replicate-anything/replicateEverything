@@ -43,8 +43,9 @@ ensure_replication_dependencies <- function(
     stop(
       "Missing required replication dependencies: ",
       paste(missing, collapse = ", "),
-      ". Install on this machine (maintainer setup), or use ",
-      "build_study_artifacts(..., install_deps = TRUE)."
+      ".\n\n",
+      maintainer_dependency_hint(),
+      call. = FALSE
     )
   }
 

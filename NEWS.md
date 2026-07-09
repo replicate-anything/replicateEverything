@@ -2,7 +2,7 @@
 
 ## Policy
 
-* **Live Run and Shiny never install dependencies** on the host by default. They probe only (R `requireNamespace`, Python `importlib`, Stata `stata_deps_probe`). Maintainer builds call `build_study_artifacts(install_deps = TRUE)`, which sets `options(replicateEverything.install_dependencies = TRUE)` and `install_stata_deps = TRUE` for that session only. Study runners must not call `install_stata_deps.do` from `init_study_paths.do` or table scripts.
+* Exported maintainer API: [check_study_compatibility()], [install_study_dependencies()], [install_registry_dependencies()], and [maintainer_dependency_hint()]. See `vignette("maintainer-setup")`. Live Run checks dependencies first and stops with setup hints when packages are missing.
 
 ## Bug fixes
 

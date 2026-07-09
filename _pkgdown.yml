@@ -49,6 +49,13 @@ reference:
   - ai_skills
   - ai_skill
   - ai_skill_path
+- title: Maintainer setup
+  desc: Probe and install study dependencies (R, Python, Stata); configure executables.
+  contents:
+  - check_study_compatibility
+  - install_study_dependencies
+  - install_registry_dependencies
+  - maintainer_dependency_hint
 - title: Registry audit
   desc: Run all registry replications and inspect results.
   contents:
@@ -58,6 +65,7 @@ build:
 articles:
 - title: Articles
   contents:
+  - maintainer-setup
   - meet-the-functions
   - replication-example
   - shiny-app

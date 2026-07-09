@@ -218,7 +218,8 @@ replications:
 
 ```r
 yaml::read_yaml("replication.yml")
-replicateEverything::study_system_compatibility("<doi>")  # after study repo exists locally
+replicateEverything::check_study_compatibility("<doi>")  # probe only
+replicateEverything::install_study_dependencies("<doi>")  # maintainer: all languages once
 ```
 
 ### Step 3c — replicateEverything conventions (no package hardcoding)
@@ -299,7 +300,7 @@ If `languages:` is omitted, engines are inferred from `engine:` / `code:` extens
 - [ ] replication.yml: languages + paper.dependencies + python_dependencies + stata_* fields complete
 - [ ] replication.yml parses; each code:/data:/artifact: path exists
 - [ ] Stata: install_stata_deps.do + probe_stata_deps.do (or stata_packages:)
-- [ ] study_system_compatibility() or Shiny “Check system compatibility” passes (or documents expected gaps)
+- [ ] check_study_compatibility() or Shiny “Check compatibility” passes (or documents expected gaps)
 - [ ] Artifacts committed; manifest if used
 - [ ] Registry stub + index.csv repo column updated
 - [ ] study tests: testthat::test_dir("tests/testthat")

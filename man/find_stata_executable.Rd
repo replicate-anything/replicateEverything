@@ -10,7 +10,9 @@ find_stata_executable()
 Normalized path or \code{NULL}.
 }
 \description{
-Checks \code{getOption("replicateEverything.stata_executable")} first, then
+Checks \code{STATA} / \code{REPLICATE_STATA_EXECUTABLE} environment variables
+(set in \code{~/.Renviron}), then
+\code{getOption("replicateEverything.stata_executable")}, then
 common install paths (Windows, Linux, macOS) and \code{PATH}.
 }
 \keyword{internal}

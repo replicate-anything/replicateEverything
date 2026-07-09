@@ -269,9 +269,8 @@ ensure_python_dependencies <- function(
         stop(
           "Missing Python dependencies: ",
           paste(missing, collapse = ", "),
-          ".\nInstall them once on this machine (maintainer setup), or set ",
-          "options(replicateEverything.install_dependencies = TRUE) during ",
-          "build_study_artifacts() only.",
+          ".\n\n",
+          maintainer_dependency_hint(),
           call. = FALSE
         )
       }

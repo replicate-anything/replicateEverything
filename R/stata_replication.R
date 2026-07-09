@@ -120,12 +120,21 @@ stata_executable_candidates <- function() {
 
 #' Locate a Stata executable
 #'
-#' Checks \code{getOption("replicateEverything.stata_executable")} first, then
+#' Checks \code{STATA} / \code{REPLICATE_STATA_EXECUTABLE} environment variables
+#' (set in \code{~/.Renviron}), then
+#' \code{getOption("replicateEverything.stata_executable")}, then
 #' common install paths (Windows, Linux, macOS) and \code{PATH}.
 #'
 #' @return Normalized path or \code{NULL}.
 #' @keywords internal
 find_stata_executable <- function() {
+  for (env_var in c("STATA", "REPLICATE_STATA_EXECUTABLE", "STATA_EXECUTABLE")) {
+    env <- Sys.getenv(env_var, unset = "")
+    if (nzchar(env) && file.exists(env)) {
+      return(normalizePath(env, winslash = "/", mustWork = FALSE))
+    }
+  }
+
   opt <- getOption("replicateEverything.stata_executable", NULL)
   if (!is.null(opt) && nzchar(opt) && file.exists(opt)) {
     return(normalizePath(opt, winslash = "/", mustWork = FALSE))
@@ -837,8 +846,8 @@ verify_stata_dependencies <- function(
     } else {
       ""
     },
-    "Or set options(replicateEverything.install_stata_deps = TRUE) during ",
-    "build_study_artifacts() only.",
+    "\n",
+    maintainer_dependency_hint(),
     call. = FALSE
   )
 }
