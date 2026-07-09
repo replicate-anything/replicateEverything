@@ -25,7 +25,7 @@ source_replication_functions <- function(path, env, install_deps = FALSE) {
       if (fn_name %in% c("library", "require", "requireNamespace")) {
         retry_with_missing_package(
           eval(expr, envir = globalenv()),
-          install_missing = install_deps
+          install_missing = allow_dependency_install(install_deps)
         )
         next
       }
@@ -60,7 +60,7 @@ source_replication_functions <- function(path, env, install_deps = FALSE) {
     if (is_fn || (is_generate && is_alias) || (is_format && is_alias)) {
       retry_with_missing_package(
         eval(expr, envir = env),
-        install_missing = install_deps
+        install_missing = allow_dependency_install(install_deps)
       )
     }
   }

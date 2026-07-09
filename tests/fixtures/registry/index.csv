@@ -1,2 +1,3 @@
 "folder","handle","doi","title","journal","year","authors","repo"
 "10.9999_example","fixture-paper","https://doi.org/10.9999/example","Fixture Paper","Test Journal",2025,"Test Author","replicate-anything/rep-10.9999_example"
+"10.9999_stata","stata-fixture","https://doi.org/10.9999/stata-fixture","Stata Fixture Paper","Test Journal",2025,"Test Author","replicate-anything/rep-10.9999_stata"

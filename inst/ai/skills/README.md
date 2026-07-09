@@ -9,7 +9,7 @@ who clones or installs replicateEverything gets the current guidance.
 
 | File | Skill name | Use for |
 |------|------------|---------|
-| `folder_replication.md` | `folder-replication` | Generic folder-backed study repo (`data/`, `code/`, `artifacts/`, `replication.yml`) |
+| `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 3a dependency search + Step 3b `replication.yml` construction** |
 | `APSR_to_replicateEverything.md` | `apsr-to-replicate-everything` | Flat APSR / Cambridge Dataverse deliveries → folder-backed study repo |
 
 Each file is a self-contained Cursor Agent Skill (YAML frontmatter with

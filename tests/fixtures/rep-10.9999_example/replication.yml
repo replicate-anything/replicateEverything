@@ -5,6 +5,9 @@ paper:
   year: 2025
   authors: Test Author
 
+languages:
+  - r
+
 replications:
   - id: tab_1
     type: table

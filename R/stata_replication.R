@@ -290,7 +290,8 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
 #' @param staging_dir Optional writable directory for \code{$result} output.
 #' @return A \code{stata_run_result} list with log path and diagnostics.
 #' @keywords internal
-run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
+run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL,
+                         hint_context = NULL) {
   stata <- find_stata_executable()
   if (is.null(stata)) {
     stop(
@@ -390,13 +391,13 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
 
   if (!is.null(stata_err)) {
     stop(
-      stata_run_failed_message(result),
+      stata_run_failed_message(result, hint_context = hint_context),
       call. = FALSE
     )
   }
   if (!identical(status, 0L) && !identical(status, 0)) {
     stop(
-      stata_run_failed_message(result),
+      stata_run_failed_message(result, hint_context = hint_context),
       call. = FALSE
     )
   }
@@ -450,39 +451,77 @@ describe_directory <- function(path, label = "Directory") {
   )
 }
 
+#' Path relative to a study root for user-facing messages
 #' @keywords internal
-stata_dependency_hint <- function(text) {
+stata_study_relative_path <- function(study_root, path) {
+  if (is.null(path) || !nzchar(path)) {
+    return(path)
+  }
+  study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  path <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  prefix <- paste0(study_root, "/")
+  if (startsWith(path, prefix)) {
+    return(sub(paste0("^", gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", study_root), "/?"), "", path))
+  }
+  basename(path)
+}
+
+#' Study-specific Stata dependency guidance from replication.yml
+#' @keywords internal
+stata_study_dependency_guidance <- function(study_root, meta = NULL) {
+  scripts <- stata_deps_install_scripts(study_root, meta = meta)
+  probe <- stata_deps_probe_scripts(study_root, meta = meta)
+  pkgs <- stata_deps_package_names(meta)
+  lines <- character(0)
+  if (length(scripts)) {
+    rel <- vapply(scripts, function(p) {
+      stata_study_relative_path(study_root, p)
+    }, character(1))
+    lines <- c(
+      lines,
+      paste0("  Run study install script(s): ", paste(rel, collapse = ", "))
+    )
+    lines <- c(
+      lines,
+      "  Or live run with install_deps = TRUE (Shiny Run does this automatically)."
+    )
+  }
+  if (length(probe)) {
+    rel <- vapply(probe, function(p) {
+      stata_study_relative_path(study_root, p)
+    }, character(1))
+    lines <- c(lines, paste0("  Dependency probe: ", paste(rel, collapse = ", ")))
+  }
+  if (length(pkgs)) {
+    lines <- c(lines, paste0("  Declared stata_packages: ", paste(pkgs, collapse = ", ")))
+  }
+  if (length(lines) == 0L) {
+    lines <- c(
+      "  Add stata_dependencies: and code/helpers/install_stata_deps.do to replication.yml",
+      "  (optional stata_deps_probe: and stata_packages:; see inst/ai/skills/folder_replication.md)."
+    )
+  }
+  paste0(
+    "Study Stata dependencies (replication.yml):\n",
+    paste(lines, collapse = "\n"),
+    "\n"
+  )
+}
+
+#' @keywords internal
+stata_dependency_hint <- function(text, study_root = NULL, meta = NULL) {
   if (is.null(text) || !nzchar(text)) {
     return("")
   }
-  hints <- character(0)
-  if (grepl("require package|uses the require package", text, ignore.case = TRUE)) {
-    hints <- c(
-      hints,
-      "ssc install ftools, replace",
-      "ftools, compile",
-      "mata: mata mlib index",
-      "cap ado uninstall reghdfe",
-      "ssc install reghdfe, replace"
-    )
-  }
-  if (grepl("ftools", text, ignore.case = TRUE)) {
-    hints <- c(hints, "ssc install ftools, replace", "ftools, compile")
-  }
-  if (grepl("reghdfe", text, ignore.case = TRUE)) {
-    hints <- c(hints, "ssc install reghdfe, replace")
-  }
-  if (grepl("eststo|estout", text, ignore.case = TRUE)) {
-    hints <- c(hints, "ssc install estout, replace")
-  }
-  hints <- unique(hints)
-  if (length(hints) == 0L) {
+  if (!stata_log_suggests_missing_dependency(text)) {
     return("")
   }
+  if (!is.null(study_root) && nzchar(study_root)) {
+    return(stata_study_dependency_guidance(study_root, meta = meta))
+  }
   paste0(
-    "Suggested Stata setup:\n",
-    paste0("  ", hints, collapse = "\n"),
-    "\n"
+    "Missing Stata package suspected. Declare stata_dependencies / stata_deps_probe ",
+    "in the study replication.yml (see inst/ai/skills/folder_replication.md).\n"
   )
 }
 
@@ -492,9 +531,14 @@ stata_log_suggests_missing_dependency <- function(log_text) {
   if (is.null(log_text) || !nzchar(log_text)) {
     return(FALSE)
   }
-  grepl("install from SSC|install from GitHub|install it:|require package", log_text, ignore.case = TRUE) ||
-    (grepl("r\\(9\\);", log_text) &&
-      grepl("reghdfe|ftools|estout|eststo", log_text, ignore.case = TRUE))
+  grepl(
+    "install from SSC|install from GitHub|install it:|require package|unrecognized command|command .* not found",
+    log_text,
+    ignore.case = TRUE
+  ) ||
+    grepl("r\\(9\\);", log_text) ||
+    grepl("r\\(199\\);", log_text) ||
+    grepl("r\\(111\\);", log_text)
 }
 
 #' Resolve Stata dependency install scripts for a study
@@ -553,6 +597,9 @@ stata_deps_install_scripts <- function(study_root, meta = NULL, rep = NULL) {
 #' @return Character vector of absolute paths to probe \code{.do} files.
 #' @keywords internal
 stata_deps_probe_scripts <- function(study_root, meta = NULL) {
+  if (!is.null(study_root) && nzchar(study_root) && dir.exists(study_root)) {
+    meta <- complete_folder_study_meta(meta %||% list(), study_root)
+  }
   collect <- function(items) {
     if (is.null(items) || length(items) == 0L) {
       return(character(0))
@@ -588,7 +635,10 @@ stata_deps_probe_scripts <- function(study_root, meta = NULL) {
 #' @param meta Parsed replication metadata.
 #' @return Character vector of package names.
 #' @keywords internal
-stata_deps_package_names <- function(meta = NULL) {
+stata_deps_package_names <- function(meta = NULL, study_root = NULL) {
+  if (!is.null(study_root) && nzchar(study_root) && dir.exists(study_root)) {
+    meta <- complete_folder_study_meta(meta %||% list(), study_root)
+  }
   if (is.null(meta)) {
     return(character(0))
   }
@@ -707,7 +757,93 @@ stata_dependencies_satisfied <- function(
   run_probe(runner)
 }
 
-#' Run Stata SSC / dependency install scripts for a study
+#' Whether study Stata install scripts may run (maintainer / build only)
+#'
+#' Live Run and Shiny probe dependencies only. Set
+#' \code{options(replicateEverything.install_stata_deps = TRUE)} to allow
+#' \code{install_stata_deps.do} (e.g. \code{build_study_artifacts(install_deps = TRUE)}).
+#' @keywords internal
+stata_install_scripts_enabled <- function() {
+  isTRUE(getOption("replicateEverything.install_stata_deps", FALSE))
+}
+
+#' Verify Stata dependencies via study yaml probe (no install)
+#'
+#' @inheritParams install_stata_dependencies
+#' @return Invisibly \code{TRUE} when satisfied.
+#' @keywords internal
+verify_stata_dependencies <- function(
+  study_root,
+  staging_dir = NULL,
+  meta = NULL,
+  rep = NULL
+) {
+  study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  meta <- complete_folder_study_meta(meta, study_root)
+
+  stata <- find_stata_executable()
+  if (is.null(stata)) {
+    stop(
+      "Stata executable not found. Install Stata or set ",
+      "options(replicateEverything.stata_executable = '/path/to/StataMP-64.exe').",
+      call. = FALSE
+    )
+  }
+
+  probe_label <- stata_deps_probe_label(study_root, meta = meta)
+  pkgs <- stata_deps_package_names(meta, study_root = study_root)
+  probe_scripts <- stata_deps_probe_scripts(study_root, meta = meta)
+
+  if (length(probe_scripts) == 0L && length(pkgs) == 0L) {
+    return(invisible(TRUE))
+  }
+
+  replicate_progress(paste0("Checking Stata dependencies (", probe_label, ")..."))
+  satisfied <- tryCatch(
+    stata_dependencies_satisfied(
+      study_root,
+      staging_dir = staging_dir,
+      meta = meta,
+      timeout = as.integer(
+        getOption("replicateEverything.stata_deps_probe_timeout", 120L)[1]
+      )
+    ),
+    error = function(e) {
+      message(conditionMessage(e))
+      FALSE
+    }
+  )
+
+  if (isTRUE(satisfied)) {
+    replicate_progress("Stata dependencies OK")
+    return(invisible(TRUE))
+  }
+
+  scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
+  stop(
+    "Stata dependencies are not satisfied on this machine.\n",
+    "Probe: ", probe_label, "\n",
+    if (length(pkgs)) {
+      paste0("Declared stata_packages: ", paste(pkgs, collapse = ", "), "\n")
+    } else {
+      ""
+    },
+    if (length(scripts)) {
+      paste0(
+        "Maintainers: run install script(s) once (not on every replication): ",
+        paste(basename(scripts), collapse = ", "),
+        "\n"
+      )
+    } else {
+      ""
+    },
+    "Or set options(replicateEverything.install_stata_deps = TRUE) during ",
+    "build_study_artifacts() only.",
+    call. = FALSE
+  )
+}
+
+#' Run Stata SSC / dependency install scripts for a study (maintainer builds only)
 #'
 #' @inheritParams run_stata_replication
 #' @param install_deps When \code{FALSE}, returns immediately.
@@ -723,7 +859,21 @@ install_stata_dependencies <- function(
   if (!isTRUE(install_deps)) {
     return(invisible(FALSE))
   }
-  if (!isTRUE(getOption("replicateEverything.install_stata_deps", TRUE))) {
+
+  study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  meta <- complete_folder_study_meta(meta, study_root)
+
+  # Live replication: probe only — never mutate the host Stata installation.
+  if (!isTRUE(force) && !stata_install_scripts_enabled()) {
+    return(verify_stata_dependencies(
+      study_root,
+      staging_dir = staging_dir,
+      meta = meta,
+      rep = rep
+    ))
+  }
+
+  if (!stata_install_scripts_enabled()) {
     return(invisible(FALSE))
   }
   scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
@@ -744,42 +894,30 @@ install_stata_dependencies <- function(
     return(invisible(FALSE))
   }
 
-  probe_timeout <- as.integer(
-    getOption("replicateEverything.stata_deps_probe_timeout", 120L)[1]
-  )
   if (!isTRUE(force)) {
-    probe_label <- stata_deps_probe_label(study_root, meta = meta)
-    replicate_progress(paste0("Checking Stata dependencies (", probe_label, ")..."))
     satisfied <- tryCatch(
-      stata_dependencies_satisfied(
+      verify_stata_dependencies(
         study_root,
         staging_dir = staging_dir,
-        timeout = probe_timeout,
-        meta = meta
+        meta = meta,
+        rep = rep
       ),
-      error = function(e) {
-        message(conditionMessage(e))
-        FALSE
-      }
+      error = function(e) e
     )
-    if (isTRUE(satisfied)) {
-      message(
-        "Stata dependencies already satisfied (", probe_label, ") — ",
-        "skipping ", paste(basename(scripts), collapse = ", ")
+    if (!inherits(satisfied, "error")) {
+      deps_key <- paste0(
+        normalizePath(study_root, winslash = "/", mustWork = FALSE),
+        "::",
+        paste(sort(basename(scripts)), collapse = ",")
       )
-      replicate_progress("Stata dependencies OK — skipped install")
       mark_stata_deps_installed(deps_key)
       return(invisible(FALSE))
     }
-    if (isFALSE(satisfied)) {
-      replicate_progress("Stata dependency probe failed — running install script...")
-      message(
-        "Stata dependency probe (", probe_label, ") did not pass — running ",
-        paste(basename(scripts), collapse = ", "), " ..."
-      )
-    } else {
-      replicate_progress("No Stata dependency probe configured — running install script if needed")
-    }
+    replicate_progress("Stata dependency probe failed — running maintainer install script...")
+    message(
+      "Stata dependency probe did not pass — running maintainer install: ",
+      paste(basename(scripts), collapse = ", "), " ..."
+    )
   }
 
   install_timeout <- as.integer(
@@ -792,7 +930,8 @@ install_stata_dependencies <- function(
       script,
       study_root,
       staging_dir = staging_dir,
-      timeout = install_timeout
+      timeout = install_timeout,
+      hint_context = list(study_root = study_root, meta = meta)
     )
   }
   mark_stata_deps_installed(deps_key)
@@ -822,7 +961,7 @@ mark_stata_deps_installed <- function(deps_key) {
   invisible(NULL)
 }
 
-stata_run_failed_message <- function(run) {
+stata_run_failed_message <- function(run, hint_context = NULL) {
   log_text <- paste(
     run$stata_error %||% "",
     run$log_tail %||% "",
@@ -857,7 +996,11 @@ stata_run_failed_message <- function(run) {
     } else {
       ""
     },
-    stata_dependency_hint(log_text)
+    stata_dependency_hint(
+      log_text,
+      study_root = hint_context$study_root %||% run$workdir %||% NULL,
+      meta = hint_context$meta %||% NULL
+    )
   )
 }
 
@@ -1123,6 +1266,7 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
   }
 
   study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  meta <- complete_folder_study_meta(meta, study_root)
   ctx$local_root <- study_root
   code_path <- resolve_registry_file(rep$code, ctx, meta = meta)
   staging_dir <- writable_stata_staging_dir(meta, ctx, study_root = study_root)
@@ -1139,8 +1283,14 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
     install_deps = install_deps
   )
 
+  hint_context <- list(study_root = study_root, meta = meta)
   run_replication_do <- function() {
-    run_stata_do(code_path, study_root, staging_dir = staging_dir)
+    run_stata_do(
+      code_path,
+      study_root,
+      staging_dir = staging_dir,
+      hint_context = hint_context
+    )
   }
 
   stata_run <- tryCatch(
@@ -1148,7 +1298,7 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
     error = function(e) e
   )
 
-  if (inherits(stata_run, "error") && isTRUE(install_deps)) {
+  if (inherits(stata_run, "error") && isTRUE(install_deps) && stata_install_scripts_enabled()) {
     err_text <- conditionMessage(stata_run)
     if (stata_log_suggests_missing_dependency(err_text)) {
       message("Retrying after Stata dependency install ...")

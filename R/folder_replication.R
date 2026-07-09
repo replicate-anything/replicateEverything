@@ -508,6 +508,78 @@ fetch_folder_study_replication_yaml <- function(meta, ctx = NULL) {
   NULL
 }
 
+#' Merge study-repo fields into registry stub metadata
+#'
+#' Registry stubs omit \code{replications}, \code{stata_deps_probe}, and related
+#' study-repo-only fields. Overlay them from the folder-backed study yaml.
+#'
+#' @param meta Parsed metadata (often a registry stub).
+#' @param study_meta Full \code{replication.yml} from the study repo.
+#' @return Updated \code{meta} list.
+#' @keywords internal
+merge_folder_study_meta_fields <- function(meta, study_meta) {
+  if (length(meta$replications %||% list()) == 0L) {
+    meta$replications <- study_meta$replications %||% list()
+  }
+  if (length(meta$prep %||% list()) == 0L) {
+    meta$prep <- study_meta$prep %||% list()
+  }
+  if (is.null(meta$paper)) {
+    meta$paper <- list()
+  }
+  if (length(meta$paper$dependencies %||% list()) == 0L) {
+    meta$paper$dependencies <- study_meta$paper$dependencies %||% list()
+  }
+  if (length(meta$paper$languages %||% list()) == 0L) {
+    meta$paper$languages <- study_meta$paper$languages %||% list()
+  }
+  if (length(meta$paper$python_dependencies %||% list()) == 0L) {
+    meta$paper$python_dependencies <- study_meta$paper$python_dependencies %||% list()
+  }
+  for (field in c(
+    "languages",
+    "python_dependencies",
+    "r_dependencies",
+    "stata_deps_probe",
+    "stata_dependencies",
+    "stata_packages"
+  )) {
+    val <- meta[[field]] %||% NULL
+    if (is.null(val) || length(val) == 0L) {
+      study_val <- study_meta[[field]] %||% NULL
+      if (!is.null(study_val) && length(study_val) > 0L) {
+        meta[[field]] <- study_val
+      }
+    }
+  }
+  repo <- meta$repo %||% NULL
+  if (is.null(repo) || length(repo) == 0L || !nzchar(as.character(repo[[1]]))) {
+    meta$repo <- study_meta$repo %||% repo
+  }
+  meta
+}
+
+#' Fill study-repo fields using a materialized local \code{replication.yml}
+#'
+#' @param meta Parsed metadata passed to Stata dependency helpers.
+#' @param study_root Local study repository root.
+#' @return Updated \code{meta} list.
+#' @keywords internal
+complete_folder_study_meta <- function(meta, study_root = NULL) {
+  if (is.null(meta) || is.null(study_root) || !nzchar(study_root)) {
+    return(meta)
+  }
+  local_yml <- file.path(study_root, "replication.yml")
+  if (!file.exists(local_yml)) {
+    return(meta)
+  }
+  study_meta <- tryCatch(yaml::read_yaml(local_yml), error = function(e) NULL)
+  if (is.null(study_meta)) {
+    return(meta)
+  }
+  merge_folder_study_meta_fields(meta, study_meta)
+}
+
 #' Merge replication entries from a folder-backed study repo into a registry stub
 #'
 #' @param meta Parsed replication metadata.
@@ -518,22 +590,13 @@ enrich_folder_study_replication_meta <- function(meta, ctx) {
   if (!is_folder_study_replication(meta, ctx)) {
     return(meta)
   }
-  reps <- meta$replications %||% list()
-  if (length(reps) > 0) {
+
+  study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
+  if (is.null(study_meta)) {
     return(meta)
   }
 
-  study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
-  if (!is.null(study_meta)) {
-    meta$replications <- study_meta$replications %||% list()
-    if (length(meta$prep %||% list()) == 0) {
-      meta$prep <- study_meta$prep %||% list()
-    }
-    if (length(meta$paper$dependencies %||% list()) == 0) {
-      meta$paper$dependencies <- study_meta$paper$dependencies %||% list()
-    }
-  }
-  meta
+  merge_folder_study_meta_fields(meta, study_meta)
 }
 
 #' Folder names to check when locating a sibling folder-backed study repo

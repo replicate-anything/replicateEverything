@@ -14,8 +14,29 @@ is_python_replication <- function(rep, paper_meta = NULL) {
 python_executable_candidates <- function() {
   bins <- c(
     Sys.getenv("PYTHON", unset = ""),
-    Sys.getenv("RETICULATE_PYTHON", unset = ""),
-    unname(Sys.which(c("python3", "python", "py"))),
+    Sys.getenv("RETICULATE_PYTHON", unset = "")
+  )
+
+  if (.Platform$OS.type == "windows") {
+    py_launcher <- unname(Sys.which("py"))
+    if (nzchar(py_launcher)) {
+      launcher_paths <- tryCatch(
+        {
+          out <- system2(py_launcher, "-0p", stdout = TRUE, stderr = FALSE)
+          out <- as.character(out)
+          paths <- sub("^.*\\s+", "", trimws(out))
+          paths <- paths[grepl("\\.exe$", paths, ignore.case = TRUE)]
+          paths[file.exists(paths)]
+        },
+        error = function(e) character(0)
+      )
+      bins <- c(bins, launcher_paths)
+    }
+  }
+
+  bins <- c(
+    bins,
+    unname(Sys.which(c("python3", "python"))),
     "C:/Python312/python.exe",
     "C:/Python311/python.exe",
     "C:/Python310/python.exe",
@@ -23,14 +44,22 @@ python_executable_candidates <- function() {
     "/usr/local/bin/python3"
   )
   bins <- unique(bins[nzchar(bins)])
-  bins[file.exists(bins)]
+  bins <- bins[file.exists(bins)]
+  # Windows Store aliases often appear before real installs on PATH.
+  bins <- bins[!grepl("[/\\\\]WindowsApps[/\\\\]", bins, ignore.case = TRUE)]
+  bins
 }
 
 #' Find a Python executable
 #'
+#' When \code{deps} is non-empty, prefers the first candidate that can import
+#' every declared package (helps on Windows where \code{Sys.which("python")}
+#' may point at a Store stub while packages live in another install).
+#'
+#' @param deps Optional character vector of PyPI dependency specs.
 #' @return Character path.
 #' @keywords internal
-find_python_executable <- function() {
+find_python_executable <- function(deps = NULL) {
   candidates <- python_executable_candidates()
   if (length(candidates) == 0L) {
     stop(
@@ -38,6 +67,14 @@ find_python_executable <- function() {
       "or set Sys.setenv(PYTHON = '/path/to/python').",
       call. = FALSE
     )
+  }
+  deps <- unique(deps[nzchar(as.character(deps))])
+  if (length(deps) > 0L) {
+    for (cand in candidates) {
+      if (length(python_missing_dependencies(cand, deps)) == 0L) {
+        return(cand)
+      }
+    }
   }
   candidates[[1]]
 }
@@ -86,12 +123,14 @@ python_dep_import_name <- function(dep) {
   overrides <- c(
     "scikit-learn" = "sklearn",
     "scikit-image" = "skimage",
+    "imbalanced-learn" = "imblearn",
     "pillow" = "PIL",
     "opencv-python" = "cv2",
     "opencv-python-headless" = "cv2",
     "beautifulsoup4" = "bs4",
     "pyyaml" = "yaml",
-    "python-dateutil" = "dateutil"
+    "python-dateutil" = "dateutil",
+    "jupyter" = "jupyter_core"
   )
   key <- tolower(base)
   if (key %in% names(overrides)) {
@@ -126,8 +165,12 @@ python_missing_dependencies <- function(python, deps) {
     return(character(0))
   }
   quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
-  importable <- function(mods) {
-    code <- paste0("import ", paste(mods, collapse = ", "))
+  spec_exists <- function(import_name) {
+    safe <- gsub("'", "\\\\'", import_name, fixed = TRUE)
+    code <- paste0(
+      "import importlib.util, sys; ",
+      "sys.exit(0 if importlib.util.find_spec('", safe, "') else 1)"
+    )
     status <- tryCatch(
       system2(
         python,
@@ -137,14 +180,11 @@ python_missing_dependencies <- function(python, deps) {
       ),
       error = function(e) 1L
     )
-    identical(status, 0L)
-  }
-  if (importable(imports)) {
-    return(character(0))
+    identical(status, 0L) || identical(status, 0)
   }
   missing <- character(0)
   for (i in seq_along(deps)) {
-    if (!importable(imports[i])) {
+    if (!spec_exists(imports[i])) {
       missing <- c(missing, deps[i])
     }
   }
@@ -210,11 +250,38 @@ ensure_python_dependencies <- function(
     return(invisible(TRUE))
   }
 
+  python <- tryCatch(
+    find_python_executable(deps),
+    error = function(e) NULL
+  )
+  if (is.null(python)) {
+    stop(
+      "Python not found. Install Python 3.10+ and ensure it is on PATH, ",
+      "or set Sys.setenv(PYTHON = '/path/to/python').",
+      call. = FALSE
+    )
+  }
+
+  if (length(deps) > 0L) {
+    missing <- python_missing_dependencies(python, deps)
+    if (length(missing) > 0L) {
+      if (!isTRUE(install_missing)) {
+        stop(
+          "Missing Python dependencies: ",
+          paste(missing, collapse = ", "),
+          ".\nInstall them once on this machine (maintainer setup), or set ",
+          "options(replicateEverything.install_dependencies = TRUE) during ",
+          "build_study_artifacts() only.",
+          call. = FALSE
+        )
+      }
+    }
+  }
+
   if (!isTRUE(install_missing)) {
     return(invisible(TRUE))
   }
 
-  python <- find_python_executable()
   quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
   err_tail <- function(output) {
     if (length(output) == 0L) {
@@ -275,9 +342,9 @@ run_python_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) 
     paper_meta = meta$paper %||% NULL,
     ctx = ctx,
     meta = meta,
-    install_missing = install_deps
+    install_missing = allow_dependency_install(install_deps)
   )
-  python <- find_python_executable()
+  python <- find_python_executable(deps)
   code_rel <- as.character(rep$code %||% "")
   if (!nzchar(code_rel)) {
     stop("Python replication ", rep$id, " is missing a code path.", call. = FALSE)

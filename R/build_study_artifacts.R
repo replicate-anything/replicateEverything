@@ -30,6 +30,23 @@ build_study_artifacts <- function(
   registry_root = NULL,
   force_prep = FALSE
 ) {
+  if (isTRUE(install_deps)) {
+    old_opts <- options(
+      replicateEverything.install_dependencies = TRUE,
+      replicateEverything.install_stata_deps = TRUE
+    )
+    on.exit(
+      options(
+        replicateEverything.install_dependencies = old_opts[[
+          "replicateEverything.install_dependencies"
+        ]],
+        replicateEverything.install_stata_deps = old_opts[[
+          "replicateEverything.install_stata_deps"
+        ]]
+      ),
+      add = TRUE
+    )
+  }
   study_root <- resolve_study_location(location)
   meta <- read_study_replication_yaml(study_root)
   if (is.null(meta)) {

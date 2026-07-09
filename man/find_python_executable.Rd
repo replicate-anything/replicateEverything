@@ -4,12 +4,17 @@
 \alias{find_python_executable}
 \title{Find a Python executable}
 \usage{
-find_python_executable()
+find_python_executable(deps = NULL)
+}
+\arguments{
+\item{deps}{Optional character vector of PyPI dependency specs.}
 }
 \value{
 Character path.
 }
 \description{
-Find a Python executable
+When \code{deps} is non-empty, prefers the first candidate that can import
+every declared package (helps on Windows where \code{Sys.which("python")}
+may point at a Store stub while packages live in another install).
 }
 \keyword{internal}

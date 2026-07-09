@@ -4,7 +4,13 @@
 \alias{run_stata_do}
 \title{Run a Stata do-file non-interactively}
 \usage{
-run_stata_do(do_path, workdir, timeout = 900L, staging_dir = NULL)
+run_stata_do(
+  do_path,
+  workdir,
+  timeout = 900L,
+  staging_dir = NULL,
+  hint_context = NULL
+)
 }
 \arguments{
 \item{do_path}{Path to the do-file.}

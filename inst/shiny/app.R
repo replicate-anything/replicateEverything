@@ -799,6 +799,191 @@ registry_audit_summary <- tryCatch(
   error = function(e) NULL
 )
 
+study_audit_dep_line <- function(engine, dep) {
+  label <- switch(
+    engine,
+    r = "R",
+    stata = "Stata",
+    python = "Python",
+    toupper(engine)
+  )
+  if (is.null(dep)) {
+    return(NULL)
+  }
+  ok <- dep$ok
+  status_class <- if (isTRUE(ok)) {
+    "study-audit-ok"
+  } else if (is.na(ok)) {
+    "study-audit-warn"
+  } else {
+    "study-audit-fail"
+  }
+  status_text <- if (isTRUE(ok)) {
+    "OK"
+  } else if (is.na(ok)) {
+    "Deferred"
+  } else {
+    "Missing"
+  }
+  detail <- character(0)
+  if (identical(engine, "r") && length(dep$required %||% character(0)) > 0L) {
+    detail <- c(detail, paste(dep$required, collapse = ", "))
+  }
+  if (identical(engine, "stata") && nzchar(dep$probe %||% "")) {
+    detail <- c(detail, paste0("probe: ", dep$probe))
+  }
+  if (identical(engine, "python") && length(dep$required %||% character(0)) > 0L) {
+    detail <- c(detail, paste(dep$required, collapse = ", "))
+  }
+  missing <- dep$missing %||% character(0)
+  if (length(missing) > 0L) {
+    detail <- c(detail, paste0("missing: ", paste(missing, collapse = ", ")))
+  }
+  tags$div(
+    class = "study-audit-row",
+    tags$span(class = paste("study-audit-status", status_class), paste0(label, ": ", status_text)),
+    if (length(detail) > 0L) {
+      tags$span(class = "study-audit-detail text-muted", paste(detail, collapse = " · "))
+    }
+  )
+}
+
+study_audit_ui <- function(audit, compact = FALSE) {
+  if (is.null(audit)) {
+    return(NULL)
+  }
+  if (!is.null(audit$error)) {
+    return(tags$div(
+      class = "alert alert-warning study-audit small mb-0",
+      tags$strong("System compatibility: "),
+      audit$error
+    ))
+  }
+
+  engines <- audit$languages %||% audit$engines %||% character(0)
+  deps <- audit$dependencies %||% list()
+  reg <- audit$registry_audit %||% list()
+
+  engine_label <- if (length(engines) == 0L) {
+    "none declared"
+  } else {
+    paste(
+      vapply(engines, function(e) {
+        switch(e, r = "R", stata = "Stata", python = "Python", e)
+      }, character(1)),
+      collapse = ", "
+    )
+  }
+
+  reg_block <- if (!isTRUE(reg$available)) {
+    NULL
+  } else if (isTRUE(reg$not_in_audit)) {
+    tags$p(
+      class = "study-audit-row text-muted mb-0",
+      "Registry audit: this study was not in the latest audit snapshot."
+    )
+  } else {
+    reg_ok <- (reg$failed %||% 0L) == 0L
+    reg_class <- if (reg_ok) "study-audit-ok" else "study-audit-fail"
+    tagList(
+      tags$p(
+        class = "study-audit-row mb-1",
+        tags$span(
+          class = paste("study-audit-status", reg_class),
+          sprintf(
+            "Registry audit%s: %d / %d passed",
+            if (nzchar(reg$finished_at %||% "")) paste0(" (", reg$finished_at, ")") else "",
+            reg$passed %||% 0L,
+            reg$total %||% 0L
+          )
+        )
+      ),
+      if (!reg_ok && !is.null(reg$failures) && nrow(reg$failures) > 0L) {
+        tags$ul(
+          class = "study-audit-failures small mb-0",
+          lapply(seq_len(min(6L, nrow(reg$failures))), function(i) {
+            row <- reg$failures[i, , drop = FALSE]
+            label <- row$object_label %||% row$object %||% "?"
+            eng <- row$engine %||% "?"
+            snippet <- trimws(as.character(row$error_snippet %||% ""))
+            if (nchar(snippet) > 80L) {
+              snippet <- paste0(substr(snippet, 1L, 77L), "...")
+            }
+            tags$li(
+              tags$code(paste0(label, " (", eng, ")")),
+              if (nzchar(snippet)) paste0(" — ", snippet)
+            )
+          }),
+          if (nrow(reg$failures) > 6L) {
+            tags$li(class = "text-muted", sprintf("… and %d more", nrow(reg$failures) - 6L))
+          }
+        )
+      }
+    )
+  }
+
+  summary_class <- if (isTRUE(audit$ready)) {
+    "alert-success"
+  } else if (isTRUE(audit$install_needed)) {
+    "alert-warning"
+  } else {
+    "alert-secondary"
+  }
+  summary_text <- if (isTRUE(audit$ready)) {
+    "Ready — nothing to install before Run."
+  } else if (isTRUE(audit$install_needed)) {
+    "Some dependencies are missing on this machine (maintainer install required)."
+  } else {
+    "Dependency check incomplete for one or more engines."
+  }
+
+  dep_lines <- Filter(
+    Negate(is.null),
+    list(
+      study_audit_dep_line("r", deps$r),
+      study_audit_dep_line("stata", deps$stata),
+      study_audit_dep_line("python", deps$python)
+    )
+  )
+
+  py_exe <- audit$dependencies$python$python %||% NULL
+  py_note <- if (!is.null(py_exe) && nzchar(py_exe)) {
+    tags$p(
+      class = "study-audit-row mb-0 text-muted",
+      "Python: ",
+      tags$code(py_exe)
+    )
+  } else {
+    NULL
+  }
+
+  if (isTRUE(compact)) {
+    return(tags$div(
+      class = paste("study-audit-compact small mb-2", summary_class),
+      tags$div(class = "study-audit-deps", dep_lines),
+      py_note,
+      tags$span(class = "study-audit-summary text-muted", summary_text)
+    ))
+  }
+
+  tags$div(
+    class = paste("alert study-audit small mb-0", summary_class),
+    tags$div(class = "study-audit-title", tags$strong("System compatibility")),
+    tags$p(
+      class = "study-audit-row mb-1 text-muted",
+      "Declared in ",
+      tags$code("replication.yml"),
+      " — checked on this machine only."
+    ),
+    tags$p(class = "study-audit-row mb-1", tags$span(class = "text-muted", "Languages: "), engine_label),
+    if (length(dep_lines) > 0L) {
+      tags$div(class = "study-audit-deps", dep_lines)
+    },
+    reg_block,
+    tags$p(class = "study-audit-summary mb-0 mt-2", summary_text)
+  )
+}
+
 registry_health_bar_ui <- function(summary) {
   if (is.null(summary)) {
     return(NULL)
@@ -2913,6 +3098,44 @@ ui <- tagList(
       color: #495057;
       white-space: nowrap;
     }
+    .study-audit-compact {
+      padding: 0.35rem 0.5rem;
+      border-radius: 0.25rem;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .compat-toolbar .btn-link {
+      font-size: 0.8rem;
+      text-decoration: none;
+    }
+    .compat-toolbar .btn-link:hover {
+      text-decoration: underline;
+    }
+    .study-audit {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.85rem;
+    }
+    .study-audit-title {
+      margin-bottom: 0.35rem;
+    }
+    .study-audit-row {
+      font-size: 0.85rem;
+      line-height: 1.35;
+    }
+    .study-audit-status {
+      font-weight: 600;
+      margin-right: 0.35rem;
+    }
+    .study-audit-ok { color: #198754; }
+    .study-audit-warn { color: #856404; }
+    .study-audit-fail { color: #b02a37; }
+    .study-audit-detail { font-weight: 400; }
+    .study-audit-failures {
+      margin: 0.25rem 0 0.5rem 1rem;
+      padding-left: 0.25rem;
+    }
+    .study-audit-summary {
+      font-size: 0.82rem;
+    }
     .app-footer {
       background: #f8f9fa;
       margin-top: 0.5rem;
@@ -2951,7 +3174,16 @@ ui <- tagList(
           )
         ),
         tags$hr(style = "margin: 0.5rem 0;"),
-        h4("2. Tables & figures"),
+        tags$div(
+          class = "compat-toolbar d-flex justify-content-between align-items-center mb-1",
+          tags$h4(class = "mb-0", "2. Tables & figures"),
+          actionButton(
+            "check_system_compat",
+            "Compatibility",
+            class = "btn btn-link btn-sm py-0 px-1 text-muted"
+          )
+        ),
+        uiOutput("study_compat_result"),
         div(class = "replication-list-wrap", uiOutput("replication_list"))
       ),
       mainPanel(
@@ -3045,7 +3277,9 @@ server <- function(input, output, session) {
     registry_folder = NULL,
     registry_repo = NULL,
     local_study_meta = NULL,
-    group_engines = list()
+    group_engines = list(),
+    study_audit = NULL,
+    study_audit_running = FALSE
   )
 
   options(replicateEverything.progress = function(msg) {
@@ -3161,6 +3395,8 @@ server <- function(input, output, session) {
         state$selected_type <- NULL
         state$selected_result <- NULL
         state$group_engines <- list()
+        state$study_audit <- NULL
+        state$study_audit_running <- FALSE
         return(NULL)
       }
     )
@@ -3219,6 +3455,8 @@ server <- function(input, output, session) {
     state$selected_type <- NULL
     state$selected_result <- NULL
     state$selected_source <- "artifact"
+    state$study_audit <- NULL
+    state$study_audit_running <- FALSE
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
       first <- state$replications_df[1, , drop = FALSE]
@@ -3242,6 +3480,36 @@ server <- function(input, output, session) {
     updateSelectInput(session, "study_select", selected = input$go_to_study)
     load_study(input$go_to_study, from_registry = TRUE)
     updateNavbarPage(session, "main_nav", selected = "Explore")
+  })
+
+  observeEvent(input$check_system_compat, {
+    req(state$doi)
+    state$study_audit_running <- TRUE
+    state$study_audit <- NULL
+    on.exit(state$study_audit_running <- FALSE, add = TRUE)
+    withProgress(message = "Checking system compatibility...", value = 0.5, {
+      state$study_audit <- tryCatch(
+        replicate_fn(
+          "study_system_compatibility",
+          state$doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo,
+          materialize_study = TRUE,
+          include_registry_audit = FALSE
+        ),
+        error = function(e) list(error = conditionMessage(e))
+      )
+    })
+  })
+
+  output$study_compat_result <- renderUI({
+    if (isTRUE(state$study_audit_running)) {
+      return(tags$p(class = "text-muted small mb-0", "Checking…"))
+    }
+    if (is.null(state$study_audit)) {
+      return(NULL)
+    }
+    study_audit_ui(state$study_audit, compact = TRUE)
   })
 
   output$studies_bibliography <- renderUI({

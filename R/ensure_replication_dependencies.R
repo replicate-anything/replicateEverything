@@ -43,7 +43,8 @@ ensure_replication_dependencies <- function(
     stop(
       "Missing required replication dependencies: ",
       paste(missing, collapse = ", "),
-      ". Install them or call render_replication(..., install_deps = TRUE)."
+      ". Install on this machine (maintainer setup), or use ",
+      "build_study_artifacts(..., install_deps = TRUE)."
     )
   }
 

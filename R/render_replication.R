@@ -140,7 +140,14 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   }
 
   meta <- enrich_package_replication_meta(meta, ctx)
-  enrich_folder_study_replication_meta(meta, ctx)
+  meta <- enrich_folder_study_replication_meta(meta, ctx)
+  if (is_folder_study_replication(meta, ctx)) {
+    local_root <- resolve_study_folder_path(meta, ctx)
+    if (!is.null(local_root) && dir.exists(local_root)) {
+      meta <- complete_folder_study_meta(meta, local_root)
+    }
+  }
+  meta
 }
 
 get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
@@ -400,7 +407,7 @@ render_replication <- function(
       ensure_replication_dependencies(
         rep,
         paper_meta = meta$paper,
-        install_missing = install_deps
+        install_missing = allow_dependency_install(install_deps)
       )
       with_replicate_study_root(study_root, {
         env <- new.env(parent = globalenv())
@@ -408,9 +415,9 @@ render_replication <- function(
         fn <- get_analysis_function(env, what, rep$type %||% "step")
         if (!is.null(rep$data)) {
           data <- load_replication_data(rep$data, ctx, meta = meta)
-          retry_with_missing_package(fn(data), install_missing = install_deps)
+          retry_with_missing_package(fn(data), install_missing = allow_dependency_install(install_deps))
         } else {
-          retry_with_missing_package(fn(), install_missing = install_deps)
+          retry_with_missing_package(fn(), install_missing = allow_dependency_install(install_deps))
         }
       })
       status_msg <- "Pipeline step finished."
@@ -489,7 +496,7 @@ render_replication <- function(
   ensure_replication_dependencies(
     rep,
     paper_meta = meta$paper,
-    install_missing = install_deps
+    install_missing = allow_dependency_install(install_deps)
   )
 
   data <- load_replication_data(rep$data, ctx, meta = meta)
@@ -501,7 +508,7 @@ render_replication <- function(
     analysis_fn <- get_analysis_function(env, what, rep$type)
     retry_with_missing_package(
       analysis_fn(data),
-      install_missing = install_deps
+      install_missing = allow_dependency_install(install_deps)
     )
   })
 

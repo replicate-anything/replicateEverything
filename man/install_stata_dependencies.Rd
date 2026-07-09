@@ -2,14 +2,15 @@
 % Please edit documentation in R/stata_replication.R
 \name{install_stata_dependencies}
 \alias{install_stata_dependencies}
-\title{Run Stata SSC / dependency install scripts for a study}
+\title{Run Stata SSC / dependency install scripts for a study (maintainer builds only)}
 \usage{
 install_stata_dependencies(
   study_root,
   staging_dir = NULL,
   meta = NULL,
   rep = NULL,
-  install_deps = FALSE
+  install_deps = FALSE,
+  force = FALSE
 )
 }
 \arguments{
@@ -20,6 +21,6 @@ install_stata_dependencies(
 \item{install_deps}{When \code{FALSE}, returns immediately.}
 }
 \description{
-Run Stata SSC / dependency install scripts for a study
+Run Stata SSC / dependency install scripts for a study (maintainer builds only)
 }
 \keyword{internal}

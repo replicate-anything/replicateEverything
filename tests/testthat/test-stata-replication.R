@@ -1,3 +1,15 @@
+test_that("get_replication_meta merges stata_deps_probe for folder-backed stub", {
+  with_fixture_stata_opts({
+    meta <- get_replication_meta(fixture_stata_doi())
+    expect_equal(
+      as.character(meta$stata_deps_probe[[1]]),
+      "code/helpers/probe_stata_deps.do"
+    )
+    expect_equal(meta$languages[[1]], "stata")
+    expect_true(length(meta$replications %||% list()) > 0L)
+  })
+})
+
 test_that("auto_detect_monorepo_root finds sibling registry", {
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),
@@ -12,36 +24,19 @@ test_that("auto_detect_monorepo_root finds sibling registry", {
   testthat::expect_equal(detected, monorepo_root)
 })
 
-test_that("get_replication_meta finds local Stata study without options", {
-  monorepo_root <- normalizePath(
-    file.path(testthat::test_path(".."), "..", ".."),
-    winslash = "/",
-    mustWork = FALSE
-  )
-  study_dir <- file.path(monorepo_root, "rep-10.1596-1813-9450-10626")
-  testthat::skip_if_not(dir.exists(study_dir), "Stata study repo missing")
-
-  withr::local_options(list(
-    replicateEverything.registry_root = NULL,
-    replicateEverything.index = NULL,
-    replicateEverything.use_sibling_packages = NULL,
-    replicateEverything.study_folders_root = NULL
-  ))
-
-  meta <- get_replication_meta("10.1596/1813-9450-10626")
-  reps <- meta$replications %||% list()
-  testthat::expect_true(length(reps) > 0L)
-  tab1 <- reps[vapply(reps, function(x) identical(x$id, "tab_1"), logical(1))]
-  testthat::expect_length(tab1, 1L)
-  testthat::expect_equal(tab1[[1]]$engine[[1]], "stata")
+test_that("get_replication_meta finds local Stata study from fixture registry", {
+  with_fixture_stata_opts({
+    meta <- get_replication_meta(fixture_stata_doi())
+    reps <- meta$replications %||% list()
+    expect_true(length(reps) > 0L)
+    tab1 <- reps[vapply(reps, function(x) identical(x$id, "tab_1"), logical(1))]
+    expect_length(tab1, 1L)
+    expect_equal(tab1[[1]]$engine[[1]], "stata")
+  })
 })
 
 test_that("stata_deps_install_scripts finds default helper do-file", {
-  study <- file.path(
-    testthat::test_path(".."), "..", "..",
-    "rep-10.1017-s0003055426101749"
-  )
-  skip_if_not(dir.exists(study), "Jiang study repo missing")
+  study <- fixture_stata_study_root()
   scripts <- replicateEverything:::stata_deps_install_scripts(study)
   expect_true(any(grepl("install_stata_deps\\.do$", scripts)))
 })
@@ -52,7 +47,7 @@ test_that("stata_deps_probe_lines_from_packages checks which for each package", 
   expect_true(any(grepl("which estout", lines)))
 })
 
-test_that("install_stata_dependencies respects install_stata_deps option", {
+test_that("install_stata_dependencies probes only when install_stata_deps is FALSE", {
   study <- tempfile("study-")
   dir.create(study, recursive = TRUE)
   on.exit(unlink(study, recursive = TRUE), add = TRUE)
@@ -73,12 +68,8 @@ test_that("stata_dependencies_satisfied returns NA without probe config", {
 
 test_that("stata_dependencies_satisfied returns TRUE when study probe passes", {
   skip_if(is.null(replicateEverything:::find_stata_executable()), "Stata not installed")
-  study <- file.path(
-    testthat::test_path(".."), "..", "..",
-    "rep-10.1017-s0003055426101749"
-  )
-  skip_if_not(dir.exists(study), "Jiang study repo missing")
-  meta <- yaml::read_yaml(file.path(study, "replication.yml"))
+  study <- fixture_stata_study_root()
+  meta <- fixture_stata_meta()
   expect_true(
     replicateEverything:::stata_dependencies_satisfied(
       study,
@@ -88,9 +79,24 @@ test_that("stata_dependencies_satisfied returns TRUE when study probe passes", {
   )
 })
 
-test_that("stata_log_suggests_missing_dependency detects reghdfe errors", {
+test_that("stata_log_suggests_missing_dependency detects SSC install prompts", {
   text <- "install it:\n - install from SSC\nr(9);"
   expect_true(replicateEverything:::stata_log_suggests_missing_dependency(text))
+})
+
+test_that("stata_dependency_hint points to study replication.yml not hardcoded SSC", {
+  study <- fixture_stata_study_root()
+  meta <- fixture_stata_meta()
+  text <- "unrecognized command: foo\nr(199);"
+  hint <- replicateEverything:::stata_dependency_hint(
+    text,
+    study_root = study,
+    meta = meta
+  )
+  expect_true(grepl("replication.yml", hint))
+  expect_true(grepl("install_stata_deps", hint))
+  expect_true(grepl("probe_stata_deps", hint))
+  expect_false(grepl("ssc install reghdfe", hint))
 })
 
 test_that("replication_engine detects Stata entries", {
@@ -110,7 +116,15 @@ test_that("replication_engine detects Stata entries", {
   expect_equal(replication_engine(do_rep), "stata")
 })
 
-test_that("get_code includes stata_source for Stata studies", {
+test_that("get_code includes stata_source for Stata fixture study", {
+  with_fixture_stata_opts({
+    code <- get_code(fixture_stata_doi(), "tab_1")
+    expect_true(any(grepl("esttab", code, fixed = TRUE)))
+    expect_true(any(grepl("ANALYSIS", code, fixed = TRUE)))
+  })
+})
+
+test_that("get_code includes stata_source for monorepo Stata study (integration)", {
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),
     winslash = "/",
@@ -148,21 +162,14 @@ test_that("study_folder_map_keys includes registry and repo aliases", {
   expect_true("rep-10.1596-1813-9450-10626" %in% keys)
 })
 
-test_that("lookup_study_folders_option matches rep-* alias", {
-  monorepo_root <- normalizePath(
-    file.path(testthat::test_path(".."), "..", ".."),
-    winslash = "/",
-    mustWork = FALSE
-  )
-  study_dir <- file.path(monorepo_root, "rep-10.1596-1813-9450-10626")
-  testthat::skip_if_not(dir.exists(study_dir), "Stata study repo missing")
-
-  meta <- get_replication_meta("10.1596/1813-9450-10626")
-  ctx <- paper_context("10.1596/1813-9450-10626")
+test_that("lookup_study_folders_option matches rep-* alias for fixture study", {
+  study_dir <- fixture_stata_study_root()
+  meta <- fixture_stata_meta()
+  ctx <- paper_context(fixture_stata_doi())
 
   withr::local_options(list(
     replicateEverything.study_folders = list(
-      "rep-10.1596-1813-9450-10626" = study_dir
+      "rep-10.9999_stata" = study_dir
     ),
     replicateEverything.use_sibling_packages = FALSE,
     replicateEverything.study_folders_root = NULL
@@ -214,23 +221,11 @@ test_that("materialize_folder_study_from_github caches public study repo", {
   )
 })
 
-test_that("replication_code_language_for reads study metadata", {
-  monorepo_root <- normalizePath(
-    file.path(testthat::test_path(".."), "..", ".."),
-    winslash = "/",
-    mustWork = FALSE
-  )
-  study_dir <- file.path(monorepo_root, "rep-10.1596-1813-9450-10626")
-  testthat::skip_if_not(dir.exists(study_dir), "Stata study repo missing")
-
-  withr::local_options(list(
-    replicateEverything.registry_root = file.path(monorepo_root, "registry"),
-    replicateEverything.study_folders_root = monorepo_root,
-    replicateEverything.use_sibling_packages = TRUE
-  ))
-
-  expect_equal(
-    replication_code_language_for("10.1596/1813-9450-10626", "tab_1"),
-    "stata"
-  )
+test_that("replication_code_language_for reads fixture study metadata", {
+  with_fixture_stata_opts({
+    expect_equal(
+      replication_code_language_for(fixture_stata_doi(), "tab_1"),
+      "stata"
+    )
+  })
 })

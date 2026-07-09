@@ -20,3 +20,17 @@ replicate_progress <- function(msg) {
   message(msg)
   invisible(NULL)
 }
+
+#' Whether replication runs may install missing dependencies
+#'
+#' Live Run and Shiny verify only. Maintainer builds set
+#' \code{options(replicateEverything.install_dependencies = TRUE)} (as
+#' \code{build_study_artifacts(install_deps = TRUE)} does).
+#'
+#' @param want Caller requested \code{install_deps = TRUE}.
+#' @return Logical scalar.
+#' @keywords internal
+allow_dependency_install <- function(want = FALSE) {
+  isTRUE(want) &&
+    isTRUE(getOption("replicateEverything.install_dependencies", FALSE))
+}

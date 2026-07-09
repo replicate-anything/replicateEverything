@@ -234,7 +234,7 @@ format_for_display <- function(
   ensure_replication_dependencies(
     rep,
     paper_meta = meta$paper,
-    install_missing = install_deps
+    install_missing = allow_dependency_install(install_deps)
   )
 
   ctx <- paper_context(doi, repo = repo, folder = folder)
@@ -253,7 +253,7 @@ format_for_display <- function(
   tryCatch(
     retry_with_missing_package(
       fmt_fn(fmt_object),
-      install_missing = install_deps
+      install_missing = allow_dependency_install(install_deps)
     ),
     error = function(e) {
       if (!is_stata_replication(rep, meta$paper)) {

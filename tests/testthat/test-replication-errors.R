@@ -14,42 +14,39 @@ test_that("replication_error_message strips Stata-style hyperlinks", {
   expect_equal(replication_error_message(err), "file not found: ./data/raw/foo")
 })
 
-test_that("get_artifact_path resolves python figure when language is stata", {
+test_that("get_artifact_path resolves figure from fixture study folder", {
   skip_on_cran()
-  skip_if_not_installed("httr")
-  withr::local_options(list(
-    replicateEverything.registry_root = "c:/WZB Dropbox/Macartan Humphreys/5_github/replicate_everything/registry",
-    replicateEverything.study_folders_root = NULL,
-    replicateEverything.use_sibling_packages = FALSE
-  ))
-  path <- get_artifact_path(
-    "10.1017/S0003055426101749",
-    "fig_2",
-    folder = "10.1017S0003055426101749",
-    language = "stata"
-  )
-  expect_false(is.null(path))
-  expect_true(
-    grepl("fig_2\\.png$", path) ||
-      grepl("fig_2\\.png$", basename(path))
-  )
+  with_fixture_opts({
+    study <- file.path(
+      testthat::test_path(".."), "fixtures", "rep-10.9999_example"
+    )
+    png_path <- file.path(study, "artifacts", "fig_1.png")
+    dir.create(dirname(png_path), recursive = TRUE, showWarnings = FALSE)
+    writeBin(as.raw(0), png_path)
+    on.exit(unlink(png_path), add = TRUE)
+
+    path <- get_artifact_path(
+      fixture_doi(),
+      "fig_1",
+      folder = "10.9999_example",
+      language = "r"
+    )
+    expect_false(is.null(path))
+    expect_true(grepl("fig_1\\.png$", path))
+  })
 })
 
-test_that("get_artifact_path resolves by id when replication entry lookup fails", {
+test_that("get_artifact_path returns NULL when replication entry lookup fails", {
   skip_on_cran()
-  skip_if_not_installed("httr")
-  withr::local_options(list(
-    replicateEverything.registry_root = NULL,
-    replicateEverything.study_folders_root = NULL,
-    replicateEverything.use_sibling_packages = FALSE
-  ))
-  path <- get_artifact_path(
-    "10.1017/S0003055426101749",
-    "fig_2_not_in_meta",
-    folder = "10.1017S0003055426101749",
-    language = "stata"
-  )
-  expect_null(path)
+  with_fixture_opts({
+    path <- get_artifact_path(
+      fixture_doi(),
+      "fig_2_not_in_meta",
+      folder = "10.9999_example",
+      language = "r"
+    )
+    expect_null(path)
+  })
 })
 
 test_that("infer_folder_study_stub finds study repo from rep slug", {

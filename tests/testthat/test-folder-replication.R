@@ -69,6 +69,22 @@ test_that("write_folder_registry_stub creates registry sync files", {
   expect_equal(nrow(index), 1L)
 })
 
+test_that("enrich_folder_study_replication_meta merges stata fields from study repo", {
+  stub <- yaml::read_yaml(
+    file.path(
+      testthat::test_path(".."), "fixtures", "registry", "studies", "10.9999_stata.yml"
+    )
+  )
+  ctx <- list(local_root = fixture_stata_study_root())
+  enriched <- replicateEverything:::enrich_folder_study_replication_meta(stub, ctx)
+  expect_true(length(enriched$replications %||% list()) > 0L)
+  expect_equal(
+    as.character(enriched$stata_deps_probe[[1]]),
+    "code/helpers/probe_stata_deps.do"
+  )
+  expect_true(length(enriched$stata_dependencies %||% list()) > 0L)
+})
+
 test_that("registry_study_yaml_path prefers flat stub files", {
   tmp <- withr::local_tempdir()
   studies <- file.path(tmp, "studies")
