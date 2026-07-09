@@ -1,6 +1,7 @@
-# Run Stata SSC / dependency install scripts for a study
+# Run Stata SSC / dependency install scripts for a study (maintainer builds only)
 
-Run Stata SSC / dependency install scripts for a study
+Run Stata SSC / dependency install scripts for a study (maintainer
+builds only)
 
 ## Usage
 
@@ -10,7 +11,8 @@ install_stata_dependencies(
   staging_dir = NULL,
   meta = NULL,
   rep = NULL,
-  install_deps = FALSE
+  install_deps = FALSE,
+  force = FALSE
 )
 ```
 

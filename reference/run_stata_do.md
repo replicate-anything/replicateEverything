@@ -5,7 +5,13 @@ Run a Stata do-file non-interactively
 ## Usage
 
 ``` r
-run_stata_do(do_path, workdir, timeout = 900L, staging_dir = NULL)
+run_stata_do(
+  do_path,
+  workdir,
+  timeout = 900L,
+  staging_dir = NULL,
+  hint_context = NULL
+)
 ```
 
 ## Arguments

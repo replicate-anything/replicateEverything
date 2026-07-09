@@ -2,8 +2,51 @@
 
 ## replicateEverything 0.5.0
 
+### Policy
+
+- **Live Run and Shiny never install dependencies** on the host by
+  default. They probe only (R `requireNamespace`, Python `importlib`,
+  Stata `stata_deps_probe`). Maintainer builds call
+  `build_study_artifacts(install_deps = TRUE)`, which sets
+  `options(replicateEverything.install_dependencies = TRUE)` and
+  `install_stata_deps = TRUE` for that session only. Study runners must
+  not call `install_stata_deps.do` from `init_study_paths.do` or table
+  scripts.
+
 ### Bug fixes
 
+- Stata dependency checks are **study-declared** via `stata_deps_probe:`
+  (check-only `.do` in the study repo) or `stata_packages:` (generic
+  `which`-only probe). The package no longer hardcodes
+  ftools/reghdfe/estout. Live Run probes only; `install_stata_deps.do`
+  runs only when
+  `options(replicateEverything.install_stata_deps = TRUE)`
+  (e.g. `build_study_artifacts(install_deps = TRUE)`).
+- Stata dependency probe and study `install_stata_deps.do` load tests
+  use `help reghdfe` instead of bare `reghdfe` where applicable (study
+  probe script). Invoking `reghdfe` with no data returns r(301) even
+  when installed. When satisfied (as on a typical dev machine), the
+  install script is skipped and Shiny shows “Stata dependencies OK —
+  skipped install”. Install runs only when the probe fails. Progress
+  lines are reported via
+  [`replicate_progress()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_progress.md)
+  / `options(replicateEverything.progress)` for Shiny’s “Working:”
+  banner.
+- Stata batch runs honour `timeout` when the suggested **processx**
+  package is installed; overdue runs are killed so Shiny can recover
+  instead of freezing indefinitely. Tune with
+  `options(replicateEverything.stata_timeout)`,
+  `stata_deps_probe_timeout` (default 120s), and
+  `stata_deps_install_timeout` (default 600s). Set
+  `options(replicateEverything.install_stata_deps = FALSE)` to skip
+  study Stata installs entirely.
+- Shiny artifact loading no longer passes `install_deps = TRUE` (only
+  live Run installs dependencies).
+- Study cache downloads unzip on the same filesystem as the cache
+  directory (not system `/tmp`), so moving the extracted repo into the
+  cache is atomic on Linux servers where `/tmp` and the Samba/NFS cache
+  are on different mounts. The cross-device `file.rename` fallback also
+  uses a single recursive copy and suppresses the EXDEV warning.
 - Study Stata dependency scripts (`install_stata_deps.do` etc.) now run
   at most once per study per session instead of before every prep step
   and table, so repeated live runs no longer re-trigger a slow SSC
@@ -34,14 +77,10 @@
   directory (e.g. `ShinyApps/replicate/data/raw/...`) rather than the
   study repo clone. The Python process now also runs with its working
   directory set to the study root, matching Stata.
-- Python dependency handling now probes whether each declared package is
-  already importable (`python -c "import ..."`) before shelling out to
-  `pip`, so live runs skip redundant installs and no longer fail on
-  locked-down servers where the packages are pre-installed but
-  `pip install` is forbidden. Also fixed the pip exit-status check,
-  which previously misread
-  [`system2()`](https://rdrr.io/r/base/system2.html) captured output as
-  the status code.
+- Python dependency probing uses `importlib.util.find_spec` per package,
+  prefers the Windows `py -0p` launcher installs over Store stubs, and
+  skips `WindowsApps` aliases on PATH. Compatibility UI shows the full
+  Python path probed.
 - [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md)
   no longer lists `README.md` as a skill; `inst/ai/skills/` now bundles
   both `folder_replication` and `APSR_to_replicateEverything`.
