@@ -86,7 +86,8 @@ validate_artifact <- function(doi, what, repo = NULL, language = NULL) {
       pkg <- as.character(meta$paper$package[[1]])
       stop(
         "Artifact not available for replication ", what,
-        ". Run ", pkg, "::build_report() in the study package.",
+        ". Run ", study_build_function("package"), "(",
+        shQuote(pkg, type = "sh"), ", install_deps = TRUE).",
         call. = FALSE
       )
     }

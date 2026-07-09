@@ -103,3 +103,13 @@ test_that("python_dep_import_name strips specifiers and maps known names", {
   expect_equal(imp("requests[security]"), "requests")
   expect_equal(imp("some-dist ; python_version >= '3.9'"), "some_dist")
 })
+
+test_that("python_replication_deps merges entry and study-wide packages", {
+  rep <- list(id = "fig_2", engine = "python", dependencies = c("matplotlib"))
+  meta <- list(
+    python_dependencies = c("pandas", "numpy"),
+    paper = list()
+  )
+  deps <- replicateEverything:::python_replication_deps(rep, meta)
+  expect_true(all(c("matplotlib", "pandas", "numpy") %in% deps))
+})

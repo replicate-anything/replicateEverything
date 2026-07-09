@@ -31,25 +31,22 @@ In Shiny, use **Check compatibility** above the tables list. When something is m
 
 ## Install dependencies for one study
 
-Use a **single function** for all languages declared in the study repo (R CRAN, Python pip, Stata `install_stata_deps.do`):
+Use **one function** for folder-backed and package-backed registry studies (R CRAN, Python pip, Stata `install_stata_deps.do`):
 
 ```{r}
 install_study_dependencies("10.1017/S0003055426101749")
-# or a local clone:
+install_study_dependencies("10.1371/journal.pone.0278337")  # package-backed too
 install_study_dependencies("path/to/study-repo")
 ```
 
-This does **not** rebuild `artifacts/` — it only satisfies dependencies. To build display artifacts after dependencies are in place:
+This does **not** rebuild display artifacts — only dependencies. After setup, build artifacts with the kind-specific builder (paths differ by design):
 
 ```{r}
-build_study_artifacts("path/to/study-repo", install_deps = TRUE)
+build_study_artifacts("path/to/folder-study", install_deps = TRUE)
+build_package_artifacts("rep1371journalpone0278337", install_deps = TRUE)
 ```
 
-Package-backed studies (registry entry with `paper.package`) use:
-
-```{r}
-build_package_artifacts("pkgname", install_deps = TRUE)
-```
+Use [replication_kind()] to inspect layout (`"folder"`, `"package"`, or `"registry"`) and [study_artifact_dir()] for the artifact root (`artifacts/` vs `inst/report/artifacts/`).
 
 ## Install dependencies for every registry study
 
@@ -59,7 +56,7 @@ On a shared audit or Shiny server, run once:
 install_registry_dependencies()
 ```
 
-Failures are collected per DOI; other studies continue.
+Covers folder- and package-backed entries. Failures are collected per DOI; other studies continue.
 
 ## Point R at Python and Stata permanently
 
@@ -100,9 +97,12 @@ maintainer_dependency_hint("10.1017/S0003055426101749")
 | Task | Function |
 |------|----------|
 | Probe this machine | `check_study_compatibility(doi)` |
-| Install one study (all languages) | `install_study_dependencies(doi)` |
+| Install one study (all kinds, all languages) | `install_study_dependencies(doi)` |
 | Install entire registry | `install_registry_dependencies()` |
-| Build artifacts after setup | `build_study_artifacts(path, install_deps = TRUE)` |
+| Study layout | `replication_kind(meta)` → `"folder"` / `"package"` |
+| Artifact directory | `study_artifact_dir(meta, ctx)` |
+| Build folder artifacts | `build_study_artifacts(path, install_deps = TRUE)` |
+| Build package artifacts | `build_package_artifacts(pkg, install_deps = TRUE)` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
 
 See also *Meet the functions* and the folder replication checklist for study-repo conventions (`languages:`, `python_dependencies:`, `stata_deps_probe:`).

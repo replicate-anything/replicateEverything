@@ -223,7 +223,8 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
 package_installed_artifact_path <- function(what, pkg, meta = NULL, ctx = NULL) {
   if (!is.null(meta) && !is.null(ctx)) {
     local_root <- resolve_replication_package_path(pkg, meta, ctx)
-    if (!is.null(local_root)) {
+    art_dir <- study_artifact_dir(meta, ctx, installed = FALSE, package = pkg)
+    if (!is.null(local_root) && !is.null(art_dir)) {
       for (ext in c("png", "html", "rds", "svg")) {
         path <- file.path(local_root, "inst", "report", "artifacts", paste0(what, ".", ext))
         if (file.exists(path)) {
@@ -235,13 +236,18 @@ package_installed_artifact_path <- function(what, pkg, meta = NULL, ctx = NULL) 
   if (!replication_package_usable(pkg)) {
     return(NULL)
   }
+  art_dir <- if (!is.null(meta)) {
+    study_artifact_dir(meta, ctx, installed = TRUE, package = pkg)
+  } else {
+    system.file("report", "artifacts", package = pkg)
+  }
+  if (is.null(art_dir) || !nzchar(art_dir)) {
+    return(NULL)
+  }
   for (ext in c("png", "html", "rds", "svg")) {
-    path <- system.file(
-      "report", "artifacts", paste0(what, ".", ext),
-      package = pkg
-    )
-    if (nzchar(path) && file.exists(path)) {
-      return(path)
+    path <- file.path(art_dir, paste0(what, ".", ext))
+    if (file.exists(path)) {
+      return(normalizePath(path, winslash = "/", mustWork = FALSE))
     }
   }
   NULL

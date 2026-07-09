@@ -96,12 +96,41 @@ install_study_stata_packages <- function(study_root, meta) {
   )
 }
 
+#' Install dependencies for a package-backed study
+#'
+#' Loads or installs the study package, then installs declared R, Python, and
+#' Stata dependencies from its \code{replication.yml}. Does not build
+#' \code{inst/report/artifacts/} — use [build_package_artifacts()] for that.
+#'
+#' @param meta Parsed replication metadata with \code{paper.package}.
+#' @param ctx Paper context.
+#' @keywords internal
+install_package_dependencies <- function(meta, ctx) {
+  pkg <- as.character(meta$paper$package[[1]] %||% "")
+  if (!nzchar(pkg)) {
+    stop("Package-backed study is missing paper.package.", call. = FALSE)
+  }
+  ensure_replication_package(pkg, meta = meta, ctx = ctx)
+  full_meta <- read_package_replication_meta(pkg)
+  pkg_root <- package_source_root(pkg)
+
+  with_maintainer_install_opts({
+    install_study_r_packages(full_meta)
+    if (!is.null(pkg_root) && dir.exists(pkg_root)) {
+      install_study_python_packages(full_meta, ctx, study_root = pkg_root)
+      install_study_stata_packages(pkg_root, full_meta)
+    }
+  })
+  invisible(TRUE)
+}
+
 #' Install dependencies for one folder-backed or registry study
 #'
 #' Maintainer setup only. Installs declared R CRAN packages, Python pip
 #' packages, and runs study Stata install scripts (\code{install_stata_deps.do})
-#' once. Does **not** build display artifacts — use [build_study_artifacts()] for
-#' that.
+#' once. Works for **folder-backed** and **package-backed** registry studies.
+#' Does **not** build display artifacts — use [build_study_artifacts()] or
+#' [build_package_artifacts()] for that.
 #'
 #' Live Run and Shiny probe dependencies only; call this function (or
 #' [install_registry_dependencies()]) when onboarding a machine.
@@ -111,7 +140,7 @@ install_study_stata_packages <- function(study_root, meta) {
 #' @param repo,folder Optional registry row hints.
 #' @return Invisibly \code{TRUE} on success.
 #' @seealso [check_study_compatibility()], [build_study_artifacts()],
-#'   [install_registry_dependencies()]
+#'   [build_package_artifacts()], [install_registry_dependencies()]
 #'
 #' @examples
 #' \dontrun{
@@ -147,6 +176,7 @@ install_study_dependencies <- function(
     }
     doi <- normalize_doi(meta$paper$doi)
     ctx <- paper_context(doi, repo = repo, folder = folder)
+    kind <- "folder"
   } else {
     doi <- prepare_doi_for_replication(loc)
     meta <- get_replication_meta(
@@ -155,12 +185,20 @@ install_study_dependencies <- function(
       folder = folder
     )
     ctx <- paper_context(doi, repo = repo, folder = folder)
-    if (isTRUE(is_package_replication(meta))) {
-      pkg <- as.character(meta$paper$package[[1]] %||% "")
+    kind <- replication_kind(meta, ctx)
+    if (identical(kind, "package")) {
+      with_maintainer_install_opts({
+        message("Installing dependencies for ", doi, " (package ", meta$paper$package[[1]], ") ...")
+        install_package_dependencies(meta, ctx)
+      })
+      message("Dependency install finished for ", doi)
+      return(invisible(TRUE))
+    }
+    if (!identical(kind, "folder")) {
       stop(
-        "Package-backed study ", pkg, ".\n",
-        "Install its R dependencies with build_package_artifacts(",
-        shQuote(pkg, type = "sh"), ", install_deps = TRUE).",
+        "Study ", doi, " is registry-embedded (not folder- or package-backed). ",
+        "Install dependencies manually or use build_study_artifacts() from ",
+        "the registry checkout.",
         call. = FALSE
       )
     }
@@ -315,49 +353,21 @@ assert_study_ready_for_replication <- function(
   if (is.null(meta)) {
     meta <- get_replication_meta(doi, repo = repo, folder = folder)
   }
-
-  if (isTRUE(is_package_replication(meta))) {
-    pkgs <- study_declared_r_packages(meta)
-    missing <- pkgs[
-      !vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)
-    ]
-    if (length(missing) == 0L) {
-      return(invisible(TRUE))
-    }
-    pkg <- as.character(meta$paper$package[[1]] %||% "")
-    stop(
-      maintainer_dependency_hint(
-        doi = doi,
-        scope = "package",
-        package = pkg,
-        missing_r = missing
-      ),
-      call. = FALSE
-    )
-  }
-
-  pkgs <- study_declared_r_packages(meta)
-  missing_r <- pkgs[
-    !vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)
-  ]
-  if (length(missing_r) > 0L) {
-    stop(
-      maintainer_dependency_hint(doi = doi, missing_r = missing_r),
-      call. = FALSE
-    )
-  }
-
-  compat <- study_system_compatibility(
-    doi = doi,
-    repo = repo,
-    folder = folder,
-    materialize_study = TRUE,
-    include_registry_audit = FALSE
+  ctx <- tryCatch(
+    paper_context(doi, repo = repo, folder = folder),
+    error = function(e) list()
   )
-  if (isTRUE(compat$ready)) {
+  eval <- evaluate_study_compatibility(
+    meta,
+    ctx,
+    do_materialize = TRUE
+  )
+  if (isTRUE(eval$ready)) {
     return(invisible(TRUE))
   }
 
+  compat <- c(list(doi = doi), eval, list(registry_audit = list(available = FALSE)))
+  class(compat) <- "study_system_compatibility"
   stop(
     maintainer_dependency_hint(doi = doi, audit = compat),
     call. = FALSE

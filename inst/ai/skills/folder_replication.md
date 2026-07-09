@@ -219,7 +219,8 @@ replications:
 ```r
 yaml::read_yaml("replication.yml")
 replicateEverything::check_study_compatibility("<doi>")  # probe only
-replicateEverything::install_study_dependencies("<doi>")  # maintainer: all languages once
+replicateEverything::install_study_dependencies("<doi>")  # folder + package registry studies
+replicateEverything::install_registry_dependencies()      # all registry rows
 ```
 
 ### Step 3c — replicateEverything conventions (no package hardcoding)
@@ -263,6 +264,20 @@ stata_dependencies:
 ```
 
 If `languages:` is omitted, engines are inferred from `engine:` / `code:` extensions on prep and replication entries.
+
+### Package-backed vs folder-backed (maintainer API)
+
+Both study types use the **same maintainer functions** for dependency setup:
+
+| Task | Function |
+|------|----------|
+| Probe machine | `check_study_compatibility(doi)` |
+| Install deps | `install_study_dependencies(doi)` |
+| Registry bulk install | `install_registry_dependencies()` |
+| Layout | `replication_kind(meta)` → `"folder"` or `"package"` |
+| Artifact root | `study_artifact_dir(meta, ctx)` — `artifacts/` vs `inst/report/artifacts/` |
+
+**Build** still uses kind-specific builders: `build_study_artifacts()` (folder) vs `build_package_artifacts()` (package). Declare the same yaml fields (`languages:`, `paper.dependencies`, `python_dependencies:`, `stata_*`) in both layouts.
 
 ### Stata studies — declare dependencies in the study repo
 

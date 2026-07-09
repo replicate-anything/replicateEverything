@@ -300,6 +300,150 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
   )
 }
 
+#' Probe declared R / Python / Stata dependencies from yaml
+#'
+#' @param meta Parsed replication metadata.
+#' @param study_root Local study or package source root (for Stata probes).
+#' @return List with \code{languages}, \code{dependencies}, \code{ready},
+#'   \code{install_needed}.
+#' @keywords internal
+probe_study_engine_dependencies <- function(meta, study_root = NULL) {
+  languages <- study_declared_languages(meta)
+  dependencies <- list()
+  ready <- TRUE
+  install_needed <- FALSE
+
+  if ("r" %in% languages) {
+    r_probe <- probe_r_packages(study_declared_r_packages(meta))
+    dependencies$r <- c(r_probe, list(kind = "cran"))
+    if (!isTRUE(r_probe$ok)) {
+      ready <- FALSE
+      install_needed <- TRUE
+    }
+  }
+
+  if ("stata" %in% languages) {
+    st_probe <- probe_stata_from_yaml(meta, study_root = study_root)
+    dependencies$stata <- c(st_probe, list(kind = "stata"))
+    if (isFALSE(st_probe$ok)) {
+      ready <- FALSE
+      install_needed <- TRUE
+    }
+  }
+
+  if ("python" %in% languages) {
+    py_probe <- probe_python_from_yaml(study_declared_python_packages(meta))
+    dependencies$python <- c(py_probe, list(kind = "python"))
+    if (!isTRUE(py_probe$ok)) {
+      ready <- FALSE
+      install_needed <- TRUE
+    }
+  }
+
+  list(
+    languages = languages,
+    dependencies = dependencies,
+    ready = ready,
+    install_needed = install_needed
+  )
+}
+
+#' Evaluate yaml-declared compatibility from parsed metadata
+#'
+#' @param meta Parsed replication metadata.
+#' @param ctx Paper context.
+#' @param do_materialize Materialize folder or package materials when \code{TRUE}.
+#' @return List with \code{kind}, \code{languages}, \code{dependencies},
+#'   \code{ready}, \code{install_needed}.
+#' @keywords internal
+evaluate_study_compatibility <- function(
+  meta,
+  ctx,
+  do_materialize = TRUE
+) {
+  kind <- replication_kind(meta, ctx)
+
+  languages <- character(0)
+  dependencies <- list()
+  ready <- TRUE
+  install_needed <- FALSE
+  study_root <- NULL
+
+  if (identical(kind, "package")) {
+    pkg <- as.character(meta$paper$package[[1]] %||% "")
+    pkg_ok <- nzchar(pkg) && replication_package_usable(pkg)
+    if (isTRUE(do_materialize)) {
+      mat <- tryCatch(
+        materialize_study(meta, ctx),
+        error = function(e) NULL
+      )
+      if (!is.null(mat)) {
+        study_root <- mat$root
+        meta <- mat$meta
+      }
+    } else if (pkg_ok) {
+      study_root <- package_source_root(pkg)
+      meta <- tryCatch(
+        read_package_replication_meta(pkg),
+        error = function(e) meta
+      )
+    }
+    dependencies$package <- list(
+      ok = pkg_ok,
+      required = if (nzchar(pkg)) pkg else character(0),
+      missing = if (pkg_ok) character(0) else pkg,
+      kind = "replication_package"
+    )
+    if (!pkg_ok) {
+      ready <- FALSE
+      install_needed <- TRUE
+    }
+  } else if (identical(kind, "folder")) {
+    languages <- study_declared_languages(meta)
+    study_root <- resolve_study_folder_path(meta, ctx)
+
+    needs_stata_folder <- "stata" %in% languages &&
+      length(stata_deps_probe_scripts(study_root %||% ".", meta = meta)) > 0L
+
+    if (
+      isTRUE(do_materialize) &&
+      needs_stata_folder &&
+      (is.null(study_root) || !dir.exists(study_root))
+    ) {
+      study_root <- tryCatch(
+        ensure_study_folder_local(meta, ctx),
+        error = function(e) NULL
+      )
+    }
+
+    if (!is.null(study_root) && dir.exists(study_root)) {
+      meta <- complete_folder_study_meta(meta, study_root)
+      languages <- study_declared_languages(meta)
+    }
+  }
+
+  engine_probe <- probe_study_engine_dependencies(meta, study_root = study_root)
+  languages <- unique(c(languages, engine_probe$languages))
+  dependencies <- c(dependencies, engine_probe$dependencies)
+  if (!isTRUE(engine_probe$ready)) {
+    ready <- FALSE
+    install_needed <- TRUE
+  }
+  if (identical(kind, "package") && !isTRUE(dependencies$package$ok %||% TRUE)) {
+    ready <- FALSE
+    install_needed <- TRUE
+  }
+
+  list(
+    kind = kind,
+    languages = languages,
+    engines = languages,
+    dependencies = dependencies,
+    ready = ready,
+    install_needed = install_needed
+  )
+}
+
 #' Check yaml-declared dependencies against the local system
 #'
 #' Reads \code{languages:}, \code{paper.dependencies}, \code{python_dependencies:},
@@ -324,93 +468,19 @@ study_system_compatibility <- function(
   doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
-
-  languages <- character(0)
-  dependencies <- list()
-  ready <- TRUE
-  install_needed <- FALSE
-
-  if (isTRUE(is_package_replication(meta))) {
-    pkg <- as.character(meta$paper$package[[1]] %||% "")
-    pkg_ok <- nzchar(pkg) && replication_package_usable(pkg)
-    languages <- "r"
-    dependencies$r <- list(
-      ok = pkg_ok,
-      required = if (nzchar(pkg)) pkg else character(0),
-      missing = if (pkg_ok) character(0) else pkg,
-      kind = "replication_package"
-    )
-    if (!pkg_ok) {
-      ready <- FALSE
-      install_needed <- TRUE
-    }
-  } else {
-    languages <- study_declared_languages(meta)
-    study_root <- resolve_study_folder_path(meta, ctx)
-
-    needs_stata_folder <- "stata" %in% languages &&
-      length(stata_deps_probe_scripts(study_root %||% ".", meta = meta)) > 0L
-
-    if (
-      isTRUE(materialize_study) &&
-      needs_stata_folder &&
-      (is.null(study_root) || !dir.exists(study_root)) &&
-      is_folder_study_replication(meta, ctx)
-    ) {
-      study_root <- tryCatch(
-        ensure_study_folder_local(meta, ctx),
-        error = function(e) NULL
-      )
-    }
-
-    if (!is.null(study_root) && dir.exists(study_root)) {
-      meta <- complete_folder_study_meta(meta, study_root)
-      languages <- study_declared_languages(meta)
-    }
-
-    if ("r" %in% languages) {
-      r_probe <- probe_r_packages(study_declared_r_packages(meta))
-      dependencies$r <- c(r_probe, list(kind = "cran"))
-      if (!isTRUE(r_probe$ok)) {
-        ready <- FALSE
-        install_needed <- TRUE
-      }
-    }
-
-    if ("stata" %in% languages) {
-      st_probe <- probe_stata_from_yaml(meta, study_root = study_root)
-      dependencies$stata <- c(st_probe, list(kind = "stata"))
-      if (isFALSE(st_probe$ok)) {
-        ready <- FALSE
-        install_needed <- TRUE
-      }
-    }
-
-    if ("python" %in% languages) {
-      py_probe <- probe_python_from_yaml(study_declared_python_packages(meta))
-      dependencies$python <- c(py_probe, list(kind = "python"))
-      if (!isTRUE(py_probe$ok)) {
-        ready <- FALSE
-        install_needed <- TRUE
-      }
-    }
-  }
-
-  registry <- if (isTRUE(include_registry_audit)) {
-    study_registry_audit_results(doi, registry_root = registry_root)
-  } else {
-    list(available = FALSE)
-  }
+  eval <- evaluate_study_compatibility(meta, ctx, do_materialize = materialize_study)
 
   structure(
-    list(
-      doi = doi,
-      languages = languages,
-      engines = languages,
-      dependencies = dependencies,
-      ready = ready,
-      install_needed = install_needed,
-      registry_audit = registry
+    c(
+      list(doi = doi),
+      eval,
+      list(
+        registry_audit = if (isTRUE(include_registry_audit)) {
+          study_registry_audit_results(doi, registry_root = registry_root)
+        } else {
+          list(available = FALSE)
+        }
+      )
     ),
     class = "study_system_compatibility"
   )

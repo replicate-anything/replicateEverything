@@ -370,10 +370,16 @@ replicate_fn <- function(name, ..., folder = NULL, repo = NULL) {
   }
   ns <- asNamespace("replicateEverything")
   if (!exists(name, envir = ns, inherits = FALSE)) {
+    pkg_ver <- tryCatch(
+      as.character(utils::packageVersion("replicateEverything")),
+      error = function(e) "unknown"
+    )
     stop(
       "Function replicateEverything::", name,
-      " is not available. Update replicateEverything ",
-      "(remotes::install_github('replicate-anything/replicateEverything')).",
+      " is not available (installed version ", pkg_ver, "). ",
+      "Update replicateEverything ",
+      "(remotes::install_github('replicate-anything/replicateEverything')) ",
+      "and redeploy the Shiny app from the same release.",
       call. = FALSE
     )
   }
@@ -387,6 +393,67 @@ replicate_fn <- function(name, ..., folder = NULL, repo = NULL) {
     args$repo <- repo
   }
   do.call(fn, args)
+}
+
+#' Compatibility check with fallback for older replicateEverything installs.
+check_study_compat <- function(...) {
+  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
+    stop("replicateEverything is not installed.", call. = FALSE)
+  }
+  ns <- asNamespace("replicateEverything")
+  args <- list(...)
+  if (exists("check_study_compatibility", envir = ns, inherits = FALSE)) {
+    return(do.call(get("check_study_compatibility", envir = ns), args))
+  }
+  if (exists("study_system_compatibility", envir = ns, inherits = FALSE)) {
+    return(do.call(get("study_system_compatibility", envir = ns), args))
+  }
+  replicate_fn("check_study_compatibility", ...)
+}
+
+#' Maintainer hint text with fallback when the export is missing.
+maintainer_hint <- function(...) {
+  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
+    stop("replicateEverything is not installed.", call. = FALSE)
+  }
+  ns <- asNamespace("replicateEverything")
+  args <- list(...)
+  if (exists("maintainer_dependency_hint", envir = ns, inherits = FALSE)) {
+    return(do.call(get("maintainer_dependency_hint", envir = ns), args))
+  }
+  doi <- args$doi
+  audit <- args$audit
+  pkg_ver <- tryCatch(
+    as.character(utils::packageVersion("replicateEverything")),
+    error = function(e) "unknown"
+  )
+  lines <- c(
+    "This machine is missing dependencies declared in replication.yml.",
+    paste0("(replicateEverything ", pkg_ver, " — update package and redeploy Shiny.)")
+  )
+  if (!is.null(audit) && !is.null(audit$dependencies)) {
+    for (eng in c("r", "python", "stata")) {
+      block <- audit$dependencies[[eng]]
+      if (is.null(block)) next
+      missing <- block$missing %||% character(0)
+      if (length(missing) == 0L || isTRUE(block$ok)) next
+      label <- switch(eng, r = "R", python = "Python", stata = "Stata", eng)
+      lines <- c(lines, paste0(label, " missing: ", paste(missing, collapse = ", ")))
+    }
+  }
+  lines <- c(
+    lines,
+    "",
+    "Maintainers — install for this study:",
+    if (!is.null(doi) && nzchar(as.character(doi))) {
+      paste0("  install_study_dependencies(", shQuote(as.character(doi), type = "sh"), ")")
+    } else {
+      "  install_study_dependencies(<doi>)"
+    },
+    "",
+    "Live Run does not install packages."
+  )
+  paste(lines, collapse = "\n")
 }
 
 #' Resolve DOI / path input for Shiny study loading
@@ -591,26 +658,30 @@ study_materials_info <- function(doi, folder = NULL, repo = NULL) {
     return(NULL)
   }
   ctx <- replicate_fn("paper_context", doi, repo = repo, folder = folder)
-
-  if (isTRUE(replicate_fn("is_package_replication", meta))) {
-    slug <- replicate_fn("package_repo_slug", meta, ctx)
-    return(list(
-      type = "Package-backed study",
-      repo = slug,
-      url = github_repo_browse_url(slug)
-    ))
+  kind <- replicate_fn("replication_kind", meta, ctx)
+  label <- switch(
+    kind,
+    package = "Package-backed study",
+    folder = "Folder-backed study",
+    registry = "Registry-embedded study",
+    "Study"
+  )
+  slug <- if (identical(kind, "package")) {
+    replicate_fn("package_repo_slug", meta, ctx)
+  } else if (identical(kind, "folder")) {
+    replicate_fn("study_repo_slug", meta, ctx)
+  } else {
+    NULL
   }
-
-  if (isTRUE(replicate_fn("is_folder_study_replication", meta, ctx))) {
-    slug <- replicate_fn("study_repo_slug", meta, ctx)
-    return(list(
-      type = "Folder-backed study",
-      repo = slug,
-      url = github_repo_browse_url(slug)
-    ))
+  if (is.null(slug) || !nzchar(slug)) {
+    return(NULL)
   }
-
-  NULL
+  return(list(
+    type = label,
+    kind = kind,
+    repo = slug,
+    url = github_repo_browse_url(slug)
+  ))
 }
 
 study_materials_summary_ui <- function(doi, folder = NULL, repo = NULL, dual_engine = FALSE) {
@@ -986,8 +1057,7 @@ study_audit_ui <- function(audit, compact = FALSE) {
 
 dependency_hint_modal <- function(session, doi, audit = NULL, title = "Missing dependencies") {
   hint <- tryCatch(
-    replicate_fn(
-      "maintainer_dependency_hint",
+    maintainer_hint(
       doi = doi,
       audit = audit
     ),
@@ -2003,7 +2073,7 @@ format_replication_error <- function(error) {
 
 replication_error_ui <- function(error, doi = NULL, folder = NULL, repo = NULL) {
   if (inherits(error, "dependency_error")) {
-    msg <- replication_error_message(error)
+    msg <- format_replication_error(error)
     return(tags$div(
       class = "alert alert-warning replication-error",
       tags$strong("Dependencies missing"),
@@ -3526,8 +3596,7 @@ server <- function(input, output, session) {
     on.exit(state$study_audit_running <- FALSE, add = TRUE)
     withProgress(message = "Checking system compatibility...", value = 0.5, {
       state$study_audit <- tryCatch(
-        replicate_fn(
-          "check_study_compatibility",
+        check_study_compat(
           state$doi,
           folder = state$registry_folder,
           repo = state$registry_repo,
@@ -3986,8 +4055,7 @@ server <- function(input, output, session) {
 
   run_live_replication <- function(doi, what, language = "r") {
     audit <- tryCatch(
-      replicate_fn(
-        "check_study_compatibility",
+      check_study_compat(
         doi,
         folder = state$registry_folder,
         repo = state$registry_repo,
@@ -3999,7 +4067,7 @@ server <- function(input, output, session) {
     if (!is.null(audit$error) || !isTRUE(audit$ready)) {
       dependency_hint_modal(session, doi, audit = audit)
       hint <- tryCatch(
-        replicate_fn("maintainer_dependency_hint", doi = doi, audit = audit),
+        maintainer_hint(doi = doi, audit = audit),
         error = function(e) conditionMessage(e)
       )
       state$selected_result <- structure(

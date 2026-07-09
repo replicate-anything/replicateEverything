@@ -537,6 +537,8 @@ Update `artifacts/manifest.json`:
 
 | Step | Command |
 |------|---------|
+| System deps | `check_study_compatibility(doi)` — probe only; same API for folder and package registry studies |
+| Install deps | `install_study_dependencies(doi)` — maintainer setup; not run on Shiny live Run |
 | Prep | `run_prep_step(doi, "construct_analysis_dataset")` |
 | Table | `run_replication(doi, "tab_1", language = "stata", format = TRUE)` |
 | Python fig | `run_replication(doi, "fig_2", language = "python")` |

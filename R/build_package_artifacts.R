@@ -35,12 +35,18 @@ build_package_artifacts <- function(
 
   doi <- normalize_doi(paper$doi)
   folder <- doi_to_registry_folder(doi)
+  ctx <- paper_context(doi, folder = folder)
   pkg_root <- package_source_root(package)
   if (is.null(output_dir) || !nzchar(output_dir)) {
-    if (is.null(pkg_root)) {
-      stop("Could not resolve package source root for ", package, call. = FALSE)
+    default_dir <- study_artifact_dir(meta, ctx, installed = FALSE, package = package)
+    if (is.null(default_dir)) {
+      if (is.null(pkg_root)) {
+        stop("Could not resolve package source root for ", package, call. = FALSE)
+      }
+      output_dir <- file.path(pkg_root, "inst", "report", "artifacts")
+    } else {
+      output_dir <- default_dir
     }
-    output_dir <- file.path(pkg_root, "inst", "report", "artifacts")
   }
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
@@ -62,7 +68,6 @@ build_package_artifacts <- function(
     stop("No figure/table replications to build.", call. = FALSE)
   }
 
-  ctx <- paper_context(doi, folder = folder)
   prep_steps <- prep_steps_for_build(
     meta,
     if (is.null(ids)) NULL else display_reps
@@ -97,7 +102,10 @@ build_package_artifacts <- function(
     replications = display_result$manifest
   )
 
-  manifest_path <- file.path(dirname(output_dir), "manifest.json")
+  manifest_path <- study_manifest_path(meta, ctx, installed = FALSE, package = package)
+  if (is.null(manifest_path) || !nzchar(manifest_path)) {
+    manifest_path <- file.path(dirname(output_dir), "manifest.json")
+  }
   jsonlite::write_json(manifest, manifest_path, pretty = TRUE, auto_unbox = TRUE)
 
   if (length(failures) > 0) {

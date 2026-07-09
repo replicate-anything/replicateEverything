@@ -56,55 +56,75 @@ maintainer_dependency_hint <- function(
 ) {
   scope <- match.arg(scope)
   lines <- character(0)
-
-  if (scope == "package") {
-    pkg <- as.character(package[[1]] %||% package %||% "study-package")
-    lines <- c(
-      lines,
-      "Missing R packages for this replication package.",
-      "",
-      "Maintainers — install once:",
-      paste0("  build_package_artifacts(", shQuote(pkg, type = "sh"), ", install_deps = TRUE)")
-    )
-    if (length(missing_r) > 0L) {
-      lines <- c(lines, "", paste0("Missing: ", paste(missing_r, collapse = ", ")))
-    }
+  kind <- if (!is.null(audit) && !is.null(audit$kind)) {
+    audit$kind
+  } else if (identical(scope, "package")) {
+    "package"
   } else {
-    lines <- c(lines, "This machine is missing dependencies declared in replication.yml.")
-    if (!is.null(audit) && !is.null(audit$dependencies)) {
-      deps <- audit$dependencies
-      for (eng in c("r", "python", "stata")) {
-        block <- deps[[eng]]
-        if (is.null(block)) next
-        missing <- block$missing %||% character(0)
-        if (length(missing) == 0L || isTRUE(block$ok)) next
-        label <- switch(eng, r = "R", python = "Python", stata = "Stata", eng)
-        lines <- c(lines, paste0(label, " missing: ", paste(missing, collapse = ", ")))
-      }
-    }
-    lines <- c(lines, "", "Maintainers — install for this study:")
-    if (!is.null(doi) && nzchar(as.character(doi))) {
+    "folder"
+  }
+  build_fn <- study_build_function(kind)
+
+  lines <- c(
+    lines,
+    "This machine is missing dependencies declared in replication.yml."
+  )
+
+  if (!is.null(audit) && !is.null(audit$dependencies)) {
+    pkg_block <- audit$dependencies$package %||% NULL
+    if (!is.null(pkg_block) && !isTRUE(pkg_block$ok)) {
       lines <- c(
         lines,
-        paste0("  install_study_dependencies(", hint_quote_study(doi), ")")
+        paste0(
+          "Study package not installed: ",
+          paste(pkg_block$missing %||% pkg_block$required, collapse = ", ")
+        )
       )
-    } else {
-      lines <- c(lines, "  install_study_dependencies(<doi-or-study-path>)")
     }
+    deps <- audit$dependencies
+    for (eng in c("r", "python", "stata")) {
+      block <- deps[[eng]]
+      if (is.null(block)) next
+      missing <- block$missing %||% character(0)
+      if (length(missing) == 0L || isTRUE(block$ok)) next
+      label <- switch(eng, r = "R", python = "Python", stata = "Stata", eng)
+      lines <- c(lines, paste0(label, " missing: ", paste(missing, collapse = ", ")))
+    }
+  } else if (length(missing_r) > 0L) {
+    lines <- c(lines, paste0("R missing: ", paste(missing_r, collapse = ", ")))
+  }
+
+  lines <- c(lines, "", "Maintainers — install for this study:")
+  if (!is.null(doi) && nzchar(as.character(doi))) {
     lines <- c(
       lines,
-      "",
-      "Install for every study in the registry:",
-      "  install_registry_dependencies()",
-      "",
-      "Check without installing:",
-      if (!is.null(doi) && nzchar(as.character(doi))) {
-        paste0("  check_study_compatibility(", hint_quote_study(doi), ")")
-      } else {
-        "  check_study_compatibility(<doi>)"
-      }
+      paste0("  install_study_dependencies(", hint_quote_study(doi), ")")
     )
+  } else {
+    lines <- c(lines, "  install_study_dependencies(<doi-or-study-path>)")
   }
+  lines <- c(
+    lines,
+    "",
+    "Install for every study in the registry:",
+    "  install_registry_dependencies()",
+    "",
+    "Build display artifacts after dependencies are satisfied:",
+    if (identical(kind, "package") && !is.null(package)) {
+      paste0("  ", build_fn, "(", shQuote(as.character(package[[1]] %||% package), type = "sh"), ", install_deps = TRUE)")
+    } else if (identical(kind, "package") && !is.null(audit$dependencies$package$required)) {
+      paste0("  ", build_fn, "(", shQuote(audit$dependencies$package$required[[1]], type = "sh"), ", install_deps = TRUE)")
+    } else {
+      paste0("  ", build_fn, "(<study-path>, install_deps = TRUE)")
+    },
+    "",
+    "Check without installing:",
+    if (!is.null(doi) && nzchar(as.character(doi))) {
+      paste0("  check_study_compatibility(", hint_quote_study(doi), ")")
+    } else {
+      "  check_study_compatibility(<doi>)"
+    }
+  )
 
   if (isTRUE(include_path_hints)) {
     renv <- executable_renviron_lines()

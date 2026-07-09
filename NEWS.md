@@ -2,7 +2,7 @@
 
 ## Policy
 
-* Exported maintainer API: [check_study_compatibility()], [install_study_dependencies()], [install_registry_dependencies()], and [maintainer_dependency_hint()]. See `vignette("maintainer-setup")`. Live Run checks dependencies first and stops with setup hints when packages are missing.
+* Exported maintainer API: [check_study_compatibility()], [install_study_dependencies()] (folder + package registry studies), [install_registry_dependencies()], [replication_kind()], [study_artifact_dir()], and [maintainer_dependency_hint()].
 
 ## Bug fixes
 

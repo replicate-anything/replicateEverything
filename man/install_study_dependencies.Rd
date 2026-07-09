@@ -24,8 +24,9 @@ Invisibly \code{TRUE} on success.
 \description{
 Maintainer setup only. Installs declared R CRAN packages, Python pip
 packages, and runs study Stata install scripts (\code{install_stata_deps.do})
-once. Does \strong{not} build display artifacts — use \code{\link[=build_study_artifacts]{build_study_artifacts()}} for
-that.
+once. Works for \strong{folder-backed} and \strong{package-backed} registry studies.
+Does \strong{not} build display artifacts — use \code{\link[=build_study_artifacts]{build_study_artifacts()}} or
+\code{\link[=build_package_artifacts]{build_package_artifacts()}} for that.
 }
 \details{
 Live Run and Shiny probe dependencies only; call this function (or
@@ -40,5 +41,5 @@ install_study_dependencies("path/to/study-repo")
 }
 \seealso{
 \code{\link[=check_study_compatibility]{check_study_compatibility()}}, \code{\link[=build_study_artifacts]{build_study_artifacts()}},
-\code{\link[=install_registry_dependencies]{install_registry_dependencies()}}
+\code{\link[=build_package_artifacts]{build_package_artifacts()}}, \code{\link[=install_registry_dependencies]{install_registry_dependencies()}}
 }

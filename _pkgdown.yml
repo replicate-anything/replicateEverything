@@ -56,6 +56,8 @@ reference:
   - install_study_dependencies
   - install_registry_dependencies
   - maintainer_dependency_hint
+  - replication_kind
+  - study_artifact_dir
 - title: Registry audit
   desc: Run all registry replications and inspect results.
   contents:

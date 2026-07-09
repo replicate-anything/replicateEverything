@@ -211,6 +211,24 @@ pip_install <- function(python, args) {
   )
 }
 
+#' Declared pip packages for a Python replication run
+#'
+#' Merges entry-level \code{dependencies} with study-wide
+#' \code{python_dependencies:} from \code{replication.yml}.
+#'
+#' @keywords internal
+python_replication_deps <- function(rep, meta = NULL) {
+  deps <- character(0)
+  if (!is.null(rep$dependencies)) {
+    deps <- c(deps, unlist(rep$dependencies, use.names = FALSE))
+  }
+  if (!is.null(meta)) {
+    deps <- c(deps, study_declared_python_packages(meta))
+  }
+  deps <- unique(na.omit(as.character(deps)))
+  deps[nzchar(deps)]
+}
+
 #' Ensure Python pip dependencies for a replication entry
 #'
 #' Installs packages listed under entry-level \code{dependencies} (engine
@@ -242,6 +260,9 @@ ensure_python_dependencies <- function(
   deps <- character(0)
   if (!is.null(replication_meta$dependencies)) {
     deps <- c(deps, unlist(replication_meta$dependencies, use.names = FALSE))
+  }
+  if (!is.null(meta)) {
+    deps <- c(deps, study_declared_python_packages(meta))
   }
   deps <- unique(na.omit(as.character(deps)))
   deps <- deps[nzchar(deps)]
@@ -336,6 +357,7 @@ ensure_python_dependencies <- function(
 #' @param install_deps When \code{TRUE}, install pip dependencies before running.
 #' @keywords internal
 run_python_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
+  py_deps <- python_replication_deps(rep, meta)
   ensure_python_dependencies(
     rep,
     paper_meta = meta$paper %||% NULL,
@@ -343,7 +365,7 @@ run_python_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) 
     meta = meta,
     install_missing = allow_dependency_install(install_deps)
   )
-  python <- find_python_executable(deps)
+  python <- find_python_executable(py_deps)
   code_rel <- as.character(rep$code %||% "")
   if (!nzchar(code_rel)) {
     stop("Python replication ", rep$id, " is missing a code path.", call. = FALSE)
