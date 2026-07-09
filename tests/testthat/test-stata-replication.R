@@ -50,6 +50,7 @@ test_that("stata_deps_probe_lines cover ftools reghdfe eststo", {
   lines <- replicateEverything:::stata_deps_probe_lines()
   expect_true(any(grepl("which ftools", lines)))
   expect_true(any(grepl("which reghdfe", lines)))
+  expect_true(any(grepl("help reghdfe", lines)))
   expect_true(any(grepl("which eststo", lines)))
 })
 

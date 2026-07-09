@@ -558,8 +558,8 @@ stata_deps_probe_lines <- function() {
     "if _rc exit 10",
     "cap which reghdfe",
     "if _rc exit 11",
-    "cap reghdfe",
-    "if _rc != 0 & _rc != 100 exit 12",
+    "cap help reghdfe",
+    "if _rc exit 12",
     "cap which eststo",
     "if _rc exit 13",
     "exit 0"
