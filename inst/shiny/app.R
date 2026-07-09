@@ -3048,6 +3048,12 @@ server <- function(input, output, session) {
     group_engines = list()
   )
 
+  options(replicateEverything.progress = function(msg) {
+    if (!is.null(msg) && nzchar(as.character(msg))) {
+      state$progress <- as.character(msg)
+    }
+  })
+
   showModal(modalDialog(
     title = "Welcome to Replicate Everything",
     app_welcome_intro(),
@@ -3620,7 +3626,7 @@ server <- function(input, output, session) {
         language = target$language,
         prefer = "artifact",
         fallback_live = fallback_live,
-        install_deps = TRUE,
+        install_deps = FALSE,
         folder = state$registry_folder,
         repo = state$registry_repo
       )

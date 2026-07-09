@@ -46,6 +46,38 @@ test_that("stata_deps_install_scripts finds default helper do-file", {
   expect_true(any(grepl("install_stata_deps\\.do$", scripts)))
 })
 
+test_that("stata_deps_probe_lines cover ftools reghdfe eststo", {
+  lines <- replicateEverything:::stata_deps_probe_lines()
+  expect_true(any(grepl("which ftools", lines)))
+  expect_true(any(grepl("which reghdfe", lines)))
+  expect_true(any(grepl("which eststo", lines)))
+})
+
+test_that("install_stata_dependencies respects install_stata_deps option", {
+  study <- tempfile("study-")
+  dir.create(study, recursive = TRUE)
+  on.exit(unlink(study, recursive = TRUE), add = TRUE)
+  withr::local_options(list(replicateEverything.install_stata_deps = FALSE))
+  expect_silent(
+    replicateEverything:::install_stata_dependencies(
+      study,
+      install_deps = TRUE
+    )
+  )
+})
+
+test_that("stata_dependencies_satisfied returns TRUE when Stata probe passes", {
+  skip_if(is.null(replicateEverything:::find_stata_executable()), "Stata not installed")
+  study <- file.path(
+    testthat::test_path(".."), "..", "..",
+    "rep-10.1017-s0003055426101749"
+  )
+  skip_if_not(dir.exists(study), "Jiang study repo missing")
+  expect_true(
+    replicateEverything:::stata_dependencies_satisfied(study, timeout = 180L)
+  )
+})
+
 test_that("stata_log_suggests_missing_dependency detects reghdfe errors", {
   text <- "install it:\n - install from SSC\nr(9);"
   expect_true(replicateEverything:::stata_log_suggests_missing_dependency(text))

@@ -242,6 +242,46 @@ cleanup_stata_stray_batch_logs <- function(dirs, log_name, keep = NULL) {
   invisible(paths)
 }
 
+#' Run Stata in batch mode with an optional timeout
+#'
+#' Uses \pkg{processx} when available so overdue runs can be killed and the R
+#' session (e.g. Shiny) can continue. Without \pkg{processx}, runs block with no
+#' timeout (legacy behaviour).
+#'
+#' @param stata Path to Stata executable.
+#' @param batch_args Character vector of batch arguments.
+#' @param timeout Seconds; \code{0} or negative means no limit.
+#' @return Integer exit status (0 = success).
+#' @keywords internal
+run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
+  timeout <- as.integer(timeout[1])
+  if (length(timeout) != 1L || is.na(timeout) || timeout <= 0L) {
+    return(system2(stata, batch_args, wait = TRUE, stdout = "", stderr = ""))
+  }
+  if (requireNamespace("processx", quietly = TRUE)) {
+    proc <- processx::process$new(
+      stata,
+      batch_args,
+      stdout = "|",
+      stderr = "|"
+    )
+    proc$wait(timeout = timeout * 1000)
+    if (proc$is_alive()) {
+      proc$kill()
+      stop(
+        "Stata did not finish within ", timeout,
+        " seconds. The run was stopped so your session can continue. ",
+        "Increase options(replicateEverything.stata_timeout = <seconds>) or ",
+        "options(replicateEverything.stata_deps_probe_timeout = <seconds>).",
+        call. = FALSE
+      )
+    }
+    status <- proc$get_exit_status()
+    return(if (is.null(status)) 1L else as.integer(status))
+  }
+  system2(stata, batch_args, wait = TRUE, stdout = "", stderr = "")
+}
+
 #' Run a Stata do-file non-interactively
 #'
 #' @param do_path Path to the do-file.
@@ -316,12 +356,10 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL) {
     setwd(run_dir)
   }
 
-  status <- system2(
+  status <- run_stata_system2(
     stata,
     batch_args,
-    wait = TRUE,
-    stdout = "",
-    stderr = ""
+    timeout = getOption("replicateEverything.stata_timeout", timeout)
   )
 
   strays <- stata_stray_batch_log_paths(c(workdir, old_wd), log_name)
@@ -505,6 +543,90 @@ stata_deps_install_scripts <- function(study_root, meta = NULL, rep = NULL) {
   unique(scripts[nzchar(scripts)])
 }
 
+#' Stata one-liners that verify SSC packages load (no network install)
+#'
+#' Mirrors the success checks at the end of a typical
+#' \code{install_stata_deps.do} without reinstalling or recompiling.
+#'
+#' @return Character vector of Stata commands.
+#' @keywords internal
+stata_deps_probe_lines <- function() {
+  c(
+    "version 17",
+    "set more off, permanently",
+    "cap which ftools",
+    "if _rc exit 10",
+    "cap which reghdfe",
+    "if _rc exit 11",
+    "cap reghdfe",
+    "if _rc != 0 & _rc != 100 exit 12",
+    "cap which eststo",
+    "if _rc exit 13",
+    "exit 0"
+  )
+}
+
+#' Human-readable label for a Stata dependency probe exit code
+#'
+#' @param rc Integer Stata return code from [stata_deps_probe_lines()].
+#' @return Character description.
+#' @keywords internal
+stata_deps_probe_failure_reason <- function(rc) {
+  switch(
+    as.character(rc),
+    "10" = "ftools not installed",
+    "11" = "reghdfe not installed",
+    "12" = "reghdfe failed to load (stale ftools — try ftools, compile)",
+    "13" = "eststo not found (install estout from SSC)",
+    paste0("Stata dependency probe failed (rc=", rc, ")")
+  )
+}
+
+#' Whether required Stata SSC packages load without running install scripts
+#'
+#' Spawns a short-lived batch Stata job. Returns \code{TRUE} when ftools,
+#' reghdfe, and estout/eststo are present and reghdfe loads.
+#'
+#' @inheritParams run_stata_do
+#' @return Logical scalar.
+#' @keywords internal
+stata_dependencies_satisfied <- function(
+  study_root,
+  staging_dir = NULL,
+  timeout = 120L
+) {
+  stata <- find_stata_executable()
+  if (is.null(stata)) {
+    return(FALSE)
+  }
+  workdir <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  run_dir <- stata_run_dir(workdir, staging_dir)
+  runner <- file.path(run_dir, "replicate_stata_deps_probe.do")
+  writeLines(stata_deps_probe_lines(), runner, useBytes = TRUE)
+  on.exit(cleanup_stata_run_dir(run_dir), add = TRUE)
+
+  old_wd <- getwd()
+  on.exit(setwd(old_wd), add = TRUE)
+  if (dir.exists(run_dir)) {
+    setwd(run_dir)
+  }
+
+  status <- tryCatch(
+    run_stata_system2(
+      stata,
+      stata_batch_args(runner),
+      timeout = timeout
+    ),
+    error = function(e) {
+      if (grepl("did not finish within", conditionMessage(e), fixed = TRUE)) {
+        stop(conditionMessage(e), call. = FALSE)
+      }
+      return(1L)
+    }
+  )
+  identical(status, 0L) || identical(status, 0)
+}
+
 #' Run Stata SSC / dependency install scripts for a study
 #'
 #' @inheritParams run_stata_replication
@@ -541,13 +663,50 @@ install_stata_dependencies <- function(
   if (!isTRUE(force) && stata_deps_installed_this_session(deps_key)) {
     return(invisible(FALSE))
   }
+
+  probe_timeout <- as.integer(
+    getOption("replicateEverything.stata_deps_probe_timeout", 120L)[1]
+  )
+  if (!isTRUE(force)) {
+    replicate_progress("Checking Stata dependencies (ftools, reghdfe, estout)...")
+    satisfied <- tryCatch(
+      stata_dependencies_satisfied(
+        study_root,
+        staging_dir = staging_dir,
+        timeout = probe_timeout
+      ),
+      error = function(e) {
+        message(conditionMessage(e))
+        FALSE
+      }
+    )
+    if (isTRUE(satisfied)) {
+      message(
+        "Stata dependencies already satisfied (ftools, reghdfe, estout) — ",
+        "skipping ", paste(basename(scripts), collapse = ", ")
+      )
+      replicate_progress("Stata dependencies OK — skipped install")
+      mark_stata_deps_installed(deps_key)
+      return(invisible(FALSE))
+    }
+    replicate_progress("Stata packages missing or not loading — running install script...")
+    message(
+      "Stata dependency check did not pass — running ",
+      paste(basename(scripts), collapse = ", "), " ..."
+    )
+  }
+
+  install_timeout <- as.integer(
+    getOption("replicateEverything.stata_deps_install_timeout", 600L)[1]
+  )
   for (script in scripts) {
+    replicate_progress(paste0("Installing Stata dependencies via ", basename(script), " ..."))
     message("Installing Stata dependencies via ", basename(script), " ...")
     run_stata_do(
       script,
       study_root,
       staging_dir = staging_dir,
-      timeout = 1200L
+      timeout = install_timeout
     )
   }
   mark_stata_deps_installed(deps_key)
