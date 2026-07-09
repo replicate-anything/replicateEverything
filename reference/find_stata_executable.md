@@ -1,7 +1,9 @@
 # Locate a Stata executable
 
-Checks `getOption("replicateEverything.stata_executable")` first, then
-common install paths (Windows, Linux, macOS) and `PATH`.
+Checks `STATA` / `REPLICATE_STATA_EXECUTABLE` environment variables (set
+in `~/.Renviron`), then
+`getOption("replicateEverything.stata_executable")`, then common install
+paths (Windows, Linux, macOS) and `PATH`.
 
 ## Usage
 

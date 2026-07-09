@@ -1,0 +1,126 @@
+# Maintainer setup
+
+**replicateEverything** separates **readers** (browse, Run) from
+**maintainers** (onboard a study or server). Live Run and Shiny
+**probe** dependencies only — they never install R, Python, or Stata
+packages on the host. Maintainers install once during setup.
+
+``` r
+
+library(replicateEverything)
+```
+
+## Check compatibility (no installs)
+
+Before running tables or figures, confirm the machine matches what
+`replication.yml` declares:
+
+``` r
+
+check_study_compatibility("10.1017/S0003055426101749")
+```
+
+The returned list includes `ready` (logical), `install_needed`, and
+per-engine blocks under `dependencies` (`r`, `python`, `stata`).
+
+In Shiny, use **Check compatibility** above the tables list. When
+something is missing, a dialog shows the same maintainer commands
+documented here.
+
+## Install dependencies for one study
+
+Use a **single function** for all languages declared in the study repo
+(R CRAN, Python pip, Stata `install_stata_deps.do`):
+
+``` r
+
+install_study_dependencies("10.1017/S0003055426101749")
+# or a local clone:
+install_study_dependencies("path/to/study-repo")
+```
+
+This does **not** rebuild `artifacts/` — it only satisfies dependencies.
+To build display artifacts after dependencies are in place:
+
+``` r
+
+build_study_artifacts("path/to/study-repo", install_deps = TRUE)
+```
+
+Package-backed studies (registry entry with `paper.package`) use:
+
+``` r
+
+build_package_artifacts("pkgname", install_deps = TRUE)
+```
+
+## Install dependencies for every registry study
+
+On a shared audit or Shiny server, run once:
+
+``` r
+
+install_registry_dependencies()
+```
+
+Failures are collected per DOI; other studies continue.
+
+## Point R at Python and Stata permanently
+
+Session [`options()`](https://rdrr.io/r/base/options.html) are not the
+right place for production servers. Set environment variables in
+**`~/.Renviron`** and restart R:
+
+``` text
+PYTHON=C:/Users/you/AppData/Local/Python/pythoncore-3.14-64/python.exe
+STATA=C:/Program Files/Stata17/StataMP-64.exe
+```
+
+On Linux or macOS, use the corresponding paths (for example
+`/usr/bin/python3` or
+`/Applications/Stata/StataMP.app/Contents/MacOS/stata-mp`).
+
+In R you can open the file with
+[`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html)
+if you use **usethis**.
+
+Priority order:
+
+| Engine | Permanent config | Fallback |
+|----|----|----|
+| Python | `PYTHON` or `RETICULATE_PYTHON` in `.Renviron` | Windows `py -0p` installs, then `PATH` |
+| Stata | `STATA` or `REPLICATE_STATA_EXECUTABLE` in `.Renviron` | `options(replicateEverything.stata_executable)`, then common install paths |
+
+## What happens on Run
+
+When a reader calls
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+or Shiny **Run**, the package:
+
+1.  Checks declared dependencies
+    ([`assert_study_ready_for_replication()`](https://replicate-anything.github.io/replicateEverything/reference/assert_study_ready_for_replication.md)).
+2.  Stops with \[maintainer_dependency_hint()\] if anything is missing.
+3.  Runs the replication **without** installing packages.
+
+Maintainers see the same hint text in the console, in Shiny modals, and
+via
+[`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md):
+
+``` r
+
+maintainer_dependency_hint("10.1017/S0003055426101749")
+```
+
+## Summary
+
+| Task | Function |
+|----|----|
+| Probe this machine | `check_study_compatibility(doi)` |
+| Install one study (all languages) | `install_study_dependencies(doi)` |
+| Install entire registry | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
+| Build artifacts after setup | `build_study_artifacts(path, install_deps = TRUE)` |
+| Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
+
+See also *Meet the functions* and the folder replication checklist for
+study-repo conventions (`languages:`, `python_dependencies:`,
+`stata_deps_probe:`).

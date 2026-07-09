@@ -66,6 +66,20 @@ Validate folder-backed studies and sync to the registry.
 - [`ai_skill_path()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill_path.md)
   : Get the path to a bundled AI skill
 
+## Maintainer setup
+
+Probe and install study dependencies (R, Python, Stata); configure
+executables.
+
+- [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
+  : Check yaml-declared dependencies against this machine (no installs)
+- [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)
+  : Install dependencies for one folder-backed or registry study
+- [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)
+  : Install dependencies for every study in the registry index
+- [`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md)
+  : Maintainer guidance when dependencies or executables are missing
+
 ## Registry audit
 
 Run all registry replications and inspect results.

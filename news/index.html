@@ -47,8 +47,7 @@
 <h2 class="pkg-version" data-toc-text="0.5.0" id="replicateeverything-050">replicateEverything 0.5.0<a class="anchor" aria-label="anchor" href="#replicateeverything-050"></a></h2>
 <div class="section level3">
 <h3 id="policy-0-5-0">Policy<a class="anchor" aria-label="anchor" href="#policy-0-5-0"></a></h3>
-<ul><li>
-<strong>Live Run and Shiny never install dependencies</strong> on the host by default. They probe only (R <code>requireNamespace</code>, Python <code>importlib</code>, Stata <code>stata_deps_probe</code>). Maintainer builds call <code>build_study_artifacts(install_deps = TRUE)</code>, which sets <code>options(replicateEverything.install_dependencies = TRUE)</code> and <code>install_stata_deps = TRUE</code> for that session only. Study runners must not call <code>install_stata_deps.do</code> from <code>init_study_paths.do</code> or table scripts.</li>
+<ul><li>Exported maintainer API: [check_study_compatibility()], [install_study_dependencies()], [install_registry_dependencies()], and [maintainer_dependency_hint()]. See <code><a href="../articles/maintainer-setup.html">vignette("maintainer-setup")</a></code>. Live Run checks dependencies first and stops with setup hints when packages are missing.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-5-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-0"></a></h3>

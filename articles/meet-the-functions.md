@@ -169,6 +169,22 @@ options(
 Without these options the package reads the public registry from GitHub
 and clones study materials on demand.
 
+### Maintainer setup (dependencies)
+
+Live Run and Shiny **probe** dependencies only. Maintainers install once
+with:
+
+``` r
+
+check_study_compatibility("10.1017/S0003055426101749")
+install_study_dependencies("10.1017/S0003055426101749")
+install_registry_dependencies()
+```
+
+Set `PYTHON=` and `STATA=` in `~/.Renviron` so R finds the right
+executables permanently. Full details:
+[`vignette("maintainer-setup")`](https://replicate-anything.github.io/replicateEverything/articles/maintainer-setup.md).
+
 ### Folder-backed studies
 
 Study repos hold `replication.yml`, `code/`, `data/`, and `artifacts/`.
@@ -261,6 +277,9 @@ for the latest snapshot table shipped with the package.
 | View code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Interactive browser | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
 | **Contributor** |  |
+| Check machine vs study yaml | [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md) |
+| Install deps (one study) | [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md) |
+| Install deps (all studies) | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
 | Build folder artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
 | Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md), [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md), [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
 | Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
