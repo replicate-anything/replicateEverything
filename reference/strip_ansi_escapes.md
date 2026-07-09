@@ -6,7 +6,7 @@ and, when present, parent errors and the call that failed.
 ## Usage
 
 ``` r
-replication_error_message(x)
+strip_ansi_escapes(x)
 ```
 
 ## Arguments
@@ -22,7 +22,8 @@ A single character string suitable for logs or UI.
 ## Examples
 
 ``` r
+if (FALSE) { # \dontrun{
 err <- simpleError("Replication failed", call = quote(run_replication()))
 replication_error_message(err)
-#> Error in replication_error_message(err): could not find function "replication_error_message"
+} # }
 ```

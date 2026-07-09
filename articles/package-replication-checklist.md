@@ -4,8 +4,8 @@
 
 | Model | Registry | Materials |
 |----|----|----|
-| **Folder-backed** | `papers/<folder>.yml` stub only | Study repo: `code/`, `data/`, `artifacts/` |
-| **Package-backed** | `papers/<folder>.yml` stub only | Study R package on GitHub |
+| **Folder-backed** | `studies/<folder>.yml` stub only | Study repo: `code/`, `data/`, `artifacts/` |
+| **Package-backed** | `studies/<folder>.yml` stub only | Study R package on GitHub |
 
 This checklist covers **package-backed** studies (recommended for
 multi-table papers).
@@ -114,7 +114,7 @@ check_package_replication(
 
 After checks pass, copy the generated registry stub into the [registry
 repository](https://github.com/replicate-anything/registry)
-(`papers/<folder>.yml` and a row in `index.csv` with `handle`, `doi`,
+(`studies/<folder>.yml` and a row in `index.csv` with `handle`, `doi`,
 `title`, etc.).
 
 ## Reference implementation

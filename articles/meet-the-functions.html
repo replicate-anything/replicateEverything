@@ -68,7 +68,7 @@
       <img src="../logo.png" class="logo" alt=""><h1>Meet the functions</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/vignettes/meet-the-functions.Rmd" class="external-link"><code>vignettes/meet-the-functions.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/main/vignettes/meet-the-functions.Rmd" class="external-link"><code>vignettes/meet-the-functions.Rmd</code></a></small>
       <div class="d-none name"><code>meet-the-functions.Rmd</code></div>
     </div>
 
@@ -204,11 +204,13 @@ GitHub and clones study materials on demand.</p>
 Maintainers install once with:</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_study_compatibility.html">check_study_compatibility</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/install_study_dependencies.html">install_study_dependencies</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/install_study_dependencies.html">install_study_dependencies</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span>  <span class="co"># folder or package DOI</span></span>
 <span><span class="fu"><a href="../reference/install_registry_dependencies.html">install_registry_dependencies</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>Set <code>PYTHON=</code> and <code>STATA=</code> in
-<code>~/.Renviron</code> so R finds the right executables permanently.
-Full details: <code><a href="../articles/maintainer-setup.html">vignette("maintainer-setup")</a></code>.</p>
+<p>Build display artifacts separately:
+<code><a href="../reference/build_study_artifacts.html">build_study_artifacts()</a></code> (folder) or
+<code><a href="../reference/build_package_artifacts.html">build_package_artifacts()</a></code> (package). Inspect layout with
+<code><a href="../reference/replication_kind.html">replication_kind()</a></code>. Full details:
+<code><a href="../articles/maintainer-setup.html">vignette("maintainer-setup")</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="folder-backed-studies">Folder-backed studies<a class="anchor" aria-label="anchor" href="#folder-backed-studies"></a>
@@ -361,7 +363,7 @@ shipped with the package.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

@@ -8,6 +8,7 @@ Run one replication with a per-object time limit
 audit_run_one(
   doi,
   what,
+  engine = NULL,
   patience = 20,
   install_deps = FALSE,
   repo = NULL,

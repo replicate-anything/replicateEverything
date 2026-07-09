@@ -32,7 +32,7 @@ run_replication("10.1177/00491241211036161", "everything")
 ## How it works
 
 The [registry](https://github.com/replicate-anything/registry) indexes
-studies with lightweight stub files in `papers/<folder>.yml` and
+studies with lightweight stub files in `studies/<folder>.yml` and
 `index.csv`. **Replication materials live in separate study
 repositories**, not inside the registry.
 
@@ -41,7 +41,7 @@ from the study repo or package, loads data, sources analysis scripts,
 and returns typed result objects.
 
     Registry (index only)              Study repository
-      papers/<folder>.yml  ───────►    replication.yml
+      studies/<folder>.yml  ───────►    replication.yml
       index.csv                        data/
                                        code/
                                        artifacts/   (folder-backed)
@@ -70,9 +70,9 @@ and returns typed result objects.
       replication.yml
       inst/report/artifacts/
 
-In both cases the registry holds only a **stub** (`papers/<folder>.yml`)
-pointing at the study repo. See the folder and package replication
-checklists for contributor workflows.
+In both cases the registry holds only a **stub**
+(`studies/<folder>.yml`) pointing at the study repo. See the folder and
+package replication checklists for contributor workflows.
 
 ### Shiny demo
 

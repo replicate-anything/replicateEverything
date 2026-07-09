@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,19 +40,51 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="replicateeverything-050">replicateEverything 0.5.0<a class="anchor" aria-label="anchor" href="#replicateeverything-050"></a></h2>
+<div class="section level3">
+<h3 id="policy-0-5-0">Policy<a class="anchor" aria-label="anchor" href="#policy-0-5-0"></a></h3>
+<ul><li>Exported maintainer API: [check_study_compatibility()], [install_study_dependencies()] (folder + package registry studies), [install_registry_dependencies()], [replication_kind()], [study_artifact_dir()], and [maintainer_dependency_hint()].</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-5-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-0"></a></h3>
+<ul><li>Stata dependency checks are <strong>study-declared</strong> via <code>stata_deps_probe:</code> (check-only <code>.do</code> in the study repo) or <code>stata_packages:</code> (generic <code>which</code>-only probe). The package no longer hardcodes ftools/reghdfe/estout. Live Run probes only; <code>install_stata_deps.do</code> runs only when <code>options(replicateEverything.install_stata_deps = TRUE)</code> (e.g. <code>build_study_artifacts(install_deps = TRUE)</code>).</li>
+<li>Stata dependency probe and study <code>install_stata_deps.do</code> load tests use <code>help reghdfe</code> instead of bare <code>reghdfe</code> where applicable (study probe script). Invoking <code>reghdfe</code> with no data returns r(301) even when installed. When satisfied (as on a typical dev machine), the install script is skipped and Shiny shows “Stata dependencies OK — skipped install”. Install runs only when the probe fails. Progress lines are reported via <code><a href="../reference/replicate_progress.html">replicate_progress()</a></code> / <code>options(replicateEverything.progress)</code> for Shiny’s “Working:” banner.</li>
+<li>Stata batch runs honour <code>timeout</code> when the suggested <strong>processx</strong> package is installed; overdue runs are killed so Shiny can recover instead of freezing indefinitely. Tune with <code>options(replicateEverything.stata_timeout)</code>, <code>stata_deps_probe_timeout</code> (default 120s), and <code>stata_deps_install_timeout</code> (default 600s). Set <code>options(replicateEverything.install_stata_deps = FALSE)</code> to skip study Stata installs entirely.</li>
+<li>Shiny artifact loading no longer passes <code>install_deps = TRUE</code> (only live Run installs dependencies).</li>
+<li>Study cache downloads unzip on the same filesystem as the cache directory (not system <code>/tmp</code>), so moving the extracted repo into the cache is atomic on Linux servers where <code>/tmp</code> and the Samba/NFS cache are on different mounts. The cross-device <code>file.rename</code> fallback also uses a single recursive copy and suppresses the EXDEV warning.</li>
+<li>Study Stata dependency scripts (<code>install_stata_deps.do</code> etc.) now run at most once per study per session instead of before every prep step and table, so repeated live runs no longer re-trigger a slow SSC reinstall/recompile. A missing-dependency retry still forces a re-run. Set <code>options(replicateEverything.install_stata_deps = FALSE)</code> to skip study dependency installation entirely when you manage Stata packages yourself.</li>
+<li>Cached GitHub study checkouts now refresh when the remote commit changes. <code><a href="../reference/materialize_folder_study_from_github.html">materialize_folder_study_from_github()</a></code> records the downloaded commit SHA and compares it against the current remote SHA (via the GitHub API); a stale cache (e.g. one built before new data files were committed) is re-downloaded automatically. When the remote SHA cannot be determined (offline or rate-limited) the existing cache is kept. This fixes live Stata/Python runs failing with “file not found” for data that exists in the repo but was missing from an out-of-date server cache. The remote check is on-demand (only when a study is actually run/fetched from GitHub) and is skipped for a short, per-session window after a study is confirmed fresh, so repeated resolutions within one run make at most one API call per study; tune with <code>options(replicateEverything.study_cache_ttl = &lt;seconds&gt;)</code> (default 300; 0 to always check).</li>
+<li>Python replications now run from the resolved study folder (the local sibling or the materialized GitHub clone) instead of falling back to the R working directory. On a Shiny server this fixes <code>FileNotFoundError</code> where <code>REPLICATE_STUDY_ROOT</code> pointed at the app directory (e.g. <code>ShinyApps/replicate/data/raw/...</code>) rather than the study repo clone. The Python process now also runs with its working directory set to the study root, matching Stata.</li>
+<li>Python dependency probing uses <code>importlib.util.find_spec</code> per package, prefers the Windows <code>py -0p</code> launcher installs over Store stubs, and skips <code>WindowsApps</code> aliases on PATH. Compatibility UI shows the full Python path probed.</li>
+<li>
+<code><a href="../reference/ai_skills.html">ai_skills()</a></code> no longer lists <code>README.md</code> as a skill; <code>inst/ai/skills/</code> now bundles both <code>folder_replication</code> and <code>APSR_to_replicateEverything</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-0-5-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-5-0"></a></h3>
+<ul><li>Removed deprecated <code>replicate_paper()</code> and <code>create_replication_template()</code>. Use <code>run_replication(doi, "everything")</code> and the folder/package replication checklists instead.</li>
+<li>Pre-built vignette HTML is shipped again in <code>inst/doc/</code> so installs that skip vignette builds still include all articles.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-5-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-5-0"></a></h3>
+<ul><li>
+<code><a href="../reference/get_code.html">get_code()</a></code> appears under <strong>Run replications</strong> in the pkgdown reference index.</li>
+<li>
+<strong>Meet the functions</strong> vignette reorganized into consumer and contributor sections.</li>
+<li>Bundled AI skills under <code>inst/ai/skills/</code> with <code><a href="../reference/ai_skills.html">ai_skills()</a></code>, <code><a href="../reference/ai_skill_path.html">ai_skill_path()</a></code>, and <code><a href="../reference/ai_skill.html">ai_skill()</a></code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="replicateeverything-040">replicateEverything 0.4.0<a class="anchor" aria-label="anchor" href="#replicateeverything-040"></a></h2>
 <div class="section level3">
 <h3 id="public-api-0-4-0">Public API<a class="anchor" aria-label="anchor" href="#public-api-0-4-0"></a></h3>
-<ul><li>Slim export surface (~16 functions): discovery, run, Shiny, contribute, and audit helpers only.</li>
+<ul><li>Slim export surface (~14 functions): discovery, run, Shiny, contribute, and audit helpers only.</li>
 <li>
-<code>run_replication(doi, what = "everything")</code> replaces <code><a href="../reference/replicate_paper.html">replicate_paper()</a></code> for full-paper runs.</li>
+<code>run_replication(doi, what = "everything")</code> replaces <code>replicate_paper()</code> for full-paper runs.</li>
 <li>Registry <code>index.csv</code> includes a <code>handle</code> column; <code><a href="../reference/search_papers.html">search_papers()</a></code> and run functions accept handles (e.g. <code>"bounding-causes"</code>).</li>
-<li>
-<code><a href="../reference/replicate_paper.html">replicate_paper()</a></code> and <code><a href="../reference/create_replication_template.html">create_replication_template()</a></code> are deprecated.</li>
 <li>
 <code><a href="../reference/validate_replication.html">validate_replication()</a></code> and other internal helpers are no longer exported.</li>
 <li>New vignette: <a href="articles/meet-the-functions.html">Meet the functions</a>.</li>
@@ -83,11 +115,11 @@
 <div class="section level3">
 <h3 id="major-features-0-2-0">Major features<a class="anchor" aria-label="anchor" href="#major-features-0-2-0"></a></h3>
 <ul><li>Connect to the public <a href="https://github.com/replicate-anything/registry" class="external-link">replication registry</a> to discover and run computational replications by DOI.</li>
-<li>Run a single figure or table with <code><a href="../reference/run_replication.html">run_replication()</a></code> / <code><a href="../reference/render_replication.html">render_replication()</a></code>, or reproduce an entire paper with <code><a href="../reference/replicate_paper.html">replicate_paper()</a></code>.</li>
+<li>Run a single figure or table with <code><a href="../reference/run_replication.html">run_replication()</a></code> / <code><a href="../reference/render_replication.html">render_replication()</a></code>, or reproduce an entire paper with <code>replicate_paper()</code>.</li>
 <li>Load, validate, and save precomputed artifacts (<code><a href="../reference/load_artifact.html">load_artifact()</a></code>, <code><a href="../reference/save_artifact.html">save_artifact()</a></code>, <code><a href="../reference/validate_artifact.html">validate_artifact()</a></code>).</li>
 <li>Optional display pipeline via registered <code>format_*</code> functions (<code><a href="../reference/format_for_display.html">format_for_display()</a></code>, <code><a href="../reference/render_for_display.html">render_for_display()</a></code>).</li>
 <li>Package-backed replications: install and call standalone study packages from the registry or a local monorepo.</li>
-<li>Contributor tooling: <code><a href="../reference/create_replication_template.html">create_replication_template()</a></code> scaffolds a new replication folder with <code>replication.yml</code>, data, and code stubs.</li>
+<li>Contributor tooling: <code>create_replication_template()</code> scaffolds a new replication folder with <code>replication.yml</code>, data, and code stubs.</li>
 <li>Registry search and metadata helpers: <code><a href="../reference/search_papers.html">search_papers()</a></code>, <code><a href="../reference/load_index.html">load_index()</a></code>, <code><a href="../reference/get_doi_metadata.html">get_doi_metadata()</a></code>, <code><a href="../reference/list_replications.html">list_replications()</a></code>, <code><a href="../reference/get_code.html">get_code()</a></code>.</li>
 <li>Local registry development via <code>options(replicateEverything.registry_root = ...)</code> and <code>options(replicateEverything.index = ...)</code>.</li>
 </ul></div>
@@ -111,7 +143,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

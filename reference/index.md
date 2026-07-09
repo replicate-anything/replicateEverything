@@ -20,8 +20,6 @@ Find papers and inspect replication metadata.
   : List available replications for a paper
 - [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
   : List one replication entry per logical group
-- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
-  : Retrieve replication code for a paper
 
 ## Run replications
 
@@ -29,10 +27,12 @@ Run tables and figures from registry scripts.
 
 - [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
   : Run a single replication or all replications for a paper
-- [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
-  : Replicate all results from a paper
-- [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
-  : Create a replication template
+- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  : Retrieve replication code for a paper
+- [`run_prep_step()`](https://replicate-anything.github.io/replicateEverything/reference/run_prep_step.md)
+  : Run a single prep step
+- [`list_prep_steps()`](https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.md)
+  : List pipeline prep steps for a paper
 
 ## Shiny demo
 
@@ -49,6 +49,8 @@ Validate folder-backed studies and sync to the registry.
 
 - [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
   : Build display artifacts for a folder-backed study
+- [`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_package_artifacts.md)
+  : Build display artifacts for a package-backed study
 - [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
   : Validate a folder-backed replication study
 - [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
@@ -57,6 +59,30 @@ Validate folder-backed studies and sync to the registry.
   : Copy prepared registry files into the registry repository
 - [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
   : Validate a package-backed replication study
+- [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md)
+  : List bundled AI skills
+- [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md)
+  : Read a bundled AI skill
+- [`ai_skill_path()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill_path.md)
+  : Get the path to a bundled AI skill
+
+## Maintainer setup
+
+Probe and install study dependencies (R, Python, Stata); configure
+executables.
+
+- [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
+  : Check yaml-declared dependencies against this machine (no installs)
+- [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)
+  : Install dependencies for one folder-backed or registry study
+- [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)
+  : Install dependencies for every study in the registry index
+- [`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md)
+  : Maintainer guidance when dependencies or executables are missing
+- [`replication_kind()`](https://replicate-anything.github.io/replicateEverything/reference/replication_kind.md)
+  : Classify a registry study by materials layout
+- [`study_artifact_dir()`](https://replicate-anything.github.io/replicateEverything/reference/study_artifact_dir.md)
+  : Display artifact directory for a study
 
 ## Registry audit
 
