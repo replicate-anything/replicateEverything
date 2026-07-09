@@ -97,12 +97,12 @@ results <- audit$results
 |:------------------------------|-----------------:|
 | Patience (seconds per object) |               20 |
 | Studies audited               |                1 |
-| Replication runs              |                1 |
-| Successful                    |                1 |
+| Replication runs              |                2 |
+| Successful                    |                2 |
 | Failed                        |                0 |
 | Timed out                     |                0 |
-| Audit started                 | 2026-07-01 12:00 |
-| Audit finished                | 2026-07-01 12:05 |
+| Audit started                 | 2026-07-04 10:35 |
+| Audit finished                | 2026-07-04 10:35 |
 
 ``` r
 
@@ -135,11 +135,11 @@ for (study in studies) {
 }
 ```
 
-#### Example study
+#### Fixture
 
-| Object   | ID    | Engine | Status | Seconds | Error |
-|:---------|:------|:-------|:-------|--------:|:------|
-| Figure 1 | fig_1 | r      | OK     |     1.2 |       |
+| Object  | ID    | Engine | Status | Seconds | Error |
+|:--------|:------|:-------|:-------|--------:|:------|
+| Table 1 | tab_1 | r      | OK     |       1 |       |
 
 ### Failures (concise)
 

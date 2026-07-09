@@ -1,6 +1,6 @@
-# Relative artifact paths to try under registry `studies/<folder>/`
+# Relative artifact paths to try under registry `papers/<folder>/`
 
-Relative artifact paths to try under registry `studies/<folder>/`
+Relative artifact paths to try under registry `papers/<folder>/`
 
 ## Usage
 

@@ -2,7 +2,7 @@
 
 Validates a study replication package with
 [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
-then writes a lightweight registry stub (`studies/<folder>.yml`) and
+then writes a lightweight registry stub (`papers/<folder>.yml`) and
 updates `index.csv`.
 
 ## Usage
@@ -28,7 +28,7 @@ add_paper(
 
 - registry_root:
 
-  Path to the registry repository root (contains `studies/` and
+  Path to the registry repository root (contains `papers/` and
   `index.csv`). Defaults to
   `getOption("replicateEverything.registry_root")`.
 

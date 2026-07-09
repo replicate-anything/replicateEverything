@@ -1,7 +1,7 @@
 # Path to a registry paper stub yaml file
 
-Prefers `studies/<folder>.yml`; falls back to legacy
-`papers/<folder>.yml` or `papers/<folder>/replication.yml` when present.
+Prefers `papers/<folder>.yml`; falls back to legacy
+`papers/<folder>/replication.yml` when present.
 
 ## Usage
 

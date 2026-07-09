@@ -28,6 +28,6 @@ List with `stub_dir`, `stub_path`, `index_path`, and `folder`.
 
 ## Details
 
-- `registry/replication.yml` -\> `studies/<folder>.yml`
+- `registry/replication.yml` -\> `papers/<folder>.yml`
 
 - merge `registry/index.csv` into `index.csv`

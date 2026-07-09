@@ -38,8 +38,10 @@ A list containing:
 
 ## Details
 
-Fetches bibliographic metadata from a DOI resolver. Used when preparing
-registry stubs and study metadata.
+This function is primarily used by
+[`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
+to automatically populate metadata in the `replication.yml` file when
+creating a new replication.
 
 ## Examples
 

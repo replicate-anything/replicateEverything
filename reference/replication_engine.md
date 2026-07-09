@@ -20,4 +20,4 @@ replication_engine(rep, paper_meta = NULL)
 
 ## Value
 
-`"r"`, `"stata"`, or `"python"`.
+`"r"` or `"stata"`.

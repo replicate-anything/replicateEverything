@@ -1,9 +1,8 @@
 # Build display artifacts for a folder-backed study
 
-Runs pipeline prep steps from `replication.yml` when present, then every
-registered table and figure, saves formatted outputs under `artifacts/`,
-and writes `artifacts/manifest.json`. Intended to be run from the study
-repository root (or pass the path explicitly).
+Runs every registered table and figure, saves formatted outputs under
+`artifacts/`, and writes `artifacts/manifest.json`. Intended to be run
+from the study repository root (or pass the path explicitly).
 
 ## Usage
 
@@ -12,8 +11,7 @@ build_study_artifacts(
   location = ".",
   install_deps = TRUE,
   ids = NULL,
-  registry_root = NULL,
-  force_prep = FALSE
+  registry_root = NULL
 )
 ```
 
@@ -36,10 +34,6 @@ build_study_artifacts(
 - registry_root:
 
   Optional registry checkout path for monorepo dev.
-
-- force_prep:
-
-  Logical. Re-run prep steps even when outputs already exist.
 
 ## Value
 

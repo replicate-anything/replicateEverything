@@ -20,6 +20,8 @@ Find papers and inspect replication metadata.
   : List available replications for a paper
 - [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
   : List one replication entry per logical group
+- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  : Retrieve replication code for a paper
 
 ## Run replications
 
@@ -27,12 +29,10 @@ Run tables and figures from registry scripts.
 
 - [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
   : Run a single replication or all replications for a paper
-- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
-  : Retrieve replication code for a paper
-- [`run_prep_step()`](https://replicate-anything.github.io/replicateEverything/reference/run_prep_step.md)
-  : Run a single prep step
-- [`list_prep_steps()`](https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.md)
-  : List pipeline prep steps for a paper
+- [`replicate_paper()`](https://replicate-anything.github.io/replicateEverything/reference/replicate_paper.md)
+  : Replicate all results from a paper
+- [`create_replication_template()`](https://replicate-anything.github.io/replicateEverything/reference/create_replication_template.md)
+  : Create a replication template
 
 ## Shiny demo
 
@@ -49,8 +49,6 @@ Validate folder-backed studies and sync to the registry.
 
 - [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
   : Build display artifacts for a folder-backed study
-- [`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_package_artifacts.md)
-  : Build display artifacts for a package-backed study
 - [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
   : Validate a folder-backed replication study
 - [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
@@ -59,12 +57,6 @@ Validate folder-backed studies and sync to the registry.
   : Copy prepared registry files into the registry repository
 - [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
   : Validate a package-backed replication study
-- [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md)
-  : List bundled AI skills
-- [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md)
-  : Read a bundled AI skill
-- [`ai_skill_path()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill_path.md)
-  : Get the path to a bundled AI skill
 
 ## Registry audit
 

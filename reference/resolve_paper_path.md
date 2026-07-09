@@ -17,4 +17,4 @@ resolve_paper_path(doi)
 
 ## Value
 
-Character folder name under `studies/`.
+Character folder name under `papers/`.

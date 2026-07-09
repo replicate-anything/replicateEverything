@@ -1,6 +1,6 @@
 # Build base URLs and paths for a paper in the registry
 
-Registry stubs live as `studies/<folder>.yml` files. For folder-backed
+Registry stubs live as `papers/<folder>.yml` files. For folder-backed
 external studies, materials live at the study repo root. For
 package-backed studies, the registry stub path is still exposed but
 materials are resolved via the study package API.

@@ -21,7 +21,6 @@ Character HTML with common entities decoded for browser display.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;")
-} # }
+#> Error in normalize_html_table("&lt;table&gt;&amp;nbsp;data&lt;/table&gt;"): could not find function "normalize_html_table"
 ```

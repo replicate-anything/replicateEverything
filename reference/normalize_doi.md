@@ -23,7 +23,6 @@ A cleaned DOI string.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 normalize_doi("https://doi.org/10.1177/00491241211036161")
-} # }
+#> Error in normalize_doi("https://doi.org/10.1177/00491241211036161"): could not find function "normalize_doi"
 ```

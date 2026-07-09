@@ -50,7 +50,6 @@ Invisibly the output file path.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
 tmp <- tempfile()
 dir.create(tmp)
 result <- structure(
@@ -64,5 +63,5 @@ result <- structure(
   class = "replication_result"
 )
 save_artifact(result, tmp)
-} # }
+#> Error in save_artifact(result, tmp): could not find function "save_artifact"
 ```
