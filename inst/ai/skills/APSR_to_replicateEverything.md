@@ -166,6 +166,26 @@ if _rc ssc install estout, replace
 
 Reference: `rep-10.1017-s0003055426101749/code/helpers/install_stata_deps.do`.
 
+### Stata: dependency probe (fast check before install)
+
+replicateEverything runs a **probe** before `install_stata_deps.do` so live runs skip the install script when packages already work. Declare one of:
+
+| Approach | In `replication.yml` | When to use |
+|----------|----------------------|-------------|
+| **Probe script** | `stata_deps_probe: code/helpers/probe_stata_deps.do` | Custom load tests (e.g. `help reghdfe` — bare `reghdfe` returns r(301) with no data) |
+| **Package list** | `stata_packages: [ivreg2, estout]` | Simple SSC packages; package checks `which <pkg>` only |
+| **Neither** | (install script only) | Install script runs once per session; must be idempotent when packages exist |
+
+Example probe script (study-specific — not hardcoded in the package):
+
+```yaml
+stata_dependencies:
+  - code/helpers/install_stata_deps.do
+stata_deps_probe: code/helpers/probe_stata_deps.do
+```
+
+The probe must **exit 0** when satisfied, non-zero otherwise; no network install.
+
 ### Stata: `init_study_paths.do`
 
 Create `code/helpers/init_study_paths.do` — walk up to `replication.yml`, set `global maindir/rawdir/processed/result`, mkdir, then `do install_stata_deps.do`.

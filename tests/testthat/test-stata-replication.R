@@ -46,12 +46,10 @@ test_that("stata_deps_install_scripts finds default helper do-file", {
   expect_true(any(grepl("install_stata_deps\\.do$", scripts)))
 })
 
-test_that("stata_deps_probe_lines cover ftools reghdfe eststo", {
-  lines <- replicateEverything:::stata_deps_probe_lines()
-  expect_true(any(grepl("which ftools", lines)))
-  expect_true(any(grepl("which reghdfe", lines)))
-  expect_true(any(grepl("help reghdfe", lines)))
-  expect_true(any(grepl("which eststo", lines)))
+test_that("stata_deps_probe_lines_from_packages checks which for each package", {
+  lines <- replicateEverything:::stata_deps_probe_lines_from_packages(c("ivreg2", "estout"))
+  expect_true(any(grepl("which ivreg2", lines)))
+  expect_true(any(grepl("which estout", lines)))
 })
 
 test_that("install_stata_dependencies respects install_stata_deps option", {
@@ -67,15 +65,26 @@ test_that("install_stata_dependencies respects install_stata_deps option", {
   )
 })
 
-test_that("stata_dependencies_satisfied returns TRUE when Stata probe passes", {
+test_that("stata_dependencies_satisfied returns NA without probe config", {
+  expect_true(is.na(
+    replicateEverything:::stata_dependencies_satisfied(tempdir(), meta = list())
+  ))
+})
+
+test_that("stata_dependencies_satisfied returns TRUE when study probe passes", {
   skip_if(is.null(replicateEverything:::find_stata_executable()), "Stata not installed")
   study <- file.path(
     testthat::test_path(".."), "..", "..",
     "rep-10.1017-s0003055426101749"
   )
   skip_if_not(dir.exists(study), "Jiang study repo missing")
+  meta <- yaml::read_yaml(file.path(study, "replication.yml"))
   expect_true(
-    replicateEverything:::stata_dependencies_satisfied(study, timeout = 180L)
+    replicateEverything:::stata_dependencies_satisfied(
+      study,
+      timeout = 180L,
+      meta = meta
+    )
   )
 })
 
