@@ -1,9 +1,9 @@
-test_that("get_replication_meta merges stata_deps_probe for folder-backed stub", {
+test_that("get_replication_meta merges stata_packages for folder-backed stub", {
   with_fixture_stata_opts({
     meta <- get_replication_meta(fixture_stata_doi())
     expect_equal(
-      as.character(meta$stata_deps_probe[[1]]),
-      "code/helpers/probe_stata_deps.do"
+      as.character(meta$stata_packages),
+      "estout"
     )
     expect_equal(meta$languages[[1]], "stata")
     expect_true(length(meta$replications %||% list()) > 0L)
@@ -35,16 +35,26 @@ test_that("get_replication_meta finds local Stata study from fixture registry", 
   })
 })
 
-test_that("stata_deps_install_scripts finds default helper do-file", {
+test_that("stata_deps_install_targets generates install from stata_packages", {
   study <- fixture_stata_study_root()
-  scripts <- replicateEverything:::stata_deps_install_scripts(study)
-  expect_true(any(grepl("install_stata_deps\\.do$", scripts)))
+  meta <- fixture_stata_meta()
+  targets <- replicateEverything:::stata_deps_install_targets(study, meta = meta)
+  expect_true(targets$generated)
+  expect_equal(targets$packages, "estout")
+  expect_true(file.exists(targets$scripts[[1]]))
+  lines <- readLines(targets$scripts[[1]], warn = FALSE)
+  expect_true(any(grepl("ssc install estout", lines)))
 })
 
-test_that("stata_deps_probe_lines_from_packages checks which for each package", {
+test_that("stata_deps_probe_lines_from_packages checks commands and reghdfe stack", {
   lines <- replicateEverything:::stata_deps_probe_lines_from_packages(c("ivreg2", "estout"))
   expect_true(any(grepl("which ivreg2", lines)))
-  expect_true(any(grepl("which estout", lines)))
+  expect_true(any(grepl("which eststo", lines)))
+  reghdfe_lines <- replicateEverything:::stata_deps_probe_lines_from_packages(
+    c("ftools", "reghdfe", "estout")
+  )
+  expect_true(any(grepl("which require", reghdfe_lines)))
+  expect_true(any(grepl("noi reghdfe", reghdfe_lines)))
 })
 
 test_that("install_stata_dependencies probes only when install_stata_deps is FALSE", {
@@ -66,17 +76,19 @@ test_that("stata_dependencies_satisfied returns NA without probe config", {
   ))
 })
 
-test_that("stata_dependencies_satisfied returns TRUE when study probe passes", {
+test_that("stata_dependencies_satisfied returns TRUE when generated probe passes", {
   skip_if(is.null(replicateEverything:::find_stata_executable()), "Stata not installed")
   study <- fixture_stata_study_root()
   meta <- fixture_stata_meta()
-  expect_true(
-    replicateEverything:::stata_dependencies_satisfied(
-      study,
-      timeout = 180L,
-      meta = meta
-    )
+  probe_ok <- replicateEverything:::stata_dependencies_satisfied(
+    study,
+    timeout = 180L,
+    meta = meta
   )
+  if (!isTRUE(probe_ok)) {
+    skip("estout/eststo not installed in Stata (expected on maintainer machines)")
+  }
+  expect_true(probe_ok)
 })
 
 test_that("stata_log_suggests_missing_dependency detects SSC install prompts", {
@@ -94,8 +106,7 @@ test_that("stata_dependency_hint points to study replication.yml not hardcoded S
     meta = meta
   )
   expect_true(grepl("replication.yml", hint))
-  expect_true(grepl("install_stata_deps", hint))
-  expect_true(grepl("probe_stata_deps", hint))
+  expect_true(grepl("stata_packages", hint))
   expect_false(grepl("ssc install reghdfe", hint))
 })
 

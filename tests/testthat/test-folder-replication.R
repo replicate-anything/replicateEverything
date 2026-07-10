@@ -79,10 +79,9 @@ test_that("enrich_folder_study_replication_meta merges stata fields from study r
   enriched <- replicateEverything:::enrich_folder_study_replication_meta(stub, ctx)
   expect_true(length(enriched$replications %||% list()) > 0L)
   expect_equal(
-    as.character(enriched$stata_deps_probe[[1]]),
-    "code/helpers/probe_stata_deps.do"
+    as.character(enriched$stata_packages[[1]]),
+    "estout"
   )
-  expect_true(length(enriched$stata_dependencies %||% list()) > 0L)
 })
 
 test_that("registry_study_yaml_path prefers flat stub files", {

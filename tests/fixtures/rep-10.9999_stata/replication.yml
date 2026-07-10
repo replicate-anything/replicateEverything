@@ -10,11 +10,6 @@ repo: replicate-anything/rep-10.9999_stata
 languages:
   - stata
 
-stata_dependencies:
-  - code/helpers/install_stata_deps.do
-
-stata_deps_probe: code/helpers/probe_stata_deps.do
-
 stata_packages:
   - estout
 

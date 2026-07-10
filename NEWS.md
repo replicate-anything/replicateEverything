@@ -4,7 +4,7 @@
 
 * Shiny footer shows package and app **commit SHA** (`pkg` / `app`) instead of the library install path, so it is easy to see when a deployed `app.R` is stale relative to the installed package. `save_local_shiny()` writes `BUNDLE_SHA` into the deploy directory; a warning banner appears when `app` and `pkg` SHAs differ.
 * Fixed Shiny footer crash (`do.call(tag, ...)` — second argument must be a list) from malformed tag construction in `app_build_footer_ui()`.
-* Fixed Python live Run regression (`object 'deps' not found` in `run_python_replication()`).
+* `stata_packages:` — auto install and probe from SSC (including `reghdfe` / GitHub conflict handling). Custom `stata_dependencies:` / `stata_deps_probe:` `.do` files are optional for rare cases only.
 * Shiny dependency-error UI no longer calls internal `replication_error_message()` as a global function.
 
 ## New functions

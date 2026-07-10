@@ -494,20 +494,28 @@ stata_study_dependency_guidance <- function(study_root, meta = NULL) {
       lines,
       "  Maintainer: install_study_dependencies(<doi>) or run the install script once on this machine."
     )
+  } else if (length(pkgs)) {
+    lines <- c(
+      lines,
+      paste0("  Declared stata_packages: ", paste(pkgs, collapse = ", ")),
+      "  Maintainer: install_study_dependencies(<doi>) installs SSC packages from this list."
+    )
   }
   if (length(probe)) {
     rel <- vapply(probe, function(p) {
       stata_study_relative_path(study_root, p)
     }, character(1))
-    lines <- c(lines, paste0("  Dependency probe: ", paste(rel, collapse = ", ")))
-  }
-  if (length(pkgs)) {
-    lines <- c(lines, paste0("  Declared stata_packages: ", paste(pkgs, collapse = ", ")))
+    lines <- c(lines, paste0("  Custom dependency probe: ", paste(rel, collapse = ", ")))
+  } else if (length(pkgs)) {
+    lines <- c(
+      lines,
+      "  Probe: auto-generated from stata_packages (which + help; reghdfe stack checks when listed)."
+    )
   }
   if (length(lines) == 0L) {
     lines <- c(
-      "  Add stata_dependencies: and code/helpers/install_stata_deps.do to replication.yml",
-      "  (optional stata_deps_probe: and stata_packages:; see inst/ai/skills/folder_replication.md)."
+      "  Add stata_packages: [reghdfe, estout, ...] to replication.yml",
+      "  (see inst/ai/skills/folder_replication.md). Custom .do scripts are optional."
     )
   }
   paste0(
@@ -560,12 +568,6 @@ stata_log_suggests_missing_dependency <- function(log_text) {
 #' @param rep Optional replication entry.
 #' @keywords internal
 stata_deps_install_scripts <- function(study_root, meta = NULL, rep = NULL) {
-  scripts <- character(0)
-  default_script <- file.path(study_root, "code", "helpers", "install_stata_deps.do")
-  if (file.exists(default_script)) {
-    scripts <- c(scripts, default_script)
-  }
-
   collect_yaml_scripts <- function(items) {
     if (is.null(items) || length(items) == 0L) {
       return(character(0))
@@ -585,6 +587,7 @@ stata_deps_install_scripts <- function(study_root, meta = NULL, rep = NULL) {
     unlist(paths, use.names = FALSE)
   }
 
+  scripts <- character(0)
   if (!is.null(meta)) {
     scripts <- c(scripts, collect_yaml_scripts(meta$paper$stata_dependencies %||% NULL))
     scripts <- c(scripts, collect_yaml_scripts(meta$stata_dependencies %||% NULL))
@@ -592,8 +595,21 @@ stata_deps_install_scripts <- function(study_root, meta = NULL, rep = NULL) {
   if (!is.null(rep)) {
     scripts <- c(scripts, collect_yaml_scripts(rep$stata_dependencies %||% NULL))
   }
+  scripts <- unique(scripts[nzchar(scripts)])
+  if (length(scripts) > 0L) {
+    return(scripts)
+  }
 
-  unique(scripts[nzchar(scripts)])
+  packages <- stata_deps_package_names(meta, study_root = study_root)
+  if (length(packages) > 0L) {
+    return(character(0))
+  }
+
+  default_script <- file.path(study_root, "code", "helpers", "install_stata_deps.do")
+  if (file.exists(default_script)) {
+    return(default_script)
+  }
+  character(0)
 }
 
 #' Resolve optional Stata dependency probe script paths from study metadata
@@ -660,26 +676,206 @@ stata_deps_package_names <- function(meta = NULL, study_root = NULL) {
   pkgs[!grepl("\\.do$", pkgs, ignore.case = TRUE)]
 }
 
-#' Build a minimal Stata probe for declared SSC package names
+#' Stata ado command to probe for a declared package name
+#'
+#' \code{estout} installs \code{eststo} / \code{esttab}; probe the runnable command.
+#'
+#' @param pkg Declared package name from \code{stata_packages:}.
+#' @keywords internal
+stata_probe_command <- function(pkg) {
+  if (identical(pkg, "estout")) {
+    return("eststo")
+  }
+  pkg
+}
+
+#' Stata install lines for the SSC \code{ftools} + \code{reghdfe} stack
+#'
+#' Handles GitHub 6.x / broken partial installs on shared servers.
+#'
+#' @keywords internal
+stata_reghdfe_stack_install_lines <- function() {
+  c(
+    "* SSC ftools + reghdfe (refreshes GitHub 6.x / broken installs)",
+    "local refresh 0",
+    "cap which require",
+    "if !_rc local refresh 1",
+    "if !`refresh' {",
+    "    cap which reghdfe",
+    "    if !_rc {",
+    "        cap noi reghdfe",
+    "        if _rc == 9 local refresh 1",
+    "        if !`refresh' {",
+    "            cap help reghdfe",
+    "            if _rc local refresh 1",
+    "        }",
+    "    }",
+    "}",
+    "if `refresh' {",
+    '    di as txt "Refreshing SSC ftools/reghdfe stack..."',
+    "    cap ado uninstall reghdfe",
+    "    cap ado uninstall ftools",
+    "    cap ado uninstall require",
+    "}",
+    'di as txt "Installing ftools from SSC..."',
+    "cap which ftools",
+    "if _rc ssc install ftools, replace",
+    "cap noisily ftools, compile",
+    "cap mata: mata mlib index",
+    'di as txt "Installing reghdfe from SSC..."',
+    "cap which reghdfe",
+    "if _rc ssc install reghdfe, replace",
+    "cap help reghdfe",
+    "if _rc {",
+    '    di as err "reghdfe failed to load after SSC install."',
+    "    exit 498",
+    "}"
+  )
+}
+
+#' Build a Stata install script from \code{stata_packages:}
+#'
+#' @param packages Character vector of SSC ado names.
+#' @return Character vector of Stata commands.
+#' @keywords internal
+stata_deps_install_lines_from_packages <- function(packages) {
+  packages <- unique(as.character(packages[nzchar(packages)]))
+  if (length(packages) == 0L) {
+    return(character(0))
+  }
+  lines <- c(
+    "* Auto-generated by replicateEverything from replication.yml stata_packages:",
+    paste0("* ", paste(packages, collapse = ", ")),
+    "version 17",
+    "set more off, permanently",
+    "cap set netmsg off"
+  )
+  needs_reghdfe <- "reghdfe" %in% packages
+  if (needs_reghdfe) {
+    lines <- c(lines, stata_reghdfe_stack_install_lines())
+  }
+  for (pkg in packages) {
+    if (needs_reghdfe && pkg %in% c("ftools", "reghdfe")) {
+      next
+    }
+    cmd <- stata_probe_command(pkg)
+    lines <- c(
+      lines,
+      sprintf("cap which %s", cmd),
+      "if _rc {",
+      sprintf('    di as txt "Installing %s from SSC..."', pkg),
+      sprintf("    ssc install %s, replace", pkg),
+      "}"
+    )
+  }
+  if ("estout" %in% packages) {
+    lines <- c(
+      lines,
+      "cap which eststo",
+      "if _rc {",
+      '    di as err "eststo not found after estout install."',
+      "    exit 498",
+      "}"
+    )
+  }
+  lines
+}
+
+#' Build a Stata probe from \code{stata_packages:}
+#'
+#' Uses \code{which} plus \code{help} (and reghdfe runtime checks when needed).
 #'
 #' @param packages Character vector of ado command names.
 #' @return Character vector of Stata commands.
 #' @keywords internal
 stata_deps_probe_lines_from_packages <- function(packages) {
-  packages <- unique(packages[nzchar(packages)])
+  packages <- unique(as.character(packages[nzchar(packages)]))
   if (length(packages) == 0L) {
     return(character(0))
   }
-  lines <- c("version 17", "set more off, permanently")
-  for (i in seq_along(packages)) {
-    pkg <- packages[[i]]
+  lines <- c(
+    "* Auto-generated probe from replication.yml stata_packages:",
+    "version 17",
+    "set more off, permanently"
+  )
+  if ("ftools" %in% packages || "reghdfe" %in% packages) {
     lines <- c(
       lines,
-      sprintf("cap which %s", pkg),
-      sprintf("if _rc exit %d", i)
+      "cap which ftools",
+      "if _rc exit 10"
+    )
+  }
+  if ("reghdfe" %in% packages) {
+    lines <- c(
+      lines,
+      "cap which reghdfe",
+      "if _rc exit 11",
+      "cap which require",
+      "if !_rc exit 14",
+      "cap noi reghdfe",
+      "if _rc == 9 exit 12",
+      "if _rc != 0 & _rc != 301 exit 15",
+      "cap help reghdfe",
+      "if _rc exit 12"
+    )
+  }
+  other <- packages[!packages %in% c("ftools", "reghdfe")]
+  for (i in seq_along(other)) {
+    pkg <- other[[i]]
+    cmd <- stata_probe_command(pkg)
+    lines <- c(
+      lines,
+      sprintf("cap which %s", cmd),
+      sprintf("if _rc exit %d", 20L + i)
     )
   }
   c(lines, "exit 0")
+}
+
+#' Resolve Stata install scripts or generated install from \code{stata_packages:}
+#'
+#' @inheritParams stata_deps_install_scripts
+#' @param staging_dir Optional staging directory for generated runner files.
+#' @return List with \code{scripts}, \code{generated}, and optional \code{run_dir}.
+#' @keywords internal
+stata_deps_install_targets <- function(
+  study_root,
+  staging_dir = NULL,
+  meta = NULL,
+  rep = NULL
+) {
+  scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
+  if (length(scripts) > 0L) {
+    return(list(
+      scripts = scripts,
+      generated = FALSE,
+      run_dir = NULL,
+      packages = character(0)
+    ))
+  }
+  packages <- stata_deps_package_names(meta, study_root = study_root)
+  if (length(packages) == 0L) {
+    return(list(
+      scripts = character(0),
+      generated = FALSE,
+      run_dir = NULL,
+      packages = character(0)
+    ))
+  }
+  workdir <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  run_dir <- stata_run_dir(workdir, staging_dir)
+  runner <- file.path(run_dir, "replicate_stata_deps_install.do")
+  writeLines(
+    stata_deps_install_lines_from_packages(packages),
+    runner,
+    useBytes = TRUE
+  )
+  list(
+    scripts = runner,
+    generated = TRUE,
+    run_dir = run_dir,
+    packages = packages
+  )
 }
 
 #' Label for progress messages describing the configured Stata dependency probe
@@ -885,15 +1081,29 @@ install_stata_dependencies <- function(
   if (!stata_install_scripts_enabled()) {
     return(invisible(FALSE))
   }
-  scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
+  targets <- stata_deps_install_targets(
+    study_root,
+    staging_dir = staging_dir,
+    meta = meta,
+    rep = rep
+  )
+  scripts <- targets$scripts
   if (length(scripts) == 0L) {
     return(invisible(FALSE))
   }
-  deps_key <- paste0(
-    normalizePath(study_root, winslash = "/", mustWork = FALSE),
-    "::",
-    paste(sort(basename(scripts)), collapse = ",")
-  )
+  deps_key <- if (isTRUE(targets$generated) && length(targets$packages) > 0L) {
+    paste0(
+      normalizePath(study_root, winslash = "/", mustWork = FALSE),
+      "::packages:",
+      paste(sort(targets$packages), collapse = ",")
+    )
+  } else {
+    paste0(
+      normalizePath(study_root, winslash = "/", mustWork = FALSE),
+      "::",
+      paste(sort(basename(scripts)), collapse = ",")
+    )
+  }
   # A single live Run installs deps before the prep step and again before the
   # table; and re-running the study's install script is expensive (it may
   # recompile / reinstall SSC packages over the network every time). Once the
@@ -922,10 +1132,15 @@ install_stata_dependencies <- function(
       mark_stata_deps_installed(deps_key)
       return(invisible(FALSE))
     }
-    replicate_progress("Stata dependency probe failed — running maintainer install script...")
+    replicate_progress("Stata dependency probe failed — running maintainer install...")
+    label <- if (isTRUE(targets$generated)) {
+      paste0("stata_packages: ", paste(targets$packages, collapse = ", "))
+    } else {
+      paste(basename(scripts), collapse = ", ")
+    }
     message(
       "Stata dependency probe did not pass — running maintainer install: ",
-      paste(basename(scripts), collapse = ", "), " ..."
+      label, " ..."
     )
   }
 

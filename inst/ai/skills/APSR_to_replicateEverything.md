@@ -162,58 +162,33 @@ Goal: a fresh machine or Shiny server should run prep + tables + figures **witho
 
 | Engine | Where to declare | How it installs |
 |--------|------------------|-----------------|
-| **Stata** | Top-level `stata_dependencies:` + `code/helpers/install_stata_deps.do` | `install_deps=TRUE` runs the `.do` via batch Stata; every Stata runner also calls it via `init_study_paths.do` |
-| **R** | `paper.dependencies:` (CRAN only) | `build_study_artifacts(install_deps=TRUE)` or `run_replication(..., install_deps=TRUE)` |
-| **Python** | `python_dependencies:` (study-wide) **or** entry-level `dependencies:` on `engine: python` rows | Same `install_deps=TRUE` → `python -m pip install` before script/notebook |
+| **Stata** | `stata_packages:` (SSC ado names) | Maintainers: `install_study_dependencies(doi)` — package auto-installs from SSC and probes before live Run |
+| **R** | `paper.dependencies:` (CRAN only) | `install_study_dependencies(doi)` or `build_study_artifacts(install_deps=TRUE)` |
+| **Python** | `python_dependencies:` (study-wide) **or** entry-level `dependencies:` on `engine: python` rows | Same maintainer install API → `pip install` |
 
 **Do not** put Stata SSC package names (`reghdfe`, `estout`, `ftools`) in R `dependencies` — replicateEverything only installs CRAN packages for `engine: r` entries and paper-level R deps.
 
-### Stata: `install_stata_deps.do`
+### Stata: `stata_packages:` (default — no custom `.do` files)
 
-Create `code/helpers/install_stata_deps.do` — idempotent, batch-safe, first run needs internet:
-
-```stata
-* Pin SSC reghdfe 5.x (author stack). Reghdfe 6.x from GitHub needs "require" — avoid.
-version 17
-cap which require
-if !_rc {
-    cap ado uninstall reghdfe
-    cap ado uninstall ftools
-}
-cap which ftools
-if _rc ssc install ftools, replace
-cap noisily ftools, compile
-cap which reghdfe
-if _rc ssc install reghdfe, replace
-cap which estout
-if _rc ssc install estout, replace
-```
-
-Reference: `rep-10.1017-s0003055426101749/code/helpers/install_stata_deps.do`.
-
-### Stata: dependency probe (fast check before install)
-
-replicateEverything runs a **probe** before `install_stata_deps.do` so live runs skip the install script when packages already work. Declare one of:
-
-| Approach | In `replication.yml` | When to use |
-|----------|----------------------|-------------|
-| **Probe script** | `stata_deps_probe: code/helpers/probe_stata_deps.do` | Custom load tests (e.g. `help reghdfe` — bare `reghdfe` returns r(301) with no data) |
-| **Package list** | `stata_packages: [ivreg2, estout]` | Simple SSC packages; package checks `which <pkg>` only |
-| **Neither** | (install script only) | Install script runs once per session; must be idempotent when packages exist |
-
-Example probe script (study-specific — not hardcoded in the package):
+List SSC ado command names from your `.do` files. replicateEverything auto-generates install + probe (including `reghdfe` / GitHub 6.x conflict handling on shared servers):
 
 ```yaml
-stata_dependencies:
-  - code/helpers/install_stata_deps.do
-stata_deps_probe: code/helpers/probe_stata_deps.do
+languages:
+  - stata
+
+stata_packages:
+  - ftools
+  - reghdfe
+  - estout
 ```
 
-The probe must **exit 0** when satisfied, non-zero otherwise; no network install.
+Maintainers run once: `install_study_dependencies("<doi>")`. Live Run and Shiny probe only.
+
+Optional **custom** `stata_dependencies:` / `stata_deps_probe:` `.do` files only for exotic GitHub-only stacks or non-SSC packages (rare).
 
 ### Stata: `init_study_paths.do`
 
-Create `code/helpers/init_study_paths.do` — walk up to `replication.yml`, set `global maindir/rawdir/processed/result`, mkdir. **Do not** call `install_stata_deps.do` from runners — replicateEverything probes before Run; maintainers run the install script once during onboarding.
+Create `code/helpers/init_study_paths.do` — walk up to `replication.yml`, set `global maindir/rawdir/processed/result`, mkdir. **Do not** install SSC packages from runners — replicateEverything probes before Run; maintainers use `install_study_dependencies(doi)`.
 
 **Every** Stata runner (tables **and** prep steps) should start with:
 

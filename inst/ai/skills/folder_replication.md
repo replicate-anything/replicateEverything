@@ -105,7 +105,7 @@ Before drafting yaml, **search the entire study tree** (delivered folder and/or 
 | Engine | Search patterns (examples) | Yaml destination |
 |--------|---------------------------|------------------|
 | **R** | `library(`, `require(`, `requireNamespace(`, `::` on package names | `paper.dependencies:` (study-wide CRAN list) |
-| **Stata** | `ssc install`, `net install`, `ado install`, `github install`; commands like `reghdfe`, `esttab`, `eststo`, `ftools`, `ivreg2`, `reghdfe`, `outreg2` | `stata_packages:` + `code/helpers/install_stata_deps.do` + `stata_deps_probe:` |
+| **Stata** | `ssc install`, `net install`, `ado install`, `github install`; commands like `reghdfe`, `esttab`, `eststo`, `ftools`, `ivreg2`, `outreg2` | `stata_packages:` (study-wide SSC ado names) |
 | **Python** | `^import `, `^from ` in `.py`; notebook `pip install`; `requirements.txt` | `python_dependencies:` (study-wide PyPI names) |
 | **All** | Author README / `README.txt` “Requirements”, “Software”, numbered install steps | Cross-check; README often lists Stata SSC stacks authors forgot to script |
 
@@ -129,7 +129,7 @@ rg -n "pip install|!pip" code/ --glob "*.{py,ipynb}"
 **Deduplicate into three lists:**
 
 1. **R (CRAN)** — package names only (not Stata ado names).
-2. **Stata (SSC/GitHub)** — ado names for `stata_packages:`; full install lines go in `install_stata_deps.do`.
+2. **Stata (SSC)** — ado command names for `stata_packages:` (e.g. `reghdfe`, `estout`, `ftools`). replicateEverything auto-installs from SSC and auto-probes (`which` + `help`; special handling for `reghdfe` / GitHub conflicts).
 3. **Python (PyPI)** — distribution names (`scikit-learn`, not `sklearn`).
 
 **Do not** put Stata ado names in `paper.dependencies` or R `dependencies:` — replicateEverything installs CRAN packages for R only.
@@ -161,13 +161,10 @@ python_dependencies:     # omit if no Python; study-wide PyPI list from Step 3a
   - pandas
   - scikit-learn
 
-stata_packages:          # ado names from Step 3a (probe fallback)
+stata_packages:          # SSC ado names from Step 3a (auto install + probe)
   - reghdfe
   - estout
-
-stata_deps_probe: code/helpers/probe_stata_deps.do
-stata_dependencies:
-  - code/helpers/install_stata_deps.do
+  - ftools
 
 prep:                    # optional pipeline steps (same engine/dependency rules)
   - id: build_data
@@ -203,9 +200,9 @@ replications:
 | `languages:` | Union of engines in prep + replications (or infer from `.R` / `.do` / `.py` / `.ipynb` paths) |
 | `paper.dependencies` | All unique CRAN packages from R scripts and `format_*.R` helpers |
 | `python_dependencies:` | All unique PyPI names from Python scripts/notebooks |
-| `stata_packages:` | User-written ado names used in `.do` files |
-| `stata_dependencies:` | Path to idempotent `install_stata_deps.do` (SSC/GitHub installs from Step 3a) |
-| `stata_deps_probe:` | Check-only `.do` that exits 0 when packages load (`help` / `which`, no network) |
+| `stata_packages:` | User-written ado names used in `.do` files — **default for all Stata studies** |
+| `stata_deps_probe:` | *(Optional)* custom check-only `.do` when auto-probe is insufficient |
+| `stata_dependencies:` | *(Optional)* custom install `.do` for GitHub installs, version pins, unusual order |
 | `replications[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
 | `replications[].artifact` | Precomputed display file under `artifacts/` |
 | `replications[].dependencies` | **R only** — extra CRAN packages for that entry; prefer study-wide lists when shared |
@@ -279,18 +276,34 @@ Both study types use the **same maintainer functions** for dependency setup:
 
 **Build** still uses kind-specific builders: `build_study_artifacts()` (folder) vs `build_package_artifacts()` (package). Declare the same yaml fields (`languages:`, `paper.dependencies`, `python_dependencies:`, `stata_*`) in both layouts.
 
-### Stata studies — declare dependencies in the study repo
+### Stata studies — declare packages in yaml (default)
 
-| Field | Example | When to use |
-|-------|---------|-------------|
-| `stata_dependencies:` | `code/helpers/install_stata_deps.do` | Maintainer-only SSC/GitHub install script (not run on live Shiny Run) |
-| `stata_deps_probe:` | `code/helpers/probe_stata_deps.do` | Check-only `.do` that exits 0 when packages load (no network) |
-| `stata_packages:` | `[estout, reghdfe]` | Fallback probe via `which <pkg>` when no custom probe script |
-| Default install path | `code/helpers/install_stata_deps.do` | Used even without yaml entry if file exists |
+**Most studies only need a list:**
 
-**Probe script contract:** exit 0 when satisfied, non-zero otherwise. Use `help <pkg>` or `which <pkg>` — not bare commands that fail with no data (e.g. prefer `cap help reghdfe` over bare `reghdfe`).
+```yaml
+languages:
+  - stata
 
-**Install script contract:** idempotent SSC/GitHub installs for this study only — run **once** by maintainers (`build_study_artifacts(install_deps = TRUE)` or manually). **Never** call `install_stata_deps.do` from table/prep runners or `init_study_paths.do`; live Run probes only.
+stata_packages:
+  - reghdfe
+  - estout
+  - ftools
+```
+
+replicateEverything **auto-generates** maintainer install and compatibility probe from this list:
+- `ssc install <pkg>, replace` for each package (`estout` → probes `eststo`)
+- `ftools, compile` when `ftools` or `reghdfe` is listed
+- Refreshes broken GitHub `reghdfe` 6.x / `require` stacks on shared servers
+
+Maintainers: `install_study_dependencies(doi)` once. Live Run and Shiny probe only.
+
+| Field | When to use |
+|-------|-------------|
+| `stata_packages:` | **Default** — SSC ado command names from your `.do` files |
+| `stata_deps_probe:` | Optional custom check-only `.do` (rare; e.g. non-SSC probes) |
+| `stata_dependencies:` | Optional custom install `.do` (rare; GitHub-only stacks, exotic pins) |
+
+**Do not** call install scripts from table/prep runners or `init_study_paths.do`.
 
 ### R / Python replications
 
@@ -312,9 +325,8 @@ Both study types use the **same maintainer functions** for dependency setup:
 
 ```
 - [ ] Step 3a: dependency search re-run after final code layout
-- [ ] replication.yml: languages + paper.dependencies + python_dependencies + stata_* fields complete
+- [ ] replication.yml: languages + paper.dependencies + python_dependencies + stata_packages complete
 - [ ] replication.yml parses; each code:/data:/artifact: path exists
-- [ ] Stata: install_stata_deps.do + probe_stata_deps.do (or stata_packages:)
 - [ ] check_study_compatibility() or Shiny “Check compatibility” passes (or documents expected gaps)
 - [ ] Artifacts committed; manifest if used
 - [ ] Registry stub + index.csv repo column updated
