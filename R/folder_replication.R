@@ -67,6 +67,11 @@ auto_detect_monorepo_root <- function() {
     return(normalizePath(study_root, winslash = "/", mustWork = FALSE))
   }
 
+  env_root <- Sys.getenv("REPLICATE_MONOREPO_ROOT", unset = "")
+  if (nzchar(env_root) && file.exists(file.path(env_root, "registry", "index.csv"))) {
+    return(normalizePath(env_root, winslash = "/", mustWork = FALSE))
+  }
+
   pkg_root <- tryCatch(
     getNamespaceInfo("replicateEverything", "path"),
     error = function(e) ""
@@ -74,8 +79,16 @@ auto_detect_monorepo_root <- function() {
   if (!nzchar(pkg_root)) {
     pkg_root <- tryCatch(system.file(package = "replicateEverything"), error = function(e) "")
   }
+  shiny_root <- tryCatch(system.file("shiny", package = "replicateEverything"), error = function(e) "")
 
-  starts <- unique(c(getwd(), pkg_root, if (nzchar(pkg_root)) dirname(pkg_root)))
+  starts <- unique(c(
+    getwd(),
+    pkg_root,
+    shiny_root,
+    if (nzchar(pkg_root)) dirname(pkg_root),
+    if (nzchar(shiny_root)) dirname(shiny_root)
+  ))
+  starts <- starts[nzchar(starts)]
   for (start in starts) {
     found <- walk_up_for_relative(start, "registry/index.csv")
     if (!is.null(found)) {
@@ -93,8 +106,13 @@ auto_detect_monorepo_root <- function() {
 #' @keywords internal
 resolve_local_study_folder <- function(doi) {
   study_name <- study_folder_from_doi(doi)
-  monorepo <- sibling_monorepo_root()
-  if (!is.null(monorepo)) {
+  roots <- unique(c(
+    getOption("replicateEverything.study_folders_root", NULL),
+    sibling_monorepo_root(),
+    Sys.getenv("REPLICATE_MONOREPO_ROOT", unset = "")
+  ))
+  roots <- roots[nzchar(roots) & dir.exists(roots)]
+  for (monorepo in roots) {
     candidate <- file.path(monorepo, study_name)
     if (dir.exists(candidate) && file.exists(file.path(candidate, "replication.yml"))) {
       return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
@@ -105,7 +123,12 @@ resolve_local_study_folder <- function(doi) {
     getNamespaceInfo("replicateEverything", "path"),
     error = function(e) ""
   )
-  starts <- unique(c(getwd(), pkg_root))
+  if (!nzchar(pkg_root)) {
+    pkg_root <- tryCatch(system.file(package = "replicateEverything"), error = function(e) "")
+  }
+  shiny_root <- tryCatch(system.file("shiny", package = "replicateEverything"), error = function(e) "")
+  starts <- unique(c(getwd(), pkg_root, shiny_root))
+  starts <- starts[nzchar(starts)]
   for (start in starts) {
     found <- walk_up_for_relative(start, file.path(study_name, "replication.yml"))
     if (!is.null(found)) {
@@ -1056,6 +1079,17 @@ ensure_study_folder_local <- function(meta, ctx = NULL) {
     marker <- file.path(ctx$local_root, "replication.yml")
     if (file.exists(marker)) {
       return(normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE))
+    }
+  }
+
+  paper_doi <- meta$paper$doi %||% NULL
+  if (is.null(paper_doi) && !is.null(ctx) && !is.null(ctx$doi)) {
+    paper_doi <- ctx$doi
+  }
+  if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
+    local <- resolve_local_study_folder(normalize_doi(as.character(paper_doi[[1]])))
+    if (!is.null(local)) {
+      return(local)
     }
   }
 

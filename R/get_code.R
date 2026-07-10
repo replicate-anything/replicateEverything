@@ -2,9 +2,12 @@
 #'
 #' Returns a single script suitable for the Code tab in Shiny. For Stata
 #' replications, the substantive analysis from \code{stata_source} is inlined
-#' after a short setup section so the script can be copied and run. R
-#' replications return the analysis script only; optional \code{format_*} helpers
-#' in separate files are labeled and omitted for Stata.
+#' after a short setup section so the script can be copied and run. When
+#' \code{stata_source} is omitted but the runner calls nested \code{do} files,
+#' those paths are inferred automatically (setup helpers such as
+#' \code{init_study_paths.do} are skipped). R replications return the analysis
+#' script only; optional \code{format_*} helpers in separate files are labeled
+#' and omitted for Stata.
 #'
 #' For package-backed studies, reads \code{inst/replication_code/*.R} from the
 #' study package GitHub repo when the package is not installed (same idea as
@@ -108,6 +111,43 @@ stata_code_banner <- function(title) {
 }
 
 #' @keywords internal
+extract_stata_do_paths <- function(lines) {
+  if (!length(lines)) {
+    return(character())
+  }
+  matched <- regmatches(
+    lines,
+    regexec('^\\s*(?:quietly\\s+)?do\\s+"([^"]+)"', lines, perl = TRUE)
+  )
+  vapply(matched, function(m) if (length(m) >= 2L) m[[2L]] else "", character(1L))
+}
+
+#' @keywords internal
+normalize_stata_source_path <- function(path) {
+  path <- gsub("\\\\", "/", path)
+  path <- sub("^\\$\\{maindir\\}/", "", path)
+  sub("^\\./", "", path)
+}
+
+#' @keywords internal
+is_stata_setup_do_path <- function(path) {
+  base <- basename(path)
+  grepl("init_study_paths|init_paths|^init_", base, ignore.case = TRUE) ||
+    grepl("/helpers/init", path, ignore.case = TRUE) ||
+    grepl("setup_analysis|setup_paths", base, ignore.case = TRUE)
+}
+
+#' Infer substantive Stata scripts from nested \code{do} calls in a runner.
+#' @keywords internal
+infer_stata_source_paths <- function(wrapper_lines) {
+  paths <- extract_stata_do_paths(wrapper_lines)
+  paths <- paths[nzchar(paths)]
+  paths <- vapply(paths, normalize_stata_source_path, character(1L))
+  paths <- paths[!vapply(paths, is_stata_setup_do_path, logical(1L))]
+  unique(paths)
+}
+
+#' @keywords internal
 drop_nested_stata_do_calls <- function(lines) {
   if (!length(lines)) {
     return(lines)
@@ -128,12 +168,16 @@ drop_stata_log_directives <- function(lines) {
 
 #' @keywords internal
 assemble_stata_display_code <- function(rep, read_code_file) {
-  wrapper <- read_code_file(rep$code)
-  wrapper <- drop_nested_stata_do_calls(wrapper)
+  wrapper_raw <- read_code_file(rep$code)
 
   stata_paths <- rep$stata_source %||% rep$stata_sources %||% NULL
   stata_paths <- as.character(unlist(stata_paths, use.names = FALSE))
   stata_paths <- stata_paths[nzchar(stata_paths)]
+  if (!length(stata_paths)) {
+    stata_paths <- infer_stata_source_paths(wrapper_raw)
+  }
+
+  wrapper <- drop_nested_stata_do_calls(wrapper_raw)
 
   if (!length(stata_paths)) {
     return(c(

@@ -1,10 +1,14 @@
 # Copy to local.R (gitignored) for local development or server overrides.
 # save_local_shiny() never overwrites an existing local.R.
 
-# --- Monorepo development (sibling registry/ and replicateEverything/) ---
+# --- Monorepo development (sibling registry/ and rep-* study folders) ---
+# Option A: paths relative to the shiny app directory (monorepo layout)
 registry_root <- normalizePath("../registry", winslash = "/", mustWork = FALSE)
 package_root <- normalizePath("../replicateEverything", winslash = "/", mustWork = FALSE)
 packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
+
+# Option B: absolute monorepo root when running from an installed library copy, e.g.
+# Sys.setenv(REPLICATE_MONOREPO_ROOT = "c:/path/to/replicate_everything")
 
 # --- Shiny Server example (uncomment and edit) ---
 # registry_root <- "/srv/registry"

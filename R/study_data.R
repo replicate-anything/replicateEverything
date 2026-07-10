@@ -56,10 +56,21 @@ study_data_file_candidates <- function(rel_path, study_root, meta, ctx = NULL) {
   file_name <- basename(rel_path)
   study_name <- study_data_folder_name(meta, ctx)
   root <- study_data_root(ctx)
-  c(
-    file.path(study_root, rel_path),
-    file.path(root, "data", study_name, file_name)
-  )
+  candidates <- c(file.path(study_root, rel_path))
+  sibling <- resolve_study_folder_path(meta, ctx)
+  if (is.null(sibling) && !is.null(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
+    sibling <- resolve_local_study_folder(normalize_doi(as.character(ctx$doi)))
+  }
+  if (!is.null(sibling)) {
+    sibling_path <- file.path(sibling, rel_path)
+    study_norm <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+    sibling_norm <- normalizePath(sibling, winslash = "/", mustWork = FALSE)
+    if (!identical(study_norm, sibling_norm)) {
+      candidates <- c(candidates, sibling_path)
+    }
+  }
+  candidates <- c(candidates, file.path(root, "data", study_name, file_name))
+  unique(candidates)
 }
 
 #' Summarize a directory for error messages

@@ -23,9 +23,20 @@ load_index <- function() {
   if (!is.null(registry_root)) {
     local_csv <- file.path(registry_root, "index.csv")
     if (file.exists(local_csv)) {
-      return(ensure_index_handles(
+      index <- ensure_index_handles(
         utils::read.csv(local_csv, stringsAsFactors = FALSE)
-      ))
+      )
+      if (index_needs_stub_refresh(index)) {
+        refreshed <- compile_registry_index_from_stubs(registry_root)
+        if (
+          !is.null(refreshed) &&
+            nrow(refreshed) > 0L &&
+            any(nzchar(refreshed$collections))
+        ) {
+          index <- refreshed
+        }
+      }
+      return(index)
     }
   }
 
@@ -52,6 +63,34 @@ ensure_index_handles <- function(index) {
     index[[col]][is.na(index[[col]])] <- ""
   }
   index
+}
+
+#' Compile index rows from registry study stubs (no write)
+#' @keywords internal
+compile_registry_index_from_stubs <- function(registry_root) {
+  studies_dir <- registry_studies_dir(registry_root)
+  if (!dir.exists(studies_dir)) {
+    return(NULL)
+  }
+  yml_files <- list.files(studies_dir, pattern = "\\.yml$", full.names = TRUE)
+  if (length(yml_files) == 0L) {
+    return(NULL)
+  }
+  rows <- lapply(yml_files, function(path) {
+    meta <- yaml::read_yaml(path)
+    registry_index_row_from_meta(meta, study_root = NULL)
+  })
+  index <- do.call(rbind, rows)
+  ensure_index_handles(index)
+}
+
+#' @keywords internal
+index_needs_stub_refresh <- function(index) {
+  if (!is.data.frame(index) || nrow(index) == 0L) {
+    return(FALSE)
+  }
+  index <- ensure_index_handles(index)
+  !any(nzchar(index$collections))
 }
 
 #' Resolve a registry handle to a DOI
@@ -112,12 +151,7 @@ build_registry_index <- function(registry_root = NULL) {
     stop("No study stubs found in ", studies_dir, call. = FALSE)
   }
 
-  rows <- lapply(yml_files, function(path) {
-    meta <- yaml::read_yaml(path)
-    registry_index_row_from_meta(meta, study_root = NULL)
-  })
-  index <- do.call(rbind, rows)
-  index <- ensure_index_handles(index)
+  index <- compile_registry_index_from_stubs(registry_root)
   ord <- order(index$title, index$year, index$folder)
   index <- index[ord, , drop = FALSE]
 

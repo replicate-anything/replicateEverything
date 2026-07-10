@@ -40,7 +40,7 @@ app_brand_title <- function() {
       alt = "",
       class = "app-brand-icon me-2"
     ),
-    "Replicate Everything"
+    "replicateEverything"
   )
 }
 
@@ -73,9 +73,28 @@ app_welcome_intro <- function() {
 }
 
 find_shiny_monorepo_root <- function() {
+  env_root <- Sys.getenv("REPLICATE_MONOREPO_ROOT", unset = "")
+  if (nzchar(env_root) && file.exists(file.path(env_root, "registry", "index.csv"))) {
+    return(normalizePath(env_root, winslash = "/", mustWork = FALSE))
+  }
+
+  if (requireNamespace("replicateEverything", quietly = TRUE)) {
+    found <- tryCatch(
+      get("auto_detect_monorepo_root", envir = asNamespace("replicateEverything"))(),
+      error = function(e) NULL
+    )
+    if (!is.null(found)) {
+      return(found)
+    }
+  }
+
   wd <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  shiny_pkg <- tryCatch(system.file("shiny", package = "replicateEverything"), error = function(e) "")
+  pkg_root <- tryCatch(system.file(package = "replicateEverything"), error = function(e) "")
   candidates <- unique(c(
     wd,
+    shiny_pkg,
+    pkg_root,
     normalizePath(file.path(wd, ".."), winslash = "/", mustWork = FALSE),
     normalizePath(file.path(wd, "../.."), winslash = "/", mustWork = FALSE),
     normalizePath(file.path(wd, "../../.."), winslash = "/", mustWork = FALSE)
@@ -87,6 +106,25 @@ find_shiny_monorepo_root <- function() {
     }
   }
   NULL
+}
+
+shiny_configure_monorepo_study_folders <- function(monorepo = NULL) {
+  if (is.null(monorepo) || !dir.exists(monorepo)) {
+    monorepo <- find_shiny_monorepo_root()
+  }
+  if (is.null(monorepo) || !dir.exists(monorepo)) {
+    return(invisible(NULL))
+  }
+  if (!file.exists(file.path(monorepo, "registry", "index.csv"))) {
+    return(invisible(NULL))
+  }
+  options(
+    replicateEverything.study_folders_root = monorepo,
+    replicateEverything.replication_packages_root = monorepo,
+    replicateEverything.use_sibling_packages = TRUE
+  )
+  message("Replicate Everything: using monorepo study folders at ", monorepo)
+  invisible(monorepo)
 }
 
 #' Use a sibling registry/ package when developing in the monorepo;
@@ -117,31 +155,15 @@ configure_registry_source <- function() {
     message("Replicate Everything: using remote registry on GitHub")
   }
 
+  shiny_configure_monorepo_study_folders()
+
   if (dir.exists(sibling_pkg) && requireNamespace("devtools", quietly = TRUE)) {
-    options(
-      replicateEverything.use_sibling_packages = TRUE,
-      replicateEverything.replication_packages_root = sibling_root,
-      replicateEverything.study_folders_root = sibling_root
-    )
     devtools::load_all(sibling_pkg, quiet = TRUE)
     options(replicate_shiny.use_local_replicate_everything = TRUE)
     if (exists("load_sibling_replication_packages", envir = asNamespace("replicateEverything"), inherits = FALSE)) {
       get("load_sibling_replication_packages", envir = asNamespace("replicateEverything"))(sibling_root)
     }
     message("Replicate Everything: using local package at ", sibling_pkg)
-  } else if (requireNamespace("replicateEverything", quietly = TRUE)) {
-    monorepo <- tryCatch(
-      get("auto_detect_monorepo_root", envir = asNamespace("replicateEverything"))(),
-      error = function(e) NULL
-    )
-    if (!is.null(monorepo)) {
-      options(
-        replicateEverything.study_folders_root = monorepo,
-        replicateEverything.replication_packages_root = monorepo,
-        replicateEverything.use_sibling_packages = TRUE
-      )
-      message("Replicate Everything: using monorepo study folders at ", monorepo)
-    }
   }
 
   invisible(TRUE)
@@ -757,7 +779,13 @@ study_materials_info <- function(doi, folder = NULL, repo = NULL) {
   ))
 }
 
-study_materials_summary_ui <- function(doi, folder = NULL, repo = NULL, dual_engine = FALSE) {
+study_materials_summary_ui <- function(
+  doi,
+  folder = NULL,
+  repo = NULL,
+  dual_engine = FALSE,
+  maintainer_row = NULL
+) {
   info <- study_materials_info(doi, folder = folder, repo = repo)
   if (is.null(info)) {
     return(NULL)
@@ -774,7 +802,10 @@ study_materials_summary_ui <- function(doi, folder = NULL, repo = NULL, dual_eng
     },
     br(),
     strong("Study materials: "),
-    tags$a(href = info$url, target = "_blank", rel = "noopener", info$repo)
+    tags$a(href = info$url, target = "_blank", rel = "noopener", info$repo),
+    if (!is.null(maintainer_row) && is.data.frame(maintainer_row) && nrow(maintainer_row) > 0) {
+      maintainer_link_ui(maintainer_row)
+    }
   )
 }
 
@@ -1207,7 +1238,7 @@ nice_doi_choices <- function(index_df) {
   setNames(idx$doi[ord], labels[ord])
 }
 
-truncate_label <- function(text, max_chars = 25L) {
+truncate_label <- function(text, max_chars = 40L) {
   text <- trimws(as.character(text))
   if (length(text) != 1L || !nzchar(text) || nchar(text) <= max_chars) {
     return(text)
@@ -1466,13 +1497,13 @@ maintainer_link_ui <- function(row) {
 
 registry_collection_choices <- function(index_df) {
   if (is.null(index_df) || nrow(index_df) == 0) {
-    return(c("All collections" = ""))
+    return(c("All studies" = ""))
   }
   cols <- unique(unlist(lapply(seq_len(nrow(index_df)), function(i) {
     parse_index_collections(index_df[i, , drop = FALSE])
   })))
   cols <- sort(cols[nzchar(cols)])
-  c("All collections" = "", setNames(cols, cols))
+  c("All studies" = "", setNames(cols, cols))
 }
 
 filter_index_by_collection <- function(index_df, collection = "") {
@@ -1562,7 +1593,7 @@ prep_to_df <- function(prep_steps) {
     label_full <- if (nzchar(desc)) paste0(label, ": ", desc) else label
     data.frame(
       id = as.character(x$id),
-      label = truncate_label(label_full, 28L),
+      label = truncate_label(label_full, 40L),
       label_full = label_full,
       engine = entry_engine(x),
       type = "step",
@@ -1615,7 +1646,7 @@ replications_to_df <- function(reps) {
       r_id = if (length(r_reps)) as.character(r_reps[[1]]$id) else NA_character_,
       stata_id = if (length(stata_reps)) as.character(stata_reps[[1]]$id) else NA_character_,
       python_id = if (length(python_reps)) as.character(python_reps[[1]]$id) else NA_character_,
-      label = truncate_label(replication_display_label(primary), 25L),
+      label = truncate_label(replication_display_label(primary), 40L),
       label_full = replication_display_label(primary),
       type = as.character(primary$type),
       stringsAsFactors = FALSE
@@ -3356,7 +3387,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: 1fr 4.5rem 3rem 4.5rem 6rem;
+      grid-template-columns: 1fr 4.5rem 3rem 4.5rem 2.75rem;
       gap: 12px;
       align-items: start;
     }
@@ -3372,6 +3403,19 @@ ui <- tagList(
     .study-run-col {
       text-align: right;
       white-space: nowrap;
+    }
+    .study-go-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      min-width: 2.25rem;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 0.68rem;
+      font-weight: 600;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     .study-collections-col {
       text-align: center;
@@ -3522,7 +3566,7 @@ ui <- tagList(
   title = app_brand_title(),
   theme = bs_theme(bootswatch = "flatly"),
   tabPanel(
-    "Explore",
+    "Replicate",
     sidebarLayout(
       sidebarPanel(
         width = 4,
@@ -3545,15 +3589,8 @@ ui <- tagList(
           )
         ),
         tags$hr(style = "margin: 0.5rem 0;"),
-        tags$div(
-          class = "compat-toolbar d-flex justify-content-between align-items-center mb-1",
-          tags$h4(class = "mb-0", "2. Tables & figures"),
-          actionButton(
-            "check_system_compat",
-            "Check system compatibility",
-            class = "btn btn-link btn-sm py-0 px-1 text-muted"
-          )
-        ),
+        tags$h4(class = "mb-1", "2. Tables & figures"),
+        uiOutput("check_system_compat_ui"),
         uiOutput("study_compat_result"),
         div(class = "replication-list-wrap", uiOutput("replication_list"))
       ),
@@ -3867,7 +3904,7 @@ server <- function(input, output, session) {
     req(input$go_to_study)
     updateSelectInput(session, "study_select", selected = input$go_to_study)
     load_study(input$go_to_study, from_registry = TRUE)
-    updateNavbarPage(session, "main_nav", selected = "Explore")
+    updateNavbarPage(session, "main_nav", selected = "Replicate")
   })
 
   observeEvent(input$check_system_compat, {
@@ -3891,6 +3928,18 @@ server <- function(input, output, session) {
     if (!is.null(audit) && is.null(audit$error) && isTRUE(audit$install_needed)) {
       dependency_hint_modal(session, state$doi, audit = audit)
     }
+  })
+
+  output$check_system_compat_ui <- renderUI({
+    req(state$doi)
+    tags$div(
+      class = "compat-toolbar d-flex justify-content-end mb-1",
+      actionButton(
+        "check_system_compat",
+        "Check system compatibility",
+        class = "btn btn-link btn-sm py-0 px-1 text-muted"
+      )
+    )
   })
 
   output$study_compat_result <- renderUI({
@@ -3935,9 +3984,8 @@ server <- function(input, output, session) {
           class = "study-run-col",
           actionButton(
             paste0("study_", i),
-            "Run",
-            class = "btn-primary btn-sm",
-            style = "min-width: 84px;",
+            "Go",
+            class = "btn-primary btn-sm study-go-btn",
             onclick = sprintf(
               "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
               row$doi[[1]]
@@ -3951,10 +3999,10 @@ server <- function(input, output, session) {
       tags$div(
         class = "study-list-header",
         tags$div("Study"),
-        tags$div(class = "study-collections-col", "Tags"),
+        tags$div(class = "study-collections-col", "Collection"),
         tags$div(class = "study-repo-col", "Repo"),
         tags$div(class = "study-engine-col", "Languages"),
-        tags$div(class = "study-run-col", "Replication")
+        tags$div(class = "study-run-col", "Go")
       ),
       rows,
       collections_legend_ui()
@@ -3996,9 +4044,7 @@ server <- function(input, output, session) {
         }),
         h4(paper$title %||% state$doi),
         p(
-          strong("DOI: "), doi_link_ui(doi_value),
-          if (nrow(row) > 0) maintainer_link_ui(row),
-          br(),
+          strong("DOI: "), doi_link_ui(doi_value), br(),
           strong("Authors: "), format_authors_summary(paper$authors %||% ""), br(),
           if (!is.null(paper$year) && nzchar(as.character(paper$year))) {
             tagList(strong("Year: "), paper$year, br())
@@ -4019,7 +4065,8 @@ server <- function(input, output, session) {
           repo = state$registry_repo,
           dual_engine = !is.null(state$replications_df) &&
             replication_has_engine(state$replications_df, "r") &&
-            replication_has_engine(state$replications_df, "stata")
+            replication_has_engine(state$replications_df, "stata"),
+          maintainer_row = if (nrow(row) > 0) row else NULL
         )
       ),
       study_package_install_ui(
