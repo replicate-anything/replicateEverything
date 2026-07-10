@@ -520,15 +520,15 @@ See `registry/guides/folder-replication.md` in the monorepo.
 
 ## Registry `index.csv` columns
 
-When merging a study row into [registry/index.csv](https://github.com/replicate-anything/registry/blob/main/index.csv), include precompiled metadata so Shiny does not fetch each study repo on load:
+When merging a study row into [registry/index.csv](https://github.com/replicate-anything/registry/blob/main/index.csv), **`maintainer`**, **`collections`**, and **`languages`** live in the registry stub yaml (`studies/<folder>.yml`) copied from the study repo. Rebuild the full index with `build_registry_index(registry_root)` — no fetch from individual study repos required.
 
 | Column | Source |
 |--------|--------|
-| `collections` | Pipe-separated tags from `replication.yml` (`APSR\|PED`) |
-| `maintainer_name`, `maintainer_email` | `maintainer:` block |
-| `languages` | Semicolon-separated engines (`r;stata;python`) from `languages:` or inferred from replications |
+| `collections` | Pipe-separated tags from stub `collections:` (`APSR\|PED`) |
+| `maintainer_name`, `maintainer_email` | stub `maintainer:` block |
+| `languages` | Semicolon-separated engines from stub `languages:` |
 
-`prepare_folder_paper()` writes these via `folder_registry_index_row()`. **Every new contribution must name a maintainer** — do not leave these blank.
+`prepare_folder_paper()` / `write_folder_registry_stub()` copy these fields into the study's `registry/replication.yml`. **Every new contribution must name a maintainer** — do not leave these blank.
 
 ## Common pitfalls
 

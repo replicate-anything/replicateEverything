@@ -74,3 +74,59 @@ resolve_registry_handle <- function(x) {
   }
   normalize_doi(hit$doi[[1]])
 }
+
+#' Compile registry index.csv from study stub yaml files
+#'
+#' Reads every `studies/*.yml` under a registry checkout and writes
+#' `index.csv` with `collections`, `maintainer_*`, and `languages` taken from
+#' each stub (no fetch from individual study repos).
+#'
+#' @param registry_root Path to the registry repository. Defaults to
+#'   `getOption("replicateEverything.registry_root")` or [auto_detect_registry_root()].
+#' @return Invisibly, a list with `index_path`, `index`, and `n`.
+#'
+#' @examples
+#' \dontrun{
+#' build_registry_index("../registry")
+#' }
+#'
+#' @export
+build_registry_index <- function(registry_root = NULL) {
+  if (is.null(registry_root) || !nzchar(registry_root)) {
+    registry_root <- getOption("replicateEverything.registry_root", NULL)
+  }
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    registry_root <- auto_detect_registry_root()
+  }
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    stop(
+      "registry_root not found. Pass the path to the registry repository or set ",
+      "options(replicateEverything.registry_root = ...).",
+      call. = FALSE
+    )
+  }
+
+  studies_dir <- registry_studies_dir(registry_root)
+  yml_files <- list.files(studies_dir, pattern = "\\.yml$", full.names = TRUE)
+  if (length(yml_files) == 0L) {
+    stop("No study stubs found in ", studies_dir, call. = FALSE)
+  }
+
+  rows <- lapply(yml_files, function(path) {
+    meta <- yaml::read_yaml(path)
+    registry_index_row_from_meta(meta, study_root = NULL)
+  })
+  index <- do.call(rbind, rows)
+  index <- ensure_index_handles(index)
+  ord <- order(index$title, index$year, index$folder)
+  index <- index[ord, , drop = FALSE]
+
+  index_path <- file.path(registry_root, "index.csv")
+  utils::write.csv(index, index_path, row.names = FALSE)
+
+  invisible(list(
+    index_path = index_path,
+    index = index,
+    n = nrow(index)
+  ))
+}

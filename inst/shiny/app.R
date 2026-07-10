@@ -1376,8 +1376,8 @@ collection_tag_abbrev <- function(collection) {
     trimws(collection),
     "American Political Science Review" = "APSR",
     "APSR" = "APSR",
-    "PED" = "PDE",
-    "Political Economy of Development" = "PDE",
+    "PED" = "PED",
+    "Political Economy of Development" = "PED",
     "World Bank" = "WB",
     "IPI" = "IPI",
     {
@@ -1396,7 +1396,7 @@ collection_tag_class <- function(collection) {
   switch(
     abbr,
     "APSR" = "collection-tag-apsr",
-    "PDE" = "collection-tag-pde",
+    "PED" = "collection-tag-ped",
     "WB" = "collection-tag-wb",
     "IPI" = "collection-tag-ipi",
     "collection-tag-other"
@@ -1430,7 +1430,7 @@ collections_legend_ui <- function() {
     tags$span(class = "collections-legend-label", "Collections: "),
     tags$span(class = "collection-tag collection-tag-apsr", title = "APSR", "APSR"),
     " American Political Science Review · ",
-    tags$span(class = "collection-tag collection-tag-pde", title = "PED", "PDE"),
+    tags$span(class = "collection-tag collection-tag-ped", title = "PED", "PED"),
     " Political economy of development · ",
     tags$span(class = "collection-tag collection-tag-wb", title = "World Bank", "WB"),
     " World Bank · ",
@@ -3390,7 +3390,7 @@ ui <- tagList(
       vertical-align: middle;
     }
     .collection-tag-apsr { background: #0d6efd; }
-    .collection-tag-pde { background: #198754; }
+    .collection-tag-ped { background: #198754; }
     .collection-tag-wb { background: #0dcaf0; color: #084298; }
     .collection-tag-ipi { background: #6f42c1; }
     .collection-tag-other { background: #6c757d; }

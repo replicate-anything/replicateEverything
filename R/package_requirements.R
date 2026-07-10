@@ -143,5 +143,8 @@ registry_stub_from_package_meta <- function(meta, package_folder = NULL) {
     stub_paper$package_folder <- package_folder
   }
   stub_paper <- stub_paper[!vapply(stub_paper, is.null, logical(1))]
-  list(paper = stub_paper, repo = pkg_repo)
+  c(
+    list(paper = stub_paper, repo = pkg_repo),
+    registry_stub_summary_fields(meta)
+  )
 }

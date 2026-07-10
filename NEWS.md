@@ -4,7 +4,8 @@
 
 * Registry `index.csv` supports **`collections`**, **`maintainer_name`**, **`maintainer_email`**, and precompiled **`languages`** so the Studies tab does not fetch each study repo on load.
 * Shiny study selector uses **bibliographic labels** (`Acemoglu et al (2001)`) sorted by first author and year.
-* Studies tab: **collection tags column** (APSR, PDE, WB, IPI; max three per row) with legend; **maintainer** link on study details (`[maintainer]` hover).
+* Studies tab: **collection tags column** (APSR, PED, WB, IPI; max three per row) with legend; **maintainer** link on study details (`[maintainer]` hover).
+* Registry study stubs (`studies/*.yml`) now carry **`maintainer`**, **`collections`**, and **`languages`**; [build_registry_index()] compiles `index.csv` from stubs alone.
 * Button renamed to **Check system compatibility**.
 
 ## Bug fixes

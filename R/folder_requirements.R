@@ -82,7 +82,40 @@ registry_stub_from_folder_meta <- function(meta, study_folder = NULL, study_root
     stub_paper$study_folder <- study_folder
   }
   stub_paper <- stub_paper[!vapply(stub_paper, is.null, logical(1))]
-  list(paper = stub_paper, repo = study_repo)
+  c(
+    list(paper = stub_paper, repo = study_repo),
+    registry_stub_summary_fields(meta)
+  )
+}
+
+#' Maintainer, collections, and languages copied into registry study stubs
+#' @keywords internal
+registry_stub_summary_fields <- function(meta) {
+  out <- list()
+  maintainer <- meta$maintainer %||% list()
+  maintainer_name <- as.character(maintainer$name %||% maintainer$Name %||% "")
+  maintainer_email <- as.character(maintainer$email %||% maintainer$Email %||% "")
+  if (nzchar(maintainer_name) || nzchar(maintainer_email)) {
+    maintainer_out <- list(
+      name = if (nzchar(maintainer_name)) maintainer_name else NULL,
+      email = if (nzchar(maintainer_email)) maintainer_email else NULL
+    )
+    maintainer_out <- maintainer_out[!vapply(maintainer_out, is.null, logical(1))]
+    if (length(maintainer_out) > 0L) {
+      out$maintainer <- maintainer_out
+    }
+  }
+  collections <- meta$collections %||% meta$paper$collections %||% character(0)
+  collections <- unique(na.omit(as.character(unlist(collections, use.names = FALSE))))
+  collections <- collections[nzchar(collections)]
+  if (length(collections) > 0L) {
+    out$collections <- as.list(collections)
+  }
+  languages <- study_declared_languages(meta)
+  if (length(languages) > 0L) {
+    out$languages <- as.list(languages)
+  }
+  out
 }
 
 #' Options for running replications against a local folder-backed study

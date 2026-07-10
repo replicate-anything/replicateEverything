@@ -22,7 +22,7 @@ study repo. After \code{\link[=check_folder_replication]{check_folder_replicatio
 \details{
 \itemize{
 \item \code{registry/replication.yml} -> \verb{studies/<folder>.yml}
-\item merge \code{registry/index.csv} into \code{index.csv}
+\item run \code{\link[=build_registry_index]{build_registry_index()}} on the registry repo (or merge \code{registry/index.csv})
 }
 }
 \keyword{internal}

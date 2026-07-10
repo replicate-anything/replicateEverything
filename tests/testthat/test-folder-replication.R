@@ -23,7 +23,7 @@ test_that("check_folder_replication validates Bounding Causes study", {
   expect_true(result$ok)
 })
 
-test_that("registry_stub_from_folder_meta omits replications", {
+test_that("registry_stub_from_folder_meta includes summary fields", {
   meta <- list(
     paper = list(
       doi = "https://doi.org/10.1177/00491241211036161",
@@ -31,6 +31,12 @@ test_that("registry_stub_from_folder_meta omits replications", {
       study_repo = "org/study"
     ),
     repo = "org/study",
+    maintainer = list(
+      name = "Macartan Humphreys",
+      email = "macartan.humphreys@wzb.eu"
+    ),
+    collections = c("IPI"),
+    languages = list("r"),
     replications = list(list(id = "fig_1"))
   )
   stub <- registry_stub_from_folder_meta(
@@ -40,6 +46,33 @@ test_that("registry_stub_from_folder_meta omits replications", {
   )
   expect_null(stub$replications)
   expect_equal(stub$paper$materials, "folder")
+  expect_equal(stub$maintainer$email, "macartan.humphreys@wzb.eu")
+  expect_equal(unlist(stub$collections), "IPI")
+  expect_equal(unlist(stub$languages), "r")
+})
+
+test_that("build_registry_index compiles index from study stubs", {
+  registry_root <- file.path(testthat::test_path(".."), "fixtures", "registry")
+  testthat::skip_if_not(dir.exists(registry_root), "fixture registry missing")
+  tmp <- file.path(tempdir(), "registry_build_index_test")
+  dir.create(tmp, showWarnings = FALSE, recursive = TRUE)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  dir.create(file.path(tmp, "studies"), recursive = TRUE, showWarnings = FALSE)
+  file.copy(
+    file.path(registry_root, "studies", "10.9999_example.yml"),
+    file.path(tmp, "studies", "10.9999_example.yml")
+  )
+  stub <- yaml::read_yaml(file.path(tmp, "studies", "10.9999_example.yml"))
+  stub$maintainer <- list(name = "Test Maintainer", email = "test@example.org")
+  stub$collections <- list("APSR")
+  stub$languages <- list("r")
+  yaml::write_yaml(stub, file.path(tmp, "studies", "10.9999_example.yml"))
+
+  built <- build_registry_index(tmp)
+  expect_equal(built$n, 1L)
+  index <- utils::read.csv(built$index_path, stringsAsFactors = FALSE)
+  expect_equal(index$maintainer_email[[1]], "test@example.org")
+  expect_equal(index$collections[[1]], "APSR")
 })
 
 test_that("write_folder_registry_stub creates registry sync files", {
