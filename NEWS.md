@@ -1,5 +1,12 @@
 # replicateEverything 0.5.1
 
+## Registry index and Shiny
+
+* Registry `index.csv` supports **`collections`**, **`maintainer_name`**, **`maintainer_email`**, and precompiled **`languages`** so the Studies tab does not fetch each study repo on load.
+* Shiny study selector uses **bibliographic labels** (`Acemoglu et al (2001)`) sorted by first author and year.
+* Studies tab: **collection tags column** (APSR, PDE, WB, IPI; max three per row) with legend; **maintainer** link on study details (`[maintainer]` hover).
+* Button renamed to **Check system compatibility**.
+
 ## Bug fixes
 
 * Shiny footer shows package and app **commit SHA** (`pkg` / `app`) instead of the library install path, so it is easy to see when a deployed `app.R` is stale relative to the installed package. `save_local_shiny()` writes `BUNDLE_SHA` into the deploy directory; a warning banner appears when `app` and `pkg` SHAs differ.

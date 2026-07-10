@@ -44,6 +44,13 @@ ensure_index_handles <- function(index) {
   }
   index$handle <- as.character(index$handle)
   index$handle[!nzchar(index$handle)] <- index$folder[!nzchar(index$handle)]
+  for (col in c("collections", "maintainer_name", "maintainer_email", "languages")) {
+    if (!col %in% names(index)) {
+      index[[col]] <- ""
+    }
+    index[[col]] <- as.character(index[[col]])
+    index[[col]][is.na(index[[col]])] <- ""
+  }
   index
 }
 

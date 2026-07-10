@@ -908,9 +908,10 @@ load_registry_index <- function() {
     if (file.exists(local_csv)) {
       df <- tryCatch({
         idx <- utils::read.csv(local_csv, stringsAsFactors = FALSE)
+        options(replicateEverything.index = idx)
+        idx <- replicateEverything::load_index()
         idx$doi <- replicate_fn("normalize_doi", idx$doi)
         if (!"repo" %in% names(idx)) idx$repo <- DEFAULT_REGISTRY_REPO
-        options(replicateEverything.index = idx)
         idx
       }, error = function(e) NULL)
       if (!is.null(df)) {
@@ -932,6 +933,9 @@ load_registry_index <- function() {
     df <- utils::read.csv(REGISTRY_INDEX_URL, stringsAsFactors = FALSE)
     df$doi <- replicate_fn("normalize_doi", df$doi)
     df$repo <- DEFAULT_REGISTRY_REPO
+    if (requireNamespace("replicateEverything", quietly = TRUE)) {
+      df <- get("ensure_index_handles", envir = asNamespace("replicateEverything"))(df)
+    }
     df
   }, error = function(e) NULL)
 }
@@ -1187,10 +1191,20 @@ registry_health_bar_ui <- function(summary) {
 nice_doi_choices <- function(index_df) {
   if (is.null(index_df) || nrow(index_df) == 0) return(character(0))
   idx <- index_df[nzchar(index_df$doi), , drop = FALSE]
-  setNames(
-    idx$doi,
-    paste0(truncate_label(idx$title, 25L), " (", idx$year, ")")
+  labels <- vapply(seq_len(nrow(idx)), function(i) {
+    row <- idx[i, , drop = FALSE]
+    author <- format_author_label(row$authors[[1]])
+    year <- row$year[[1]] %||% ""
+    paste0(author, " (", year, ")")
+  }, character(1))
+  ord <- order(
+    vapply(strsplit(idx$authors, ",\\s*"), function(x) {
+      first_author_surname(trimws(x[[1]] %||% ""))
+    }, character(1)),
+    idx$year,
+    idx$title
   )
+  setNames(idx$doi[ord], labels[ord])
 }
 
 truncate_label <- function(text, max_chars = 25L) {
@@ -1325,6 +1339,17 @@ study_engine_availability <- function(reps) {
 }
 
 study_engine_availability_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO) {
+  langs <- row$languages[[1]] %||% ""
+  if (nzchar(langs)) {
+    parts <- tolower(strsplit(langs, "[|;]")[[1]])
+    parts <- trimws(parts)
+    parts <- parts[nzchar(parts)]
+    return(list(
+      r = "r" %in% parts,
+      stata = "stata" %in% parts,
+      python = "python" %in% parts || "py" %in% parts
+    ))
+  }
   folder <- row$folder[[1]] %||% NULL
   if (is.null(folder) || !nzchar(folder)) {
     return(list(r = TRUE, stata = FALSE, python = FALSE))
@@ -1334,6 +1359,138 @@ study_engine_availability_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO)
     error = function(e) NULL
   )
   study_engine_availability(reps)
+}
+
+parse_index_collections <- function(row) {
+  raw <- row$collections[[1]] %||% ""
+  if (!nzchar(raw)) {
+    return(character(0))
+  }
+  parts <- unlist(strsplit(raw, "[|;]", perl = TRUE))
+  parts <- trimws(parts)
+  unique(parts[nzchar(parts)])
+}
+
+collection_tag_abbrev <- function(collection) {
+  switch(
+    trimws(collection),
+    "American Political Science Review" = "APSR",
+    "APSR" = "APSR",
+    "PED" = "PDE",
+    "Political Economy of Development" = "PDE",
+    "World Bank" = "WB",
+    "IPI" = "IPI",
+    {
+      abbr <- toupper(gsub("[^A-Za-z]", "", collection))
+      if (nzchar(abbr)) {
+        substr(abbr, 1L, min(4L, nchar(abbr)))
+      } else {
+        collection
+      }
+    }
+  )
+}
+
+collection_tag_class <- function(collection) {
+  abbr <- collection_tag_abbrev(collection)
+  switch(
+    abbr,
+    "APSR" = "collection-tag-apsr",
+    "PDE" = "collection-tag-pde",
+    "WB" = "collection-tag-wb",
+    "IPI" = "collection-tag-ipi",
+    "collection-tag-other"
+  )
+}
+
+collections_column_ui <- function(collections, max_tags = 3L) {
+  if (length(collections) == 0L) {
+    return(tags$span(class = "text-muted", "—"))
+  }
+  show <- collections[seq_len(min(length(collections), max_tags))]
+  extra <- length(collections) - length(show)
+  tagList(
+    lapply(show, function(c) {
+      abbr <- collection_tag_abbrev(c)
+      tags$span(
+        class = paste("collection-tag", collection_tag_class(c)),
+        title = c,
+        abbr
+      )
+    }),
+    if (extra > 0L) {
+      tags$span(class = "collection-tag collection-tag-more", paste0("+", extra))
+    }
+  )
+}
+
+collections_legend_ui <- function() {
+  tags$div(
+    class = "collections-legend text-muted small mt-3",
+    tags$span(class = "collections-legend-label", "Collections: "),
+    tags$span(class = "collection-tag collection-tag-apsr", title = "APSR", "APSR"),
+    " American Political Science Review · ",
+    tags$span(class = "collection-tag collection-tag-pde", title = "PED", "PDE"),
+    " Political economy of development · ",
+    tags$span(class = "collection-tag collection-tag-wb", title = "World Bank", "WB"),
+    " World Bank · ",
+    tags$span(class = "collection-tag collection-tag-ipi", title = "IPI", "IPI"),
+    " IPI studies"
+  )
+}
+
+maintainer_link_ui <- function(row) {
+  name <- trimws(as.character(row$maintainer_name[[1]] %||% ""))
+  email <- trimws(as.character(row$maintainer_email[[1]] %||% ""))
+  if (!nzchar(name) && !nzchar(email)) {
+    return(NULL)
+  }
+  tip <- if (nzchar(name) && nzchar(email)) {
+    paste0(name, " (", email, ")")
+  } else if (nzchar(name)) {
+    name
+  } else {
+    email
+  }
+  tags$span(
+    class = "maintainer-link-wrap",
+    " ",
+    tags$a(
+      href = if (nzchar(email)) paste0("mailto:", email) else "#",
+      class = "maintainer-link",
+      title = tip,
+      "[maintainer]"
+    )
+  )
+}
+
+registry_collection_choices <- function(index_df) {
+  if (is.null(index_df) || nrow(index_df) == 0) {
+    return(c("All collections" = ""))
+  }
+  cols <- unique(unlist(lapply(seq_len(nrow(index_df)), function(i) {
+    parse_index_collections(index_df[i, , drop = FALSE])
+  })))
+  cols <- sort(cols[nzchar(cols)])
+  c("All collections" = "", setNames(cols, cols))
+}
+
+filter_index_by_collection <- function(index_df, collection = "") {
+  if (is.null(index_df) || nrow(index_df) == 0) {
+    return(index_df)
+  }
+  collection <- trimws(as.character(collection %||% ""))
+  if (!nzchar(collection)) {
+    return(index_df)
+  }
+  keep <- vapply(seq_len(nrow(index_df)), function(i) {
+    collection %in% parse_index_collections(index_df[i, , drop = FALSE])
+  }, logical(1))
+  index_df[keep, , drop = FALSE]
+}
+
+collections_badges_ui <- function(collections) {
+  collections_column_ui(collections)
 }
 
 contribute_step_title <- function(text, kind = c("folder", "package", "registry", "check")) {
@@ -3199,7 +3356,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: 1fr 3rem 4.5rem 6rem;
+      grid-template-columns: 1fr 4.5rem 3rem 4.5rem 6rem;
       gap: 12px;
       align-items: start;
     }
@@ -3215,6 +3372,39 @@ ui <- tagList(
     .study-run-col {
       text-align: right;
       white-space: nowrap;
+    }
+    .study-collections-col {
+      text-align: center;
+      white-space: nowrap;
+      line-height: 1.6;
+    }
+    .collection-tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 0.1rem 0.35rem;
+      border-radius: 0.2rem;
+      margin: 0 0.1rem 0.1rem 0;
+      color: #fff;
+      vertical-align: middle;
+    }
+    .collection-tag-apsr { background: #0d6efd; }
+    .collection-tag-pde { background: #198754; }
+    .collection-tag-wb { background: #0dcaf0; color: #084298; }
+    .collection-tag-ipi { background: #6f42c1; }
+    .collection-tag-other { background: #6c757d; }
+    .collection-tag-more { background: #e9ecef; color: #495057; }
+    .collections-legend .collection-tag { cursor: default; }
+    .maintainer-link {
+      font-size: 0.9rem;
+      color: #6c757d;
+      text-decoration: none;
+      border-bottom: 1px dotted #adb5bd;
+    }
+    .maintainer-link:hover {
+      color: #495057;
+      text-decoration: none;
     }
     .study-repo-col {
       text-align: center;
@@ -3360,7 +3550,7 @@ ui <- tagList(
           tags$h4(class = "mb-0", "2. Tables & figures"),
           actionButton(
             "check_system_compat",
-            "Check compatibility",
+            "Check system compatibility",
             class = "btn btn-link btn-sm py-0 px-1 text-muted"
           )
         ),
@@ -3384,6 +3574,17 @@ ui <- tagList(
     "Studies",
     fluidPage(
       class = "px-3 py-2",
+      fluidRow(
+        column(
+          width = 4,
+          selectInput(
+            "studies_collection_filter",
+            "Collection",
+            choices = registry_collection_choices(registry_index),
+            selected = ""
+          )
+        )
+      ),
       uiOutput("studies_bibliography")
     )
   ),
@@ -3441,6 +3642,12 @@ server <- function(input, output, session) {
     session,
     "study_select",
     choices = c("Choose a study…" = "", nice_doi_choices(registry_index))
+  )
+  updateSelectInput(
+    session,
+    "studies_collection_filter",
+    choices = registry_collection_choices(registry_index),
+    selected = ""
   )
 
   state <- reactiveValues(
@@ -3699,16 +3906,22 @@ server <- function(input, output, session) {
   output$studies_bibliography <- renderUI({
     req(registry_index)
     idx <- registry_index[studies_for_bibliography(registry_index), , drop = FALSE]
+    idx <- filter_index_by_collection(idx, input$studies_collection_filter)
 
     rows <- lapply(seq_len(nrow(idx)), function(i) {
       row <- idx[i, , drop = FALSE]
       cite <- format_study_citation(row)
       engines <- study_engine_availability_for_row(row)
+      collections <- parse_index_collections(row)
       tags$div(
         class = "study-citation",
         tags$div(
           tags$div(cite$line1),
           tags$div(class = "text-muted", style = "font-size: 0.9rem;", cite$line2)
+        ),
+        tags$div(
+          class = "study-collections-col",
+          collections_column_ui(collections)
         ),
         tags$div(
           class = "study-repo-col",
@@ -3738,11 +3951,13 @@ server <- function(input, output, session) {
       tags$div(
         class = "study-list-header",
         tags$div("Study"),
+        tags$div(class = "study-collections-col", "Tags"),
         tags$div(class = "study-repo-col", "Repo"),
         tags$div(class = "study-engine-col", "Languages"),
         tags$div(class = "study-run-col", "Replication")
       ),
-      rows
+      rows,
+      collections_legend_ui()
     )
   })
 
@@ -3781,7 +3996,9 @@ server <- function(input, output, session) {
         }),
         h4(paper$title %||% state$doi),
         p(
-          strong("DOI: "), doi_link_ui(doi_value), br(),
+          strong("DOI: "), doi_link_ui(doi_value),
+          if (nrow(row) > 0) maintainer_link_ui(row),
+          br(),
           strong("Authors: "), format_authors_summary(paper$authors %||% ""), br(),
           if (!is.null(paper$year) && nzchar(as.character(paper$year))) {
             tagList(strong("Year: "), paper$year, br())

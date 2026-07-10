@@ -17,7 +17,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 library(replicateEverything)
 ```
 
-## Check compatibility (no installs)
+## Check system compatibility (no installs)
 
 Before running tables or figures, confirm the machine matches what `replication.yml` declares:
 
@@ -27,7 +27,7 @@ check_study_compatibility("10.1017/S0003055426101749")
 
 The returned list includes `ready` (logical), `install_needed`, and per-engine blocks under `dependencies` (`r`, `python`, `stata`).
 
-In Shiny, use **Check compatibility** above the tables list. When something is missing, a dialog shows the same maintainer commands documented here.
+In Shiny, use **Check system compatibility** above the tables list. When something is missing, a dialog shows the same maintainer commands documented here.
 
 ## Install dependencies for one study
 

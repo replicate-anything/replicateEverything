@@ -47,8 +47,8 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 - [ ] 7. Extract pipeline → code/steps/ + prep: in replication.yml
 - [ ] 8. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
 - [ ] 9. Port figures → code/figures/fig_N.{R,py}; helpers → code/helpers/
-- [ ] 10. **Write replication.yml** from dependency inventory — folder-replication Step 3b (`languages:`, `paper.dependencies`, `python_dependencies:`, `stata_*`)
-- [ ] 11. Registry stub + index.csv row (or drafts/ while WIP)
+- [ ] 10. **Write replication.yml** from dependency inventory — folder-replication Step 3b (`languages:`, `maintainer:`, `collections:`, `paper.dependencies`, `python_dependencies:`, `stata_packages:`)
+- [ ] 11. Registry stub + **index.csv row** (collections, maintainer, languages precompiled)
 - [ ] 12. testthat smoke tests
 - [ ] 13. Build artifacts/ + manifest.json (`build_study_artifacts(..., install_deps = TRUE)`)
 - [ ] 14. Validate engines + Shiny (Display + Run + Check system compatibility)
@@ -179,10 +179,13 @@ languages:
 stata_packages:
   - ftools
   - reghdfe
+  - require
   - estout
 ```
 
 Maintainers run once: `install_study_dependencies("<doi>")`. Live Run and Shiny probe only.
+
+When **`reghdfe` is in table code**, **`require` must be in this list** — SSC 6.x depends on it. Probes that only run `help reghdfe` can pass while live Run fails with `r(9)`.
 
 Optional **custom** `stata_dependencies:` / `stata_deps_probe:` `.do` files only for exotic GitHub-only stacks or non-SSC packages (rare).
 
@@ -225,11 +228,8 @@ python_dependencies:
 stata_packages:
   - ftools
   - reghdfe
+  - require
   - estout
-
-stata_dependencies:
-  - code/helpers/install_stata_deps.do
-stata_deps_probe: code/helpers/probe_stata_deps.do
 
 replications:
   - id: fig_2
@@ -328,7 +328,19 @@ Authors often use `version 18`. If the machine has Stata 17, change to `version 
 
 ### Stata packages
 
-**Do not document manual `ssc install` as the primary path.** Use `stata_dependencies:` + `install_stata_deps.do` (Step 3b). Pin package versions when authors used older stacks (e.g. SSC `reghdfe` 5.x vs GitHub 6.x + `require`).
+**Do not document manual `ssc install` as the primary path.** List SSC ado names under `stata_packages:` (Step 3b). replicateEverything auto-generates install + probe scripts.
+
+When **`reghdfe` appears in table code**, also list **`require`** — SSC now ships `reghdfe` 6.x, which depends on `require`. A server can pass `help reghdfe` in the probe yet fail live Run on the first `reghdfe` call if `require` is missing (`r(9)`).
+
+```yaml
+stata_packages:
+  - ftools
+  - reghdfe
+  - require
+  - estout
+```
+
+Custom `install_stata_deps.do` / `stata_deps_probe:` are **rare** — only for GitHub-only stacks or exotic version pins.
 
 ## Step 6 — R figures
 
@@ -385,6 +397,13 @@ paper:
 
 repo: replicate-anything/rep-10.1017-s0003055426101749
 
+maintainer:
+  name: Jane Maintainer
+  email: maintainer@example.org
+
+collections:
+  - APSR
+
 python_dependencies:
   - pandas
   - scikit-learn
@@ -393,11 +412,8 @@ python_dependencies:
 stata_packages:
   - ftools
   - reghdfe
+  - require
   - estout
-
-stata_dependencies:
-  - code/helpers/install_stata_deps.do
-stata_deps_probe: code/helpers/probe_stata_deps.do
 
 prep: [ ... ]
 
@@ -542,9 +558,9 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 | Monolithic `DO18_main_analyses.do` | Split into `mk_tab_N.do`; shared setup in `code/helpers/setup_analysis.do` |
 | Temp `.dta` in author cwd | Save under `${result}/` via `global result` |
 | `version 18` on Stata 17 | Use `version 17` |
-| `reghdfe` / `estout` not found | Step 3a search → `stata_packages:` + `install_stata_deps.do` + `stata_deps_probe:`; call `init_study_paths.do` in every Stata runner |
-| `reghdfe` 6.x / `require` package conflict | Pin SSC `reghdfe` 5.x in `install_stata_deps.do`; uninstall GitHub 6.x stack |
-| Shiny “not configured” for Stata deps | Add `languages:`, `stata_deps_probe:`, and `stata_packages:` to study `replication.yml` (registry stub does not carry these) |
+| `reghdfe` / `estout` not found | Step 3a search → `stata_packages:` (include `require` when `reghdfe` is listed); call `init_study_paths.do` in every Stata runner |
+| `reghdfe` fails at runtime (`r(9)`) but probe passed | SSC `reghdfe` 6.x needs `require` — add to `stata_packages:` and run `install_study_dependencies(doi)` |
+| Shiny “not configured” for Stata deps | Add `languages:` and `stata_packages:` to study `replication.yml` (registry stub does not carry these) |
 | Stata names in R `dependencies` | Only CRAN packages in `paper.dependencies` / R entry `dependencies` — not `reghdfe`, `estout` |
 | `format_tab_N not found` for Stata tables | Use `format: code/helpers/format_stata.R` (shared formatter); replicateEverything falls back to `format_tab_N_stata` |
 | Figure with `output:` only (no `artifact:`) | Treated as prep — add `artifact:` for display figures |
@@ -567,7 +583,7 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 2. Restart Shiny after package reinstall.
 3. Check footer: `replicateEverything 0.5.0 · <sha> · installed` — confirms which build is live.
 4. **Stata + Python on PATH**. Committed inputs (≤50MB) arrive with the clone; only >50MB files must be deployed manually or rebuilt by prep.
-5. First replication run: `install_deps=TRUE` (default in Shiny live display) installs SSC/CRAN/pip automatically when study has `stata_dependencies`, `paper.dependencies`, and Python entry `dependencies` wired correctly.
+5. First replication run: `install_deps=TRUE` (default in Shiny live display) installs SSC/CRAN/pip automatically when study has `stata_packages:`, `paper.dependencies`, and Python entry `dependencies` wired correctly.
 6. Stata first run needs **internet once** for SSC; document offline fallback in study README if needed.
 
 ## Additional references

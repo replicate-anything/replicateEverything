@@ -52,12 +52,12 @@ Copy and track progress:
 - [ ] 1. Inventory delivered materials (scripts, data, outputs)
 - [ ] 2. Create GitHub study repo (empty) + local clone as monorepo sibling
 - [ ] 3a. **Search all code** for R, Stata, and Python dependencies (Step 3a)
-- [ ] 3b. **Write `replication.yml`** — languages, deps, prep, replications (Step 3b)
+- [ ] 3b. **Write `replication.yml`** — languages, deps, prep, replications, **maintainer**, **collections** (Step 3b)
 - [ ] 4. Structure repo: code/, data/, artifacts/; add Stata install/probe helpers if needed
 - [ ] 5. Refactor code into make_<id>() + format_<id>() per replication
 - [ ] 6. Build artifacts; write artifacts/manifest.json
 - [ ] 7. Add testthat tests (run_replication + artifact match)
-- [ ] 8. Slim registry stub; update index.csv repo column
+- [ ] 8. Slim registry stub; update **index.csv** row (repo, collections, maintainer, languages)
 - [ ] 9. Remove code/data/artifacts from registry study folder (if migrating)
 - [ ] 10. Verify replicateEverything + Shiny (Display + Run + system compatibility check)
 - [ ] 11. Commit and push study repo + registry
@@ -129,7 +129,7 @@ rg -n "pip install|!pip" code/ --glob "*.{py,ipynb}"
 **Deduplicate into three lists:**
 
 1. **R (CRAN)** — package names only (not Stata ado names).
-2. **Stata (SSC)** — ado command names for `stata_packages:` (e.g. `reghdfe`, `estout`, `ftools`). replicateEverything auto-installs from SSC and auto-probes (`which` + `help`; special handling for `reghdfe` / GitHub conflicts).
+2. **Stata (SSC)** — ado command names for `stata_packages:` (e.g. `reghdfe`, `estout`, `ftools`). When **`reghdfe` appears anywhere in `.do` files, also list `require`** — SSC `reghdfe` 6.x depends on it and tables fail at runtime without it even when `help reghdfe` works. replicateEverything auto-installs from SSC and auto-probes (`which` + `help`; refreshes the `ftools` / `reghdfe` / `require` stack when needed).
 3. **Python (PyPI)** — distribution names (`scikit-learn`, not `sklearn`).
 
 **Do not** put Stata ado names in `paper.dependencies` or R `dependencies:` — replicateEverything installs CRAN packages for R only.
@@ -153,6 +153,13 @@ paper:
 
 repo: replicate-anything/rep-10.1177-00491241211036161
 
+maintainer:              # required for every new study repo
+  name: Jane Maintainer
+  email: maintainer@example.org
+
+collections:             # one or more tags; synced to registry index.csv
+  - IPI
+
 languages:               # every engine used anywhere (prep + replications)
   - r
   - stata
@@ -163,6 +170,7 @@ python_dependencies:     # omit if no Python; study-wide PyPI list from Step 3a
 
 stata_packages:          # SSC ado names from Step 3a (auto install + probe)
   - reghdfe
+  - require               # mandatory when reghdfe is listed (SSC 6.x stack)
   - estout
   - ftools
 
@@ -200,7 +208,9 @@ replications:
 | `languages:` | Union of engines in prep + replications (or infer from `.R` / `.do` / `.py` / `.ipynb` paths) |
 | `paper.dependencies` | All unique CRAN packages from R scripts and `format_*.R` helpers |
 | `python_dependencies:` | All unique PyPI names from Python scripts/notebooks |
-| `stata_packages:` | User-written ado names used in `.do` files — **default for all Stata studies** |
+| `stata_packages:` | User-written ado names used in `.do` files — **default for all Stata studies**. Include **`require`** whenever **`reghdfe`** is listed. |
+| `maintainer:` | **Required** — person responsible for keeping the study repo and server deps current (name + email) |
+| `collections:` | Optional tags (`APSR`, `PED`, `World Bank`, `IPI`, …) — copied to registry `index.csv` for Shiny filtering |
 | `stata_deps_probe:` | *(Optional)* custom check-only `.do` when auto-probe is insufficient |
 | `stata_dependencies:` | *(Optional)* custom install `.do` for GitHub installs, version pins, unusual order |
 | `replications[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
@@ -286,6 +296,7 @@ languages:
 
 stata_packages:
   - reghdfe
+  - require
   - estout
   - ftools
 ```
@@ -293,7 +304,8 @@ stata_packages:
 replicateEverything **auto-generates** maintainer install and compatibility probe from this list:
 - `ssc install <pkg>, replace` for each package (`estout` → probes `eststo`)
 - `ftools, compile` when `ftools` or `reghdfe` is listed
-- Refreshes broken GitHub `reghdfe` 6.x / `require` stacks on shared servers
+- Installs **`require`** when `reghdfe` is listed (SSC 6.x dependency)
+- Refreshes broken GitHub `reghdfe` 6.x stacks on shared servers
 
 Maintainers: `install_study_dependencies(doi)` once. Live Run and Shiny probe only.
 
@@ -327,7 +339,7 @@ Maintainers: `install_study_dependencies(doi)` once. Live Run and Shiny probe on
 - [ ] Step 3a: dependency search re-run after final code layout
 - [ ] replication.yml: languages + paper.dependencies + python_dependencies + stata_packages complete
 - [ ] replication.yml parses; each code:/data:/artifact: path exists
-- [ ] check_study_compatibility() or Shiny “Check compatibility” passes (or documents expected gaps)
+- [ ] check_study_compatibility() or Shiny “Check system compatibility” passes (or documents expected gaps)
 - [ ] Artifacts committed; manifest if used
 - [ ] Registry stub + index.csv repo column updated
 - [ ] study tests: testthat::test_dir("tests/testthat")
@@ -506,10 +518,25 @@ git push origin main
 
 See `registry/guides/folder-replication.md` in the monorepo.
 
+## Registry `index.csv` columns
+
+When merging a study row into [registry/index.csv](https://github.com/replicate-anything/registry/blob/main/index.csv), include precompiled metadata so Shiny does not fetch each study repo on load:
+
+| Column | Source |
+|--------|--------|
+| `collections` | Pipe-separated tags from `replication.yml` (`APSR\|PED`) |
+| `maintainer_name`, `maintainer_email` | `maintainer:` block |
+| `languages` | Semicolon-separated engines (`r;stata;python`) from `languages:` or inferred from replications |
+
+`prepare_folder_paper()` writes these via `folder_registry_index_row()`. **Every new contribution must name a maintainer** — do not leave these blank.
+
 ## Common pitfalls
 
-- **Skipping Step 3a** — yaml missing `reghdfe`, `haven`, or `pandas` because only the main script was read
-- **Stata names in `paper.dependencies`** — use `stata_packages:` / install script instead
+- **Skipping Step 3a** — yaml missing `reghdfe`, `require`, `haven`, or `pandas` because only the main script was read
+- **`reghdfe` without `require`** — probe can pass (`help reghdfe`) while table code fails at runtime with `r(9)` on shared servers where SSC ships `reghdfe` 6.x; always grep for `reghdfe` in `.do` files and list both in `stata_packages:`
+- **Assuming SSC `reghdfe` is still 5.x** — current SSC installs 6.x; do not pin 5.x or uninstall `require` unless you have a documented reason
+- **No maintainer** — every study repo needs `maintainer:` (name + email); registry index row should match
+- **Stata names in `paper.dependencies`** — use `stata_packages:` instead
 - Putting the **stub** yaml in the study repo (must be **full** yaml with `replications:`)
 - Forgetting to update `index.csv` `repo` column
 - `label` duplicating Shiny sidebar (use `description` for captions; labels like "Table 1" are optional)

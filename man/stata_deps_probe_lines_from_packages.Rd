@@ -2,7 +2,7 @@
 % Please edit documentation in R/stata_replication.R
 \name{stata_deps_probe_lines_from_packages}
 \alias{stata_deps_probe_lines_from_packages}
-\title{Build a minimal Stata probe for declared SSC package names}
+\title{Build a Stata probe from \code{stata_packages:}}
 \usage{
 stata_deps_probe_lines_from_packages(packages)
 }
@@ -13,6 +13,6 @@ stata_deps_probe_lines_from_packages(packages)
 Character vector of Stata commands.
 }
 \description{
-Build a minimal Stata probe for declared SSC package names
+Uses \code{which} plus \code{help} (and reghdfe runtime checks when needed).
 }
 \keyword{internal}

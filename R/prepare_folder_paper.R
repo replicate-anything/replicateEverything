@@ -13,6 +13,14 @@ folder_registry_index_row <- function(meta, study_root) {
   if (!nzchar(handle)) {
     handle <- folder
   }
+  collections <- meta$collections %||% paper$collections %||% character(0)
+  collections <- unique(na.omit(as.character(unlist(collections, use.names = FALSE))))
+  collections <- paste(collections[nzchar(collections)], collapse = "|")
+  maintainer <- meta$maintainer %||% list()
+  maintainer_name <- as.character(maintainer$name %||% maintainer$Name %||% "")
+  maintainer_email <- as.character(maintainer$email %||% maintainer$Email %||% "")
+  languages <- study_declared_languages(meta)
+  languages <- paste(languages[nzchar(languages)], collapse = ";")
   data.frame(
     folder = folder,
     handle = handle,
@@ -22,6 +30,10 @@ folder_registry_index_row <- function(meta, study_root) {
     year = as.integer(paper$year %||% NA_integer_),
     authors = authors,
     repo = infer_study_repo_slug(study_root, meta),
+    collections = collections,
+    maintainer_name = maintainer_name,
+    maintainer_email = maintainer_email,
+    languages = languages,
     stringsAsFactors = FALSE
   )
 }

@@ -691,18 +691,19 @@ stata_probe_command <- function(pkg) {
 
 #' Stata install lines for the SSC \code{ftools} + \code{reghdfe} stack
 #'
-#' Handles GitHub 6.x / broken partial installs on shared servers.
+#' Current SSC \code{reghdfe} (6.x) requires the \code{require} package. Refreshes
+#' broken partial installs on shared servers.
 #'
 #' @keywords internal
 stata_reghdfe_stack_install_lines <- function() {
   c(
-    "* SSC ftools + reghdfe (refreshes GitHub 6.x / broken installs)",
+    "* SSC ftools + reghdfe 6.x (+ require)",
     "local refresh 0",
-    "cap which require",
-    "if !_rc local refresh 1",
-    "if !`refresh' {",
-    "    cap which reghdfe",
-    "    if !_rc {",
+    "cap which reghdfe",
+    "if !_rc {",
+    "    cap which require",
+    "    if _rc local refresh 1",
+    "    if !`refresh' {",
     "        cap noi reghdfe",
     "        if _rc == 9 local refresh 1",
     "        if !`refresh' {",
@@ -712,7 +713,7 @@ stata_reghdfe_stack_install_lines <- function() {
     "    }",
     "}",
     "if `refresh' {",
-    '    di as txt "Refreshing SSC ftools/reghdfe stack..."',
+    '    di as txt "Refreshing SSC ftools/reghdfe/require stack..."',
     "    cap ado uninstall reghdfe",
     "    cap ado uninstall ftools",
     "    cap ado uninstall require",
@@ -725,6 +726,9 @@ stata_reghdfe_stack_install_lines <- function() {
     'di as txt "Installing reghdfe from SSC..."',
     "cap which reghdfe",
     "if _rc ssc install reghdfe, replace",
+    'di as txt "Installing require from SSC (reghdfe 6.x dependency)..."',
+    "cap which require",
+    "if _rc ssc install require, replace",
     "cap help reghdfe",
     "if _rc {",
     '    di as err "reghdfe failed to load after SSC install."',
@@ -755,7 +759,7 @@ stata_deps_install_lines_from_packages <- function(packages) {
     lines <- c(lines, stata_reghdfe_stack_install_lines())
   }
   for (pkg in packages) {
-    if (needs_reghdfe && pkg %in% c("ftools", "reghdfe")) {
+    if (needs_reghdfe && pkg %in% c("ftools", "reghdfe", "require")) {
       next
     }
     cmd <- stata_probe_command(pkg)
@@ -811,7 +815,7 @@ stata_deps_probe_lines_from_packages <- function(packages) {
       "cap which reghdfe",
       "if _rc exit 11",
       "cap which require",
-      "if !_rc exit 14",
+      "if _rc exit 16",
       "cap noi reghdfe",
       "if _rc == 9 exit 12",
       "if _rc != 0 & _rc != 301 exit 15",
@@ -819,7 +823,7 @@ stata_deps_probe_lines_from_packages <- function(packages) {
       "if _rc exit 12"
     )
   }
-  other <- packages[!packages %in% c("ftools", "reghdfe")]
+  other <- packages[!packages %in% c("ftools", "reghdfe", "require")]
   for (i in seq_along(other)) {
     pkg <- other[[i]]
     cmd <- stata_probe_command(pkg)
