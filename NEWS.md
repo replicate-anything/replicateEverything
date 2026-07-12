@@ -12,9 +12,14 @@
 * Removed legacy path fallbacks (`artifacts/`, `data/processed/` as implicit output locations). Study repos must declare and write **`outputs/`** paths explicitly.
 * Format steps are **`type: format`** children of tables/figures; run via `format = TRUE` unless `format = FALSE`.
 * [configure_local_monorepo()] wires registry + sibling study folders for local dev.
-* [study_output_dir()] is the preferred name for [study_artifact_dir()].
+* [study_output_dir()] is the preferred name for the display output directory; [study_artifact_dir()] is now internal.
 * **Step inheritance** — extension studies declare `paper.extends` and `inherit:` steps; inherited pipeline steps run in the base repo, extension analyses read base `outputs/`. New vignette: `vignette("reanalysis-studies")`. Worked example: Fearon & Laitin reanalysis (`rep-10.1017-S0003055403000534--alt-1`).
 * Studies without an article DOI may use **`paper.study_handle`** (registry handle) instead of `paper.doi`.
+* **`paper.article_url`** — optional publisher landing page when `https://doi.org/...` fails; [paper_article_url()] and Shiny bibliography links use it. Registry `index.csv` carries `article_url` when set in the stub.
+* [list_replications()] gains **`grouped`**, **`include`** (`"display"`, `"pipeline"`, `"all"`), consolidating [list_replication_groups()] and [list_prep_steps()] (both deprecated).
+* New overview vignette: **`vignette("why-replicateEverything")`** (first article on the site).
+* [list_replications()] gains a compact **print method** (`replication_list` class). `given` defaults to `"nothing"` when `what = "everything"`.
+* [audit_everything()] runs published-value checks from `tests/substantive/<step_id>.R` when present (`substantive = TRUE` by default). New helper: [check_glm_table_benchmark()] for logit tables.
 
 # replicateEverything 0.5.1
 

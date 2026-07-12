@@ -2,17 +2,17 @@
 name: apsr-to-replicate-everything
 description: >-
   Convert an APSR Cambridge Dataverse replication package into a folder-backed
-  replicateEverything study repo (prep steps, Stata/R/Python engines,
-  replication.yml, registry stub, artifacts, tests, Shiny). Use when onboarding
-  APSR Dataverse deliveries, Cambridge Core archives, rep-10.1017-* study repos,
-  or when the user mentions APSR_to_replicateEverything.
+  replicateEverything study repo (infer step DAG from author delivery, Stata/R/Python
+  engines, replication.yml with steps:, registry stub, outputs/, tests, Shiny). Use
+  when onboarding APSR Dataverse deliveries, Cambridge Core archives, rep-10.1017-*
+  study repos, or when the user mentions APSR_to_replicateEverything.
 ---
 
 # APSR Dataverse → replicateEverything
 
 Turn a **flat APSR Dataverse delivery** (`README.txt`, `Codebook.pdf`, monolithic `.do` files, mixed Stata/R/Python) into a **folder-backed study repo** wired to [replicateEverything](https://github.com/replicate-anything/replicateEverything) and the [registry](https://github.com/replicate-anything/registry).
 
-**Companion skills:** `folder-replication` (generic layout), `update-my-skills` (sync this folder to Cursor).
+**Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml), `update-my-skills` (sync this folder to Cursor).
 
 **Canonical example:** `rep-10.1017-s0003055426101749` (Jiang & Yang, *Portraits of Power*).
 
@@ -37,23 +37,24 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 
 ## Workflow checklist
 
-Every study needs **`maintainer:`** (name + email) and should list **`collections:`** (typically `APSR` for this workflow) in root `replication.yml`. Sync to registry `index.csv` with **`build_registry_index()`** after copying the stub — see folder-replication Step 3b.
+Every study needs **`maintainer:`** (name + email) and should list **`collections:`** (typically `APSR` for this workflow) in root `replication.yml`. Sync to registry `index.csv` with **`build_registry_index()`** after copying the stub — see folder-replication Step 4b.
 
 ```
 - [ ] 1. Read README.txt + Codebook.pdf; list main-text tables/figures
-- [ ] 2. Inventory engines (Stata / R / Python) and pipeline order
-- [ ] 3. Create study repo layout (see Target layout)
-- [ ] 4. Stage data in data/raw/; commit data ≤50MB, gitignore only >50MB (list by name)
-- [ ] 5. **Search all code for dependencies** — folder-replication Step 3a + APSR patterns below
-- [ ] 6. Add dependency automation (Stata install script, R CRAN, Python pip)
-- [ ] 7. Extract pipeline → code/steps/ + prep: in replication.yml
-- [ ] 8. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
-- [ ] 9. Port figures → code/figures/fig_N.{R,py}; helpers → code/helpers/
-- [ ] 10. **Write replication.yml** from dependency inventory — folder-replication Step 3b (`languages:`, `maintainer:`, `collections:`, `paper.dependencies`, `python_dependencies:`, `stata_packages:`)
-- [ ] 11. Registry stub + run **`build_registry_index()`** (collections, maintainer, languages in `index.csv`)
-- [ ] 12. testthat smoke tests
-- [ ] 13. Build artifacts/ + manifest.json (`build_study_artifacts(..., install_deps = TRUE)`)
-- [ ] 14. Validate engines + Shiny (Display + Run + Check system compatibility)
+- [ ] 2. **Reconstruct step DAG** from README order + script file I/O (folder-replication Step 1b)
+- [ ] 3. Inventory engines (Stata / R / Python) and pipeline order
+- [ ] 4. Create study repo layout (see Target layout)
+- [ ] 5. Stage data in data/raw/; commit data ≤50MB, gitignore only >50MB (list by name)
+- [ ] 6. **Search all code for dependencies** — folder-replication Step 4a + APSR patterns below
+- [ ] 7. Add dependency automation (Stata install script, R CRAN, Python pip)
+- [ ] 8. Extract pipeline → code/steps/ + transform steps in replication.yml
+- [ ] 9. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
+- [ ] 10. Port figures → code/figures/fig_N.{R,py}; helpers → code/helpers/
+- [ ] 11. **Write replication.yml** — `steps:` DAG + deps (folder-replication Step 4b)
+- [ ] 12. Registry stub + run **`build_registry_index()`**
+- [ ] 13. testthat smoke tests
+- [ ] 14. Build outputs/ + manifest.json (`build_study_artifacts(..., install_deps = TRUE)`)
+- [ ] 15. Validate engines + Shiny (Display + Run + Check system compatibility)
 ```
 
 ## Step 1 — Read the delivery
@@ -88,15 +89,31 @@ rep-<doi-hyphenated>/
     tables/                  # tab_N.do runners + mk_tab_N.do
     figures/                 # fig_N.R / fig_N.py
     helpers/                 # setup_analysis.do, format_stata.R
-  artifacts/
+  outputs/
     manifest.json
-    fig_*.png                # display artifacts (commit)
-    tab_*.html               # display artifacts (commit after format)
+    fig_*.png                # display outputs (commit)
+    tab_*.html               # display outputs (commit after format)
+    <step_id>/               # intermediate step products
     staging/                 # Stata logs (gitignore)
   tests/testthat/
 ```
 
 **No** `code/original/`, `code/stata/`, `code/prep/` — use `steps/`, `helpers/`, engine-agnostic names.
+
+## Step 2b — Map author README to a step DAG
+
+APSR deliveries almost always document pipeline order in **README.txt**. That
+numbered list is the primary source for `steps:` — not a guess from table ids alone.
+
+| README pattern | Step yaml |
+|----------------|-----------|
+| Step 0: merge / construct dataset | `type: transform`, `parents: []`, raw `inputs:` from `data/raw/` |
+| Step 1: main tables | One `type: table` per table, `parents: [construct_…]` |
+| Later: figures / ML / conjoint | `type: figure` or extra transforms as needed |
+| Shared `.dta` used by many scripts | **One** transform step; tables point to `outputs/<step_id>/…` |
+
+Trace **`use` / `merge` / `save`** in monolithic `.do` files to confirm edges. See
+**folder-replication Step 1b** for the full agent workflow and Fearon/Jiang examples.
 
 ## Step 3 — Data staging
 
@@ -111,14 +128,14 @@ study repo**. Uncommitted inputs are missing from the clone and steps fail with
 | File size | Handling |
 |-----------|----------|
 | **≤ 50 MB** | Commit under `data/` — live runs work from any clone. |
-| **> 50 MB** | Keep out of git. Stage under `registry/data/<folder>/` for manual deploy to the server, document the source in `data/raw/README.md`, rely on precomputed `artifacts/`, and list the file explicitly in `.gitignore`. |
+| **> 50 MB** | Keep out of git. Stage under `registry/data/<folder>/` for manual deploy to the server, document the source in `data/raw/README.md`, rely on precomputed `outputs/`, and list the file explicitly in `.gitignore`. |
 
 4. `.gitignore` (keep data; exclude only logs, staging, and oversized files by name):
 
 ```gitignore
 .Rproj.user/
 *.log
-artifacts/staging/
+outputs/staging/
 
 # Commit data so live replication works from a clone. Only exclude inputs
 # too large for git (>50 MB): keep those out, stage under registry/data/<folder>/,
@@ -136,7 +153,7 @@ too when ≤ 50 MB so tables run without re-running heavy prep.
 
 ## Step 3a — Search for all dependencies (before yaml)
 
-**Follow folder-replication Step 3a** for the generic workflow. APSR deliveries need extra passes because dependencies are scattered across monolithic `.do` files, `(RCODE)_*.R`, and `(Python)_*.ipynb`.
+**Follow folder-replication Step 4a** for the generic workflow. APSR deliveries need extra passes because dependencies are scattered across monolithic `.do` files, `(RCODE)_*.R`, and `(Python)_*.ipynb`.
 
 **Search the source delivery folder and refactored `code/`:**
 
@@ -205,7 +222,7 @@ Do **not** rely on authors running `ssc install` by hand, and **do not** install
 
 ### replication.yml dependency block
 
-Use the **Step 3a inventory** — do not hand-write a partial list. See **folder-replication Step 3b** for the full yaml template.
+Use the **Step 3a inventory** — do not hand-write a partial list. See **folder-replication Step 4b** for the full yaml template.
 
 ```yaml
 languages:
@@ -255,43 +272,50 @@ build_study_artifacts("rep-10.1017-s0003055426101749", install_deps = TRUE)
 
 **Prerequisites on the machine:** Stata (batch), R 4.x, Python 3.10+ on PATH (or `Sys.setenv(PYTHON=...)`). Internet on first run for SSC/CRAN/pip.
 
-## Step 4 — Prep steps (`prep:` block)
+## Step 4 — Transform steps (`steps:` block)
 
-Map README step 0 (and similar) to `type: step` entries:
+Map README step 0 (and similar) to `type: transform` entries with explicit `parents:` and `outputs:`:
 
 ```yaml
-prep:
+steps:
   - id: construct_analysis_dataset
-    type: step
+    type: transform
     label: Construct analysis dataset
-    engine: stata
-    code: code/steps/construct_analysis_dataset.do
+    parents: []
     inputs:
       - data/raw/all_asperson_original.dta
       - data/raw/CPED_2022.dta
-    output: data/processed/all_asperson_fulldata.dta
+    outputs:
+      - outputs/construct_analysis_dataset/all_asperson_fulldata.dta
+    engine: stata
+    code: code/steps/construct_analysis_dataset.do
 
   - id: run_random_forest
-    type: step
+    type: transform
+    label: Random forest prep
+    parents:
+      - construct_analysis_dataset
+    inputs:
+      - outputs/construct_analysis_dataset/all_asperson_fulldata.dta
+    outputs:
+      - outputs/run_random_forest/promotion_results.csv
     engine: python
     code: code/steps/run_random_forest.ipynb
-    inputs:
-      - data/processed/all_asperson_fulldata.dta
-    output: data/raw/promotion_results.csv
     dependencies:
       - pandas
-      - numpy
       - scikit-learn
       - imbalanced-learn
       - jupyter
       - nbconvert
 ```
 
-Downstream replications use `requires: [construct_analysis_dataset]`.
+Downstream tables/figures set `parents: [construct_analysis_dataset]` (and other
+transforms as needed).
 
-`run_replication(..., "everything")` runs prep first (skip if output exists unless forced).
+`run_replication(..., "tab_1", given = "nothing")` runs upstream transforms first
+(skip if `outputs/` exist unless `force = TRUE`).
 
-**Audit:** `audit_everything()` should include prep steps and Python engines — verify after onboarding.
+**Audit:** `audit_everything()` walks all non-format steps — verify after onboarding.
 
 ## Step 5 — Stata tables
 
@@ -361,7 +385,7 @@ if (sys.nframe() == 0L) make_fig_N()
 ```
 
 - Read paths from `data/raw/`
-- `ggsave` → `artifacts/fig_N.png` when run via replicateEverything
+- `ggsave` → `outputs/fig_N.png` when run via replicateEverything
 - List all input CSVs under `data:` in yaml
 
 ## Step 7 — Python figures / prep
@@ -379,7 +403,7 @@ out = Path(os.environ.get("REPLICATE_PYTHON_OUTPUT", root / "artifacts" / "fig_2
 
 ## Step 8 — replication.yml (main text)
 
-**Construct from Step 3a inventory** using folder-replication Step 3b. Minimum APSR main-text block:
+**Construct from Step 4a dependency inventory and Step 2b DAG** using folder-replication Step 4b. Minimum APSR main-text block:
 
 ```yaml
 languages:
@@ -390,26 +414,7 @@ languages:
 paper:
   doi: https://doi.org/10.1017/S0003055426101749
   title: "..."
-  journal: American Political Science Review
-  year: 2026
-  authors: "..."
-  dependencies:
-    - ggplot2
-    - dplyr
-
-repo: replicate-anything/rep-10.1017-s0003055426101749
-
-maintainer:
-  name: Jane Maintainer
-  email: maintainer@example.org
-
-collections:
-  - APSR
-
-python_dependencies:
-  - pandas
-  - scikit-learn
-  # ... full list from Step 3a
+  # ...
 
 stata_packages:
   - ftools
@@ -417,38 +422,39 @@ stata_packages:
   - require
   - estout
 
-prep: [ ... ]
+steps:
+  - id: construct_analysis_dataset
+    type: transform
+    # ... see Step 4
 
-replications:
   - id: tab_1
     type: table
     label: Table 1
+    parents:
+      - construct_analysis_dataset
+    inputs:
+      - outputs/construct_analysis_dataset/all_asperson_fulldata.dta
     engine: stata
-    requires: [construct_analysis_dataset]
-    data: data/processed/all_asperson_fulldata.dta
     code: code/tables/tab_1.do
     format: code/helpers/format_stata.R
-    output: artifacts/staging/tab_1_stata.log
-    artifact: artifacts/tab_1.html   # sole display artifact path (Shiny reads this only)
+    outputs:
+      - outputs/tab_1.html
+    artifact: outputs/tab_1.html
 
   - id: fig_2
     type: figure
     label: Figure 2
+    parents: []
     engine: python
     code: code/figures/fig_2.py
-    data: data/raw/10fold_training_results.csv
-    output: artifacts/fig_2.png
-    artifact: artifacts/fig_2.png
-    dependencies:
-      - pandas
-      - matplotlib
-      - seaborn
-      - scipy
+    inputs:
+      - data/raw/10fold_training_results.csv
+    outputs:
+      - outputs/fig_2.png
+    artifact: outputs/fig_2.png
 ```
 
-**Figure vs prep routing:** Display figures need **both** `output:` and `artifact:`. Entries with `output:` but no `artifact:` are treated as prep/pipeline steps.
-
-**Artifact wiring:** `artifact:` in `replication.yml` is the **only** path Shiny/`get_artifact_path()` uses (no extension guessing). Stata tables: export with `esttab ... using "${result}/tab_N_table.html", html replace` in `mk_tab_N.do`; `format_stata.R` reads that file, not the full log.
+**Display paths:** `artifact:` (and primary `outputs:` entry) is the **only** path Shiny uses. Stata tables: export with `esttab ... using "${result}/tab_N_table.html", html replace` in `mk_tab_N.do`; `format_stata.R` reads that file, not the full log.
 
 | Engine | yaml `engine` | `code` extension | `dependencies` installs |
 |--------|---------------|------------------|-------------------------|
@@ -473,7 +479,7 @@ repo: replicate-anything/rep-10.1017-s0003055426101749
 
 Add row to `registry/index.csv` with `handle`, `doi`, `repo`.
 
-**Do not** put the full `replications:` list in the registry — only in the study repo.
+**Do not** put the full `steps:` list in the registry — only in the study repo.
 
 Move stub to `drafts/` and regenerate `index.csv` to hide from public Shiny dropdown until ready.
 
@@ -495,15 +501,15 @@ options(
 devtools::load_all("<monorepo>/replicateEverything")
 ```
 
-## Step 11 — Build artifacts
+## Step 11 — Build outputs
 
-Use `build_study_artifacts()` with `install_deps = TRUE` (default) so prep, Stata SSC, CRAN, and pip all install on a fresh machine:
+Use `build_study_artifacts()` with `install_deps = TRUE` (default) so transforms, Stata SSC, CRAN, and pip all install on a fresh machine:
 
 ```r
 build_study_artifacts("rep-10.1017-s0003055426101749", install_deps = TRUE)
 ```
 
-This runs prep steps, then every table/figure, writes `artifacts/*` and `artifacts/manifest.json`.
+This runs upstream steps, then every table/figure, writes `outputs/*` and `outputs/manifest.json`.
 
 **Per-item debugging:**
 
@@ -512,19 +518,19 @@ run_replication("10.1017/S0003055426101749", "tab_1", language = "stata", format
 run_replication("10.1017/S0003055426101749", "fig_2", language = "python", install_deps = TRUE)
 ```
 
-Update `artifacts/manifest.json`:
+Update `outputs/manifest.json`:
 
 ```json
 {
   "generated": "YYYY-MM-DD",
   "replications": {
-    "fig_2": { "status": "ok", "artifact": "artifacts/fig_2.png" },
-    "tab_1": { "status": "ok", "artifact": "artifacts/tab_1.html" }
+    "fig_2": { "status": "ok", "artifact": "outputs/fig_2.png" },
+    "tab_1": { "status": "ok", "artifact": "outputs/tab_1.html" }
   }
 }
 ```
 
-**If tables are missing from GitHub `artifacts/`**, they were not built/formatted yet — staging logs alone are not display artifacts.
+**If tables are missing from GitHub `outputs/`**, they were not built/formatted yet — staging logs alone are not display files.
 
 ## Step 12 — Validate
 
@@ -557,15 +563,17 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 
 | Issue | Fix |
 |-------|-----|
+| Wrong pipeline order in yaml | Re-read README.txt; trace `use`/`save` in author scripts (folder-replication Step 1b) |
 | Monolithic `DO18_main_analyses.do` | Split into `mk_tab_N.do`; shared setup in `code/helpers/setup_analysis.do` |
 | Temp `.dta` in author cwd | Save under `${result}/` via `global result` |
 | `version 18` on Stata 17 | Use `version 17` |
-| `reghdfe` / `estout` not found | Step 3a search → `stata_packages:` (include `require` when `reghdfe` is listed); call `init_study_paths.do` in every Stata runner |
+| `reghdfe` / `estout` not found | Step 3a/4a search → `stata_packages:` (include `require` when `reghdfe` is listed); call `init_study_paths.do` in every Stata runner |
 | `reghdfe` fails at runtime (`r(9)`) but probe passed | SSC `reghdfe` 6.x needs `require` — add to `stata_packages:` and run `install_study_dependencies(doi)` |
 | Shiny “not configured” for Stata deps | Add `languages:` and `stata_packages:` to study `replication.yml` (registry stub does not carry these) |
 | Stata names in R `dependencies` | Only CRAN packages in `paper.dependencies` / R entry `dependencies` — not `reghdfe`, `estout` |
 | `format_tab_N not found` for Stata tables | Use `format: code/helpers/format_stata.R` (shared formatter); replicateEverything falls back to `format_tab_N_stata` |
-| Figure with `output:` only (no `artifact:`) | Treated as prep — add `artifact:` for display figures |
+| Figure with `outputs:` only (no `artifact:`) | Add `artifact:` for display figures |
+| Using `prep:`/`replications:` on new studies | Use unified `steps:` + `outputs/` (0.6+) |
 | Python fig prints `[1] "…/fig_2.png"` during build | Fixed in replicateEverything ≥0.5: PNG paths must copy, not `print()` — deploy current package |
 | Python fig shows as engine `r` in audit | Set `engine: python`; audit must pass `language` to `render_replication()` |
 | Shiny "not available for language r" on `fig_2` | Resolve engine-specific id (`fig_2` + `python`) before Run/Display |
@@ -590,7 +598,8 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 
 ## Additional references
 
-- Generic folder workflow: skill `folder-replication`
+- Generic folder workflow + DAG rules: skill `folder-replication` (Step 1b)
+- Package design notes: `inst/docs/step-dag-design.md`, `inst/docs/step-inheritance.md`
 - Stata table template: `rep-10.1017-S0003055403000534` (Fearon)
 - Multi-engine APSR example: `rep-10.1017-s0003055426101749`
 - replicateEverything Shiny: `inst/shiny/app.R`

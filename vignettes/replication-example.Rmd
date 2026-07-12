@@ -15,7 +15,7 @@ knitr::opts_chunk$set(eval = FALSE)
 library(replicateEverything)
 ```
 
-See `vignette("meet-the-functions", package = "replicateEverything")` for a tour of every main function.
+See `vignette("why-replicateEverything", package = "replicateEverything")` for motivation, then `vignette("meet-the-functions", package = "replicateEverything")` for a tour of every main function.
 
 ## Quick start
 
@@ -47,7 +47,7 @@ Registry (index only)              Study repository
   studies/<folder>.yml  ───────►    replication.yml
   index.csv                        data/
                                    code/
-                                   artifacts/   (folder-backed)
+                                   outputs/   (folder-backed)
               ↓
       replicateEverything
               ↓
@@ -63,7 +63,7 @@ rep-<doi-slug>/
   replication.yml
   data/
   code/
-  artifacts/
+  outputs/
   tests/testthat/
 ```
 

@@ -217,7 +217,7 @@ dag_data_roots_node <- function(paths) {
 
 #' Collect non-format step entries for indexes and Shiny lists
 #' @param meta Parsed replication metadata.
-#' @export
+#' @keywords internal
 study_step_entries <- function(meta) {
   collect_study_step_entries(meta)
 }

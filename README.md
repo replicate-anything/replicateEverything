@@ -273,7 +273,7 @@ and `build_report()`.
 | Task | Function |
 |------|----------|
 | Browse registry | `load_index()`, `search_papers()` |
-| List replications | `list_replications()`, `list_replication_groups()` |
+| List replications | `list_replications()`, `list_replications(..., grouped = TRUE)` |
 | View source code | `get_code()` |
 | Run one replication | `run_replication()` |
 | Replicate full paper | `run_replication(doi, "everything")` |

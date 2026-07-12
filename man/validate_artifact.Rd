@@ -4,7 +4,7 @@
 \alias{validate_artifact}
 \title{Validate that a precomputed artifact exists}
 \usage{
-validate_artifact(doi, what, repo = NULL, language = NULL)
+validate_artifact(doi, what, repo = NULL, folder = NULL, language = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
@@ -12,6 +12,8 @@ validate_artifact(doi, what, repo = NULL, language = NULL)
 \item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
 
 \item{repo}{Optional repository slug.}
+
+\item{folder}{Optional registry folder name from \code{index.csv}.}
 
 \item{language}{Optional \code{"R"} or \code{"stata"}.}
 }

@@ -4,10 +4,14 @@
 \alias{study_dag_facets}
 \title{Faceted pipeline groups for Shiny (split multi-branch components)}
 \usage{
-study_dag_facets(meta)
+study_dag_facets(meta, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{meta}{Parsed replication metadata.}
+\item{meta}{Parsed replication metadata, or a DOI / registry handle.}
+
+\item{repo}{Optional repository slug when \code{meta} is a DOI or handle.}
+
+\item{folder}{Optional registry folder when \code{meta} is a DOI or handle.}
 }
 \value{
 List of facets, each with \code{title} and \code{paths}.

@@ -7,7 +7,7 @@
 list_prep_steps(doi, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{doi}{Character. DOI of the paper.}
+\item{doi}{Character. DOI, registry handle, or local study path.}
 
 \item{repo}{Optional repository slug.}
 
@@ -17,5 +17,5 @@ list_prep_steps(doi, repo = NULL, folder = NULL)
 A list of prep step entries.
 }
 \description{
-Returns entries from the \code{prep:} block in \code{replication.yml}.
+Superseded by \code{\link[=list_replications]{list_replications()}} with \code{include = "pipeline"}.
 }

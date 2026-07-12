@@ -577,7 +577,16 @@ resolve_study_doi_input <- function(doi_input, from_registry = FALSE) {
 
 ensure_replicate_everything()
 
-doi_resolved_url <- function(doi) {
+doi_resolved_url <- function(doi, paper = NULL) {
+  if (!is.null(paper) || (!is.null(doi) && length(doi) && nzchar(trimws(as.character(doi))))) {
+    url <- tryCatch(
+      replicate_fn("paper_article_url", doi = doi, paper = paper),
+      error = function(e) NULL
+    )
+    if (!is.null(url) && nzchar(url)) {
+      return(url)
+    }
+  }
   if (is.null(doi) || !length(doi) || !nzchar(trimws(as.character(doi)))) {
     return(NULL)
   }
@@ -591,8 +600,8 @@ doi_resolved_url <- function(doi) {
   paste0("https://doi.org/", normalized)
 }
 
-doi_link_ui <- function(doi, label = NULL) {
-  url <- doi_resolved_url(doi)
+doi_link_ui <- function(doi, label = NULL, paper = NULL) {
+  url <- doi_resolved_url(doi, paper = paper)
   if (is.null(url)) {
     return("")
   }
@@ -1936,7 +1945,14 @@ format_study_citation <- function(row) {
       tags$em("Working paper")
     },
     if (nzchar(doi)) {
-      tagList(" ", doi_link_ui(doi_raw %||% doi))
+      paper_link <- list(doi = doi_raw)
+      if ("article_url" %in% names(row)) {
+        au <- row$article_url[[1]] %||% ""
+        if (nzchar(as.character(au))) {
+          paper_link$article_url <- as.character(au)
+        }
+      }
+      tagList(" ", doi_link_ui(doi_raw %||% doi, paper = paper_link))
     }
   )
   list(
@@ -4621,7 +4637,13 @@ server <- function(input, output, session) {
         title = row$title[[1]],
         authors = row$authors[[1]],
         year = row$year[[1]],
-        journal = row$journal[[1]]
+        journal = row$journal[[1]],
+        doi = row$doi[[1]],
+        article_url = if ("article_url" %in% names(row)) {
+          row$article_url[[1]] %||% NULL
+        } else {
+          NULL
+        }
       )
     } else if (!is.null(state$local_study_meta)) {
       state$local_study_meta
@@ -4652,7 +4674,7 @@ server <- function(input, output, session) {
           tags$summary(
             class = "study-details-summary",
             tags$span(class = "study-details-chevron", HTML("&#9660;")),
-            tags$span(class = "ms-1", strong("DOI: "), doi_link_ui(doi_value))
+            tags$span(class = "ms-1", strong("DOI: "), doi_link_ui(doi_value, paper = paper))
           ),
           tags$div(
             class = "study-details-body pt-2",

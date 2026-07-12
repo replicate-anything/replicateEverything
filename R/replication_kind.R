@@ -131,7 +131,7 @@ study_output_dir <- function(
 }
 
 #' @rdname study_output_dir
-#' @export
+#' @keywords internal
 study_artifact_dir <- function(
   meta,
   ctx = NULL,

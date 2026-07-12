@@ -17,7 +17,7 @@ A **reanalysis study** reuses upstream data preparation from a published replica
 
 The worked example pairs:
 
-- **Base study:** [Fearon & Laitin (2003)](https://doi.org/10.1017/S0003055403000534) — `rep-10.1017-S0003055403000534`
+- **Base study:** Fearon & Laitin (2003) — `rep-10.1017-S0003055403000534` ([Cambridge Core article](https://www.cambridge.org/core/journals/american-political-science-review/article/abs/ethnicity-insurgency-and-civil-war/B1D5D0E7C782483C5D7E102A61AD6605); DOI `10.1017/S0003055403000534`)
 - **Reanalysis:** [Simple replication of F&L data / repo](https://github.com/replicate-anything/rep-10.1017-S0003055403000534--alt-1) — same prepared data, `lm_robust` instead of `glm`
 
 ## Base study pipeline
@@ -46,8 +46,13 @@ steps:
     format: format_tab_1
 
   - inherit: tab_1_format
-    code: code/tab_1.R
 ```
+
+`inherit: tab_1_format` is enough when the extension repo has its own
+\code{code/tab_1.R} at the same path as the base format step: replicateEverything
+sources that file locally so \code{format_tab_1} uses the reanalysis models.
+Only add a \code{code:} override when the extension formatter lives at a
+different path.
 
 In the base Fearon \& Laitin study, Stata table steps read \code{data/repdata.dta} directly; R steps use the shared \code{prep_data} output.
 
@@ -59,6 +64,11 @@ In the base Fearon \& Laitin study, Stata table steps read \code{data/repdata.dt
 | `"nothing"` | Runs inherited `prep_data` in the base checkout, then the extension analysis locally |
 
 Inherited steps execute in the base study root; extension steps run in the extension root but may read base `outputs/`.
+
+`run_replication(handle, "everything", given = "nothing")` returns a named list
+with one entry per non-format step (`prep_data`, `tab_1`, …). Use
+`format = FALSE` (default) for raw model objects; `format = TRUE` for display
+HTML.
 
 ## Running locally
 

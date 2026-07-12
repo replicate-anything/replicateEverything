@@ -2,11 +2,11 @@
 % Please edit documentation in R/study_steps.R
 \name{step_output_rel_variants}
 \alias{step_output_rel_variants}
-\title{Legacy/alternate repo-relative paths for one declared output}
+\title{Repo-relative path variants for one declared output (outputs-only)}
 \usage{
 step_output_rel_variants(rel, step_id = "")
 }
 \description{
-Legacy/alternate repo-relative paths for one declared output
+Repo-relative path variants for one declared output (outputs-only)
 }
 \keyword{internal}

@@ -17,7 +17,7 @@ writable_stata_staging_dir(meta, ctx = NULL, study_root = NULL)
 Normalized path.
 }
 \description{
-Uses \code{<study>/artifacts/staging} when the study folder is writable;
+Uses \code{<study>/outputs/staging} when the study folder is writable;
 otherwise falls back to \code{<study_data_root>/staging/<study>} (Shiny server).
 }
 \keyword{internal}

@@ -131,7 +131,8 @@ audit_run_one <- function(
   patience = 20,
   install_deps = FALSE,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  substantive = TRUE
 ) {
   patience <- as.numeric(patience)
   if (!is.finite(patience) || patience <= 0) {
@@ -155,10 +156,10 @@ audit_run_one <- function(
       if (is.null(obj)) {
         stop("Replication returned no object.", call. = FALSE)
       }
-      list(ok = TRUE, error = NULL)
+      list(ok = TRUE, error = NULL, object = obj)
     },
     error = function(e) {
-      list(ok = FALSE, error = e)
+      list(ok = FALSE, error = e, object = NULL)
     }
   )
   seconds <- (proc.time() - t0)[["elapsed"]]
@@ -166,8 +167,30 @@ audit_run_one <- function(
     !is.null(run$error) &&
     grepl("elapsed time limit|cpu time limit", conditionMessage(run$error), ignore.case = TRUE)
 
+  substantive_ok <- NA
+  substantive_message <- ""
+  if (isTRUE(run$ok) && isTRUE(substantive) && !is.null(run$object)) {
+    sub <- run_substantive_check(
+      run$object,
+      doi = doi,
+      what = what,
+      repo = repo,
+      folder = folder
+    )
+    if (isTRUE(sub$checked)) {
+      substantive_ok <- isTRUE(sub$ok)
+      substantive_message <- sub$message %||% ""
+    }
+  }
+
+  overall_ok <- isTRUE(run$ok) &&
+    (is.na(substantive_ok) || isTRUE(substantive_ok))
+
   list(
-    success = isTRUE(run$ok),
+    success = overall_ok,
+    run_ok = isTRUE(run$ok),
+    substantive_ok = substantive_ok,
+    substantive_message = substantive_message,
     seconds = seconds,
     timed_out = timed_out,
     error = run$error
@@ -193,6 +216,8 @@ audit_run_one <- function(
 #' @param registry_root Optional path to the registry repository. When set,
 #'   writes \code{audit_summary.json} (and \code{audit_latest.rds}) there after
 #'   the audit completes.
+#' @param substantive Logical. When \code{TRUE} (default), run published-value
+#'   checks from \code{tests/substantive/<step_id>.R} when a study defines them.
 #' @return An object of class \code{audit_everything} with components
 #'   \code{results} (data frame), \code{summary}, and metadata.
 #' @export
@@ -208,7 +233,8 @@ audit_everything <- function(
   dois = NULL,
   install_deps = FALSE,
   verbose = TRUE,
-  registry_root = NULL
+  registry_root = NULL,
+  substantive = TRUE
 ) {
   patience <- as.numeric(patience)
   if (!is.finite(patience) || patience <= 0) {
@@ -266,6 +292,8 @@ audit_everything <- function(
         type = NA_character_,
         engine = NA_character_,
         success = FALSE,
+        run_ok = FALSE,
+        substantive_ok = NA,
         seconds = NA_real_,
         timed_out = FALSE,
         error_snippet = audit_error_snippet(reps),
@@ -284,6 +312,8 @@ audit_everything <- function(
         type = NA_character_,
         engine = NA_character_,
         success = FALSE,
+        run_ok = FALSE,
+        substantive_ok = NA,
         seconds = NA_real_,
         timed_out = FALSE,
         error_snippet = "No table, figure, or pipeline step replications listed for this study.",
@@ -310,8 +340,17 @@ audit_everything <- function(
         patience = patience,
         install_deps = install_deps,
         repo = repo,
-        folder = folder
+        folder = folder,
+        substantive = substantive
       )
+
+      err_snippet <- if (run$success) {
+        ""
+      } else if (isFALSE(run$substantive_ok) && isTRUE(run$run_ok)) {
+        audit_error_snippet(run$substantive_message)
+      } else {
+        audit_error_snippet(run$error)
+      }
 
       results[[length(results) + 1L]] <- data.frame(
         doi = doi,
@@ -321,9 +360,11 @@ audit_everything <- function(
         type = type,
         engine = engine,
         success = run$success,
+        run_ok = run$run_ok,
+        substantive_ok = run$substantive_ok,
         seconds = run$seconds,
         timed_out = run$timed_out,
-        error_snippet = if (run$success) "" else audit_error_snippet(run$error),
+        error_snippet = err_snippet,
         stringsAsFactors = FALSE
       )
     }
@@ -336,10 +377,15 @@ audit_everything <- function(
   n_ok <- sum(results_df$success, na.rm = TRUE)
   n_fail <- sum(!results_df$success, na.rm = TRUE)
   n_timeout <- sum(results_df$timed_out, na.rm = TRUE)
+  n_substantive_fail <- sum(
+    !is.na(results_df$substantive_ok) & !results_df$substantive_ok,
+    na.rm = TRUE
+  )
 
   out <- structure(
     list(
       patience = patience,
+      substantive = substantive,
       started_at = started_at,
       finished_at = finished_at,
       results = results_df,
@@ -348,7 +394,8 @@ audit_everything <- function(
         runs = nrow(results_df),
         success = n_ok,
         failed = n_fail,
-        timed_out = n_timeout
+        timed_out = n_timeout,
+        substantive_failed = n_substantive_fail
       )
     ),
     class = "audit_everything"
@@ -373,16 +420,22 @@ audit_everything <- function(
 #' @export
 print.audit_everything <- function(x, ...) {
   sm <- x$summary
+  substantive_line <- if (!is.null(sm$substantive_failed) && sm$substantive_failed > 0L) {
+    sprintf(" | Substantive failed: %d", sm$substantive_failed)
+  } else {
+    ""
+  }
   cat(
     "replicateEverything registry audit\n",
     sprintf(
-      "Patience: %gs | Studies: %d | Runs: %d | OK: %d | Failed: %d | Timed out: %d\n",
+      "Patience: %gs | Studies: %d | Runs: %d | OK: %d | Failed: %d | Timed out: %d%s\n",
       x$patience,
       sm$studies,
       sm$runs,
       sm$success,
       sm$failed,
-      sm$timed_out
+      sm$timed_out,
+      substantive_line
     ),
     sep = ""
   )
@@ -399,7 +452,13 @@ print.audit_everything <- function(x, ...) {
         if (is.na(obj) || !nzchar(obj)) {
           cat(sprintf("    - %s\n", row$error_snippet[[1]]))
         } else {
-          tag <- if (isTRUE(row$timed_out[[1]])) " [timed out]" else ""
+          tag <- if (isTRUE(row$timed_out[[1]])) {
+            " [timed out]"
+          } else if (isFALSE(row$substantive_ok[[1]]) && isTRUE(row$run_ok[[1]])) {
+            " [substantive]"
+          } else {
+            ""
+          }
           cat(sprintf(
             "    - %s (%s, %s)%s: %s\n",
             row$object_label[[1]],
@@ -472,7 +531,8 @@ write_registry_audit_record <- function(audit, registry_root = NULL) {
     runs = sm$runs,
     success = sm$success,
     failed = sm$failed,
-    timed_out = sm$timed_out
+    timed_out = sm$timed_out,
+    substantive_failed = sm$substantive_failed %||% 0L
   )
   jsonlite::write_json(
     payload,

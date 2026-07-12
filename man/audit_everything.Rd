@@ -10,7 +10,8 @@ audit_everything(
   dois = NULL,
   install_deps = FALSE,
   verbose = TRUE,
-  registry_root = NULL
+  registry_root = NULL,
+  substantive = TRUE
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ audits every row in \code{index}.}
 \item{registry_root}{Optional path to the registry repository. When set,
 writes \code{audit_summary.json} (and \code{audit_latest.rds}) there after
 the audit completes.}
+
+\item{substantive}{Logical. When \code{TRUE} (default), run published-value
+checks from \code{tests/substantive/<step_id>.R} when a study defines them.}
 }
 \value{
 An object of class \code{audit_everything} with components

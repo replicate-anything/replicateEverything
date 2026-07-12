@@ -21,19 +21,56 @@ test_that("search_papers finds fixture study by title", {
 test_that("list_replications returns fixture ids", {
   with_fixture_opts({
     reps <- list_replications(fixture_doi())
+    expect_s3_class(reps, "replication_list")
     expect_true(length(reps) >= 2L)
     ids <- vapply(reps, function(x) as.character(x$id), character(1))
     expect_true(all(c("fig_1", "tab_1") %in% ids))
   })
 })
 
-test_that("list_replication_groups returns one entry per logical group", {
+test_that("print.replication_list shows compact table", {
   with_fixture_opts({
-    groups <- list_replication_groups(fixture_doi())
+    reps <- list_replications(fixture_doi())
+    expect_output(print(reps), "Replications:")
+    expect_output(print(reps), "fig_1")
+  })
+})
+
+test_that("list_replications grouped returns one entry per logical group", {
+  with_fixture_opts({
+    groups <- list_replications(fixture_doi(), grouped = TRUE)
     expect_true(length(groups) >= 2L)
     ids <- vapply(groups, function(x) as.character(x$id), character(1))
     expect_true(all(c("fig_1", "tab_1") %in% ids))
   })
+})
+
+test_that("list_replications include pipeline filters prep steps", {
+  with_fixture_opts({
+    pipeline <- list_replications(fixture_doi(), include = "pipeline")
+    expect_type(pipeline, "list")
+  })
+})
+
+test_that("paper_article_url prefers article_url over doi.org", {
+  url <- paper_article_url(
+    doi = "10.1017/S0003055403000534",
+    paper = list(
+      article_url = paste0(
+        "https://www.cambridge.org/core/journals/",
+        "american-political-science-review/article/abs/",
+        "ethnicity-insurgency-and-civil-war/",
+        "B1D5D0E7C782483C5D7E102A61AD6605"
+      )
+    )
+  )
+  expect_match(url, "^https://www\\.cambridge\\.org/")
+  expect_false(grepl("^https://doi\\.org/", url))
+})
+
+test_that("paper_article_url falls back to doi.org", {
+  url <- paper_article_url(doi = "10.1177/00491241211036161")
+  expect_equal(url, "https://doi.org/10.1177/00491241211036161")
 })
 
 test_that("get_code returns replication script text", {
@@ -98,7 +135,7 @@ test_that("build_study_artifacts writes manifest for fixture study", {
       install_deps = FALSE,
       registry_root = getOption("replicateEverything.registry_root")
     ))
-    manifest <- file.path(copy_root, "artifacts", "manifest.json")
+    manifest <- file.path(copy_root, "outputs", "manifest.json")
     expect_true(file.exists(manifest))
   })
 })

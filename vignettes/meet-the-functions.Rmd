@@ -13,6 +13,8 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 
 **replicateEverything** has two sides. On the **consumer** side you browse the registry, run a table or figure, and inspect the code that produced it. On the **producer** side you set up a study repository, validate it, and register it so others can replicate your work.
 
+Start with the overview: `vignette("why-replicateEverything", package = "replicateEverything")`.
+
 This vignette walks through the main exported functions on each side. For full contributor checklists see the folder and package replication articles; for Stata-specific behaviour see *Stata replications*.
 
 ```{r setup}
@@ -69,10 +71,17 @@ Example output (abbreviated):
 #> [1] "figure"
 ```
 
-`list_replication_groups()` returns **one entry per logical group**. When both R and Stata exist for the same table, the default is R.
+`list_replications(..., grouped = TRUE)` returns **one entry per logical group**. When both R and Stata exist for the same table, the default is R.
 
 ```{r}
-list_replication_groups("10.1257/aer.91.5.1369")
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE)
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE, language = "stata")
+```
+
+Pipeline steps (transforms) are listed separately:
+
+```{r}
+list_replications("10.1017/s0003055426101749", include = "pipeline")
 ```
 
 ### Run a replication
@@ -150,9 +159,9 @@ Build display artifacts separately: `build_study_artifacts()` (folder) or `build
 
 ### Folder-backed studies
 
-Study repos hold `replication.yml`, `code/`, `data/`, and `artifacts/`. See `vignette("folder-replication-checklist")`.
+Study repos hold `replication.yml`, `code/`, `data/`, and `outputs/`. See `vignette("folder-replication-checklist")`.
 
-`build_study_artifacts()` runs every replication and writes PNG/HTML under `artifacts/` plus `manifest.json`.
+`build_study_artifacts()` runs every replication and writes display files under `outputs/` plus `outputs/manifest.json`.
 
 ```{r}
 build_study_artifacts(".", install_deps = TRUE)
@@ -211,7 +220,7 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 |------|----------|
 | **Consumer** | |
 | Browse registry | `load_index()`, `search_papers()` |
-| What can I replicate? | `list_replications()`, `list_replication_groups()` |
+| What can I replicate? | `list_replications()`, `list_replications(..., grouped = TRUE)` |
 | Run one result | `run_replication()` |
 | Run whole paper | `run_replication(doi, "everything")` |
 | View code | `get_code()` |

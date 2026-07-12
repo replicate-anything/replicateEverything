@@ -2,10 +2,11 @@
 name: folder-replication
 description: >-
   Set up a folder-backed replication study repo for replicate-anything (data/,
-  code/, artifacts/, replication.yml), register a registry stub, and validate
-  with replicateEverything and testthat. Use when migrating a classic registry
-  paper to an external study repo, onboarding a delivered code/data folder, or
-  when the user mentions folder-backed replication, study repo, or rep-* DOI repos.
+  code/, outputs/, replication.yml with a steps DAG), register a registry stub,
+  and validate with replicateEverything and testthat. Use when migrating a classic
+  registry paper to an external study repo, onboarding a delivered code/data folder,
+  or when the user mentions folder-backed replication, study repo, rep-* DOI repos,
+  steps DAG, or step inheritance.
 ---
 
 # Folder-backed replication study
@@ -18,16 +19,19 @@ Turn delivered analysis materials into a **folder-backed study repository** wire
 
 ```
 rep-<doi-with-hyphens>/
-  replication.yml      # full metadata + replications list
+  replication.yml      # full metadata + unified steps: DAG
   README.md
-  code/                # one script per table/figure (make_* + format_*)
-  data/                # optional; paths relative to repo root
-  artifacts/           # precomputed display files + manifest.json
+  code/                # one script per step (transform / table / figure / format)
+  data/                # raw inputs only; paths relative to repo root
+  outputs/             # step products + display files (tab_1.html, prep_data/*.rds)
   tests/
     testthat.R
     testthat/
       test-<id>.R
 ```
+
+Legacy repos may still use `prep:` + `replications:` and `artifacts/`; new work
+uses **`steps:`** and **`outputs/`** only (replicateEverything 0.6+).
 
 Registry keeps **stub only**:
 
@@ -52,30 +56,116 @@ Copy and track progress:
 
 ```
 - [ ] 1. Inventory delivered materials (scripts, data, outputs)
-- [ ] 2. Create GitHub study repo (empty) + local clone as monorepo sibling
-- [ ] 3a. **Search all code** for R, Stata, and Python dependencies (Step 3a)
-- [ ] 3b. **Write `replication.yml`** — languages, deps, prep, replications, **maintainer**, **collections** (Step 3b)
-- [ ] 4. Structure repo: code/, data/, artifacts/; add Stata install/probe helpers if needed
-- [ ] 5. Refactor code into make_<id>() + format_<id>() per replication
-- [ ] 6. Build artifacts; write artifacts/manifest.json
-- [ ] 7. Add testthat tests (run_replication + artifact match)
-- [ ] 8. Slim registry stub; run **`build_registry_index()`** so `index.csv` has repo, **collections**, **maintainer**, **languages**
-- [ ] 9. Remove code/data/artifacts from registry study folder (if migrating)
-- [ ] 10. Verify replicateEverything + Shiny (Display + Run + system compatibility check)
-- [ ] 11. Commit and push study repo + registry
+- [ ] 2. **Reconstruct the step DAG from the original repo** (README order, file I/O, shared prep) — Step 1b
+- [ ] 3. Create GitHub study repo (empty) + local clone as monorepo sibling
+- [ ] 4a. **Search all code** for R, Stata, and Python dependencies (Step 4a)
+- [ ] 4b. **Write `replication.yml`** — languages, deps, **steps:** DAG, **maintainer**, **collections** (Step 4b)
+- [ ] 5. Structure repo: code/, data/, outputs/; add Stata install/probe helpers if needed
+- [ ] 6. Refactor code into one script per step; make_<id>() + format_<id>() where needed
+- [ ] 7. Build outputs; write outputs/manifest.json
+- [ ] 8. Add testthat tests (run_replication + output match)
+- [ ] 9. Slim registry stub; run **`build_registry_index()`** so `index.csv` has repo, **collections**, **maintainer**, **languages**
+- [ ] 10. Remove code/data from registry study folder (if migrating)
+- [ ] 11. Verify replicateEverything + Shiny (Display + Run + system compatibility check)
+- [ ] 12. Commit and push study repo + registry
 ```
 
 ## Step 1 — Inventory
 
 For each table/figure identify:
 
-- **id** (`tab_1`, `fig_1`)
-- **type** (`table` | `figure`)
-- **data** paths (or none if generated in code)
-- **analysis** logic → `make_<id>(data)`
-- **display** logic → `format_<id>(object)` (HTML table, ggplot, etc.)
+- **id** (`tab_1`, `fig_1`, `prep_data`, …)
+- **type** (`transform` | `table` | `figure` | `format`)
+- **parents** — which upstream step outputs (or raw `data/` files) this step reads
+- **data** / **inputs** paths (raw roots under `data/` or prior `outputs/…`)
+- **outputs** — files this step writes under `outputs/`
+- **analysis** logic → `make_<id>(data)` in the step script
+- **display** logic → `format_<id>(object)` when yaml lists `format:` (often a separate `type: format` child)
 - **engine** (`r`, `stata`, `python`) — from file extension or author README
-- **dependencies** — note any `library()`, `ssc install`, `import` (full list comes in Step 3a)
+- **dependencies** — note any `library()`, `ssc install`, `import` (full list comes in Step 4a)
+
+## Step 1b — Reconstruct the step DAG from the original repo
+
+**The DAG is not invented in yaml — it is recovered from the author delivery.**
+
+replicateEverything runs steps in dependency order (`parents:` edges). Getting the
+graph wrong breaks live Run, Shiny pipeline display, and extension studies that
+`inherit:` upstream steps. Before writing `replication.yml`, trace the **actual**
+author pipeline.
+
+### Sources to read (in order)
+
+| Source | What to extract |
+|--------|-----------------|
+| **README.txt / author guide** | Numbered pipeline (step 0 = merge data, step 1 = tables, …) |
+| **Master `.do` / driver scripts** | `use`, `merge`, `save`, `esttab using …` — file I/O chain |
+| **Per-table/figure scripts** | Which processed `.dta` or CSV each output reads |
+| **Notebooks / `(RCODE)_*.R`** | Inputs loaded from `data/raw` vs `data/processed` |
+| **Existing outputs in the zip** | Intermediate files authors expect to exist |
+
+### Agent workflow
+
+1. **List raw roots** — files under `data/` that no script in the repo produces (only consumed). These have **no parent step**; cite them in downstream `inputs:` / `data:`.
+2. **Walk README order** — each numbered author step becomes one or more `type: transform` steps (or a table/figure if it only produces a display output).
+3. **Follow writes** — every `save`, `export`, `write.csv`, `ggsave` becomes an `outputs:` path. Prefer `outputs/<step_id>/…` for intermediates, `outputs/<id>.html` or `.png` for display sinks.
+4. **Split shared prep** — if three tables all `use` the same constructed `.dta`, declare **one** transform step and set `parents: [that_step]` on each table (do not duplicate prep inside every table script).
+5. **Parallel engines** — when authors ship both Stata and R for the same table, use **separate step ids** (`tab_1`, `tab_1_stata`) with optional `group: tab_1`. They may read different inputs (raw vs cleaned) if that matches the author code.
+6. **Format children** — when Display needs HTML/PNG but analysis returns a model or temp file, add `type: format` with `parent: <table_or_figure_id>` (or rely on auto-generated `<id>_format` from legacy migration).
+7. **Draw the graph** — sanity-check: every non-root input is either under `data/` or produced by a listed parent; no cycles; `given = "parents"` on a table only requires immediate parents' `outputs/` to exist.
+
+Example (Fearon & Laitin):
+
+```
+data/repdata.dta  →  prep_data  →  tab_1 (R, reads outputs/prep_data/…)
+                └────────────────→  tab_1_stata (Stata, reads raw data/repdata.dta)
+```
+
+Reference repos: `rep-10.1017-S0003055403000534`, `rep-10.1017-s0003055426101749`.
+
+### Step types (0.6+)
+
+| `type` | Role | Shiny sidebar |
+|--------|------|---------------|
+| `transform` (aliases: `prep`, `pipeline`, `step`) | Build intermediate datasets | Pipeline |
+| `table` / `figure` | Analysis + display sink | Tables / Figures |
+| `format` | Format parent output for Display | Hidden (runs with `format = TRUE`) |
+
+**Labels** name the **output** (`Table 1`, `Analysis dataset`). Put methodology in `description`.
+
+**Edges:** `parents: [step_a, step_b]` (legacy `requires:` still parsed). Raw files are not parents — list them under `inputs:`.
+
+**Running:**
+
+```r
+run_replication(doi, "tab_1", given = "parents")   # default: parent outputs must exist
+run_replication(doi, "tab_1", given = "nothing") # run full upstream pipeline first
+run_replication(doi, "tab_1", given = "prep_data") # assume prep_data done; run rest
+run_replication(doi, "tab_1", force = TRUE)        # re-run even if outputs exist
+```
+
+See `inst/docs/step-dag-design.md` in the package for `given` downward-closure rules.
+
+### Extension / reanalysis studies
+
+When a repo reuses another study's prep but replaces analysis:
+
+```yaml
+paper:
+  extends:
+    repo: replicate-anything/rep-10.1017-S0003055403000534
+    ref: main
+    doi: 10.1017/S0003055403000534
+steps:
+  - inherit: prep_data
+  - id: tab_1
+    type: table
+    parents: [prep_data]
+    code: code/tab_1.R
+  - inherit: tab_1_format
+    code: code/format_ext.R   # only when path differs from base; same-path code/tab_1.R is auto-detected
+```
+
+Only declare steps the extension **uses** (`inherit:` or local `id:`) — not every step from the base repo. Inherited format steps source **extension** code when the inherited `code:` path exists locally (same path as base is enough). Inherited steps run in the **base** checkout; extension steps read base `outputs/`. See vignette `reanalysis-studies` and `inst/docs/step-inheritance.md`.
 
 ## Step 2 — Create the study repository
 
@@ -94,11 +184,11 @@ git remote add origin https://github.com/replicate-anything/rep-<doi-hyphenated>
 
 Place the folder as a **sibling** of `registry/` and `replicateEverything/` in the monorepo for local dev.
 
-## Step 3 — `replication.yml` (dependency search + construction)
+## Step 4 — `replication.yml` (dependency search + construction)
 
-**`replication.yml` is the contract** between the study repo and replicateEverything. Shiny, live Run, and **Check system compatibility** read only what you declare here — they do not guess study-specific packages. **Always search the code first, then write the yaml.**
+**`replication.yml` is the contract** between the study repo and replicateEverything. Shiny, live Run, and **Check system compatibility** read only what you declare here — they do not guess study-specific packages or pipeline order. **Infer the step DAG from the original repo (Step 1b), search the code for dependencies (Step 4a), then write yaml (Step 4b).**
 
-### Step 3a — Search for all libraries and dependencies
+### Step 4a — Search for all libraries and dependencies
 
 Before drafting yaml, **search the entire study tree** (delivered folder and/or refactored `code/`) and collect every external dependency. Do not rely on memory or a single main script.
 
@@ -136,11 +226,11 @@ rg -n "pip install|!pip" code/ --glob "*.{py,ipynb}"
 
 **Do not** put Stata ado names in `paper.dependencies` or R `dependencies:` — replicateEverything installs CRAN packages for R only.
 
-### Step 3b — Construct `replication.yml`
+### Step 4b — Construct `replication.yml`
 
-Use the inventory from Step 3a. **Declare languages explicitly** so Shiny system compatibility knows what to probe.
+Use the inventory from Step 4a and the DAG from Step 1b. **Declare languages explicitly** so Shiny system compatibility knows what to probe.
 
-**Minimal full study:**
+**Minimal full study (unified `steps:` block):**
 
 ```yaml
 paper:
@@ -149,93 +239,115 @@ paper:
   journal: "..."
   year: 2022
   authors: "..."
-  study_folder: rep-10.1177-00491241211036161   # Shiny Server data/ subfolder (optional if repo name matches)
-  dependencies:          # all CRAN packages from Step 3a (R scripts + format helpers)
+  study_folder: rep-10.1177-00491241211036161
+  dependencies:
     - ggplot2
     - haven
 
 repo: replicate-anything/rep-10.1177-00491241211036161
 
-maintainer:              # required for every new study repo
+maintainer:
   name: Jane Maintainer
   email: maintainer@example.org
 
-collections:             # one or more tags; synced to registry index.csv
+collections:
   - IPI
 
-languages:               # every engine used anywhere (prep + replications)
+languages:
   - r
   - stata
 
-python_dependencies:     # omit if no Python; study-wide PyPI list from Step 3a
+python_dependencies:
   - pandas
-  - scikit-learn
 
-stata_packages:          # SSC ado names from Step 3a (auto install + probe)
+stata_packages:
   - reghdfe
-  - require               # mandatory when reghdfe is listed (SSC 6.x stack)
+  - require
   - estout
-  - ftools
 
-prep:                    # optional pipeline steps (same engine/dependency rules)
+steps:
   - id: build_data
-    type: step
+    type: transform
+    label: Build analysis dataset
+    parents: []
+    inputs:
+      - data/raw/survey.dta
+    outputs:
+      - outputs/build_data/analysis.dta
     engine: stata
     code: code/steps/build_data.do
-    output: data/processed/analysis.dta
 
-replications:
   - id: fig_1
     type: figure
     label: Figure 1
     description: Short caption for Shiny
+    parents:
+      - build_data
     engine: r
+    inputs:
+      - outputs/build_data/analysis.dta
     code: code/fig_1.R
     format: format_fig_1
-    artifact: artifacts/fig_1.png
+    outputs:
+      - outputs/fig_1.png
+    artifact: outputs/fig_1.png
+
+  - id: fig_1_format
+    type: format
+    parent: fig_1
+    code: code/fig_1.R
 
   - id: tab_1
     type: table
     label: Table 1
+    parents:
+      - build_data
     engine: stata
+    inputs:
+      - outputs/build_data/analysis.dta
     code: code/tables/tab_1.do
     format: code/helpers/format_stata.R
-    artifact: artifacts/tab_1.html
-    data: data/processed/analysis.dta
+    outputs:
+      - outputs/tab_1.html
+    artifact: outputs/tab_1.html
 ```
+
+Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
+`compile_steps_from_legacy()` but **new studies must use `steps:` + `outputs/`**.
 
 **Construction rules:**
 
-| Yaml field | Source (Step 3a) |
-|------------|------------------|
-| `languages:` | Union of engines in prep + replications (or infer from `.R` / `.do` / `.py` / `.ipynb` paths) |
-| `paper.dependencies` | All unique CRAN packages from R scripts and `format_*.R` helpers |
+| Yaml field | Source |
+|------------|--------|
+| `steps:` | **Step 1b** — DAG from original repo (parents, inputs, outputs) |
+| `languages:` | Union of engines across all steps |
+| `paper.dependencies` | All unique CRAN packages from R scripts and format helpers |
 | `python_dependencies:` | All unique PyPI names from Python scripts/notebooks |
-| `stata_packages:` | User-written ado names used in `.do` files — **default for all Stata studies**. Include **`require`** whenever **`reghdfe`** is listed. |
-| `maintainer:` | **Required** — person responsible for keeping the study repo and server deps current (name + email) |
-| `collections:` | Optional tags (`APSR`, `PED`, `World Bank`, `IPI`, …) — copied to registry `index.csv` for Shiny filtering |
-| `stata_deps_probe:` | *(Optional)* custom check-only `.do` when auto-probe is insufficient |
-| `stata_dependencies:` | *(Optional)* custom install `.do` for GitHub installs, version pins, unusual order |
-| `replications[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
-| `replications[].artifact` | Precomputed display file under `artifacts/` |
-| `replications[].dependencies` | **R only** — extra CRAN packages for that entry; prefer study-wide lists when shared |
+| `stata_packages:` | User-written ado names from `.do` files — include **`require`** whenever **`reghdfe`** is listed |
+| `maintainer:` | **Required** — name + email |
+| `collections:` | Tags copied to registry `index.csv` |
+| `steps[].parents` | Immediate upstream steps (not raw `data/` files) |
+| `steps[].outputs` | Files this step produces under `outputs/` |
+| `steps[].artifact` | Primary display file for tables/figures (= main `outputs/` path) |
+| `steps[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
+| `steps[].dependencies` | **R only** — extra CRAN packages for that step |
 
-**Tables with external data:** add `data: data/myfile.dta` on the replication row.
+**Tables with external data:** add `data:` and/or `inputs:` on the step row.
 
-**Shiny Server (large files):** place files at `data/<study_folder>/<basename>` beside the app (e.g. `data/rep-10.1596-1813-9450-10626/ACS2017-2021_finalready.dta`). Use the study repo folder name (`paper.study_folder` or `rep-<doi-with-hyphens>`), not the registry stub folder (`10.x_y`).
+**Shiny Server (large files):** place files at `data/<study_folder>/<basename>` beside the app. Use the study repo folder name (`paper.study_folder` or `rep-<doi-with-hyphens>`), not the registry stub folder (`10.x_y`).
 
-**Tables without format step:** omit `format:`; artifact is usually `.html` from analysis output.
+**Tables without format step:** omit `format:`; `artifact:` is usually `.html` from analysis output.
 
 **Validate yaml before moving on:**
 
 ```r
 yaml::read_yaml("replication.yml")
-replicateEverything::check_study_compatibility("<doi>")  # probe only
-replicateEverything::install_study_dependencies("<doi>")  # folder + package registry studies
-replicateEverything::install_registry_dependencies()      # all registry rows
+replicateEverything::describe_study_dag(meta)  # after parsing — sanity-check graph
+replicateEverything::check_study_compatibility("<doi>")
+replicateEverything::install_study_dependencies("<doi>")
 ```
 
-### Step 3c — replicateEverything conventions (no package hardcoding)
+### Step 4c — replicateEverything conventions (no package hardcoding)
 
 The **replicateEverything** package reads study metadata only — it does not embed study-specific package names or install commands. Every folder-backed study must declare what the package needs in **replication.yml** and helper scripts under **code/helpers/**.
 
@@ -243,11 +355,13 @@ The **replicateEverything** package reads study metadata only — it does not em
 
 | Item | Location | Purpose |
 |------|----------|---------|
-| Full `replication.yml` | repo root | `paper:`, `replications:` list, `repo:` slug |
+| Full `replication.yml` | repo root | `paper:`, **`steps:`** DAG, `repo:` slug |
 | `languages:` | top-level (recommended) | `r`, `stata`, `python` — used by system compatibility check |
-| `code:` per replication | `code/<id>.R` or `.do` | Live Run executes this |
-| `artifact:` per replication | `artifacts/<id>.{html,png,...}` | Shiny Display tab |
+| `code:` per step | `code/<id>.R` or `.do` | Live Run executes this |
+| `artifact:` / `outputs:` per step | `outputs/<id>.{html,png,…}` | Shiny Display tab |
 | Registry stub | `registry/studies/<folder>.yml` | Points to study repo; not the full yaml |
+
+If `languages:` is omitted, engines are inferred from `engine:` / `code:` extensions on steps.
 
 **System compatibility** (Shiny button or `study_system_compatibility()`) reads only yaml declarations and probes this machine — no installs. Declare everything explicitly:
 
@@ -258,24 +372,21 @@ languages:
   - python
 
 paper:
-  dependencies:          # R CRAN packages
+  dependencies:
     - ggplot2
     - haven
 
-python_dependencies:     # pip imports (study-wide list)
+python_dependencies:
   - pandas
-  - scikit-learn
 
-stata_packages:          # fallback when no custom probe script
+stata_packages:
   - reghdfe
   - estout
 
-stata_deps_probe: code/helpers/probe_stata_deps.do
+stata_deps_probe: code/helpers/probe_stata_deps.do   # optional
 stata_dependencies:
-  - code/helpers/install_stata_deps.do
+  - code/helpers/install_stata_deps.do              # optional
 ```
-
-If `languages:` is omitted, engines are inferred from `engine:` / `code:` extensions on prep and replication entries.
 
 ### Package-backed vs folder-backed (maintainer API)
 
@@ -287,7 +398,7 @@ Both study types use the **same maintainer functions** for dependency setup:
 | Install deps | `install_study_dependencies(doi)` |
 | Registry bulk install | `install_registry_dependencies()` |
 | Layout | `replication_kind(meta)` → `"folder"` or `"package"` |
-| Artifact root | `study_artifact_dir(meta, ctx)` — `artifacts/` vs `inst/report/artifacts/` |
+| Artifact root | `study_output_dir(meta, ctx)` — **`outputs/`** for folder studies |
 
 **Build** still uses kind-specific builders: `build_study_artifacts()` (folder) vs `build_package_artifacts()` (package). Declare the same yaml fields (`languages:`, `paper.dependencies`, `python_dependencies:`, `stata_*`) in both layouts.
 
@@ -332,26 +443,27 @@ Maintainers: `install_study_dependencies(doi)` once. Live Run and Shiny probe on
 | `code:` ending in `.py` / `.ipynb` | `code/fig_1.py` | Python engine |
 | `format:` | `format_fig_1` or `code/helpers/format_stata.R` | Display step when artifact is HTML/PNG |
 
-### Artifacts and data (summary)
+### Outputs and data (summary)
 
-- **`artifact:`** — single source of truth for Display and audit paths (relative to study root).
+- **`outputs:`** — canonical step products; **`artifact:`** is the display path Shiny reads (usually the primary html/png under `outputs/`).
 - **Data ≤ 50 MB** — commit under `data/` so clones work for live Run.
-- **Data > 50 MB** — gitignore by explicit filename; stage under `registry/data/<folder>/`; rely on precomputed `artifacts/` for Display when absent locally.
+- **Data > 50 MB** — gitignore by explicit filename; stage under `registry/data/<folder>/`; rely on precomputed `outputs/` for Display when absent locally.
 
 ### Checklist before opening a PR
 
 ```
-- [ ] Step 3a: dependency search re-run after final code layout
-- [ ] replication.yml: languages + paper.dependencies + python_dependencies + stata_packages complete
-- [ ] replication.yml parses; each code:/data:/artifact: path exists
-- [ ] check_study_compatibility() or Shiny “Check system compatibility” passes (or documents expected gaps)
-- [ ] Artifacts committed; manifest if used
+- [ ] Step 1b: DAG traced from author README / scripts; parents match real file I/O
+- [ ] Step 4a: dependency search re-run after final code layout
+- [ ] replication.yml: languages + deps + steps: complete; each code:/inputs:/outputs: path exists
+- [ ] describe_study_dag() / Shiny pipeline view looks correct
+- [ ] check_study_compatibility() passes (or documents expected gaps)
+- [ ] outputs/ committed; manifest if used
 - [ ] Registry stub + index.csv repo column updated
 - [ ] study tests: testthat::test_dir("tests/testthat")
-- [ ] Package tests pass with fixture study (rep-10.9999_* pattern in replicateEverything)
+- [ ] audit_everything() or package tests pass with fixture study
 ```
 
-## Step 3.5 — Data files (git vs. large files)
+## Step 5 — Data files (git vs. large files)
 
 Live replication (the Shiny **Run** button, and any fresh clone) works from a
 **clone of the study repo**. If an input file is not committed, the clone lacks
@@ -363,14 +475,14 @@ Rule, keyed to GitHub's limits (soft warning at 50 MB, hard reject at 100 MB):
 | File size | Handling |
 |-----------|----------|
 | **≤ 50 MB** | Commit it in the study repo under `data/`. Live runs work from any clone. |
-| **> 50 MB** | Do **not** put it in git. Stage it under the registry data area (`registry/data/<folder>/`) for manual deploy to the server, and document its source (URL/DOI/Dataverse) in `data/raw/README.md`. Live runs from a bare clone won't have it; rely on the precomputed `artifacts/` instead. |
+| **> 50 MB** | Do **not** put it in git. Stage it under the registry data area (`registry/data/<folder>/`) for manual deploy to the server, and document its source (URL/DOI/Dataverse) in `data/raw/README.md`. Live runs from a bare clone won't have it; rely on precomputed `outputs/` instead. |
 
 Recommended `.gitignore` (keep data; exclude only logs, staging, and oversized inputs which you list explicitly):
 
 ```gitignore
 .Rproj.user/
 *.log
-artifacts/staging/
+outputs/staging/
 
 # Commit data so live replication works from a clone. Only exclude inputs
 # too large for git (>50 MB): keep those out, stage under registry/data/<folder>/,
@@ -380,42 +492,43 @@ artifacts/staging/
 Do **not** use blanket patterns like `data/raw/*.dta` — that silently drops all
 inputs and breaks live replication.
 
-## Step 4 — Code scripts (`code/<id>.R`)
+## Step 6 — Code scripts (`code/<id>.R` or `.do`)
 
-Each script must be **self-contained**:
+Each step script must be **self-contained**:
 
 1. Header comment with study repo URL
 2. `library(...)` for dependencies
 3. `make_<id>(data)` — analysis; returns model, data.frame, ggplot, etc.
 4. `format_<id>(object)` — display step when yaml lists `format: format_<id>`
-5. Footer that runs locally: `make_<id>(...) |> format_<id>()` or load data from `../data/`
+5. Footer that runs locally: `make_<id>(...) |> format_<id>()` or load data from declared `inputs:`
 
-**Split rule:** if Shiny/registry stores **display** artifacts (HTML/PNG), analysis output should be the **object** passed to `format_*`, not the formatted HTML (unless no format step).
+**Split rule:** if Shiny stores **display** files (HTML/PNG), analysis output should be the **object** passed to `format_*`, not the formatted HTML (unless no format step).
+
+Transform steps write to paths declared in `outputs:` (under `outputs/<step_id>/`).
 
 Reference: `rep-10.1017-S0003055403000534/code/tab_1.R`, `rep-10.1177-00491241211036161/code/fig_1.R`.
 
-## Step 5 — Artifacts
+## Step 7 — Build outputs
 
 Build from monorepo:
 
 ```r
-options(
-  replicateEverything.registry_root = "path/to/registry",
-  replicateEverything.use_sibling_packages = TRUE
-)
-replicateEverything::replicate_paper("<doi>", install_deps = TRUE)
-# Or save per replication after render_replication + save_artifact
+configure_local_monorepo("path/to/replicate_everything")
+build_study_artifacts("<doi-or-handle>", install_deps = TRUE)
+# Or per step:
+run_replication("<doi>", "tab_1", given = "nothing", format = TRUE, install_deps = TRUE)
 ```
 
-Commit under `artifacts/`:
+Commit under `outputs/`:
 
-- Figures → `.png`
-- Formatted tables → `.html` (when `format:` is set, registry convention often used `.rds` for analysis-only; follow existing `artifact:` in yaml)
-- `artifacts/manifest.json` — copy from registry build or hand-write
+- Figures → `outputs/fig_N.png`
+- Formatted tables → `outputs/tab_N.html`
+- Intermediates → `outputs/<step_id>/…`
+- `outputs/manifest.json` — from `build_study_artifacts()` or hand-written
 
 `registry/scripts/build_artifacts.R` **skips** folder-backed papers.
 
-## Step 6 — Registry stub
+## Step 8 — Registry stub
 
 `registry/studies/<folder>.yml` only (flat file, not a subfolder):
 
@@ -432,9 +545,9 @@ repo: replicate-anything/rep-<doi-hyphenated>
 
 Update `registry/index.csv` — set `repo` column to the study slug (not `replicate-anything/registry`).
 
-Delete `code/`, `data/`, `artifacts/` under the registry paper folder.
+Delete `code/`, `data/`, `outputs/` under the registry paper folder.
 
-## Step 7 — Tests (`tests/testthat/`)
+## Step 9 — Tests (`tests/testthat/`)
 
 Use **explicit** `testthat::` prefixes. Pattern per replication:
 
@@ -450,7 +563,8 @@ replicateEverything::run_replication(DOI, WHAT)
 # With format when yaml defines format_*
 replicateEverything::run_replication(DOI, WHAT, format = TRUE)
 
-# Compare to artifact: HTML normalize or PNG md5 after ggsave(8,6,150)
+# Compare to committed output: HTML normalize or PNG md5 after ggsave(8,6,150)
+replicateEverything::run_replication(DOI, WHAT, given = "parents", format = TRUE)
 ```
 
 Configure options in tests:
@@ -466,7 +580,7 @@ options(
 
 Run: `testthat::test_dir("tests/testthat")` from study repo root.
 
-## Step 8 — Verification checks
+## Step 10 — Verification checks
 
 Run in order; stop on failure.
 
@@ -488,7 +602,7 @@ replicateEverything::validate_artifact(doi, "fig_1", folder = "<registry-folder>
 replicateEverything::render_for_display(doi, "fig_1", folder = "<registry-folder>")
 ```
 
-## Step 9 — Commit and push
+## Step 11 — Commit and push
 
 Two repositories:
 
@@ -508,8 +622,9 @@ git push origin main
 
 ## Migrating from classic registry
 
-1. Copy `replication.yml`, `code/`, `data/`, `artifacts/` from legacy `registry/papers/<folder>/` (or a materialized study folder) to new study repo
-2. Ensure study `replication.yml` is the **full** copy (replications list), not the stub
+1. Copy `replication.yml`, `code/`, `data/`, `outputs/` from legacy `registry/papers/<folder>/` (or a materialized study folder) to new study repo
+2. Ensure study `replication.yml` is the **full** copy with **`steps:`** DAG, not the registry stub
+3. Migrate legacy `prep:`/`replications:` to `steps:` with `migrate_legacy_steps_yaml()` if needed
 3. Download any gitignored/large data from GitHub raw if missing locally
 4. Follow steps 6–9 above
 
@@ -537,13 +652,14 @@ When merging a study row into [registry/index.csv](https://github.com/replicate-
 
 ## Common pitfalls
 
-- **Skipping Step 3a** — yaml missing `reghdfe`, `require`, `haven`, or `pandas` because only the main script was read
-- **`reghdfe` without `require`** — probe can pass (`help reghdfe`) while table code fails at runtime with `r(9)` on shared servers where SSC ships `reghdfe` 6.x; always grep for `reghdfe` in `.do` files and list both in `stata_packages:`
-- **Assuming SSC `reghdfe` is still 5.x** — current SSC installs 6.x; do not pin 5.x or uninstall `require` unless you have a documented reason
-- **No maintainer** — every study repo needs `maintainer:` (name + email); registry index row should match
+- **Inventing the DAG without reading the author repo** — wrong `parents:` breaks Run and inheritance; always trace README + file I/O first (Step 1b)
+- **Skipping Step 4a** — yaml missing `reghdfe`, `require`, `haven`, or `pandas` because only the main script was read
+- **`reghdfe` without `require`** — probe can pass while table code fails at runtime with `r(9)` on shared servers
+- **No maintainer** — every study repo needs `maintainer:` (name + email)
 - **Stata names in `paper.dependencies`** — use `stata_packages:` instead
-- Putting the **stub** yaml in the study repo (must be **full** yaml with `replications:`)
+- Putting the **stub** yaml in the study repo (must be **full** yaml with `steps:`)
 - Forgetting to update `index.csv` `repo` column
-- `label` duplicating Shiny sidebar (use `description` for captions; labels like "Table 1" are optional)
-- Missing `format_*` when artifact is HTML/PNG but analysis returns raw models
+- **`artifacts/` instead of `outputs/`** on new studies (0.6+)
+- Missing `format_*` when display file is HTML/PNG but analysis returns raw models
+- Extension study listing every base step — only `inherit:` / local steps belong in the extension yaml
 - Tests without `replicateEverything.index` override for the new `repo` slug

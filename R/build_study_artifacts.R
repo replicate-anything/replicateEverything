@@ -1,8 +1,8 @@
 #' Build display artifacts for a folder-backed study
 #'
 #' Runs pipeline prep steps from `replication.yml` when present, then every
-#' registered table and figure, saves formatted outputs under `artifacts/`, and
-#' writes `artifacts/manifest.json`. Intended to be run from the study
+#' registered table and figure, saves formatted outputs under `outputs/`, and
+#' writes `outputs/manifest.json`. Intended to be run from the study
 #' repository root (or pass the path explicitly).
 #'
 #' Registry papers use `registry/scripts/build_artifacts.R` instead; folder-backed
@@ -101,9 +101,6 @@ build_study_artifacts <- function(
   }
 
   artifact_dir <- file.path(study_root, "outputs")
-  if (!dir.exists(artifact_dir) && dir.exists(file.path(study_root, "artifacts"))) {
-    artifact_dir <- file.path(study_root, "artifacts")
-  }
   dir.create(artifact_dir, recursive = TRUE, showWarnings = FALSE)
 
   run_opts <- folder_study_run_options(study_root, meta, registry_root = registry_root)

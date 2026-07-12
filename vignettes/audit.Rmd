@@ -36,6 +36,7 @@ Key behaviour:
 - **`patience`** (default `20` seconds) — each table or figure is halted after this limit; the audit **continues** with the next object.
 - **Failures do not stop the run** — results are collected in a data frame.
 - **Report fields** — study, object id, engine, success, elapsed seconds, timed-out flag, and a short error snippet on failure.
+- **Substantive checks** (default `substantive = TRUE`) — when a study defines `tests/substantive/<step_id>.R`, the audit compares replicated estimates to published benchmarks (see Fearon & Laitin `tab_1`). Failures appear as `[substantive]` in the printed summary.
 
 ```{r, eval = FALSE}
 library(replicateEverything)

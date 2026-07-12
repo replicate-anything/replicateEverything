@@ -4,10 +4,14 @@
 \alias{describe_study_dag}
 \title{Text representation of the study DAG for Shiny / CLI}
 \usage{
-describe_study_dag(meta)
+describe_study_dag(meta, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{meta}{Parsed replication metadata.}
+\item{meta}{Parsed replication metadata, or a DOI / registry handle.}
+
+\item{repo}{Optional repository slug when \code{meta} is a DOI or handle.}
+
+\item{folder}{Optional registry folder when \code{meta} is a DOI or handle.}
 }
 \value{
 Character vector of component strings.

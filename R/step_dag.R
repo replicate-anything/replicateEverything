@@ -435,12 +435,22 @@ format_dag_component_paths <- function(comp, graph, steps = graph$steps) {
   }, character(1))
 }
 
+resolve_study_meta_input <- function(meta, repo = NULL, folder = NULL) {
+  if (is.character(meta) && length(meta) == 1L && nzchar(trimws(meta))) {
+    return(get_replication_meta(meta, repo = repo, folder = folder))
+  }
+  meta
+}
+
 #' Step display data for Shiny (components of paths of id / label / description)
-#' @param meta Parsed replication metadata.
+#' @param meta Parsed replication metadata, or a DOI / registry handle.
+#' @param repo Optional repository slug when `meta` is a DOI or handle.
+#' @param folder Optional registry folder when `meta` is a DOI or handle.
 #' @return A list of components; each component is a list of paths; each path is a
 #'   list of step display records.
 #' @export
-study_dag_display <- function(meta) {
+study_dag_display <- function(meta, repo = NULL, folder = NULL) {
+  meta <- resolve_study_meta_input(meta, repo = repo, folder = folder)
   steps <- normalize_study_steps(meta)
   if (length(steps) == 0L) {
     return(list())
@@ -468,11 +478,11 @@ path_sink_step <- function(path) {
 }
 
 #' Faceted pipeline groups for Shiny (split multi-branch components)
-#' @param meta Parsed replication metadata.
+#' @inheritParams study_dag_display
 #' @return List of facets, each with \code{title} and \code{paths}.
 #' @export
-study_dag_facets <- function(meta) {
-  components <- study_dag_display(meta)
+study_dag_facets <- function(meta, repo = NULL, folder = NULL) {
+  components <- study_dag_display(meta, repo = repo, folder = folder)
   facets <- list()
   for (comp in components) {
     if (length(comp) == 0L) {
@@ -513,11 +523,14 @@ study_dag_facets <- function(meta) {
 }
 
 #' Pipeline paths leading to one step (for Shiny Pipeline tab)
-#' @param meta Parsed replication metadata.
+#' @param meta Parsed replication metadata, or a DOI / registry handle.
 #' @param step_id Step or replication group id (e.g. \code{"tab_1"}).
+#' @param repo Optional repository slug when `meta` is a DOI or handle.
+#' @param folder Optional registry folder when `meta` is a DOI or handle.
 #' @return List of paths; each path is a list of display node records.
-#' @export
-study_dag_for_step <- function(meta, step_id) {
+#' @keywords internal
+study_dag_for_step <- function(meta, step_id, repo = NULL, folder = NULL) {
+  meta <- resolve_study_meta_input(meta, repo = repo, folder = folder)
   step_id <- trimws(as.character(step_id %||% ""))
   if (!nzchar(step_id)) {
     return(list())
@@ -555,10 +568,11 @@ study_dag_for_step <- function(meta, step_id) {
 }
 
 #' Text representation of the study DAG for Shiny / CLI
-#' @param meta Parsed replication metadata.
+#' @inheritParams study_dag_display
 #' @return Character vector of component strings.
 #' @export
-describe_study_dag <- function(meta) {
+describe_study_dag <- function(meta, repo = NULL, folder = NULL) {
+  meta <- resolve_study_meta_input(meta, repo = repo, folder = folder)
   steps <- normalize_study_steps(meta)
   graph <- study_step_graph(steps)
   validate_study_step_graph(graph)

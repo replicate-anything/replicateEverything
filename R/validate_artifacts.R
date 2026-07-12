@@ -18,14 +18,14 @@ default_artifact_path <- function(rep, what) {
 #' @inheritParams render_replication
 #' @return Character path or \code{NULL}.
 #' @keywords internal
-local_artifact_path <- function(doi, what, repo = NULL, language = NULL) {
-  meta <- get_replication_meta(doi, repo = repo)
+local_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
   if (is_package_replication(meta)) {
     return(NULL)
   }
 
   rep <- find_replication_entry(meta, what, language = language)
-  ctx <- paper_context(doi, repo = repo)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
 
   if (is.null(ctx$local_root)) {
     return(NULL)
@@ -51,8 +51,8 @@ local_artifact_path <- function(doi, what, repo = NULL, language = NULL) {
 #' }
 #'
 #' @keywords internal
-artifact_available <- function(doi, what, repo = NULL, language = NULL) {
-  local_path <- local_artifact_path(doi, what, repo = repo, language = language)
+artifact_available <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  local_path <- local_artifact_path(doi, what, repo = repo, folder = folder, language = language)
   if (!is.null(local_path)) {
     return(file.exists(local_path))
   }
@@ -63,7 +63,7 @@ artifact_available <- function(doi, what, repo = NULL, language = NULL) {
   }
 
   !is.null(suppressWarnings(tryCatch(
-    load_artifact(doi, what, repo = repo, language = language),
+    load_artifact(doi, what, repo = repo, folder = folder, language = language),
     error = function(e) NULL
   )))
 }
@@ -79,11 +79,11 @@ artifact_available <- function(doi, what, repo = NULL, language = NULL) {
 #' }
 #'
 #' @keywords internal
-validate_artifact <- function(doi, what, repo = NULL, language = NULL) {
-  meta <- get_replication_meta(doi, repo = repo)
+validate_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
 
   if (is_package_replication(meta)) {
-    if (!artifact_available(doi, what, repo = repo, language = language)) {
+    if (!artifact_available(doi, what, repo = repo, folder = folder, language = language)) {
       pkg <- as.character(meta$paper$package[[1]])
       stop(
         "Artifact not available for replication ", what,
@@ -96,8 +96,11 @@ validate_artifact <- function(doi, what, repo = NULL, language = NULL) {
   }
 
   local_path <- local_artifact_path(doi, what, repo = repo, language = language)
+  if (!is.null(local_path) && file.exists(local_path)) {
+    return(invisible(TRUE))
+  }
   if (!is.null(local_path) && !file.exists(local_path)) {
-    ctx <- tryCatch(paper_context(doi, repo = repo), error = function(e) NULL)
+    ctx <- tryCatch(paper_context(doi, repo = repo, folder = folder), error = function(e) NULL)
     hint <- if (!is.null(ctx) && isTRUE(ctx$is_folder_study)) {
       ". Run build_study_artifacts() in the study repository."
     } else {

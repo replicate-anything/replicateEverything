@@ -30,8 +30,8 @@ Invisibly, a list with \code{artifact_dir}, \code{manifest}, and per-id status.
 }
 \description{
 Runs pipeline prep steps from \code{replication.yml} when present, then every
-registered table and figure, saves formatted outputs under \verb{artifacts/}, and
-writes \code{artifacts/manifest.json}. Intended to be run from the study
+registered table and figure, saves formatted outputs under \verb{outputs/}, and
+writes \code{outputs/manifest.json}. Intended to be run from the study
 repository root (or pass the path explicitly).
 }
 \details{

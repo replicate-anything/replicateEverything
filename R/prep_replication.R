@@ -18,32 +18,14 @@ is_prep_entry <- function(rep) {
 
 #' List pipeline prep steps for a paper
 #'
-#' Returns entries from the \code{prep:} block in \code{replication.yml}.
+#' Superseded by [list_replications()] with `include = "pipeline"`.
 #'
 #' @inheritParams list_replications
 #' @return A list of prep step entries.
 #' @export
 list_prep_steps <- function(doi, repo = NULL, folder = NULL) {
-  meta <- get_replication_meta(doi, repo = repo, folder = folder)
-  prep <- meta$prep %||% list()
-  if (length(prep) > 0L) {
-    return(prep)
-  }
-  if (is_folder_study_replication(meta)) {
-    ctx <- paper_context(doi, repo = repo, folder = folder)
-    study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
-    if (!is.null(study_meta)) {
-      return(study_meta$prep %||% list())
-    }
-  }
-  if (is_package_replication(meta)) {
-    ctx <- paper_context(doi, repo = repo, folder = folder)
-    pkg_meta <- fetch_package_replication_yaml(meta, ctx)
-    if (!is.null(pkg_meta)) {
-      return(pkg_meta$prep %||% list())
-    }
-  }
-  list()
+  .Deprecated("list_replications(..., include = \"pipeline\")")
+  list_replications(doi, repo = repo, folder = folder, include = "pipeline")
 }
 
 #' Resolve a prep step output path on disk

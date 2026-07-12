@@ -40,10 +40,15 @@ build_display_artifact_entries <- function(
       if (!file.exists(out_file)) {
         stop("Artifact file was not created: ", out_file)
       }
-      validate_artifact(doi, rep_id)
+      rel_out <- study_artifact_rel_path(rep)
+      manifest_artifact <- if (nzchar(rel_out)) {
+        rel_out
+      } else {
+        file.path("outputs", basename(out))
+      }
       list(
         status = "ok",
-        artifact = file.path("artifacts", basename(out)),
+        artifact = manifest_artifact,
         format = switch(
           tools::file_ext(out_file),
           html = "html",

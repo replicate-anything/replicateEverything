@@ -2,7 +2,7 @@
 % Please edit documentation in R/folder_requirements.R
 \name{study_artifact_rel_candidates}
 \alias{study_artifact_rel_candidates}
-\title{Candidate display artifact paths (\code{outputs/} and legacy \code{artifacts/})}
+\title{Candidate display artifact paths under \code{outputs/}}
 \usage{
 study_artifact_rel_candidates(rep)
 }
@@ -10,6 +10,6 @@ study_artifact_rel_candidates(rep)
 \item{rep}{A single replication entry from \code{replication.yml}.}
 }
 \description{
-Candidate display artifact paths (\code{outputs/} and legacy \code{artifacts/})
+Candidate display artifact paths under \code{outputs/}
 }
 \keyword{internal}

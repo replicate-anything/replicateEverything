@@ -193,35 +193,3 @@ find_replication_entry <- function(meta, what, language = NULL, paper_meta = NUL
 
   engine_matches[[1]]
 }
-
-#' List one replication entry per logical group
-#'
-#' Returns the default-engine entry for each figure/table group (R when both
-#' engines exist).
-#'
-#' @inheritParams list_replications
-#' @param language Optional \code{"R"} or \code{"stata"} for each group.
-#' @return List of replication entries.
-#'
-#' @examples
-#' \dontrun{
-#' list_replication_groups("10.1257/aer.91.5.1369")
-#' list_replication_groups("10.1257/aer.91.5.1369", language = "stata")
-#' }
-#'
-#' @export
-list_replication_groups <- function(doi, repo = NULL, folder = NULL, language = NULL) {
-  meta <- get_replication_meta(doi, repo = repo, folder = folder)
-  entries <- collect_replication_entries(meta)
-  entries <- entries[vapply(entries, function(x) {
-    type <- as.character(x$type %||% "")
-    type %in% c("figure", "table")
-  }, logical(1))]
-  if (length(entries) == 0L) {
-    return(list())
-  }
-  groups <- unique(vapply(entries, replication_logical_id, character(1)))
-  lapply(groups, function(g) {
-    find_replication_entry(meta, g, language = language)
-  })
-}

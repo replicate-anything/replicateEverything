@@ -12,3 +12,4 @@ study_step_entries(meta)
 \description{
 Collect non-format step entries for indexes and Shiny lists
 }
+\keyword{internal}

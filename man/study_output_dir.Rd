@@ -22,6 +22,7 @@ study_artifact_dir(meta, ctx = NULL, installed = TRUE, package = NULL)
 Normalized directory path or \code{NULL}.
 }
 \description{
-Folder-backed studies use \code{outputs/} (legacy \code{artifacts/} still
-supported). Package-backed studies use \code{inst/report/outputs/}.
+Folder-backed studies use \code{outputs/}. Package-backed studies use
+\code{inst/report/outputs/}.
 }
+\keyword{internal}

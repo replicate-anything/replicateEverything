@@ -4,6 +4,26 @@ folder_registry_index_row <- function(meta, study_root) {
   registry_index_row_from_meta(meta, study_root = study_root)
 }
 
+#' Registry folder / handle from paper metadata
+#' @keywords internal
+registry_folder_from_paper <- function(paper) {
+  doi_val <- paper$doi %||% NULL
+  if (!is.null(doi_val)) {
+    doi_chr <- trimws(as.character(doi_val[[1]] %||% doi_val))
+    if (nzchar(doi_chr)) {
+      return(doi_to_registry_folder(doi_val))
+    }
+  }
+  handle <- as.character(
+    paper$study_handle %||% paper$study_folder %||% paper$handle %||% ""
+  )
+  handle <- trimws(handle[[1]] %||% handle)
+  if (nzchar(handle)) {
+    return(handle)
+  }
+  stop("paper needs doi or study_handle for registry index", call. = FALSE)
+}
+
 #' Build a registry index row from study or registry stub metadata
 #' @keywords internal
 registry_index_row_from_meta <- function(meta, study_root = NULL) {
@@ -14,10 +34,17 @@ registry_index_row_from_meta <- function(meta, study_root = NULL) {
   } else {
     authors <- as.character(authors[[1]] %||% "")
   }
-  folder <- doi_to_registry_folder(paper$doi)
-  handle <- as.character(paper$handle %||% folder[[1]])
+  folder <- registry_folder_from_paper(paper)
+  handle <- as.character(paper$handle %||% paper$study_handle %||% folder)
+  handle <- trimws(handle[[1]] %||% handle)
   if (!nzchar(handle)) {
     handle <- folder
+  }
+  doi_val <- paper$doi %||% NULL
+  doi_out <- if (!is.null(doi_val) && nzchar(trimws(as.character(doi_val[[1]] %||% doi_val)))) {
+    normalize_doi(doi_val)
+  } else {
+    ""
   }
   collections <- meta$collections %||% paper$collections %||% character(0)
   collections <- unique(na.omit(as.character(unlist(collections, use.names = FALSE))))
@@ -27,6 +54,7 @@ registry_index_row_from_meta <- function(meta, study_root = NULL) {
   maintainer_email <- as.character(maintainer$email %||% maintainer$Email %||% "")
   languages <- study_declared_languages(meta)
   languages <- paste(languages[nzchar(languages)], collapse = ";")
+  article_url <- as.character(paper$article_url %||% paper$landing_url %||% paper$study_url %||% "")
   repo <- if (!is.null(study_root)) {
     infer_study_repo_slug(study_root, meta)
   } else {
@@ -43,7 +71,7 @@ registry_index_row_from_meta <- function(meta, study_root = NULL) {
   data.frame(
     folder = folder,
     handle = handle,
-    doi = normalize_doi(paper$doi),
+    doi = doi_out,
     title = as.character(paper$title[[1]]),
     journal = as.character(paper$journal %||% ""),
     year = as.integer(paper$year %||% NA_integer_),
@@ -53,6 +81,7 @@ registry_index_row_from_meta <- function(meta, study_root = NULL) {
     maintainer_name = maintainer_name,
     maintainer_email = maintainer_email,
     languages = languages,
+    article_url = article_url,
     stringsAsFactors = FALSE
   )
 }

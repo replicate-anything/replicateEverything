@@ -1,7 +1,8 @@
 #' Run a single replication or all replications for a paper
 #'
-#' Executes a specific replication (figure or table) for a paper, or every
-#' logical group when `what = "everything"`.
+#' Executes a specific replication (figure or table) for a paper, or every step
+#' in the study DAG when `what = "everything"` (transform, table, and figure
+#' steps; format children run only when `format = TRUE`).
 #'
 #' By default returns the raw analysis object (e.g. a \code{glm} or \code{ggplot}).
 #' Set \code{format = TRUE} or \code{format = "if_available"} to apply the
@@ -10,26 +11,28 @@
 #'
 #' @param doi Character. DOI, registry handle, or local study path (see
 #'   [resolve_doi_input()]).
-#' @param what Character. Replication identifier (logical id, e.g. \code{"tab_1"}),
-#'   or \code{"everything"} to run all tables and figures.
+#' @param what Character. Step or replication identifier (e.g. \code{"tab_1"}),
+#'   or \code{"everything"} to run all non-format steps in the study DAG.
 #' @param language Optional \code{"R"}, \code{"stata"}, or \code{"python"}. When
 #'   omitted and the replication has only one engine, that engine is used
 #'   automatically. When both R and Stata exist for the same logical id, R is
 #'   preferred unless \code{language} is set.
-#' @param given Assumed-complete steps. \code{"parents"} (default) requires
-#'   immediate parent outputs to exist; \code{"nothing"} runs the full upstream
-#'   DAG; or a character vector of step ids (must include all ancestors of each
-#'   listed step).
+#' @param given Assumed-complete steps. For a single step, defaults to
+#'   \code{"parents"} (immediate parent outputs must exist). For
+#'   \code{what = "everything"}, defaults to \code{"nothing"} (run the full
+#'   upstream DAG). May also be a character vector of step ids.
 #' @param force Logical. Re-run steps even when outputs already exist.
 #' @param install_deps Logical. Install missing CRAN dependencies when
 #'   \code{TRUE}. Defaults to \code{FALSE}.
 #' @param format Logical or \code{"if_available"}. Apply display formatting when
-#'   available. Ignored when \code{what = "everything"} unless set explicitly.
+#'   available. When \code{what = "everything"}, applies to each step in the
+#'   returned list (\code{FALSE} returns raw analysis objects only).
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #'
 #' @return For a single replication, the analysis or formatted object. For
-#'   \code{what = "everything"}, a named list of such objects (invisibly).
+#'   \code{what = "everything"}, a named list of results for every non-format
+#'   step in the study DAG (invisibly).
 #'
 #' @examples
 #' \dontrun{
@@ -45,13 +48,16 @@ run_replication <- function(
   doi,
   what,
   language = NULL,
-  given = "parents",
+  given = NULL,
   force = FALSE,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
   folder = NULL
 ) {
+  if (is.null(given)) {
+    given <- if (identical(what, "everything")) "nothing" else "parents"
+  }
   if (identical(what, "everything")) {
     return(run_all_replications(
       doi,
@@ -155,8 +161,25 @@ run_replication_one <- function(
     )
   }
 
-  print(object)
+  if (!isTRUE(getOption("replicateEverything.quiet_run", FALSE))) {
+    print(object)
+  }
   invisible(object)
+}
+
+#' Step ids to run for \code{what = "everything"} (excludes format children)
+#' @keywords internal
+study_everything_step_ids <- function(meta) {
+  steps <- normalize_study_steps(meta)
+  if (length(steps) == 0L) {
+    return(character(0))
+  }
+  graph <- study_step_graph(steps)
+  ids <- graph$ids[!graph$types %in% c("format")]
+  if (length(ids) == 0L) {
+    return(character(0))
+  }
+  topological_step_sort(ids, graph)
 }
 
 #' @keywords internal
@@ -173,22 +196,46 @@ run_all_replications <- function(
   doi_key <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi_key, repo = repo, folder = folder)
 
-  message("Replicating: ", meta$paper$title)
+  message("Replicating: ", meta$paper$title %||% doi_key)
   message("")
 
-  groups <- list_replication_groups(
-    doi_key,
-    repo = repo,
-    folder = folder,
-    language = language
-  )
+  if (is_package_replication(meta)) {
+    groups <- list_replication_groups_impl(meta, language = language)
+    results <- list()
+    for (rep in groups) {
+      id <- replication_logical_id(rep)
+      message("Running: ", id)
+      results[[id]] <- run_replication_one(
+        doi_key,
+        id,
+        language = language,
+        given = given,
+        force = force,
+        install_deps = install_deps,
+        format = format,
+        repo = repo,
+        folder = folder
+      )
+    }
+    names(results) <- vapply(groups, replication_logical_id, character(1))
+    return(invisible(results))
+  }
+
+  step_ids <- study_everything_step_ids(meta)
+  if (length(step_ids) == 0L) {
+    groups <- list_replication_groups_impl(
+      meta,
+      language = language
+    )
+    step_ids <- vapply(groups, replication_logical_id, character(1))
+  }
+
   results <- list()
-  for (rep in groups) {
-    id <- replication_logical_id(rep)
-    message("Running: ", id)
-    results[[id]] <- run_replication_one(
+  for (step_id in step_ids) {
+    message("Running: ", step_id)
+    results[[step_id]] <- run_replication_one(
       doi_key,
-      id,
+      step_id,
       language = language,
       given = given,
       force = force,
@@ -199,6 +246,5 @@ run_all_replications <- function(
     )
   }
 
-  names(results) <- vapply(groups, replication_logical_id, character(1))
   invisible(results)
 }

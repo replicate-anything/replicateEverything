@@ -113,6 +113,19 @@ test_that("inherit entry can override format child code path", {
   expect_equal(fmt$code, "code/format_ext.R")
 })
 
+test_that("study_everything_step_ids excludes format children", {
+  meta <- list(
+    steps = list(
+      list(id = "prep_data", type = "transform", parents = list()),
+      list(id = "tab_1", type = "table", parents = list("prep_data")),
+      list(id = "tab_1_format", type = "format", parent = "tab_1")
+    )
+  )
+  ids <- study_everything_step_ids(meta)
+  expect_equal(ids, c("prep_data", "tab_1"))
+  expect_false("tab_1_format" %in% ids)
+})
+
 test_that("step_run_context routes inherited steps to base local_root", {
   meta <- list(
     .extends_context = list(

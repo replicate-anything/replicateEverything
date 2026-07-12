@@ -8,7 +8,7 @@ run_replication(
   doi,
   what,
   language = NULL,
-  given = "parents",
+  given = NULL,
   force = FALSE,
   install_deps = FALSE,
   format = FALSE,
@@ -20,16 +20,18 @@ run_replication(
 \item{doi}{Character. DOI, registry handle, or local study path (see
 \code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
 
-\item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}),
-or \code{"everything"} to run all tables and figures.}
+\item{what}{Character. Step or replication identifier (e.g. \code{"tab_1"}),
+or \code{"everything"} to run all non-format steps in the study DAG.}
 
-\item{language}{Optional \code{"R"} or \code{"stata"}. Defaults to R when
-both engines exist for the same logical replication.}
+\item{language}{Optional \code{"R"}, \code{"stata"}, or \code{"python"}. When
+omitted and the replication has only one engine, that engine is used
+automatically. When both R and Stata exist for the same logical id, R is
+preferred unless \code{language} is set.}
 
-\item{given}{Assumed-complete steps. \code{"parents"} (default) requires
-immediate parent outputs to exist; \code{"nothing"} runs the full upstream
-DAG; or a character vector of step ids (must include all ancestors of each
-listed step).}
+\item{given}{Assumed-complete steps. For a single step, defaults to
+\code{"parents"} (immediate parent outputs must exist). For
+\code{what = "everything"}, defaults to \code{"nothing"} (run the full
+upstream DAG). May also be a character vector of step ids.}
 
 \item{force}{Logical. Re-run steps even when outputs already exist.}
 
@@ -37,7 +39,8 @@ listed step).}
 \code{TRUE}. Defaults to \code{FALSE}.}
 
 \item{format}{Logical or \code{"if_available"}. Apply display formatting when
-available. Ignored when \code{what = "everything"} unless set explicitly.}
+available. When \code{what = "everything"}, applies to each step in the
+returned list (\code{FALSE} returns raw analysis objects only).}
 
 \item{repo}{Optional repository slug.}
 
@@ -45,11 +48,13 @@ available. Ignored when \code{what = "everything"} unless set explicitly.}
 }
 \value{
 For a single replication, the analysis or formatted object. For
-\code{what = "everything"}, a named list of such objects (invisibly).
+\code{what = "everything"}, a named list of results for every non-format
+step in the study DAG (invisibly).
 }
 \description{
-Executes a specific replication (figure or table) for a paper, or every
-logical group when \code{what = "everything"}.
+Executes a specific replication (figure or table) for a paper, or every step
+in the study DAG when \code{what = "everything"} (transform, table, and figure
+steps; format children run only when \code{format = TRUE}).
 }
 \details{
 By default returns the raw analysis object (e.g. a \code{glm} or \code{ggplot}).
@@ -63,7 +68,6 @@ run_replication("10.1177/00491241211036161", "fig_1")
 run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
-run_replication("10.1017/S0003055403000534", "tab_1", given = "nothing")
 run_replication("10.1177/00491241211036161", "everything")
 }
 

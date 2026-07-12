@@ -4,12 +4,16 @@
 \alias{study_dag_for_step}
 \title{Pipeline paths leading to one step (for Shiny Pipeline tab)}
 \usage{
-study_dag_for_step(meta, step_id)
+study_dag_for_step(meta, step_id, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{meta}{Parsed replication metadata.}
+\item{meta}{Parsed replication metadata, or a DOI / registry handle.}
 
 \item{step_id}{Step or replication group id (e.g. \code{"tab_1"}).}
+
+\item{repo}{Optional repository slug when \code{meta} is a DOI or handle.}
+
+\item{folder}{Optional registry folder when \code{meta} is a DOI or handle.}
 }
 \value{
 List of paths; each path is a list of display node records.
@@ -17,3 +21,4 @@ List of paths; each path is a list of display node records.
 \description{
 Pipeline paths leading to one step (for Shiny Pipeline tab)
 }
+\keyword{internal}

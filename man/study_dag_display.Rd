@@ -4,10 +4,14 @@
 \alias{study_dag_display}
 \title{Step display data for Shiny (components of paths of id / label / description)}
 \usage{
-study_dag_display(meta)
+study_dag_display(meta, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{meta}{Parsed replication metadata.}
+\item{meta}{Parsed replication metadata, or a DOI / registry handle.}
+
+\item{repo}{Optional repository slug when \code{meta} is a DOI or handle.}
+
+\item{folder}{Optional registry folder when \code{meta} is a DOI or handle.}
 }
 \value{
 A list of components; each component is a list of paths; each path is a

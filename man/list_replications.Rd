@@ -2,26 +2,54 @@
 % Please edit documentation in R/list_replications.R
 \name{list_replications}
 \alias{list_replications}
+\alias{list_replication_groups}
 \title{List available replications for a paper}
 \usage{
-list_replications(doi, repo = NULL, folder = NULL)
+list_replications(
+  doi,
+  repo = NULL,
+  folder = NULL,
+  grouped = FALSE,
+  language = NULL,
+  include = c("display", "pipeline", "all")
+)
+
+list_replication_groups(doi, repo = NULL, folder = NULL, language = NULL)
 }
 \arguments{
-\item{doi}{Character. DOI of the paper.}
+\item{doi}{Character. DOI, registry handle, or local study path.}
 
 \item{repo}{Optional repository slug.}
 
 \item{folder}{Optional registry folder name from \code{index.csv}.}
+
+\item{grouped}{Logical. When \code{TRUE}, return one entry per logical
+table/figure group (R preferred when \code{language} is unset).}
+
+\item{language}{Optional \code{"R"}, \code{"stata"}, or \code{"python"} when
+\code{grouped = TRUE}.}
+
+\item{include}{Which steps to return: \code{"display"} (tables and figures,
+default), \code{"pipeline"} (transform / prep steps), or \code{"all"}
+(every non-format step).}
 }
 \value{
-A list of replication entries from \code{replication.yml}.
+A \code{replication_list} object (a list with a compact
+\code{print()} method).
 }
 \description{
-List available replications for a paper
+Returns step entries from \code{replication.yml}: tables, figures, and (when
+requested) pipeline transforms. Use \code{grouped = TRUE} for one entry per
+logical product (e.g. a single \code{tab_1} when both R and Stata exist).
+
+Deprecated alias for \code{\link[=list_replications]{list_replications()}} with \code{grouped = TRUE}.
 }
 \examples{
 \dontrun{
 list_replications("10.1177/00491241211036161")
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE)
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE, language = "stata")
+list_replications("10.1017/s0003055426101749", include = "pipeline")
 }
 
 }
