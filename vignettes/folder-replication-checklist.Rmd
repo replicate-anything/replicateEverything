@@ -46,6 +46,25 @@ rep-<doi-slug>/
 - `paper.title`
 - `repo` or `paper.study_repo` — GitHub slug (`org/repo`); inferred from folder name when it starts with `rep-`
 
+**Maintainer and collections** (required for registry sync)
+
+- `maintainer.name` and `maintainer.email` — person responsible for keeping the study repo and server dependencies current; shown as `[maintainer]` on the Studies tab
+- `collections` — one or more tags for bibliography filtering (`APSR`, `PED`, `World Bank`, `IPI`, …); copied to registry `index.csv`
+- `languages` — every engine used in prep or replications (`r`, `stata`, `python`); precompiled into `index.csv` for the Studies tab
+
+```yaml
+maintainer:
+  name: Jane Maintainer
+  email: maintainer@example.org
+
+collections:
+  - APSR
+
+languages:
+  - r
+  - stata
+```
+
 **Each figure or table**
 
 ```yaml
@@ -111,8 +130,8 @@ prepare_folder_paper(
 
 This runs [check_folder_replication()] and writes:
 
-- `registry/replication.yml` — copy to `registry/studies/<folder>.yml`
-- `registry/index.csv` — merge into the registry repo `index.csv`
+- `registry/replication.yml` — copy to `registry/studies/<folder>.yml` (includes `maintainer`, `collections`, and `languages`)
+- `registry/index.csv` — one row with `collections`, `maintainer_name`, `maintainer_email`, and `languages`
 
 ### 4. Sync to the registry
 
@@ -123,9 +142,13 @@ options(replicateEverything.registry_root = "../registry")
 sync_folder_paper(".")
 ```
 
-**Option B — manual:** copy the two files from `registry/` in the study repo into the [registry repository](https://github.com/replicate-anything/registry).
+**Option B — manual:** copy `registry/replication.yml` to `registry/studies/<folder>.yml`, then rebuild the full index:
 
-**Option C — one step:** run `prepare_folder_paper()` then `sync_folder_paper()` (same as options A + B).
+```{r, eval = FALSE}
+build_registry_index("../registry")
+```
+
+**Option C — one step:** run `prepare_folder_paper()` then `sync_folder_paper()` (same as options A + B; `sync_folder_paper()` calls `build_registry_index()`).
 
 ### 5. Tests (recommended before prepare)
 

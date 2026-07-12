@@ -37,6 +37,8 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 
 ## Workflow checklist
 
+Every study needs **`maintainer:`** (name + email) and should list **`collections:`** (typically `APSR` for this workflow) in root `replication.yml`. Sync to registry `index.csv` with **`build_registry_index()`** after copying the stub — see folder-replication Step 3b.
+
 ```
 - [ ] 1. Read README.txt + Codebook.pdf; list main-text tables/figures
 - [ ] 2. Inventory engines (Stata / R / Python) and pipeline order
@@ -48,7 +50,7 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 - [ ] 8. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
 - [ ] 9. Port figures → code/figures/fig_N.{R,py}; helpers → code/helpers/
 - [ ] 10. **Write replication.yml** from dependency inventory — folder-replication Step 3b (`languages:`, `maintainer:`, `collections:`, `paper.dependencies`, `python_dependencies:`, `stata_packages:`)
-- [ ] 11. Registry stub + **index.csv row** (collections, maintainer, languages precompiled)
+- [ ] 11. Registry stub + run **`build_registry_index()`** (collections, maintainer, languages in `index.csv`)
 - [ ] 12. testthat smoke tests
 - [ ] 13. Build artifacts/ + manifest.json (`build_study_artifacts(..., install_deps = TRUE)`)
 - [ ] 14. Validate engines + Shiny (Display + Run + Check system compatibility)

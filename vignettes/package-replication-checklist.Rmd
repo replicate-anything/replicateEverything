@@ -48,6 +48,24 @@ rep_<doi-slug>/
 - `paper.package_ref` — branch/tag (default `main`)
 - `paper.package_folder` — optional; sibling folder name for monorepo dev
 
+**Maintainer and collections** (required for registry sync)
+
+- `maintainer.name` and `maintainer.email` — contact shown as `[maintainer]` on the Studies tab
+- `collections` — tags for bibliography filtering (`APSR`, `PED`, `World Bank`, `IPI`, …)
+- `languages` — engines used by the package (usually `r`)
+
+```yaml
+maintainer:
+  name: Jane Maintainer
+  email: maintainer@example.org
+
+collections:
+  - IPI
+
+languages:
+  - r
+```
+
 **Each figure or table**
 
 ```yaml

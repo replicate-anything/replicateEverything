@@ -48,6 +48,8 @@ registry/studies/<folder>.yml   # lightweight stub (DOI, title, study_repo link)
 
 Copy and track progress:
 
+**Every study repo must declare `maintainer:` (name + email) and should declare `collections:` (APSR, PED, World Bank, IPI, …) in root `replication.yml`.** These fields copy into the registry stub and `index.csv` (via `build_registry_index()`) for the Studies tab filter and maintainer link.
+
 ```
 - [ ] 1. Inventory delivered materials (scripts, data, outputs)
 - [ ] 2. Create GitHub study repo (empty) + local clone as monorepo sibling
@@ -57,7 +59,7 @@ Copy and track progress:
 - [ ] 5. Refactor code into make_<id>() + format_<id>() per replication
 - [ ] 6. Build artifacts; write artifacts/manifest.json
 - [ ] 7. Add testthat tests (run_replication + artifact match)
-- [ ] 8. Slim registry stub; update **index.csv** row (repo, collections, maintainer, languages)
+- [ ] 8. Slim registry stub; run **`build_registry_index()`** so `index.csv` has repo, **collections**, **maintainer**, **languages**
 - [ ] 9. Remove code/data/artifacts from registry study folder (if migrating)
 - [ ] 10. Verify replicateEverything + Shiny (Display + Run + system compatibility check)
 - [ ] 11. Commit and push study repo + registry
@@ -147,6 +149,7 @@ paper:
   journal: "..."
   year: 2022
   authors: "..."
+  study_folder: rep-10.1177-00491241211036161   # Shiny Server data/ subfolder (optional if repo name matches)
   dependencies:          # all CRAN packages from Step 3a (R scripts + format helpers)
     - ggplot2
     - haven
@@ -218,6 +221,8 @@ replications:
 | `replications[].dependencies` | **R only** — extra CRAN packages for that entry; prefer study-wide lists when shared |
 
 **Tables with external data:** add `data: data/myfile.dta` on the replication row.
+
+**Shiny Server (large files):** place files at `data/<study_folder>/<basename>` beside the app (e.g. `data/rep-10.1596-1813-9450-10626/ACS2017-2021_finalready.dta`). Use the study repo folder name (`paper.study_folder` or `rep-<doi-with-hyphens>`), not the registry stub folder (`10.x_y`).
 
 **Tables without format step:** omit `format:`; artifact is usually `.html` from analysis output.
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/replication_kind.R
 \name{study_manifest_path}
 \alias{study_manifest_path}
-\title{Manifest path for a study's precomputed display artifacts}
+\title{Manifest path for a study's precomputed display outputs}
 \usage{
 study_manifest_path(meta, ctx = NULL, installed = TRUE, package = NULL)
 }
@@ -19,6 +19,6 @@ study_manifest_path(meta, ctx = NULL, installed = TRUE, package = NULL)
 Character path or \code{NULL}.
 }
 \description{
-Manifest path for a study's precomputed display artifacts
+Manifest path for a study's precomputed display outputs
 }
 \keyword{internal}

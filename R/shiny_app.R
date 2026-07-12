@@ -171,6 +171,21 @@ run_shiny_app <- function(...) {
     )
   }
 
+  launch_wd <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  options(replicateEverything.shiny_launch_wd = launch_wd)
+  monorepo <- monorepo_root_from_path(launch_wd)
+  if (!is.null(monorepo)) {
+    tryCatch(
+      configure_local_monorepo(monorepo),
+      error = function(e) {
+        options(
+          replicateEverything.study_folders_root = monorepo,
+          replicateEverything.use_sibling_packages = TRUE
+        )
+      }
+    )
+  }
+
   options(replicate_shiny.auto_update_replicate_everything = FALSE)
   shiny::runApp(app_dir, ...)
 }

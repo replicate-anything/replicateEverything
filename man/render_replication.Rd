@@ -10,7 +10,11 @@ render_replication(
   language = NULL,
   install_deps = FALSE,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  skip_prep = FALSE,
+  force = FALSE,
+  meta = NULL,
+  ctx = NULL
 )
 }
 \arguments{

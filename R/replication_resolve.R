@@ -23,6 +23,39 @@ normalize_replication_language <- function(language) {
   stop('language must be "R", "stata", or "python"', call. = FALSE)
 }
 
+#' Infer replication language when only one engine implements \code{what}
+#'
+#' @param meta Parsed replication metadata.
+#' @param what Replication id or logical group id.
+#' @param language Optional explicit language (normalized when set).
+#' @return \code{"r"}, \code{"stata"}, \code{"python"}, or \code{NULL}.
+#' @keywords internal
+resolve_replication_language <- function(meta, what, language = NULL) {
+  lang <- normalize_replication_language(language)
+  if (!is.null(lang)) {
+    return(lang)
+  }
+  entries <- collect_replication_entries(meta)
+  matches <- entries[
+    vapply(entries, function(x) {
+      identical(as.character(x$id), what) ||
+        identical(replication_logical_id(x), what)
+    }, logical(1))
+  ]
+  if (length(matches) == 0L) {
+    return(NULL)
+  }
+  engines <- unique(vapply(
+    matches,
+    function(x) replication_engine(x, meta$paper),
+    character(1)
+  ))
+  if (length(engines) == 1L) {
+    return(engines[[1]])
+  }
+  NULL
+}
+
 #' Logical replication id (group) for a yaml entry
 #'
 #' @param rep Replication entry from \code{replication.yml}.
@@ -42,6 +75,12 @@ replication_logical_id <- function(rep) {
 #' @return List of replication entries.
 #' @keywords internal
 collect_replication_entries <- function(meta) {
+  if (!is.null(meta$steps) && length(meta$steps) > 0L) {
+    steps <- normalize_study_steps(meta)
+    return(steps[vapply(steps, function(x) {
+      !identical(as.character(x$type), "format")
+    }, logical(1))])
+  }
   entries <- c(meta$prep %||% list(), meta$replications %||% list())
   if (length(entries) > 0L || !is_folder_study_replication(meta)) {
     return(entries)
@@ -53,6 +92,9 @@ collect_replication_entries <- function(meta) {
   study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
   if (is.null(study_meta)) {
     return(entries)
+  }
+  if (!is.null(study_meta$steps) && length(study_meta$steps) > 0L) {
+    return(normalize_study_steps(study_meta))
   }
   c(study_meta$prep %||% list(), study_meta$replications %||% list())
 }
@@ -94,7 +136,7 @@ default_replication_language <- function(entries, paper_meta = NULL) {
 #' @keywords internal
 find_replication_entry <- function(meta, what, language = NULL, paper_meta = NULL) {
   paper_meta <- paper_meta %||% meta$paper %||% NULL
-  language <- normalize_replication_language(language)
+  language <- resolve_replication_language(meta, what, language)
   entries <- collect_replication_entries(meta)
 
   exact <- entries[

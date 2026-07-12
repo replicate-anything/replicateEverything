@@ -111,7 +111,11 @@ resolve_registry_handle <- function(x) {
   if (nrow(hit) == 0L) {
     return(NULL)
   }
-  normalize_doi(hit$doi[[1]])
+  doi_val <- hit$doi[[1]]
+  if (is.null(doi_val) || !nzchar(trimws(as.character(doi_val)))) {
+    return(as.character(hit$handle[[1]]))
+  }
+  normalize_doi(doi_val)
 }
 
 #' Compile registry index.csv from study stub yaml files

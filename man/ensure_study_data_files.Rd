@@ -19,8 +19,8 @@ ensure_study_data_files(data_files, study_root, meta, ctx = NULL)
 Invisibly, character vector of resolved paths under \code{study_root}.
 }
 \description{
-Looks in the study checkout, then \code{data/<study>/<file>} under the
-working directory. When found externally, links or copies into
+Looks in the study checkout, then \code{data/<study_folder>/<file>} under
+\code{study_data_root}. When found externally, links or copies into
 \code{study_root} so Stata paths keep working.
 }
 \keyword{internal}

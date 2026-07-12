@@ -55,17 +55,34 @@ build_study_artifacts <- function(
 
   paper <- meta$paper
   if (is.null(paper$doi) || !nzchar(as.character(paper$doi[[1]]))) {
-    stop("paper.doi is required in replication.yml", call. = FALSE)
+    handle <- paper$study_handle %||% NULL
+    if (is.null(handle) || !nzchar(as.character(handle[[1]]))) {
+      stop("paper.doi or paper.study_handle is required in replication.yml", call. = FALSE)
+    }
+    doi <- as.character(handle[[1]])
+  } else {
+    doi <- normalize_doi(paper$doi)
   }
-
-  doi <- normalize_doi(paper$doi)
   folder <- doi_to_registry_folder(doi)
+
+  if (!is.null(meta$paper$extends %||% meta$extends)) {
+    meta <- merge_extended_study_meta(
+      meta,
+      paper_context(doi, folder = folder)
+    )
+  }
 
   if (is.null(registry_root) || !nzchar(registry_root)) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
   }
 
   display_reps <- folder_display_replications(meta)
+  if (study_has_extension(meta)) {
+    display_reps <- display_reps[vapply(display_reps, function(rep) {
+      code_rel <- as.character(rep$code[[1]] %||% "")
+      nzchar(code_rel) && file.exists(file.path(study_root, code_rel))
+    }, logical(1))]
+  }
   if (!is.null(ids)) {
     display_reps <- display_reps[vapply(display_reps, function(x) {
       x$id %in% ids
@@ -83,7 +100,10 @@ build_study_artifacts <- function(
     stop("No figure/table replications to build.", call. = FALSE)
   }
 
-  artifact_dir <- file.path(study_root, "artifacts")
+  artifact_dir <- file.path(study_root, "outputs")
+  if (!dir.exists(artifact_dir) && dir.exists(file.path(study_root, "artifacts"))) {
+    artifact_dir <- file.path(study_root, "artifacts")
+  }
   dir.create(artifact_dir, recursive = TRUE, showWarnings = FALSE)
 
   run_opts <- folder_study_run_options(study_root, meta, registry_root = registry_root)

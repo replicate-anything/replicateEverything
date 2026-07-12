@@ -2,7 +2,7 @@
 % Please edit documentation in R/folder_requirements.R
 \name{study_artifact_rel_path}
 \alias{study_artifact_rel_path}
-\title{Artifact path relative to study root (single source of truth)}
+\title{Artifact path relative to study root (primary candidate)}
 \usage{
 study_artifact_rel_path(rep)
 }

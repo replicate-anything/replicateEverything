@@ -1,36 +1,47 @@
 test_that("default artifact path uses png for figures", {
   rep <- list(type = "figure")
-  expect_equal(default_artifact_path(rep, "fig_1"), "artifacts/fig_1.png")
+  expect_equal(default_artifact_path(rep, "fig_1"), "outputs/fig_1.png")
 })
 
-test_that("default artifact path uses rds when format is specified", {
+test_that("default artifact path uses html when format is specified", {
   rep <- list(type = "table", format = "format_tab_1")
-  expect_equal(default_artifact_path(rep, "tab_1"), "artifacts/tab_1.rds")
+  expect_equal(default_artifact_path(rep, "tab_1"), "outputs/tab_1.html")
 })
 
 test_that("default artifact path uses html for legacy tables", {
   rep <- list(type = "table")
-  expect_equal(default_artifact_path(rep, "tab_1"), "artifacts/tab_1.html")
+  expect_equal(default_artifact_path(rep, "tab_1"), "outputs/tab_1.html")
 })
 
 test_that("study_artifact_rel_path uses replication.yml artifact when set", {
   rep <- list(
     id = "tab_2",
     type = "table",
-    artifact = "artifacts/tab_2.html"
+    artifact = "outputs/tab_2.html"
   )
-  expect_equal(study_artifact_rel_path(rep), "artifacts/tab_2.html")
+  expect_equal(study_artifact_rel_path(rep), "outputs/tab_2.html")
 })
 
 test_that("study_artifact_rel_path falls back to the type-based default", {
   expect_equal(
     study_artifact_rel_path(list(id = "fig_1", type = "figure")),
-    "artifacts/fig_1.png"
+    "outputs/fig_1.png"
   )
   expect_equal(
     study_artifact_rel_path(list(id = "tab_1", type = "table")),
-    "artifacts/tab_1.html"
+    "outputs/tab_1.html"
   )
+})
+
+test_that("study_artifact_rel_candidates uses outputs paths only", {
+  rep <- list(
+    id = "tab_1",
+    type = "table",
+    artifact = "outputs/tab_1.html"
+  )
+  cands <- study_artifact_rel_candidates(rep)
+  expect_true("outputs/tab_1.html" %in% cands)
+  expect_false(any(grepl("^artifacts/", cands)))
 })
 
 test_that("get_artifact_path resolves figure png under local folder-backed study", {

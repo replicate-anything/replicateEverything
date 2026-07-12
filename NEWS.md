@@ -1,3 +1,21 @@
+# replicateEverything 0.6.0
+
+## Step DAG and conditional replication
+
+* Unified **`steps:`** block in `replication.yml` replaces separate `prep:` / `replications:` (legacy blocks still compile automatically).
+* [run_replication()] gains **`given`** (`"parents"`, `"nothing"`, or a character vector of assumed-complete steps) and **`force`**. Default `given = "parents"` requires immediate parent outputs to exist and errors if missing.
+* Shiny shows a **faceted** pipeline (Tables / figures / standalone paths) with hover labels; step **labels** name outputs.
+* Study products live under **`outputs/`** (step-named paths); **`artifacts/`** is no longer used for folder-backed studies.
+* **`language`** is optional in [run_replication()] when a replication has only one engine.
+* Shiny: collapsible study details (expand after DOI); simplified pipeline key; **Pipeline** tab per object.
+* Shiny: fixed study deep links (`?doi=...`) — wait for browser URL before parsing; skip welcome modal when opening a shared link.
+* Removed legacy path fallbacks (`artifacts/`, `data/processed/` as implicit output locations). Study repos must declare and write **`outputs/`** paths explicitly.
+* Format steps are **`type: format`** children of tables/figures; run via `format = TRUE` unless `format = FALSE`.
+* [configure_local_monorepo()] wires registry + sibling study folders for local dev.
+* [study_output_dir()] is the preferred name for [study_artifact_dir()].
+* **Step inheritance** — extension studies declare `paper.extends` and `inherit:` steps; inherited pipeline steps run in the base repo, extension analyses read base `outputs/`. New vignette: `vignette("reanalysis-studies")`. Worked example: Fearon & Laitin reanalysis (`rep-10.1017-S0003055403000534--alt-1`).
+* Studies without an article DOI may use **`paper.study_handle`** (registry handle) instead of `paper.doi`.
+
 # replicateEverything 0.5.1
 
 ## Registry index and Shiny

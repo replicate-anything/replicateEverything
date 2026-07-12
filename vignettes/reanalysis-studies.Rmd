@@ -1,0 +1,101 @@
+---
+title: "Reanalysis and extension studies"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reanalysis and extension studies}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## Overview
+
+A **reanalysis study** reuses upstream data preparation from a published replication while replacing one or more analysis steps. The replicateEverything package supports this with `paper.extends` and step-level `inherit:` declarations.
+
+The worked example pairs:
+
+- **Base study:** [Fearon & Laitin (2003)](https://doi.org/10.1017/S0003055403000534) — `rep-10.1017-S0003055403000534`
+- **Reanalysis:** [Simple replication of F&L data / repo](https://github.com/replicate-anything/rep-10.1017-S0003055403000534--alt-1) — same prepared data, `lm_robust` instead of `glm`
+
+## Base study pipeline
+
+The base study declares a transform step and downstream tables:
+
+```
+raw data/repdata.dta  →  prep_data  →  tab_1 (R) / tab_1_stata (Stata)
+```
+
+`prep_data` renames `lpopl1` to `lpopl` and recodes onset indicators. Both analysis engines read `outputs/prep_data/repdata.rds` or `.dta`.
+
+## Extension study layout
+
+The reanalysis repository holds only new material. When the display format matches the base study, inherit the format child step; when it differs (as here), inherit with a \code{code:} override pointing at local R scripts:
+
+```yaml
+steps:
+  - inherit: prep_data
+
+  - id: tab_1
+    type: table
+    parents: [prep_data]
+    data: outputs/prep_data/repdata.rds
+    code: code/tab_1.R
+    format: format_tab_1
+
+  - inherit: tab_1_format
+    code: code/tab_1.R
+```
+
+In the base Fearon \& Laitin study, Stata table steps read \code{data/repdata.dta} directly; R steps use the shared \code{prep_data} output.
+
+## Execution semantics
+
+| `given` | Behaviour |
+|---------|-----------|
+| `"parents"` | Requires `prep_data` outputs in the **base** repo (`outputs/prep_data/`) |
+| `"nothing"` | Runs inherited `prep_data` in the base checkout, then the extension analysis locally |
+
+Inherited steps execute in the base study root; extension steps run in the extension root but may read base `outputs/`.
+
+## Running locally
+
+From a monorepo checkout with both study folders as siblings:
+
+```{r, eval = FALSE}
+devtools::load_all("replicateEverything")
+configure_local_monorepo()
+
+# Base study (once)
+run_replication("10.1017/S0003055403000534", "prep_data", given = "nothing")
+
+# Reanalysis (uses base prep_data outputs)
+run_replication(
+  "rep-10.1017-S0003055403000534--alt-1",
+  "tab_1",
+  given = "parents"
+)
+```
+
+Or pass the extension study path directly when no article DOI exists yet:
+
+```{r, eval = FALSE}
+run_replication("rep-10.1017-S0003055403000534--alt-1", "tab_1")
+```
+
+## Registration
+
+Extension studies without a DOI use `paper.study_handle` in `replication.yml` and a registry stub keyed by that handle. Link to the original study in `paper.related` or the abstract. See `registry/studies/rep-10.1017-S0003055403000534--alt-1.yml` for the stub template.
+
+Validate before opening a PR:
+
+```{r, eval = FALSE}
+check_folder_replication("rep-10.1017-S0003055403000534--alt-1")
+```
+
+## Further reading
+
+- Step inheritance design notes: `system.file("docs/step-inheritance.md", package = "replicateEverything")`
+- Folder replication checklist: `vignette("folder-replication-checklist", package = "replicateEverything")`

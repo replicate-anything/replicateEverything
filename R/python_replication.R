@@ -388,7 +388,7 @@ run_python_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) 
   ext <- tolower(tools::file_ext(code_path))
   log_path <- file.path(
     run_dir,
-    "artifacts",
+    "outputs",
     "staging",
     paste0(as.character(rep$id), "_python.log")
   )

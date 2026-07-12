@@ -122,8 +122,13 @@ registry_stub_summary_fields <- function(meta) {
 #' @keywords internal
 folder_study_run_options <- function(study_root, meta, registry_root = NULL) {
   paper <- meta$paper
-  doi <- normalize_doi(paper$doi)
-  folder <- doi_to_registry_folder(doi)
+  if (is.null(paper$doi) || !nzchar(as.character(paper$doi[[1]] %||% ""))) {
+    doi <- as.character(paper$study_handle[[1]] %||% paper$study_handle %||% "")
+    folder <- doi
+  } else {
+    doi <- normalize_doi(paper$doi)
+    folder <- doi_to_registry_folder(doi)
+  }
   study_repo <- infer_study_repo_slug(study_root, meta)
   if (is.null(study_repo)) {
     stop("Could not infer study repo slug; set repo or paper.study_repo in replication.yml", call. = FALSE)
@@ -224,6 +229,15 @@ portable_path_in_text <- function(text, study_root = NULL) {
 #' Display replications from study yaml
 #' @keywords internal
 folder_display_replications <- function(meta) {
+  steps <- tryCatch(collect_study_step_entries(meta), error = function(e) list())
+  from_steps <- steps[vapply(steps, function(x) {
+    is_display_step_type(x$type %||% "")
+  }, logical(1))]
+  if (length(from_steps) > 0L) {
+    return(from_steps[vapply(from_steps, function(x) {
+      !isTRUE(x$incomplete %||% FALSE)
+    }, logical(1))])
+  }
   reps <- meta$replications %||% list()
   reps <- reps[vapply(reps, function(x) {
     identical(as.character(x$type %||% ""), "figure") ||
@@ -286,7 +300,35 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
     grepl('<pre[^>]*class="[^"]*stata-output', html, ignore.case = TRUE)
 }
 
-#' Artifact path relative to study root (single source of truth)
+#' Candidate display artifact paths under \code{outputs/}
+#' @param rep A single replication entry from \code{replication.yml}.
+#' @keywords internal
+study_artifact_rel_candidates <- function(rep) {
+  id <- as.character(rep$id %||% "")
+  cands <- character(0)
+  artifact <- rep$artifact %||% NULL
+  if (!is.null(artifact) && nzchar(as.character(artifact[[1]] %||% ""))) {
+    cands <- c(cands, as.character(artifact[[1]]))
+  }
+  outs <- rep$outputs %||% NULL
+  if (!is.null(outs) && length(outs) > 0L) {
+    outs <- vapply(outs, function(x) as.character(x), character(1))
+    display <- outs[grepl("\\.(html|png|rds|svg)$", outs, ignore.case = TRUE)]
+    cands <- c(cands, display)
+  }
+  if (nzchar(id)) {
+    cands <- c(
+      cands,
+      paste0("outputs/", id, ".html"),
+      paste0("outputs/", id, ".png")
+    )
+  }
+  legacy <- default_artifact_path(rep, id)
+  cands <- c(cands, legacy)
+  unique(cands[nzchar(cands)])
+}
+
+#' Artifact path relative to study root (primary candidate)
 #'
 #' Returns the \code{artifact:} entry from \code{replication.yml} when declared,
 #' otherwise the type-based default from \code{default_artifact_path()}. This is
@@ -296,9 +338,9 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
 #' @param rep A single replication entry from \code{replication.yml}.
 #' @keywords internal
 study_artifact_rel_path <- function(rep) {
-  artifact <- rep$artifact %||% NULL
-  if (!is.null(artifact) && nzchar(as.character(artifact[[1]]))) {
-    return(as.character(artifact[[1]]))
+  cands <- study_artifact_rel_candidates(rep)
+  if (length(cands) == 0L) {
+    return("")
   }
-  default_artifact_path(rep, rep$id)
+  cands[[1]]
 }

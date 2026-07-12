@@ -1239,9 +1239,10 @@ stata_output_missing_message <- function(output_path, study_root, run, staging_d
   if (!is.null(staging_dir) && nzchar(staging_dir)) {
     staging_candidates <- c(
       file.path(staging_dir, expected_name),
-      file.path(study_root, "artifacts", "staging", expected_name)
+      file.path(study_root, "outputs", "staging", expected_name)
     )
   }
+  legacy_candidates <- character(0)
   paste0(
     "Expected Stata output not found.\n",
     "Expected file: ", output_path, "\n",
@@ -1281,7 +1282,7 @@ stata_output_missing_message <- function(output_path, study_root, run, staging_d
     } else {
       ""
     },
-    describe_directory(file.path(study_root, "artifacts", "staging"), "Study staging"),
+    describe_directory(file.path(study_root, "outputs", "staging"), "Study staging"),
     if (!is.null(staging_dir) && nzchar(staging_dir)) {
       paste0("\n", describe_directory(staging_dir, "Writable staging"))
     } else {
@@ -1292,7 +1293,7 @@ stata_output_missing_message <- function(output_path, study_root, run, staging_d
 
 #' Writable staging directory for Stata output
 #'
-#' Uses \code{<study>/artifacts/staging} when the study folder is writable;
+#' Uses \code{<study>/outputs/staging} when the study folder is writable;
 #' otherwise falls back to \code{<study_data_root>/staging/<study>} (Shiny server).
 #'
 #' @param meta Parsed replication metadata.
@@ -1305,7 +1306,7 @@ writable_stata_staging_dir <- function(meta, ctx = NULL, study_root = NULL) {
     study_root <- ctx$local_root
   }
   if (!is.null(study_root) && nzchar(study_root)) {
-    candidate <- file.path(study_root, "artifacts", "staging")
+    candidate <- file.path(study_root, "outputs", "staging")
     if (staging_dir_is_writable(candidate)) {
       return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
     }
@@ -1381,17 +1382,23 @@ cleanup_stata_run_dir <- function(run_dir) {
 #' @param staging_dir Optional writable staging directory.
 #' @keywords internal
 resolve_stata_output_after_run <- function(rep, study_root, staging_dir = NULL) {
-  primary <- stata_output_path(rep, study_root)
-  if (file.exists(primary)) {
-    return(normalizePath(primary, winslash = "/", mustWork = FALSE))
+  rels <- step_output_rel_candidates(rep)
+  if (length(rels) == 0L) {
+    rels <- paste0("outputs/staging/", rep$id, ".smcl")
   }
-  if (!is.null(staging_dir) && nzchar(staging_dir)) {
-    candidate <- file.path(staging_dir, basename(primary))
-    if (file.exists(candidate)) {
-      return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+  for (rel in rels) {
+    primary <- file.path(study_root, rel)
+    if (file.exists(primary)) {
+      return(normalizePath(primary, winslash = "/", mustWork = FALSE))
+    }
+    if (!is.null(staging_dir) && nzchar(staging_dir)) {
+      candidate <- file.path(staging_dir, basename(rel))
+      if (file.exists(candidate)) {
+        return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+      }
     }
   }
-  primary
+  file.path(study_root, rels[[1]])
 }
 
 #' Extract the output file path from a Stata replication result
@@ -1456,11 +1463,15 @@ normalize_stata_result_object <- function(object) {
 #' @param study_root Study repository root.
 #' @keywords internal
 stata_output_path <- function(rep, study_root) {
-  rel <- rep$output %||% rep$stata_output %||% NULL
-  if (!is.null(rel) && length(rel) > 0L && nzchar(as.character(rel[[1]]))) {
-    return(file.path(study_root, as.character(rel[[1]])))
+  rels <- step_output_rel_candidates(rep)
+  if (length(rels) == 0L) {
+    rel <- rep$output %||% rep$stata_output %||% NULL
+    if (!is.null(rel) && length(rel) > 0L && nzchar(as.character(rel[[1]]))) {
+      return(file.path(study_root, as.character(rel[[1]])))
+    }
+    return(file.path(study_root, "outputs", "staging", paste0(rep$id, ".smcl")))
   }
-  file.path(study_root, "artifacts", "staging", paste0(rep$id, ".smcl"))
+  file.path(study_root, rels[[1]])
 }
 
 #' @keywords internal

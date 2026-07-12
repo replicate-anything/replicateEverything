@@ -11,7 +11,7 @@ Normalized path or \code{NULL}.
 }
 \description{
 Looks for \code{registry/index.csv} next to the installed or loaded
-\pkg{replicateEverything} package, or uses
+\pkg{replicateEverything} package, the Shiny launch directory, or uses
 \code{getOption("replicateEverything.study_folders_root")}.
 }
 \keyword{internal}

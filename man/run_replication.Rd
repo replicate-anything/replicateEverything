@@ -8,6 +8,8 @@ run_replication(
   doi,
   what,
   language = NULL,
+  given = "parents",
+  force = FALSE,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
@@ -23,6 +25,13 @@ or \code{"everything"} to run all tables and figures.}
 
 \item{language}{Optional \code{"R"} or \code{"stata"}. Defaults to R when
 both engines exist for the same logical replication.}
+
+\item{given}{Assumed-complete steps. \code{"parents"} (default) requires
+immediate parent outputs to exist; \code{"nothing"} runs the full upstream
+DAG; or a character vector of step ids (must include all ancestors of each
+listed step).}
+
+\item{force}{Logical. Re-run steps even when outputs already exist.}
 
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}
@@ -46,7 +55,7 @@ logical group when \code{what = "everything"}.
 By default returns the raw analysis object (e.g. a \code{glm} or \code{ggplot}).
 Set \code{format = TRUE} or \code{format = "if_available"} to apply the
 registered \code{format_*} step when \code{replication.yml} defines one
-(same step used for display artifacts and Shiny).
+(same step used for display outputs and Shiny).
 }
 \examples{
 \dontrun{
@@ -54,6 +63,7 @@ run_replication("10.1177/00491241211036161", "fig_1")
 run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
+run_replication("10.1017/S0003055403000534", "tab_1", given = "nothing")
 run_replication("10.1177/00491241211036161", "everything")
 }
 

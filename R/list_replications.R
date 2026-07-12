@@ -13,7 +13,7 @@
 #' @export
 list_replications <- function(doi, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
-  reps <- c(meta$prep %||% list(), meta$replications %||% list())
+  reps <- collect_replication_entries(meta)
   display_reps <- reps[vapply(reps, function(x) {
     type <- as.character(x$type %||% "")
     type %in% c("figure", "table")

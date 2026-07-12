@@ -5,12 +5,12 @@
 #' @keywords internal
 default_artifact_path <- function(rep, what) {
   if (identical(rep$type, "figure")) {
-    return(paste0("artifacts/", what, ".png"))
+    return(paste0("outputs/", what, ".png"))
   }
   if (format_specified(rep)) {
-    return(paste0("artifacts/", what, ".rds"))
+    return(paste0("outputs/", what, ".html"))
   }
-  paste0("artifacts/", what, ".html")
+  paste0("outputs/", what, ".html")
 }
 
 #' Get the local artifact file path for a replication, if available
@@ -31,12 +31,13 @@ local_artifact_path <- function(doi, what, repo = NULL, language = NULL) {
     return(NULL)
   }
 
-  artifact <- rep$artifact
-  if (is.null(artifact) || !nzchar(artifact)) {
-    artifact <- default_artifact_path(rep, what)
+  for (rel in study_artifact_rel_candidates(rep)) {
+    local <- file.path(ctx$local_root, rel)
+    if (file.exists(local)) {
+      return(local)
+    }
   }
-
-  file.path(ctx$local_root, artifact)
+  NULL
 }
 
 #' Check whether a precomputed artifact is available

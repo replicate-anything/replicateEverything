@@ -5,10 +5,10 @@
 #' @keywords internal
 is_prep_entry <- function(rep) {
   type <- tolower(as.character(rep$type %||% ""))
-  if (type %in% c("table", "figure")) {
+  if (type %in% c("table", "figure", "format")) {
     return(FALSE)
   }
-  if (type %in% c("step", "prep", "pipeline")) {
+  if (type %in% c("step", "prep", "pipeline", "transform")) {
     return(TRUE)
   }
   !is.null(rep$output) &&
@@ -53,6 +53,10 @@ list_prep_steps <- function(doi, repo = NULL, folder = NULL) {
 #' @param meta Optional parsed replication metadata.
 #' @keywords internal
 prep_output_path <- function(prep, ctx, meta = NULL) {
+  p <- step_primary_output_path(prep, ctx, meta = meta)
+  if (!is.null(p) && nzchar(p)) {
+    return(p)
+  }
   out <- prep$output %||% prep$artifact %||% NULL
   if (is.null(out) || !nzchar(as.character(out))) {
     return(NULL)

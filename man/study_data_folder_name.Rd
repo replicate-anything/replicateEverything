@@ -2,7 +2,7 @@
 % Please edit documentation in R/study_data.R
 \name{study_data_folder_name}
 \alias{study_data_folder_name}
-\title{Study subfolder name under \code{data/}}
+\title{Study subfolder name under deployed \code{data/}}
 \usage{
 study_data_folder_name(meta, ctx = NULL)
 }
@@ -15,6 +15,7 @@ study_data_folder_name(meta, ctx = NULL)
 Character scalar.
 }
 \description{
-Study subfolder name under \code{data/}
+Uses \code{paper.study_folder} from \code{replication.yml} when set,
+otherwise \code{study_folder_from_doi()} (\code{rep-10.x-y} with hyphens).
 }
 \keyword{internal}

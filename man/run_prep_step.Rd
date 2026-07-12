@@ -25,6 +25,8 @@ run_prep_step(
 \item{repo}{Optional repository slug.}
 
 \item{folder}{Optional registry folder name from \code{index.csv}.}
+
+\item{force}{Logical. Re-run steps even when outputs already exist.}
 }
 \value{
 A data preview, file path character vector, or replication result.

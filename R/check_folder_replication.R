@@ -60,21 +60,42 @@ check_folder_replication <- function(
       class = c("folder_replication_check", "replication_check", "list")
     ))
   }
+  if (!is.null(meta$paper$extends %||% meta$extends)) {
+    meta <- tryCatch(
+      merge_extended_study_meta(meta, paper_context(
+        meta$paper$study_handle %||% meta$paper$doi %||% basename(study_root)
+      )),
+      error = function(e) {
+        checks <<- bind_check_results(
+          checks,
+          check_result("extends", FALSE, conditionMessage(e))
+        )
+        meta
+      }
+    )
+  }
   checks <- bind_check_results(
     checks,
     check_result("replication_yml", TRUE, "Found replication.yml")
   )
 
   paper <- meta$paper %||% list()
-  if (is.null(paper$doi) || !nzchar(as.character(paper$doi[[1]]))) {
+  doi_ok <- !is.null(paper$doi) && nzchar(as.character(paper$doi[[1]]))
+  handle_ok <- !is.null(paper$study_handle) && nzchar(as.character(paper$study_handle[[1]]))
+  if (!doi_ok && !handle_ok) {
     checks <- bind_check_results(
       checks,
-      check_result("paper_doi", FALSE, "paper.doi is required")
+      check_result("paper_doi", FALSE, "paper.doi or paper.study_handle is required")
+    )
+  } else if (doi_ok) {
+    checks <- bind_check_results(
+      checks,
+      check_result("paper_doi", TRUE, normalize_doi(paper$doi))
     )
   } else {
     checks <- bind_check_results(
       checks,
-      check_result("paper_doi", TRUE, normalize_doi(paper$doi))
+      check_result("paper_doi", TRUE, paste0("handle:", paper$study_handle))
     )
   }
 
@@ -104,6 +125,15 @@ check_folder_replication <- function(
   }
 
   display_reps <- folder_display_replications(meta)
+  if (study_has_extension(meta)) {
+    display_reps <- display_reps[vapply(display_reps, function(rep) {
+      code_rel <- as.character(rep$code[[1]] %||% "")
+      if (!nzchar(code_rel)) {
+        return(FALSE)
+      }
+      file.exists(file.path(study_root, code_rel))
+    }, logical(1))]
+  }
   if (length(display_reps) == 0) {
     checks <- bind_check_results(
       checks,
@@ -152,8 +182,12 @@ check_folder_replication <- function(
     )
 
     data_paths <- replication_data_paths(rep)
+    base_root <- if (study_has_extension(meta)) extended_study_base_root(meta) else NULL
     for (rel in data_paths) {
       data_path <- file.path(study_root, rel)
+      if (!file.exists(data_path) && !is.null(base_root)) {
+        data_path <- file.path(base_root, rel)
+      }
       checks <- bind_check_results(
         checks,
         check_result(
@@ -165,14 +199,17 @@ check_folder_replication <- function(
     }
   }
 
-  artifact_dir <- file.path(study_root, "artifacts")
+  artifact_dir <- file.path(study_root, "outputs")
+  if (!dir.exists(artifact_dir) && dir.exists(file.path(study_root, "artifacts"))) {
+    artifact_dir <- file.path(study_root, "artifacts")
+  }
   if (!dir.exists(artifact_dir)) {
     checks <- bind_check_results(
       checks,
       check_result(
         "artifact_directory",
         FALSE,
-        "Missing artifacts/ (run build_study_artifacts())"
+        "Missing outputs/ (run build_study_artifacts())"
       )
     )
   } else {
@@ -232,7 +269,7 @@ check_folder_replication <- function(
     check_result(
       "manifest_json",
       file.exists(manifest_path),
-      if (file.exists(manifest_path)) manifest_path else "Missing artifacts/manifest.json"
+      if (file.exists(manifest_path)) manifest_path else "Missing outputs/manifest.json"
     )
   )
 

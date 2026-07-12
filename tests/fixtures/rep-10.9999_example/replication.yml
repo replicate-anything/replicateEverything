@@ -15,7 +15,7 @@ replications:
     description: Example table
     data: data/example.csv
     code: code/tab_1.R
-    artifact: artifacts/tab_1.html
+    artifact: outputs/tab_1.html
 
   - id: fig_1
     type: figure
@@ -23,6 +23,6 @@ replications:
     description: Example figure
     data: data/example.csv
     code: code/fig_1.R
-    artifact: artifacts/fig_1.png
+    artifact: outputs/fig_1.png
     dependencies:
       - ggplot2

@@ -29,6 +29,11 @@ reference:
   desc: Run tables and figures from registry scripts.
   contents:
   - run_replication
+  - describe_study_dag
+  - study_dag_display
+  - study_dag_facets
+  - study_output_dir
+  - migrate_legacy_steps_yaml
   - get_code
   - run_prep_step
   - list_prep_steps
@@ -74,4 +79,5 @@ articles:
   - audit
   - stata-replications
   - folder-replication-checklist
+  - reanalysis-studies
   - package-replication-checklist

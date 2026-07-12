@@ -13,10 +13,26 @@ resolve_paper_path <- function(doi) {
   index <- tryCatch(load_index(), error = function(e) NULL)
 
   if (!is.null(index) && "folder" %in% names(index) && "doi" %in% names(index)) {
-    normalized_index_dois <- vapply(index$doi, normalize_doi, character(1))
-    row <- index[normalized_index_dois == doi, , drop = FALSE]
-    if (nrow(row) > 0 && nzchar(row$folder[[1]])) {
-      return(row$folder[[1]])
+    normalized_index_dois <- vapply(index[["doi"]], function(x) {
+      if (is.null(x) || !nzchar(as.character(x))) return(NA_character_)
+      normalize_doi(x)
+    }, character(1))
+    match_idx <- which(!is.na(normalized_index_dois) & normalized_index_dois == doi)
+    if (length(match_idx) > 0L) {
+      folder_val <- as.character(index[["folder"]][[match_idx[[1]]]] %||% "")
+      if (nzchar(folder_val)) {
+        return(folder_val)
+      }
+    }
+  }
+  if (!is.null(index) && "handle" %in% names(index) && "folder" %in% names(index)) {
+    handles <- tolower(as.character(index[["handle"]]))
+    match_idx <- which(!is.na(handles) & handles == tolower(doi))
+    if (length(match_idx) > 0L) {
+      folder_val <- as.character(index[["folder"]][[match_idx[[1]]]] %||% "")
+      if (nzchar(folder_val)) {
+        return(folder_val)
+      }
     }
   }
 

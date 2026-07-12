@@ -7,18 +7,28 @@ registry_root <- normalizePath("../registry", winslash = "/", mustWork = FALSE)
 package_root <- normalizePath("../replicateEverything", winslash = "/", mustWork = FALSE)
 packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 
-# Option B: absolute monorepo root when running from an installed library copy, e.g.
+# --- Monorepo development (sibling registry/ and rep-* study folders) ---
+# Option A: paths relative to the shiny app directory (monorepo layout)
+registry_root <- normalizePath("../registry", winslash = "/", mustWork = FALSE)
+package_root <- normalizePath("../replicateEverything", winslash = "/", mustWork = FALSE)
+packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
+
+# Option B: absolute monorepo root when running from an installed library copy.
+# run_shiny_app() sets this automatically when launched from replicateEverything/.
 # Sys.setenv(REPLICATE_MONOREPO_ROOT = "c:/path/to/replicate_everything")
 
-# --- Shiny Server example (uncomment and edit) ---
-# registry_root <- "/srv/registry"
-# packages_root <- NULL
-# options(replicateEverything.stata_executable = "/usr/local/stata17/stata-mp")
-#
-# Study data layout (relative to getwd() when replicating):
-#   data/rep-<doi>/<file>.dta
+# Study data on Shiny Server (relative to getwd() or study_data_root):
+#   data/<study_folder>/<file>
+# <study_folder> must match replication.yml paper.study_folder, e.g.
+#   data/rep-10.1596-1813-9450-10626/ACS2017-2021_finalready.dta
+# Local dev: large files usually stay in the sibling rep-* repo under data/
+# (not git-synced). run_shiny_app() from the monorepo wires that up.
 # Override working directory if needed:
 # options(replicateEverything.study_data_root = "/wzb/samba/user/ipi/replicate")
+
+# Share links always point at the public server (never localhost). If shiny2 moves, set:
+# Sys.setenv(REPLICATE_SHINY_BASE_URL = "https://shiny2.wzb.eu/ipi/replicate")
+# (Default is LIVE_DEMO_URL at the top of app.R.)
 
 if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
   options(

@@ -60,6 +60,9 @@ audit_jobs_from_replications <- function(reps) {
     type <- as.character(x$type %||% "")
     type %in% c("figure", "table", "step", "prep", "pipeline")
   }, logical(1))]
+  reps <- reps[vapply(reps, function(x) {
+    !isTRUE(x$incomplete %||% FALSE)
+  }, logical(1))]
   if (!length(reps)) {
     return(NULL)
   }
@@ -233,7 +236,14 @@ audit_everything <- function(
 
   for (i in seq_len(nrow(index))) {
     row <- index[i, , drop = FALSE]
-    doi <- normalize_doi(row$doi[[1]])
+    doi_raw <- as.character(row$doi[[1]] %||% "")
+    doi <- if (nzchar(trimws(doi_raw))) {
+      normalize_doi(doi_raw)
+    } else if ("handle" %in% names(row) && nzchar(trimws(as.character(row$handle[[1]] %||% "")))) {
+      as.character(row$handle[[1]])
+    } else {
+      normalize_doi(doi_raw)
+    }
     title <- as.character(row$title[[1]] %||% doi)
     folder <- if ("folder" %in% names(row)) row$folder[[1]] else NULL
     repo <- if ("repo" %in% names(row)) row$repo[[1]] else NULL

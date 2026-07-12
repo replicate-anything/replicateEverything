@@ -57,10 +57,10 @@ materialize_study <- function(meta, ctx) {
   list(kind = kind, root = NULL, meta = meta, package = NULL)
 }
 
-#' Display artifact directory for a study
+#' Display output directory for a study (legacy name: [study_artifact_dir()])
 #'
-#' Folder-backed studies use \code{artifacts/}; package-backed studies use
-#' \code{inst/report/artifacts/} in the source tree or installed package.
+#' Folder-backed studies use \code{outputs/}. Package-backed studies use
+#' \code{inst/report/outputs/}.
 #'
 #' @param meta Parsed replication metadata.
 #' @param ctx Paper context.
@@ -68,7 +68,7 @@ materialize_study <- function(meta, ctx) {
 #' @param package Optional package name (package-backed studies).
 #' @return Normalized directory path or \code{NULL}.
 #' @export
-study_artifact_dir <- function(
+study_output_dir <- function(
   meta,
   ctx = NULL,
   installed = TRUE,
@@ -81,15 +81,26 @@ study_artifact_dir <- function(
       return(NULL)
     }
     if (isTRUE(installed) && replication_package_usable(pkg)) {
-      path <- system.file("report", "artifacts", package = pkg)
-      if (nzchar(path)) {
-        return(normalizePath(path, winslash = "/", mustWork = FALSE))
+      for (parts in list(
+        c("report", "outputs"),
+        c("report", "artifacts")
+      )) {
+        path <- system.file(parts, package = pkg)
+        if (nzchar(path)) {
+          return(normalizePath(path, winslash = "/", mustWork = FALSE))
+        }
       }
     }
     root <- package_source_root(pkg)
     if (!is.null(root)) {
+      for (subdir in c("outputs", "artifacts")) {
+        candidate <- file.path(root, "inst", "report", subdir)
+        if (dir.exists(candidate)) {
+          return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+        }
+      }
       return(normalizePath(
-        file.path(root, "inst", "report", "artifacts"),
+        file.path(root, "inst", "report", "outputs"),
         winslash = "/",
         mustWork = FALSE
       ))
@@ -110,16 +121,27 @@ study_artifact_dir <- function(
     if (is.null(root) || !dir.exists(root)) {
       return(NULL)
     }
-    return(normalizePath(
-      file.path(root, "artifacts"),
+    normalizePath(
+      file.path(root, "outputs"),
       winslash = "/",
       mustWork = FALSE
-    ))
+    )
   }
   NULL
 }
 
-#' Manifest path for a study's precomputed display artifacts
+#' @rdname study_output_dir
+#' @export
+study_artifact_dir <- function(
+  meta,
+  ctx = NULL,
+  installed = TRUE,
+  package = NULL
+) {
+  study_output_dir(meta, ctx = ctx, installed = installed, package = package)
+}
+
+#' Manifest path for a study's precomputed display outputs
 #'
 #' @inheritParams study_artifact_dir
 #' @return Character path or \code{NULL}.

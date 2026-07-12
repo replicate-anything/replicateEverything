@@ -19,6 +19,8 @@ study_data_file_candidates(rel_path, study_root, meta, ctx = NULL)
 Character vector of paths checked.
 }
 \description{
-Checks the study checkout, then \code{<root>/data/<study>/<file>}.
+Checks (1) the study checkout at \code{study_root/<rel_path>}, (2) a sibling
+monorepo study repo when configured, then (3) deployed Shiny data at
+\code{<study_data_root>/data/<study_folder>/<basename>}.
 }
 \keyword{internal}

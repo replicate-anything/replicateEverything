@@ -20,30 +20,45 @@ study_data_root <- function(ctx = NULL) {
   normalizePath(root, winslash = "/", mustWork = FALSE)
 }
 
-#' Study subfolder name under \code{data/}
+#' Study subfolder name under deployed \code{data/}
+#'
+#' Uses \code{paper.study_folder} from \code{replication.yml} when set,
+#' otherwise \code{study_folder_from_doi()} (\code{rep-10.x-y} with hyphens).
 #'
 #' @param meta Parsed replication metadata.
 #' @param ctx Optional paper context.
 #' @return Character scalar.
 #' @keywords internal
 study_data_folder_name <- function(meta, ctx = NULL) {
-  names <- study_folder_map_keys(meta, ctx)
-  rep_like <- names[grepl("^rep-", names)]
-  if (length(rep_like) > 0L) {
-    return(rep_like[[1]])
+  study_name <- c(
+    meta$paper$study_folder %||% NULL,
+    meta$study_folder %||% NULL
+  )
+  for (item in study_name) {
+    if (!is.null(item) && length(item) > 0L) {
+      value <- as.character(item[[1]])
+      if (nzchar(value)) {
+        return(value)
+      }
+    }
   }
-  if (length(names) > 0L) {
-    return(names[[1]])
+  doi <- NULL
+  if (!is.null(meta$paper$doi) && length(meta$paper$doi) > 0L) {
+    doi <- normalize_doi(as.character(meta$paper$doi[[1]]))
+  } else if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
+    doi <- normalize_doi(as.character(ctx$doi))
   }
-  if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
-    return(study_folder_from_doi(normalize_doi(ctx$doi)))
+  if (!is.null(doi) && nzchar(doi)) {
+    return(study_folder_from_doi(doi))
   }
   "study"
 }
 
 #' Candidate paths for a replication data file
 #'
-#' Checks the study checkout, then \code{<root>/data/<study>/<file>}.
+#' Checks (1) the study checkout at \code{study_root/<rel_path>}, (2) a sibling
+#' monorepo study repo when configured, then (3) deployed Shiny data at
+#' \code{<study_data_root>/data/<study_folder>/<basename>}.
 #'
 #' @param rel_path Path relative to study root (e.g. \code{data/file.dta}).
 #' @param study_root Normalized study repository root.
@@ -57,19 +72,29 @@ study_data_file_candidates <- function(rel_path, study_root, meta, ctx = NULL) {
   study_name <- study_data_folder_name(meta, ctx)
   root <- study_data_root(ctx)
   candidates <- c(file.path(study_root, rel_path))
-  sibling <- resolve_study_folder_path(meta, ctx)
-  if (is.null(sibling) && !is.null(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
-    sibling <- resolve_local_study_folder(normalize_doi(as.character(ctx$doi)))
+
+  doi <- NULL
+  if (!is.null(meta$paper$doi) && length(meta$paper$doi) > 0L) {
+    doi <- normalize_doi(as.character(meta$paper$doi[[1]]))
+  } else if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
+    doi <- normalize_doi(as.character(ctx$doi))
   }
-  if (!is.null(sibling)) {
-    sibling_path <- file.path(sibling, rel_path)
-    study_norm <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
-    sibling_norm <- normalizePath(sibling, winslash = "/", mustWork = FALSE)
-    if (!identical(study_norm, sibling_norm)) {
-      candidates <- c(candidates, sibling_path)
+  if (!is.null(doi) && nzchar(doi)) {
+    local_study <- resolve_local_study_folder(doi)
+    if (!is.null(local_study)) {
+      local_data <- file.path(local_study, rel_path)
+      study_norm <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+      local_norm <- normalizePath(local_study, winslash = "/", mustWork = FALSE)
+      if (!identical(study_norm, local_norm)) {
+        candidates <- c(candidates, local_data)
+      }
     }
   }
-  candidates <- c(candidates, file.path(root, "data", study_name, file_name))
+
+  candidates <- c(
+    candidates,
+    file.path(root, "data", study_name, file_name)
+  )
   unique(candidates)
 }
 
@@ -98,6 +123,31 @@ describe_working_directory <- function(path = getwd()) {
     "Contents:\n  ", paste(if (length(entries)) entries else "(empty)", collapse = "\n  "),
     "\n",
     "data/:\n  ", paste(if (length(data_entries)) data_entries else "(empty)", collapse = "\n  ")
+  )
+}
+
+#' @keywords internal
+describe_expected_data_folder <- function(root, study_name, rel_path) {
+  file_name <- basename(gsub("\\", "/", rel_path, fixed = TRUE))
+  expected_dir <- file.path(root, "data", study_name)
+  if (!dir.exists(expected_dir)) {
+    return(paste0("Expected folder missing: ", expected_dir))
+  }
+  entries <- tryCatch(
+    list.files(expected_dir, all.files = FALSE),
+    error = function(e) character(0)
+  )
+  if (file_name %in% entries) {
+    return(paste0("Expected folder exists and contains ", file_name, ": ", expected_dir))
+  }
+  preview <- if (length(entries)) {
+    paste(c(head(entries, 8L), if (length(entries) > 8L) "..." else NULL), collapse = ", ")
+  } else {
+    "(empty)"
+  }
+  paste0(
+    "Expected folder exists but ", file_name, " not found: ", expected_dir, "\n",
+    "  Contents: ", preview
   )
 }
 
@@ -156,21 +206,53 @@ study_data_not_found_message <- function(rel_path, study_root, checked, meta, ct
   root <- study_data_root(ctx)
   study_name <- study_data_folder_name(meta, ctx)
   file_name <- basename(gsub("\\", "/", rel_path, fixed = TRUE))
+  deployed <- file.path(root, "data", study_name, file_name)
+
+  doi <- NULL
+  if (!is.null(meta$paper$doi) && length(meta$paper$doi) > 0L) {
+    doi <- normalize_doi(as.character(meta$paper$doi[[1]]))
+  } else if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$doi) && nzchar(ctx$doi)) {
+    doi <- normalize_doi(as.character(ctx$doi))
+  }
+  local_study <- if (!is.null(doi) && nzchar(doi)) {
+    resolve_local_study_folder(doi)
+  } else {
+    NULL
+  }
+  local_line <- if (!is.null(local_study)) {
+    paste0(
+      "Expected sibling study repo: ",
+      file.path(local_study, rel_path),
+      "\n"
+    )
+  } else {
+    paste0(
+      "Sibling study repo not found (set REPLICATE_MONOREPO_ROOT or run ",
+      "run_shiny_app() from the monorepo).\n"
+    )
+  }
+
   paste0(
     "Data file not found: ", rel_path, "\n",
     "Study folder (code): ", study_root, "\n",
-    "Expected data path: ", file.path(root, "data", study_name, file_name), "\n",
+    local_line,
+    "Expected Shiny deploy path: ", deployed, "\n",
     "Also checked:\n",
     paste0("  - ", checked, collapse = "\n"),
     "\n\n",
-    describe_working_directory(root)
+    describe_expected_data_folder(root, study_name, rel_path),
+    "\n\n",
+    describe_working_directory(root),
+    "\n",
+    "Large files live either in the sibling study repo (data/ in the repo) ",
+    "or at data/<study_folder>/ next to the Shiny app."
   )
 }
 
 #' Ensure replication data files exist under a study root
 #'
-#' Looks in the study checkout, then \code{data/<study>/<file>} under the
-#' working directory. When found externally, links or copies into
+#' Looks in the study checkout, then \code{data/<study_folder>/<file>} under
+#' \code{study_data_root}. When found externally, links or copies into
 #' \code{study_root} so Stata paths keep working.
 #'
 #' @param data_files Character vector of paths relative to study root.

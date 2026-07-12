@@ -8,6 +8,8 @@ ORG_GITHUB <- "https://github.com/orgs/replicate-anything/repositories"
 PKGDOCS_URL <- "https://replicate-anything.github.io/replicateEverything/index.html"
 SHINY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/shiny-app.html"
 LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
+# Share links (Studies table, replication sidebar) always use the public server URL above.
+# Override without editing app.R: REPLICATE_SHINY_BASE_URL in local.R / server env.
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
 
 registry_stub_yaml_url <- function(folder) {
@@ -890,13 +892,15 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
         class = "small mb-0",
         "Folder-backed studies: run ",
         tags$code("build_study_artifacts()"),
-        " in the study repository (writes paths declared as ",
-        tags$code("artifact:"),
-        " in ",
+        "Folder-backed studies: run ",
+        tags$code("build_study_artifacts()"),
+        " in the study repository (writes ",
+        tags$code("outputs/"),
+        " paths declared in ",
         tags$code("replication.yml"),
         "). ",
         "Registry studies: build ",
-        tags$code("artifacts/"),
+        tags$code("outputs/"),
         " with ",
         tags$code("registry/scripts/build_artifacts.R"),
         ". ",
@@ -1495,15 +1499,17 @@ maintainer_link_ui <- function(row) {
   )
 }
 
+ALL_STUDIES_COLLECTION <- "__all_studies__"
+
 registry_collection_choices <- function(index_df) {
   if (is.null(index_df) || nrow(index_df) == 0) {
-    return(c("All studies" = ""))
+    return(c("All studies" = ALL_STUDIES_COLLECTION))
   }
   cols <- unique(unlist(lapply(seq_len(nrow(index_df)), function(i) {
     parse_index_collections(index_df[i, , drop = FALSE])
   })))
   cols <- sort(cols[nzchar(cols)])
-  c("All studies" = "", setNames(cols, cols))
+  c("All studies" = ALL_STUDIES_COLLECTION, setNames(cols, cols))
 }
 
 filter_index_by_collection <- function(index_df, collection = "") {
@@ -1511,13 +1517,207 @@ filter_index_by_collection <- function(index_df, collection = "") {
     return(index_df)
   }
   collection <- trimws(as.character(collection %||% ""))
-  if (!nzchar(collection)) {
+  if (!nzchar(collection) || identical(collection, ALL_STUDIES_COLLECTION)) {
     return(index_df)
   }
   keep <- vapply(seq_len(nrow(index_df)), function(i) {
     collection %in% parse_index_collections(index_df[i, , drop = FALSE])
   }, logical(1))
   index_df[keep, , drop = FALSE]
+}
+
+shiny_deep_link_query_list <- function(doi, what = NULL, language = NULL) {
+  doi_norm <- tryCatch(
+    replicate_fn("normalize_doi", doi),
+    error = function(e) trimws(as.character(doi))
+  )
+  out <- list(doi = doi_norm)
+  what <- trimws(as.character(what %||% ""))
+  if (nzchar(what)) {
+    out$what <- what
+  }
+  lang <- tolower(trimws(as.character(language %||% "")))
+  if (nzchar(lang) && !identical(lang, "r")) {
+    out$language <- lang
+  }
+  out
+}
+
+shiny_query_string <- function(params) {
+  if (is.null(params) || length(params) == 0L) {
+    return("")
+  }
+  names <- names(params)
+  if (is.null(names)) {
+    return("")
+  }
+  parts <- vapply(seq_along(params), function(i) {
+    paste0(
+      URLencode(names[[i]], reserved = TRUE),
+      "=",
+      URLencode(as.character(params[[i]]), reserved = TRUE)
+    )
+  }, character(1))
+  paste(parts[nzchar(parts)], collapse = "&")
+}
+
+shiny_share_base_url <- function() {
+  env_base <- Sys.getenv("REPLICATE_SHINY_BASE_URL", unset = "")
+  if (nzchar(env_base)) {
+    return(sub("/+$", "", env_base))
+  }
+  sub("/+$", "", LIVE_DEMO_URL)
+}
+
+shiny_share_url <- function(params) {
+  qs <- shiny_query_string(params)
+  base <- shiny_share_base_url()
+  if (nzchar(qs)) {
+    paste0(base, "?", qs)
+  } else {
+    base
+  }
+}
+
+link_icon_svg <- function() {
+  HTML(paste0(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" ',
+    'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ',
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">',
+    '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>',
+    '<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>',
+    "</svg>"
+  ))
+}
+
+share_link_ui <- function(params, title = "Link to this page") {
+  href <- shiny_share_url(params)
+  tags$a(
+    href = href,
+    class = "study-share-link",
+    title = paste0(title, "\n", href),
+    target = "_blank",
+    rel = "noopener noreferrer",
+    `aria-label` = title,
+    link_icon_svg()
+  )
+}
+
+study_dag_chain_ui <- function(path) {
+  if (is.null(path) || length(path) == 0L) {
+    return(NULL)
+  }
+  nodes <- lapply(seq_along(path), function(i) {
+    node <- path[[i]]
+    label <- as.character(node$label %||% node$id)
+    short <- if (nchar(label) > 28L) {
+      paste0(substr(label, 1L, 26L), "...")
+    } else {
+      label
+    }
+    desc <- trimws(as.character(node$description %||% ""))
+    tip <- if (identical(node$kind %||% "", "data")) {
+      if (nzchar(desc)) {
+        paste0("Raw data\n", desc)
+      } else {
+        "Raw data"
+      }
+    } else if (nzchar(desc)) {
+      paste0(label, " — ", desc)
+    } else {
+      label
+    }
+    node_class <- paste(
+      "study-dag-node",
+      if (identical(node$kind %||% "", "data")) "is-data" else "is-step"
+    )
+    tags$span(class = node_class, title = tip, short)
+  })
+  parts <- vector("list", length(nodes) * 2L - 1L)
+  for (i in seq_along(nodes)) {
+    parts[[2L * i - 1L]] <- nodes[[i]]
+    if (i < length(nodes)) {
+      parts[[2L * i]] <- tags$span(class = "study-dag-arrow", "\u2192")
+    }
+  }
+  tags$div(class = "study-dag-chain", parts)
+}
+
+study_dag_facet_ui <- function(facet) {
+  if (is.null(facet) || length(facet$paths) == 0L) {
+    return(NULL)
+  }
+  tags$div(
+    class = "study-dag-facet",
+    tags$div(class = "study-dag-facet-title", facet$title),
+    lapply(facet$paths, study_dag_chain_ui)
+  )
+}
+
+study_dag_legend_ui <- function() {
+  tags$div(
+    class = "study-dag-legend small text-muted mt-3 pt-2",
+    tags$span(class = "me-1", "Key:"),
+    tags$span(class = "study-dag-node is-data study-dag-legend-swatch me-1", "raw data"),
+    tags$span(class = "study-dag-node is-step study-dag-legend-swatch", "analysis step")
+  )
+}
+
+study_dag_panel_body_ui <- function(facets, heading = TRUE) {
+  if (is.null(facets) || length(facets) == 0L) {
+    return(NULL)
+  }
+  tags$div(
+    class = "study-dag-panel",
+    if (heading) {
+      tags$div(class = "study-dag-heading small text-muted mb-2", "Steps pipeline")
+    },
+    tags$div(
+      class = "study-dag-facets",
+      lapply(facets, study_dag_facet_ui)
+    ),
+    study_dag_legend_ui()
+  )
+}
+
+study_dag_facets_for <- function(doi, folder = NULL, repo = NULL) {
+  meta <- tryCatch(
+    replicate_fn("get_replication_meta", doi, folder = folder, repo = repo),
+    error = function(e) NULL
+  )
+  if (is.null(meta)) {
+    return(NULL)
+  }
+  tryCatch(
+    replicate_fn("study_dag_facets", meta),
+    error = function(e) NULL
+  )
+}
+
+study_dag_link_ui <- function(doi, folder = NULL, repo = NULL) {
+  facets <- study_dag_facets_for(doi, folder = folder, repo = repo)
+  if (is.null(facets) || length(facets) == 0L) {
+    return(NULL)
+  }
+  tags$p(
+    class = "mb-0 mt-2",
+    actionLink(
+      "show_study_pipeline",
+      "View steps pipeline",
+      class = "study-dag-link"
+    )
+  )
+}
+
+study_dag_panel_ui <- function(doi, folder = NULL, repo = NULL, heading = TRUE) {
+  facets <- study_dag_facets_for(doi, folder = folder, repo = repo)
+  if (is.null(facets) || length(facets) == 0L) {
+    return(NULL)
+  }
+  tags$div(
+    class = if (heading) "mt-3" else NULL,
+    study_dag_panel_body_ui(facets, heading = heading)
+  )
 }
 
 collections_badges_ui <- function(collections) {
@@ -1558,26 +1758,22 @@ replication_display_label <- function(x) {
   if (!is.null(yaml_label)) {
     lab <- trimws(as.character(yaml_label[[1]] %||% yaml_label))
     if (length(lab) == 1L && !is.na(lab) && nzchar(lab)) {
-      desc <- x$description %||% NULL
-      if (!is.null(desc) && length(desc) > 0L) {
-        d <- trimws(as.character(desc[[1]] %||% desc))
-        if (length(d) == 1L && !is.na(d) && nzchar(d)) {
-          return(paste0(lab, ": ", d))
-        }
-      }
       return(lab)
     }
   }
-  stub <- replication_stub_label(x$type, x$id)
+  replication_stub_label(x$type, x$id)
+}
+
+replication_entry_description <- function(x) {
   desc <- x$description %||% NULL
-  if (is.null(desc) || length(desc) == 0) {
-    return(stub)
+  if (is.null(desc) || length(desc) == 0L) {
+    return("")
   }
-  desc <- trimws(as.character(desc[[1]] %||% desc))
-  if (length(desc) != 1L || is.na(desc) || !nzchar(desc)) {
-    return(stub)
+  d <- trimws(as.character(desc[[1]] %||% desc))
+  if (length(d) != 1L || is.na(d)) {
+    return("")
   }
-  paste0(stub, ": ", desc)
+  d
 }
 
 prep_to_df <- function(prep_steps) {
@@ -1589,11 +1785,11 @@ prep_to_df <- function(prep_steps) {
       return(NULL)
     }
     label <- as.character(x$label %||% x$id)
-    desc <- as.character(x$description %||% "")
-    label_full <- if (nzchar(desc)) paste0(label, ": ", desc) else label
+    desc <- replication_entry_description(x)
+    label_full <- if (nzchar(desc)) desc else label
     data.frame(
       id = as.character(x$id),
-      label = truncate_label(label_full, 40L),
+      label = truncate_label(label, 40L),
       label_full = label_full,
       engine = entry_engine(x),
       type = "step",
@@ -1647,7 +1843,10 @@ replications_to_df <- function(reps) {
       stata_id = if (length(stata_reps)) as.character(stata_reps[[1]]$id) else NA_character_,
       python_id = if (length(python_reps)) as.character(python_reps[[1]]$id) else NA_character_,
       label = truncate_label(replication_display_label(primary), 40L),
-      label_full = replication_display_label(primary),
+      label_full = {
+        desc <- replication_entry_description(primary)
+        if (nzchar(desc)) desc else replication_display_label(primary)
+      },
       type = as.character(primary$type),
       stringsAsFactors = FALSE
     )
@@ -1934,10 +2133,22 @@ read_local_study_replication_index <- function(stub, folder, repo = DEFAULT_REGI
     return(NULL)
   }
   study_meta <- read_yaml_from_url(local_yml)
-  if (is.null(study_meta) || length(study_meta$replications %||% list()) == 0L) {
+  study_yaml_replication_index(study_meta)
+}
+
+study_yaml_replication_index <- function(study_meta) {
+  if (is.null(study_meta)) {
     return(NULL)
   }
-  c(study_meta$prep %||% list(), study_meta$replications %||% list())
+  steps <- study_meta$steps %||% list()
+  if (length(steps) > 0L) {
+    return(replicate_fn("study_step_entries", study_meta))
+  }
+  reps <- study_meta$replications %||% list()
+  if (length(reps) > 0L) {
+    return(c(study_meta$prep %||% list(), reps))
+  }
+  NULL
 }
 
 fetch_study_replications_index <- function(folder, repo = DEFAULT_REGISTRY_REPO) {
@@ -1979,8 +2190,9 @@ fetch_study_replications_index <- function(folder, repo = DEFAULT_REGISTRY_REPO)
       study_repo, ref
     )
     study_meta <- read_yaml_from_url(study_url)
-    if (!is.null(study_meta) && length(study_meta$replications %||% list()) > 0) {
-      return(c(study_meta$prep %||% list(), study_meta$replications %||% list()))
+    index <- study_yaml_replication_index(study_meta)
+    if (!is.null(index) && length(index) > 0L) {
+      return(index)
     }
     return(list())
   }
@@ -2190,7 +2402,7 @@ split_replication_entries <- function(reps) {
   }, logical(1))
   is_prep <- vapply(reps, function(x) {
     type <- tolower(as.character(x$type %||% ""))
-    type %in% c("step", "prep", "pipeline")
+    type %in% c("step", "prep", "pipeline", "transform")
   }, logical(1))
   list(
     prep = reps[is_prep],
@@ -2616,7 +2828,15 @@ contribute_tab_ui <- function() {
     "  materials: folder\n",
     "  study_repo: replicate-anything/rep-10.1017-S0003055403000534\n",
     "  study_folder: rep-10.1017-S0003055403000534\n",
-    "repo: replicate-anything/rep-10.1017-S0003055403000534"
+    "repo: replicate-anything/rep-10.1017-S0003055403000534\n",
+    "maintainer:\n",
+    "  name: Jane Maintainer\n",
+    "  email: maintainer@example.org\n",
+    "collections:\n",
+    "  - APSR\n",
+    "languages:\n",
+    "  - r\n",
+    "  - stata"
   )
 
   example_folder_repo <- paste0(
@@ -2634,6 +2854,18 @@ contribute_tab_ui <- function() {
     "  dependencies:\n",
     "    - haven\n",
     "    - modelsummary\n",
+    "\n",
+    "repo: replicate-anything/rep-10.1017-S0003055403000534\n",
+    "\n",
+    "maintainer:              # required — contact on the Studies tab\n",
+    "  name: Jane Maintainer\n",
+    "  email: maintainer@example.org\n",
+    "\n",
+    "collections:             # optional tags for Studies tab filtering\n",
+    "  - APSR\n",
+    "\n",
+    "languages:\n",
+    "  - r\n",
     "\n",
     "replications:\n",
     "  - id: tab_1\n",
@@ -2703,7 +2935,22 @@ contribute_tab_ui <- function() {
     "  package: rep1371journalpone0278337\n",
     "  package_repo: replicate-anything/rep-10.1371_journal.pone.0278337\n",
     "  package_ref: main\n",
-    "repo: replicate-anything/rep-10.1371_journal.pone.0278337"
+    "repo: replicate-anything/rep-10.1371_journal.pone.0278337\n",
+    "maintainer:\n",
+    "  name: Jane Maintainer\n",
+    "  email: maintainer@example.org\n",
+    "collections:\n",
+    "  - IPI\n",
+    "languages:\n",
+    "  - r"
+  )
+
+  example_build_registry_index <- paste0(
+    "library(replicateEverything)\n",
+    "options(replicateEverything.registry_root = \"../registry\")\n",
+    "\n",
+    "build_registry_index(\"../registry\")\n",
+    "# writes index.csv with collections, maintainer_*, languages from stubs"
   )
 
   example_package_api <- paste0(
@@ -2816,6 +3063,28 @@ contribute_tab_ui <- function() {
         " that tells replicateEverything how code, data, and outputs relate."
       ),
       contribute_prose(
+        tags$strong("Maintainer and collections. "),
+        "Every study must name a ",
+        code("maintainer:"),
+        " (name + email) — shown as ",
+        code("[maintainer]"),
+        " on the Studies tab. List one or more ",
+        code("collections:"),
+        " tags (e.g. ",
+        code("APSR"),
+        ", ",
+        code("PED"),
+        ", ",
+        code("World Bank"),
+        ", ",
+        code("IPI"),
+        ") so readers can filter the bibliography. ",
+        code("prepare_folder_paper()"),
+        " copies these fields into the registry stub and ",
+        code("index.csv"),
+        " row."
+      ),
+      contribute_prose(
         tags$strong("R, Stata, or both. "),
         "Each table or figure is one entry in ",
         code("replication.yml"),
@@ -2892,14 +3161,24 @@ contribute_tab_ui <- function() {
           code("studies/<folder>.yml"),
           " with ",
           contribute_hint(code("materials: folder"), example_folder_stub, "Registry stub fields"),
-          " pointing at your study repository."
+          " pointing at your study repository (include ",
+          code("maintainer:"),
+          " and ",
+          code("collections:"),
+          ")."
         ),
         tags$li(
-          "Update ",
+          "Rebuild ",
           code("index.csv"),
-          " so the ",
-          code("repo"),
-          " column names your study repository."
+          " with ",
+          contribute_hint(code("build_registry_index()"), example_build_registry_index, "Compile index from stubs"),
+          " so ",
+          code("collections"),
+          ", ",
+          code("maintainer_name"),
+          ", and ",
+          code("languages"),
+          " appear on the Studies tab."
         ),
         tags$li(
           contribute_hint(code("add_folder_paper()"), example_registry_connect, "Register folder study"),
@@ -2929,7 +3208,11 @@ contribute_tab_ui <- function() {
         code("get_code()"),
         ", and include ",
         contribute_hint(code("replication.yml"), example_package_stub),
-        " describing each replication."
+        " describing each replication (include ",
+        code("maintainer:"),
+        " and ",
+        code("collections:"),
+        " at the top level)."
       ),
       contribute_prose(
         tags$strong("R only. "),
@@ -2971,12 +3254,20 @@ contribute_tab_ui <- function() {
           code("studies/<folder>.yml"),
           " with ",
           contribute_hint(code("materials: package"), example_package_stub, "Package registry stub"),
-          " and the package name."
+          ", the package name, ",
+          code("maintainer:"),
+          ", and ",
+          code("collections:"),
+          "."
         ),
         tags$li(
-          "Update ",
+          "Rebuild ",
           code("index.csv"),
-          " with bibliographic metadata and the package repository URL."
+          " with ",
+          contribute_hint(code("build_registry_index()"), example_build_registry_index, "Compile index from stubs"),
+          " (or merge the row from ",
+          code("prepare_folder_paper()"),
+          " for folder studies)."
         ),
         tags$li(
           contribute_hint(code("add_paper()"), example_package_registry, "Register package study"),
@@ -2993,13 +3284,16 @@ contribute_tab_ui <- function() {
   )
 }
 
-replication_run_snippet <- function(doi, what, language = NULL) {
+replication_run_snippet <- function(doi, what, language = NULL, include_language = NULL) {
   lang <- tolower(trimws(as.character(language %||% "")))
   args <- c(
     paste0("  doi = ", encodeString(doi, quote = '"')),
     paste0("  what = ", encodeString(what, quote = '"'))
   )
-  if (nzchar(lang) && !identical(lang, "r")) {
+  if (is.null(include_language)) {
+    include_language <- nzchar(lang) && !identical(lang, "r")
+  }
+  if (isTRUE(include_language) && nzchar(lang)) {
     lang_val <- if (identical(lang, "stata")) "stata" else language
     args <- c(args, paste0("  language = ", encodeString(lang_val, quote = '"')))
   }
@@ -3122,6 +3416,18 @@ ui <- tagList(
         document.querySelectorAll('.replication-code-block code[class*=language-]').forEach(function(el) {
           if (window.hljs) hljs.highlightElement(el);
         });
+      });
+      $(document).on('shiny:connected', function() {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var doi = params.get('doi');
+          if (!doi) return;
+          Shiny.setInputValue('url_deep_link', {
+            doi: doi,
+            what: params.get('what') || '',
+            language: params.get('language') || ''
+          }, {priority: 'event'});
+        } catch (e) {}
       });
     ")),
     tags$style(HTML("
@@ -3377,7 +3683,7 @@ ui <- tagList(
       align-items: center;
       gap: 0.2rem;
       min-width: 2.5rem;
-      justify-content: flex-end;
+      justify-content: center;
     }
     .engine-badge {
       display: inline-flex;
@@ -3387,7 +3693,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: 1fr 4.5rem 3rem 4.5rem 2.75rem;
+      grid-template-columns: 1fr 4.5rem 3rem 4.5rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
     }
@@ -3400,9 +3706,107 @@ ui <- tagList(
       margin-bottom: 0.25rem;
     }
     .study-engine-col,
-    .study-run-col {
-      text-align: right;
+    .study-run-col,
+    .study-link-col {
+      text-align: center;
       white-space: nowrap;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .study-share-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #6c757d;
+      line-height: 0;
+      padding: 0.15rem;
+      border-radius: 4px;
+    }
+    .study-share-link:hover {
+      color: #0d6efd;
+      background: #eef4ff;
+    }
+    .replication-share-link {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 0.15rem;
+      color: #6c757d;
+      line-height: 0;
+    }
+    .replication-share-link:hover { color: #0d6efd; }
+    .study-dag-panel {
+      border-top: 1px solid #dee2e6;
+      padding-top: 0.65rem;
+    }
+    .study-dag-facets {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+      gap: 0.65rem;
+      align-items: start;
+    }
+    .study-dag-facet {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 0.55rem 0.65rem;
+      background: #fafbfc;
+      min-width: 0;
+    }
+    .study-dag-facet-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #495057;
+      margin-bottom: 0.4rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .study-dag-heading {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+    }
+    .study-dag-chain {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.15rem 0.25rem;
+      margin-bottom: 0.35rem;
+      font-size: 0.82rem;
+    }
+    .study-dag-node {
+      background: #f1f3f5;
+      border-radius: 4px;
+      padding: 0.1rem 0.35rem;
+      cursor: help;
+      max-width: 11rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .study-dag-node.is-data {
+      background: #e7f5ff;
+      border: 1px dashed #339af0;
+      border-radius: 2px;
+      color: #1864ab;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+    }
+    .study-dag-node.is-step {
+      background: #f1f3f5;
+    }
+    .study-dag-legend {
+      border-top: 1px solid #dee2e6;
+    }
+    .study-dag-legend-swatch {
+      cursor: default;
+      max-width: none;
+      display: inline-flex;
+      vertical-align: middle;
+    }
+    .study-dag-arrow {
+      color: #6c757d;
+      user-select: none;
     }
     .study-go-btn {
       width: 2.25rem;
@@ -3416,6 +3820,31 @@ ui <- tagList(
       display: inline-flex;
       align-items: center;
       justify-content: center;
+    }
+    .study-details-expand {
+      margin-top: 0.25rem;
+    }
+    .study-details-expand > summary {
+      cursor: pointer;
+      list-style: none;
+      color: inherit;
+    }
+    .study-details-expand > summary::-webkit-details-marker {
+      display: none;
+    }
+    .study-details-chevron {
+      display: inline-block;
+      font-size: 0.75rem;
+      color: #6c757d;
+      transition: transform 0.15s ease;
+    }
+    .study-details-expand[open] .study-details-chevron {
+      transform: rotate(180deg);
+    }
+    .study-details-body {
+      border-left: 2px solid #e9ecef;
+      padding-left: 0.75rem;
+      margin-left: 0.35rem;
     }
     .study-collections-col {
       text-align: center;
@@ -3602,7 +4031,8 @@ ui <- tagList(
         tabsetPanel(
           id = "result_tabs",
           tabPanel("Output", uiOutput("selected_output_ui")),
-          tabPanel("Code", uiOutput("replication_code_ui"))
+          tabPanel("Code", uiOutput("replication_code_ui")),
+          tabPanel("Pipeline", uiOutput("selected_pipeline_ui"))
         )
       )
     )
@@ -3618,7 +4048,7 @@ ui <- tagList(
             "studies_collection_filter",
             "Collection",
             choices = registry_collection_choices(registry_index),
-            selected = ""
+            selected = ALL_STUDIES_COLLECTION
           )
         )
       ),
@@ -3648,6 +4078,30 @@ ui <- tagList(
         tags$li(tags$a(href = PKGDOCS_URL, "Package documentation", target = "_blank")),
         tags$li(tags$a(href = REGISTRY_GITHUB, "Replication registry", target = "_blank")),
         tags$li(tags$a(href = ORG_GITHUB, "Study repositories", target = "_blank"))
+      ),
+      h4("Share links"),
+      p(
+        "Chain icons in the ",
+        tags$strong("Studies"),
+        " table and beside each replication open a URL on the public server ",
+        tags$code(paste0(shiny_share_base_url(), "?doi=...")),
+        " (optional ",
+        tags$code("what="),
+        " and ",
+        tags$code("language="),
+        " select a replication and engine). Recipients land on the same study when they open the link."
+      ),
+      p(
+        class = "text-muted small",
+        "Share links always use ",
+        tags$code("LIVE_DEMO_URL"),
+        " in ",
+        tags$code("app.R"),
+        ", or ",
+        tags$code("REPLICATE_SHINY_BASE_URL"),
+        " in ",
+        tags$code("local.R"),
+        " if the host moves — not your local session URL."
       ),
       tags$hr(),
       p(
@@ -3684,7 +4138,7 @@ server <- function(input, output, session) {
     session,
     "studies_collection_filter",
     choices = registry_collection_choices(registry_index),
-    selected = ""
+    selected = ALL_STUDIES_COLLECTION
   )
 
   state <- reactiveValues(
@@ -3704,7 +4158,13 @@ server <- function(input, output, session) {
     local_study_meta = NULL,
     group_engines = list(),
     study_audit = NULL,
-    study_audit_running = FALSE
+    study_audit_running = FALSE,
+    url_deep_link_parsed = FALSE,
+    pending_deep_link_doi = NULL,
+    pending_deep_link_what = NULL,
+    pending_deep_link_language = NULL,
+    suppress_url_sync = FALSE,
+    welcome_shown = FALSE
   )
 
   options(replicateEverything.progress = function(msg) {
@@ -3713,13 +4173,40 @@ server <- function(input, output, session) {
     }
   })
 
-  showModal(modalDialog(
-    title = "Welcome to Replicate Everything",
-    app_welcome_intro(),
-    size = "m",
-    easyClose = TRUE,
-    footer = modalButton("Get started")
-  ))
+  observe({
+    query_string <- session$clientData$url_search
+    if (is.null(query_string)) {
+      return(invisible(NULL))
+    }
+
+    if (isFALSE(state$url_deep_link_parsed)) {
+      state$url_deep_link_parsed <- TRUE
+      qs <- sub("^\\?", "", query_string)
+      if (nzchar(qs)) {
+        query <- parseQueryString(qs)
+        doi <- trimws(as.character(query$doi %||% ""))
+        if (nzchar(doi)) {
+          state$welcome_shown <- TRUE
+          state$suppress_url_sync <- TRUE
+          state$pending_deep_link_doi <- doi
+          state$pending_deep_link_what <- trimws(as.character(query$what %||% ""))
+          state$pending_deep_link_language <- trimws(as.character(query$language %||% ""))
+          return(invisible(NULL))
+        }
+      }
+    }
+
+    if (isFALSE(state$welcome_shown)) {
+      state$welcome_shown <- TRUE
+      showModal(modalDialog(
+        title = "Welcome to Replicate Everything",
+        app_welcome_intro(),
+        size = "m",
+        easyClose = TRUE,
+        footer = modalButton("Get started")
+      ))
+    }
+  })
 
   replication_has_engine <- function(reps, engine) {
     col <- switch(
@@ -3740,6 +4227,14 @@ server <- function(input, output, session) {
     )
     val <- row[[col]][[1]]
     !is.na(val) && nzchar(val)
+  }
+
+  row_engine_count <- function(row) {
+    sum(c(
+      if (row_has_engine(row, "r")) 1L else 0L,
+      if (row_has_engine(row, "stata")) 1L else 0L,
+      if (row_has_engine(row, "python")) 1L else 0L
+    ))
   }
 
   default_row_engine <- function(row) {
@@ -3885,11 +4380,107 @@ server <- function(input, output, session) {
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
       first <- state$replications_df[1, , drop = FALSE]
-      state$selected_replication <- first$group[[1]]
-      state$selected_type <- first$type[[1]]
-      load_selected_artifact(fallback_live = FALSE)
+      if (!isTRUE(state$suppress_url_sync) &&
+          !is.null(state$pending_deep_link_what) &&
+          nzchar(state$pending_deep_link_what)) {
+        select_replication_by_group(
+          state$pending_deep_link_what,
+          language = state$pending_deep_link_language
+        )
+        state$pending_deep_link_what <- NULL
+        state$pending_deep_link_language <- NULL
+      } else {
+        state$selected_replication <- first$group[[1]]
+        state$selected_type <- first$type[[1]]
+        load_selected_artifact(fallback_live = FALSE)
+      }
     }
   }
+
+  sync_url_to_selection <- function() {
+    if (isTRUE(state$suppress_url_sync)) {
+      return(invisible(NULL))
+    }
+    if (is.null(state$doi) || !nzchar(state$doi)) {
+      updateQueryString(query = "?", mode = "replace", session = session)
+      return(invisible(NULL))
+    }
+    if (is.null(state$selected_replication) || !nzchar(state$selected_replication)) {
+      params <- shiny_deep_link_query_list(state$doi)
+    } else {
+      target <- selected_replication_id_and_language()
+      params <- shiny_deep_link_query_list(
+        state$doi,
+        what = state$selected_replication,
+        language = target$language
+      )
+    }
+    qs <- shiny_query_string(params)
+    updateQueryString(
+      query = if (nzchar(qs)) paste0("?", qs) else "?",
+      mode = "replace",
+      session = session
+    )
+    invisible(NULL)
+  }
+
+  select_replication_by_group <- function(group_or_id, language = NULL) {
+    row <- tryCatch(
+      resolve_replication_row(group_or_id),
+      error = function(e) NULL
+    )
+    if (is.null(row)) {
+      return(FALSE)
+    }
+    lang <- tolower(trimws(as.character(language %||% "")))
+    if (!nzchar(lang)) {
+      lang <- group_engine(row$group[[1]], row)
+    } else if (!row_has_engine(row, lang)) {
+      lang <- group_engine(row$group[[1]], row)
+    }
+    state$group_engines[[row$group[[1]]]] <- lang
+    state$selected_replication <- row$group[[1]]
+    state$selected_type <- row$type[[1]]
+    state$selected_source <- "artifact"
+    state$selected_result <- NULL
+    load_selected_artifact(fallback_live = FALSE)
+    TRUE
+  }
+
+  observeEvent(input$url_deep_link, {
+    link <- input$url_deep_link
+    req(is.list(link))
+    doi <- trimws(as.character(link$doi %||% ""))
+    req(nzchar(doi))
+    if (isFALSE(state$url_deep_link_parsed)) {
+      state$url_deep_link_parsed <- TRUE
+    }
+    state$welcome_shown <- TRUE
+    state$suppress_url_sync <- TRUE
+    state$pending_deep_link_doi <- doi
+    state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
+    state$pending_deep_link_language <- trimws(as.character(link$language %||% ""))
+  }, ignoreInit = TRUE)
+
+  observeEvent(state$pending_deep_link_doi, {
+    doi <- state$pending_deep_link_doi
+    req(nzchar(doi))
+    norm_doi <- tryCatch(
+      replicate_fn("normalize_doi", doi),
+      error = function(e) doi
+    )
+    if (!is.null(state$doi) && identical(state$doi, norm_doi)) {
+      state$pending_deep_link_doi <- NULL
+      state$suppress_url_sync <- FALSE
+      return(invisible(NULL))
+    }
+    updateNavbarPage(session, "main_nav", selected = "Replicate")
+    updateSelectInput(session, "study_select", selected = norm_doi)
+    load_study(doi, from_registry = TRUE)
+    state$pending_deep_link_doi <- NULL
+    state$suppress_url_sync <- FALSE
+    sync_url_to_selection()
+  }, ignoreInit = TRUE)
 
   observeEvent(input$study_select, {
     req(nzchar(input$study_select))
@@ -3905,7 +4496,12 @@ server <- function(input, output, session) {
     updateSelectInput(session, "study_select", selected = input$go_to_study)
     load_study(input$go_to_study, from_registry = TRUE)
     updateNavbarPage(session, "main_nav", selected = "Replicate")
+    sync_url_to_selection()
   })
+
+  observeEvent(list(state$doi, state$selected_replication, state$group_engines), {
+    sync_url_to_selection()
+  }, ignoreInit = TRUE)
 
   observeEvent(input$check_system_compat, {
     req(state$doi)
@@ -3981,6 +4577,13 @@ server <- function(input, output, session) {
           engine_icons_display(engines$r, engines$stata, engines$python)
         ),
         tags$div(
+          class = "study-link-col",
+          share_link_ui(
+            shiny_deep_link_query_list(row$doi[[1]]),
+            title = "Link to this study on the public server"
+          )
+        ),
+        tags$div(
           class = "study-run-col",
           actionButton(
             paste0("study_", i),
@@ -4002,6 +4605,7 @@ server <- function(input, output, session) {
         tags$div(class = "study-collections-col", "Collection"),
         tags$div(class = "study-repo-col", "Repo"),
         tags$div(class = "study-engine-col", "Languages"),
+        tags$div(class = "study-link-col", "Link"),
         tags$div(class = "study-run-col", "Go")
       ),
       rows,
@@ -4043,30 +4647,46 @@ server <- function(input, output, session) {
           "Study details"
         }),
         h4(paper$title %||% state$doi),
-        p(
-          strong("DOI: "), doi_link_ui(doi_value), br(),
-          strong("Authors: "), format_authors_summary(paper$authors %||% ""), br(),
-          if (!is.null(paper$year) && nzchar(as.character(paper$year))) {
-            tagList(strong("Year: "), paper$year, br())
-          },
-          strong("Journal: "), journal_display
-        ),
-        if (!is.null(state$local_study_meta) && nrow(row) == 0) {
-          p(
-            class = "text-muted small mb-0",
-            "Loaded from ",
-            code("replication.yml"),
-            " via a local path or the working directory."
+        tags$details(
+          class = "study-details-expand",
+          tags$summary(
+            class = "study-details-summary",
+            tags$span(class = "study-details-chevron", HTML("&#9660;")),
+            tags$span(class = "ms-1", strong("DOI: "), doi_link_ui(doi_value))
+          ),
+          tags$div(
+            class = "study-details-body pt-2",
+            p(
+              class = "mb-2",
+              strong("Authors: "), format_authors_summary(paper$authors %||% ""), br(),
+              if (!is.null(paper$year) && nzchar(as.character(paper$year))) {
+                tagList(strong("Year: "), paper$year, br())
+              },
+              strong("Journal: "), journal_display
+            ),
+            if (!is.null(state$local_study_meta) && nrow(row) == 0) {
+              p(
+                class = "text-muted small mb-2",
+                "Loaded from ",
+                code("replication.yml"),
+                " via a local path or the working directory."
+              )
+            },
+            study_materials_summary_ui(
+              state$doi,
+              folder = state$registry_folder,
+              repo = state$registry_repo,
+              dual_engine = !is.null(state$replications_df) &&
+                replication_has_engine(state$replications_df, "r") &&
+                replication_has_engine(state$replications_df, "stata"),
+              maintainer_row = if (nrow(row) > 0) row else NULL
+            ),
+            study_dag_link_ui(
+              state$doi,
+              folder = state$registry_folder,
+              repo = state$registry_repo
+            )
           )
-        },
-        study_materials_summary_ui(
-          state$doi,
-          folder = state$registry_folder,
-          repo = state$registry_repo,
-          dual_engine = !is.null(state$replications_df) &&
-            replication_has_engine(state$replications_df, "r") &&
-            replication_has_engine(state$replications_df, "stata"),
-          maintainer_row = if (nrow(row) > 0) row else NULL
         )
       ),
       study_package_install_ui(
@@ -4123,6 +4743,19 @@ server <- function(input, output, session) {
       tags$span(label, class = "replication-label", title = label_full),
       tags$div(
         class = "replication-actions",
+        if (!is.null(state$doi) && nzchar(state$doi)) {
+          tags$a(
+            href = shiny_share_url(
+              shiny_deep_link_query_list(state$doi, what = group, language = engine)
+            ),
+            class = "replication-share-link",
+            title = paste0("Link to ", label, " on the public server"),
+            target = "_blank",
+            rel = "noopener noreferrer",
+            `aria-label` = paste0("Link to ", label),
+            link_icon_svg()
+          )
+        },
         engine_picks,
         actionButton(
           paste0("display_", safe_group),
@@ -4279,6 +4912,7 @@ server <- function(input, output, session) {
       state$selected_source <- "artifact"
       load_selected_artifact(fallback_live = FALSE)
     }
+    sync_url_to_selection()
   }, ignoreInit = TRUE)
 
   observeEvent(input$replication_action, {
@@ -4679,7 +5313,14 @@ server <- function(input, output, session) {
     req(state$selected_replication, state$doi)
     target <- selected_replication_id_and_language()
     lang <- target$language
-    simple_code <- replication_run_snippet(state$doi, target$id, lang)
+    rep_row <- replication_row_for_id(state$replications_df, state$selected_replication)
+    include_lang <- !is.null(rep_row) && row_engine_count(rep_row) > 1L
+    simple_code <- replication_run_snippet(
+      state$doi,
+      target$id,
+      lang,
+      include_language = include_lang
+    )
     full_code <- tryCatch(
       paste(
         replicate_fn(
@@ -4726,6 +5367,53 @@ server <- function(input, output, session) {
       error = function(e) "r"
     )
     code_panel_ui(simple_code, full_code, language = code_lang)
+  })
+
+  observeEvent(input$show_study_pipeline, {
+    req(state$doi)
+    showModal(modalDialog(
+      title = "Steps pipeline",
+      study_dag_panel_ui(
+        state$doi,
+        folder = state$registry_folder,
+        repo = state$registry_repo,
+        heading = FALSE
+      ),
+      size = "l",
+      easyClose = TRUE,
+      footer = modalButton("Close")
+    ))
+  })
+
+  output$selected_pipeline_ui <- renderUI({
+    req(state$selected_replication, state$doi)
+    meta <- tryCatch(
+      replicate_fn(
+        "get_replication_meta",
+        state$doi,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      ),
+      error = function(e) NULL
+    )
+    if (is.null(meta)) {
+      return(helpText("Could not load study metadata for the pipeline view."))
+    }
+    target <- selected_replication_id_and_language()
+    paths <- tryCatch(
+      replicate_fn("study_dag_for_step", meta, target$id),
+      error = function(e) list()
+    )
+    if (length(paths) == 0L) {
+      return(helpText("No pipeline graph available for this item."))
+    }
+    tagList(
+      tags$div(
+        class = "study-dag-panel",
+        lapply(paths, study_dag_chain_ui)
+      ),
+      study_dag_legend_ui()
+    )
   })
 
   observeEvent(list(state$selected_replication, input$result_tabs), {

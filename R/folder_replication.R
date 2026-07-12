@@ -53,10 +53,32 @@ walk_up_for_relative <- function(start, relative, max_depth = 12L) {
   NULL
 }
 
+#' Locate monorepo root from a starting directory
+#'
+#' @param path Directory path (e.g. session launch directory).
+#' @return Normalized monorepo path or \code{NULL}.
+#' @keywords internal
+monorepo_root_from_path <- function(path) {
+  if (is.null(path) || length(path) != 1L || is.na(path) || !nzchar(path)) {
+    return(NULL)
+  }
+  if (!dir.exists(path)) {
+    return(NULL)
+  }
+  found <- walk_up_for_relative(path, "registry/index.csv")
+  if (is.null(found)) {
+    return(NULL)
+  }
+  if (dir.exists(file.path(found, "replicateEverything"))) {
+    return(normalizePath(found, winslash = "/", mustWork = FALSE))
+  }
+  NULL
+}
+
 #' Detect a local replicate-anything monorepo root
 #'
 #' Looks for \code{registry/index.csv} next to the installed or loaded
-#' \pkg{replicateEverything} package, or uses
+#' \pkg{replicateEverything} package, the Shiny launch directory, or uses
 #' \code{getOption("replicateEverything.study_folders_root")}.
 #'
 #' @return Normalized path or \code{NULL}.
@@ -65,6 +87,14 @@ auto_detect_monorepo_root <- function() {
   study_root <- getOption("replicateEverything.study_folders_root", NULL)
   if (!is.null(study_root) && dir.exists(study_root)) {
     return(normalizePath(study_root, winslash = "/", mustWork = FALSE))
+  }
+
+  launch_wd <- getOption("replicateEverything.shiny_launch_wd", NULL)
+  if (!is.null(launch_wd) && nzchar(launch_wd)) {
+    found <- monorepo_root_from_path(launch_wd)
+    if (!is.null(found)) {
+      return(found)
+    }
   }
 
   env_root <- Sys.getenv("REPLICATE_MONOREPO_ROOT", unset = "")
@@ -105,7 +135,11 @@ auto_detect_monorepo_root <- function() {
 #' @return Normalized study path or \code{NULL}.
 #' @keywords internal
 resolve_local_study_folder <- function(doi) {
-  study_name <- study_folder_from_doi(doi)
+  doi <- as.character(doi)
+  study_names <- unique(c(
+    study_folder_from_doi(doi),
+    if (grepl("^rep[-_]", doi)) doi else character(0)
+  ))
   roots <- unique(c(
     getOption("replicateEverything.study_folders_root", NULL),
     sibling_monorepo_root(),
@@ -113,9 +147,11 @@ resolve_local_study_folder <- function(doi) {
   ))
   roots <- roots[nzchar(roots) & dir.exists(roots)]
   for (monorepo in roots) {
-    candidate <- file.path(monorepo, study_name)
-    if (dir.exists(candidate) && file.exists(file.path(candidate, "replication.yml"))) {
-      return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+    for (study_name in study_names) {
+      candidate <- file.path(monorepo, study_name)
+      if (dir.exists(candidate) && file.exists(file.path(candidate, "replication.yml"))) {
+        return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
+      }
     }
   }
 
@@ -129,10 +165,12 @@ resolve_local_study_folder <- function(doi) {
   shiny_root <- tryCatch(system.file("shiny", package = "replicateEverything"), error = function(e) "")
   starts <- unique(c(getwd(), pkg_root, shiny_root))
   starts <- starts[nzchar(starts)]
-  for (start in starts) {
-    found <- walk_up_for_relative(start, file.path(study_name, "replication.yml"))
-    if (!is.null(found)) {
-      return(normalizePath(file.path(found, study_name), winslash = "/", mustWork = FALSE))
+  for (study_name in study_names) {
+    for (start in starts) {
+      found <- walk_up_for_relative(start, file.path(study_name, "replication.yml"))
+      if (!is.null(found)) {
+        return(normalizePath(file.path(found, study_name), winslash = "/", mustWork = FALSE))
+      }
     }
   }
 
@@ -258,10 +296,17 @@ study_input_error_message <- function(
 
 register_local_study_from_root <- function(local_root) {
   meta <- read_study_replication_yaml(local_root)
-  if (is.null(meta) || is.null(meta$paper$doi)) {
-    stop("Local replication.yml must include paper.doi.", call. = FALSE)
+  if (is.null(meta)) {
+    stop("Local replication.yml not found.", call. = FALSE)
   }
-  doi_out <- normalize_doi(meta$paper$doi)
+  paper <- meta$paper %||% list()
+  doi_raw <- paper$doi %||% NULL
+  if (!is.null(doi_raw) && nzchar(as.character(doi_raw[[1]] %||% doi_raw))) {
+    doi_out <- normalize_doi(doi_raw)
+  } else {
+    handle <- paper$study_handle %||% basename(local_root)
+    doi_out <- as.character(handle[[1]] %||% handle)
+  }
   configure_study_folder(doi_out, local_root)
   list(doi = doi_out, local_root = local_root, is_local = TRUE)
 }
@@ -387,7 +432,7 @@ prepare_doi_for_replication <- function(doi, location = getwd()) {
 #' @param root Monorepo root containing \code{registry/} and \code{rep-*} study
 #'   folders. When \code{NULL}, attempts \code{auto_detect_monorepo_root()}.
 #' @return Invisibly, the monorepo root path.
-#' @keywords internal
+#' @export
 configure_local_monorepo <- function(root = NULL) {
   if (is.null(root) || !dir.exists(root)) {
     root <- auto_detect_monorepo_root()
@@ -541,6 +586,23 @@ fetch_folder_study_replication_yaml <- function(meta, ctx = NULL) {
 #' @return Updated \code{meta} list.
 #' @keywords internal
 merge_folder_study_meta_fields <- function(meta, study_meta) {
+  paper_field_empty <- function(val) {
+    if (is.null(val) || length(val) == 0L) {
+      return(TRUE)
+    }
+    if (is.list(val) && !is.null(names(val))) {
+      return(FALSE)
+    }
+    chr <- as.character(val[[1]] %||% val %||% "")
+    if (length(chr) != 1L) {
+      return(FALSE)
+    }
+    !nzchar(chr)
+  }
+
+  if (length(meta$steps %||% list()) == 0L) {
+    meta$steps <- study_meta$steps %||% list()
+  }
   if (length(meta$replications %||% list()) == 0L) {
     meta$replications <- study_meta$replications %||% list()
   }
@@ -558,6 +620,32 @@ merge_folder_study_meta_fields <- function(meta, study_meta) {
   }
   if (length(meta$paper$python_dependencies %||% list()) == 0L) {
     meta$paper$python_dependencies <- study_meta$paper$python_dependencies %||% list()
+  }
+  for (field in c(
+    "package",
+    "package_repo",
+    "package_folder",
+    "package_ref",
+    "source_repo",
+    "study_handle",
+    "study_url",
+    "abstract",
+    "related"
+  )) {
+    val <- meta$paper[[field]] %||% NULL
+    study_val <- study_meta$paper[[field]] %||% NULL
+    if (paper_field_empty(val) && !is.null(study_val) && length(study_val) > 0L) {
+      meta$paper[[field]] <- study_val
+    }
+  }
+  if (is.null(meta$paper$extends) || length(meta$paper$extends) == 0L) {
+    study_ext <- study_meta$paper$extends %||% study_meta$extends %||% NULL
+    if (!is.null(study_ext) && length(study_ext) > 0L) {
+      meta$paper$extends <- study_ext
+    }
+  }
+  if (is.null(meta$extends) || length(meta$extends) == 0L) {
+    meta$extends <- study_meta$extends %||% study_meta$paper$extends %||% meta$extends
   }
   for (field in c(
     "languages",
@@ -655,6 +743,10 @@ study_folder_candidates <- function(meta, ctx = NULL) {
   if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
     derived <- c(derived, study_folder_from_doi(as.character(paper_doi[[1]])))
   }
+  paper_handle <- meta$paper$study_handle %||% NULL
+  if (!is.null(paper_handle) && length(paper_handle) > 0L && nzchar(as.character(paper_handle[[1]]))) {
+    derived <- c(derived, as.character(paper_handle[[1]]))
+  }
 
   unique(c(explicit, derived))
 }
@@ -678,6 +770,13 @@ study_folder_map_keys <- function(meta, ctx = NULL) {
   }
   if (!is.null(doi) && nzchar(doi)) {
     keys <- c(keys, gsub("/", "_", doi, fixed = TRUE), study_folder_from_doi(doi))
+  }
+  paper_handle <- meta$paper$study_handle %||% NULL
+  if (!is.null(paper_handle) && length(paper_handle) > 0L) {
+    handle_val <- as.character(paper_handle[[1]] %||% paper_handle)
+    if (nzchar(handle_val)) {
+      keys <- c(keys, handle_val, tolower(handle_val))
+    }
   }
   study_name <- c(
     meta$paper$study_folder %||% NULL,
@@ -1075,21 +1174,32 @@ ensure_study_folder_local <- function(meta, ctx = NULL) {
     )
   }
 
-  if (!is.null(ctx) && !is.null(ctx$local_root) && dir.exists(ctx$local_root)) {
-    marker <- file.path(ctx$local_root, "replication.yml")
-    if (file.exists(marker)) {
-      return(normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE))
-    }
-  }
-
   paper_doi <- meta$paper$doi %||% NULL
   if (is.null(paper_doi) && !is.null(ctx) && !is.null(ctx$doi)) {
     paper_doi <- ctx$doi
   }
+
   if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
     local <- resolve_local_study_folder(normalize_doi(as.character(paper_doi[[1]])))
     if (!is.null(local)) {
       return(local)
+    }
+  }
+
+  if (!is.null(ctx) && !is.null(ctx$local_root) && dir.exists(ctx$local_root)) {
+    marker <- file.path(ctx$local_root, "replication.yml")
+    if (file.exists(marker)) {
+      cached <- normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE)
+      if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
+        sibling <- resolve_local_study_folder(normalize_doi(as.character(paper_doi[[1]])))
+        if (!is.null(sibling)) {
+          sibling_norm <- normalizePath(sibling, winslash = "/", mustWork = FALSE)
+          if (!identical(cached, sibling_norm)) {
+            return(sibling_norm)
+          }
+        }
+      }
+      return(cached)
     }
   }
 

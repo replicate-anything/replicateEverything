@@ -40,6 +40,16 @@ load_replication_data <- function(data_files, ctx, meta = NULL) {
 read_data_file <- function(path, ctx, meta = NULL) {
   ext <- tolower(tools::file_ext(path))
 
+  if (!is.null(meta)) {
+    base_root <- extended_study_base_root(meta)
+    if (!is.null(base_root)) {
+      base_path <- file.path(base_root, path)
+      if (file.exists(base_path)) {
+        return(read_data_path(base_path, ext))
+      }
+    }
+  }
+
   if (!is.null(ctx$local_root) && dir.exists(ctx$local_root) && !is.null(meta)) {
     ensure_study_data_files(path, ctx$local_root, meta, ctx)
   }
@@ -52,6 +62,16 @@ read_data_file <- function(path, ctx, meta = NULL) {
 
   if (!is.na(local_path) && file.exists(local_path)) {
     return(read_data_path(local_path, ext))
+  }
+
+  if (!is.null(meta)) {
+    base_root <- extended_study_base_root(meta)
+    if (!is.null(base_root) && !identical(base_root, ctx$local_root)) {
+      base_path <- file.path(base_root, path)
+      if (file.exists(base_path)) {
+        return(read_data_path(base_path, ext))
+      }
+    }
   }
 
   if (!is.null(ctx$local_root) && !is.null(meta)) {
