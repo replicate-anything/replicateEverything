@@ -593,11 +593,14 @@ merge_folder_study_meta_fields <- function(meta, study_meta) {
     if (is.list(val) && !is.null(names(val))) {
       return(FALSE)
     }
+    if (length(val) == 1L && is.na(val[[1]])) {
+      return(TRUE)
+    }
     chr <- as.character(val[[1]] %||% val %||% "")
     if (length(chr) != 1L) {
       return(FALSE)
     }
-    !nzchar(chr)
+    !nzchar(chr) || identical(chr, "NA")
   }
 
   if (length(meta$steps %||% list()) == 0L) {
@@ -630,7 +633,11 @@ merge_folder_study_meta_fields <- function(meta, study_meta) {
     "study_handle",
     "study_url",
     "abstract",
-    "related"
+    "related",
+    "title",
+    "authors",
+    "year",
+    "journal"
   )) {
     val <- meta$paper[[field]] %||% NULL
     study_val <- study_meta$paper[[field]] %||% NULL

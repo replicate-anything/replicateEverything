@@ -504,13 +504,26 @@ render_replication <- function(
   }
 
   if (!isTRUE(skip_prep)) {
-    ensure_prep_dependencies(
-      meta,
-      rep,
-      ctx,
-      doi = doi,
-      install_deps = install_deps
-    )
+    steps <- normalize_study_steps(meta)
+    if (length(steps) > 0L && !is_prep_entry(rep)) {
+      ensure_study_ancestor_steps(
+        meta,
+        rep,
+        ctx,
+        doi = doi,
+        install_deps = install_deps,
+        repo = repo,
+        folder = folder
+      )
+    } else {
+      ensure_prep_dependencies(
+        meta,
+        rep,
+        ctx,
+        doi = doi,
+        install_deps = install_deps
+      )
+    }
   }
 
   run_ctx <- step_code_context(rep, meta, ctx)

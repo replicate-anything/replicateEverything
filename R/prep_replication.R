@@ -62,8 +62,18 @@ prep_output_ready <- function(prep, ctx, meta = NULL) {
 #' @param step_id Prep step identifier.
 #' @keywords internal
 find_prep_entry <- function(meta, step_id) {
-  steps <- meta$prep %||% list()
-  matches <- steps[vapply(steps, function(x) identical(as.character(x$id), step_id), logical(1))]
+  step_id <- as.character(step_id)
+  pipeline <- collect_study_step_entries(meta)
+  pipeline <- pipeline[vapply(pipeline, is_prep_entry, logical(1))]
+  matches <- pipeline[vapply(pipeline, function(x) {
+    identical(as.character(x$id), step_id)
+  }, logical(1))]
+  if (length(matches) == 0L) {
+    steps <- meta$prep %||% list()
+    matches <- steps[vapply(steps, function(x) {
+      identical(as.character(x$id), step_id)
+    }, logical(1))]
+  }
   if (length(matches) == 0L) {
     stop("Prep step ", step_id, " not found in metadata", call. = FALSE)
   }
@@ -307,6 +317,64 @@ run_build_prep_steps <- function(
 #' @param install_deps Passed to prep runners.
 #' @param force Re-run prep even when outputs exist.
 #' @keywords internal
+#' Run missing upstream DAG steps before a display replication
+#'
+#' When a study uses the unified \code{steps:} block, display steps declare
+#' \code{parents:} rather than legacy \code{requires:}. This runs any ancestor
+#' transform steps whose outputs are not yet present.
+#'
+#' @keywords internal
+ensure_study_ancestor_steps <- function(
+  meta,
+  rep,
+  ctx,
+  doi,
+  install_deps = FALSE,
+  force = FALSE,
+  repo = NULL,
+  folder = NULL
+) {
+  steps <- normalize_study_steps(meta)
+  if (length(steps) == 0L) {
+    return(invisible(NULL))
+  }
+  target_id <- as.character(rep$id %||% "")
+  if (!nzchar(target_id)) {
+    return(invisible(NULL))
+  }
+  graph <- study_step_graph(steps)
+  if (!target_id %in% graph$ids) {
+    return(invisible(NULL))
+  }
+  ancestors <- topological_step_sort(step_ancestors(target_id, graph), graph)
+  if (length(ancestors) == 0L) {
+    return(invisible(NULL))
+  }
+  step_by_id <- setNames(steps, vapply(steps, function(x) as.character(x$id), character(1)))
+  repo <- repo %||% ctx$repo %||% NULL
+  folder <- folder %||% ctx$folder %||% NULL
+  for (step_id in ancestors) {
+    step <- step_by_id[[step_id]]
+    run_ctx <- step_run_context(step, meta, ctx)
+    if (!isTRUE(force) && step_outputs_ready(step, run_ctx, meta = meta)) {
+      next
+    }
+    message("Running upstream step: ", step_id)
+    render_replication_step(
+      doi,
+      step_id,
+      meta = meta,
+      ctx = ctx,
+      install_deps = install_deps,
+      repo = repo,
+      folder = folder,
+      skip_prep = TRUE,
+      force = force
+    )
+  }
+  invisible(NULL)
+}
+
 ensure_prep_dependencies <- function(
   meta,
   rep,

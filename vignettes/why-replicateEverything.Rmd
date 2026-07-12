@@ -61,18 +61,18 @@ replicateEverything::run_replication(
 
 **replicateEverything** is a prototype system to:
 
-- structure replication code as a connected pipeline;
-- fetch and run that code from a DOI (or registry handle);
-- check that it still works — one study, or a whole journal at once;
-- link base replications to downstream re-analyses without copying files.
+- structure replication code as a connected pipeline
+- fetch and run that code from a DOI (or registry handle)
+- check that it still works — one study, or a whole journal at once
+- link base replications to downstream re-analyses without copying files
 
-You can use it from R or from the browser: [shiny2.wzb.eu/ipi/replicate/](https://shiny2.wzb.eu/ipi/replicate/).
+You can use it from `R` or from the browser: [shiny2.wzb.eu/ipi/replicate/](https://shiny2.wzb.eu/ipi/replicate/).
 
 ## Why bother?
 
-Computational replication has never been easier to *attempt*; it is still surprisingly hard to *repeat* someone else's analysis on demand. Archives are ad hoc, paths differ, dependencies drift, and every new reader — students especially — retraces the same scavenger hunt. Nobody runs a standing check that the archive still runs today.
+Computational replication has never been easier to *attempt*; it is still surprisingly hard to *repeat* someone else's analysis on demand. Archives are ad hoc, paths differ, dependencies drift, and every new reader retraces the same scavenger hunt. Nobody runs a standing check that the archive still runs today.
 
-You might ask: if an AI can rewrite the analysis from the paper, why keep an authoritative codebase? Because the code *is* the record of analytic choices. When results disagree, you need a shared artifact to inspect, not a fresh vibe-coded reimplementation. That case gets stronger, not weaker, as models get better at improvising.
+Are we fighting the lat battle. You might wonder: if an AI can rewrite the analysis from the paper, why keep an authoritative codebase? Our answe: Because the code *is* the record of analytic choices. When results disagree, you need a shared artifact to inspect, not a fresh vibe-coded reimplementation. That case gets stronger  as models get better at improvising.
 
 ## The registry (what is in there so far)
 

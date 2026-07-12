@@ -20,6 +20,7 @@
 * New overview vignette: **`vignette("why-replicateEverything")`** (first article on the site).
 * [list_replications()] gains a compact **print method** (`replication_list` class). `given` defaults to `"nothing"` when `what = "everything"`.
 * [audit_everything()] runs published-value checks from `tests/substantive/<step_id>.R` when present (`substantive = TRUE` by default). New helper: [check_glm_table_benchmark()] for logit tables.
+* Live replication and Shiny **Run** now execute missing **upstream DAG steps** (`parents:`) before tables and figures; Shiny loads merged study metadata for pipeline graphs and handle-only registry entries.
 
 # replicateEverything 0.5.1
 

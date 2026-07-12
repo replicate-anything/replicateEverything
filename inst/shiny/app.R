@@ -563,6 +563,17 @@ resolve_study_doi_input <- function(doi_input, from_registry = FALSE) {
     if (!nzchar(doi_input)) {
       stop("Study DOI is required.", call. = FALSE)
     }
+    resolved <- tryCatch(
+      replicate_fn("resolve_doi_input", doi_input),
+      error = function(e) NULL
+    )
+    if (!is.null(resolved)) {
+      return(list(
+        doi = resolved$doi,
+        local_root = resolved$local_root,
+        is_local = isTRUE(resolved$is_local)
+      ))
+    }
     return(list(
       doi = replicate_fn("normalize_doi", doi_input),
       local_root = NULL,
@@ -1234,21 +1245,54 @@ registry_health_bar_ui <- function(summary) {
 
 nice_doi_choices <- function(index_df) {
   if (is.null(index_df) || nrow(index_df) == 0) return(character(0))
-  idx <- index_df[nzchar(index_df$doi), , drop = FALSE]
-  labels <- vapply(seq_len(nrow(idx)), function(i) {
-    row <- idx[i, , drop = FALSE]
-    author <- format_author_label(row$authors[[1]])
-    year <- row$year[[1]] %||% ""
-    paste0(author, " (", year, ")")
-  }, character(1))
-  ord <- order(
-    vapply(strsplit(idx$authors, ",\\s*"), function(x) {
-      first_author_surname(trimws(x[[1]] %||% ""))
-    }, character(1)),
-    idx$year,
-    idx$title
+  choice_rows <- function(idx) {
+    if (is.null(idx) || nrow(idx) == 0) {
+      return(list(values = character(0), labels = character(0)))
+    }
+    labels <- vapply(seq_len(nrow(idx)), function(i) {
+      row <- idx[i, , drop = FALSE]
+      author <- format_author_label(row$authors[[1]])
+      year <- row$year[[1]] %||% ""
+      if (is.na(year)) year <- ""
+      paste0(author, if (nzchar(as.character(year))) paste0(" (", year, ")") else "")
+    }, character(1))
+    values <- if ("doi" %in% names(idx) && any(nzchar(idx$doi))) {
+      vapply(seq_len(nrow(idx)), function(i) {
+        row <- idx[i, , drop = FALSE]
+        doi_val <- as.character(row$doi[[1]] %||% "")
+        if (nzchar(doi_val)) {
+          return(tryCatch(
+            replicate_fn("normalize_doi", doi_val),
+            error = function(e) doi_val
+          ))
+        }
+        as.character(row$handle[[1]] %||% row$folder[[1]] %||% "")
+      }, character(1))
+    } else {
+      as.character(idx$handle %||% idx$folder)
+    }
+    ord <- order(
+      vapply(strsplit(idx$authors, ",\\s*"), function(x) {
+        first_author_surname(trimws(x[[1]] %||% ""))
+      }, character(1)),
+      idx$year,
+      idx$title
+    )
+    list(values = values[ord], labels = labels[ord])
+  }
+  with_doi <- index_df[nzchar(as.character(index_df$doi %||% "")), , drop = FALSE]
+  handle_only <- index_df[
+    !nzchar(as.character(index_df$doi %||% "")) &
+      nzchar(as.character(index_df$handle %||% "")),
+    ,
+    drop = FALSE
+  ]
+  doi_part <- choice_rows(with_doi)
+  handle_part <- choice_rows(handle_only)
+  setNames(
+    c(doi_part$values, handle_part$values),
+    c(doi_part$labels, handle_part$labels)
   )
-  setNames(idx$doi[ord], labels[ord])
 }
 
 truncate_label <- function(text, max_chars = 40L) {
@@ -1692,14 +1736,20 @@ study_dag_panel_body_ui <- function(facets, heading = TRUE) {
 study_dag_facets_for <- function(doi, folder = NULL, repo = NULL) {
   meta <- tryCatch(
     replicate_fn("get_replication_meta", doi, folder = folder, repo = repo),
-    error = function(e) NULL
+    error = function(e) {
+      message("study_dag_facets: could not load metadata for ", doi, ": ", conditionMessage(e))
+      NULL
+    }
   )
   if (is.null(meta)) {
     return(NULL)
   }
   tryCatch(
     replicate_fn("study_dag_facets", meta),
-    error = function(e) NULL
+    error = function(e) {
+      message("study_dag_facets: ", conditionMessage(e))
+      NULL
+    }
   )
 }
 
@@ -1930,10 +1980,20 @@ strip_html_entities <- function(x) {
 format_study_citation <- function(row) {
   author <- format_author_label(row$authors[[1]])
   year <- row$year[[1]] %||% ""
+  if (length(year) != 1L || is.na(year) || !nzchar(as.character(year))) {
+    year <- ""
+  } else {
+    year <- as.character(year)
+  }
   title <- truncate_title(row$title[[1]])
   doi_raw <- row$doi[[1]] %||% ""
   doi <- if (nzchar(doi_raw)) {
     tryCatch(replicate_fn("normalize_doi", doi_raw), error = function(e) doi_raw)
+  } else {
+    ""
+  }
+  article_url <- if ("article_url" %in% names(row)) {
+    as.character(row$article_url[[1]] %||% "")
   } else {
     ""
   }
@@ -1946,17 +2006,28 @@ format_study_citation <- function(row) {
     },
     if (nzchar(doi)) {
       paper_link <- list(doi = doi_raw)
-      if ("article_url" %in% names(row)) {
-        au <- row$article_url[[1]] %||% ""
-        if (nzchar(as.character(au))) {
-          paper_link$article_url <- as.character(au)
-        }
+      if (nzchar(article_url)) {
+        paper_link$article_url <- article_url
       }
       tagList(" ", doi_link_ui(doi_raw %||% doi, paper = paper_link))
+    } else if (nzchar(article_url)) {
+      tagList(
+        " ",
+        tags$a(
+          href = article_url,
+          target = "_blank",
+          rel = "noopener noreferrer",
+          "Study repository"
+        )
+      )
     }
   )
   list(
-    line1 = sprintf('%s (%s) "%s"', author, year, title),
+    line1 = if (nzchar(year)) {
+      sprintf('%s (%s) "%s"', author, year, title)
+    } else {
+      sprintf('%s "%s"', author, title)
+    },
     line2 = journal_line
   )
 }
@@ -1973,10 +2044,13 @@ studies_for_bibliography <- function(index_df) {
 }
 
 registry_row_for <- function(doi, index_df = registry_index) {
-  if (is.null(index_df) || !"doi" %in% names(index_df)) {
+  if (is.null(index_df) || !"folder" %in% names(index_df)) {
     return(list(folder = NULL, repo = DEFAULT_REGISTRY_REPO))
   }
   row <- index_df[index_df$doi == doi, , drop = FALSE]
+  if (nrow(row) == 0L && "handle" %in% names(index_df)) {
+    row <- index_df[tolower(as.character(index_df$handle)) == tolower(doi), , drop = FALSE]
+  }
   list(
     folder = if (nrow(row) > 0 && "folder" %in% names(row)) row$folder[[1]] else NULL,
     repo = if (nrow(row) > 0 && "repo" %in% names(row)) row$repo[[1]] else DEFAULT_REGISTRY_REPO
@@ -2128,14 +2202,27 @@ read_local_registry_stub <- function(folder) {
 }
 
 read_local_study_replication_index <- function(stub, folder, repo = DEFAULT_REGISTRY_REPO) {
-  doi <- stub$paper$doi %||% NULL
-  if (is.null(doi) || !length(doi)) {
+  lookup <- stub$paper$doi %||% stub$paper$study_handle %||% NULL
+  if (is.null(lookup) || !length(lookup) || !nzchar(as.character(lookup[[1]] %||% lookup))) {
     return(NULL)
+  }
+  lookup_key <- as.character(lookup[[1]] %||% lookup)
+  merged <- tryCatch(
+    replicate_fn(
+      "get_replication_meta",
+      lookup_key,
+      folder = folder,
+      repo = repo
+    ),
+    error = function(e) NULL
+  )
+  if (!is.null(merged)) {
+    return(replicate_fn("study_step_entries", merged))
   }
   ctx <- tryCatch(
     replicate_fn(
       "paper_context",
-      replicate_fn("normalize_doi", doi),
+      replicate_fn("prepare_doi_for_replication", lookup_key),
       repo = repo,
       folder = folder
     ),
@@ -2149,12 +2236,27 @@ read_local_study_replication_index <- function(stub, folder, repo = DEFAULT_REGI
     return(NULL)
   }
   study_meta <- read_yaml_from_url(local_yml)
-  study_yaml_replication_index(study_meta)
+  study_yaml_replication_index(study_meta, folder = folder, repo = repo)
 }
 
-study_yaml_replication_index <- function(study_meta) {
+study_yaml_replication_index <- function(study_meta, folder = NULL, repo = DEFAULT_REGISTRY_REPO) {
   if (is.null(study_meta)) {
     return(NULL)
+  }
+  lookup <- study_meta$paper$doi %||% study_meta$paper$study_handle %||% NULL
+  if (!is.null(lookup) && nzchar(as.character(lookup[[1]] %||% lookup))) {
+    merged <- tryCatch(
+      replicate_fn(
+        "get_replication_meta",
+        as.character(lookup[[1]] %||% lookup),
+        folder = folder,
+        repo = repo
+      ),
+      error = function(e) NULL
+    )
+    if (!is.null(merged)) {
+      return(replicate_fn("study_step_entries", merged))
+    }
   }
   steps <- study_meta$steps %||% list()
   if (length(steps) > 0L) {
@@ -2206,9 +2308,27 @@ fetch_study_replications_index <- function(folder, repo = DEFAULT_REGISTRY_REPO)
       study_repo, ref
     )
     study_meta <- read_yaml_from_url(study_url)
-    index <- study_yaml_replication_index(study_meta)
+    index <- study_yaml_replication_index(study_meta, folder = folder, repo = repo)
     if (!is.null(index) && length(index) > 0L) {
       return(index)
+    }
+    lookup <- stub$paper$doi %||% stub$paper$study_handle %||% NULL
+    if (!is.null(lookup) && nzchar(as.character(lookup[[1]] %||% lookup))) {
+      merged <- tryCatch(
+        replicate_fn(
+          "get_replication_meta",
+          as.character(lookup[[1]] %||% lookup),
+          folder = folder,
+          repo = repo
+        ),
+        error = function(e) NULL
+      )
+      if (!is.null(merged)) {
+        index <- replicate_fn("study_step_entries", merged)
+        if (length(index) > 0L) {
+          return(index)
+        }
+      }
     }
     return(list())
   }
@@ -2430,7 +2550,10 @@ get_replications_meta <- function(doi, folder = NULL, repo = NULL) {
   if (is.null(doi) || !nzchar(doi)) {
     return(list(replications = NULL, prep = list(), error = NULL, diagnostics = NULL))
   }
-  doi <- replicate_fn("normalize_doi", doi)
+  doi <- tryCatch(
+    replicate_fn("prepare_doi_for_replication", doi),
+    error = function(e) replicate_fn("normalize_doi", doi)
+  )
   ctx <- list(
     folder = folder,
     repo = repo %||% DEFAULT_REGISTRY_REPO
@@ -4866,47 +4989,6 @@ server <- function(input, output, session) {
               row,
               active_id = active,
               engine = group_engine(row$group[[1]], row)
-            )
-          })
-        )
-      },
-      if (!is.null(state$prep_df) && nrow(state$prep_df) > 0) {
-        tagList(
-          tags$h6(class = "text-muted mb-2 mt-2", "Pipeline steps"),
-          lapply(seq_len(nrow(state$prep_df)), function(i) {
-            row <- state$prep_df[i, , drop = FALSE]
-            step_id <- row$id[[1]]
-            step_engine <- row$engine[[1]] %||% "r"
-            safe_id <- gsub("[^a-zA-Z0-9]", "_", step_id)
-            engine_badge <- switch(
-              step_engine,
-              stata = tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
-              python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
-              tags$span(class = "engine-badge", title = "R", engine_icon_r())
-            )
-            tags$div(
-              class = paste(
-                "replication-row d-flex align-items-center rounded",
-                if (identical(state$selected_replication, step_id)) {
-                  "bg-light border border-primary"
-                } else {
-                  ""
-                }
-              ),
-              engine_badge,
-              tags$span(row$label[[1]], class = "replication-label", title = row$label_full[[1]]),
-              tags$div(
-                class = "replication-actions",
-                actionButton(
-                  paste0("prep_run_", safe_id),
-                  "Run",
-                  class = "btn-outline-primary btn-sm",
-                  onclick = sprintf(
-                    "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
-                    step_id
-                  )
-                )
-              )
             )
           })
         )
