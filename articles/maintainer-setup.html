@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,7 +82,7 @@ the host. Maintainers install once during setup.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="check-compatibility-no-installs">Check compatibility (no installs)<a class="anchor" aria-label="anchor" href="#check-compatibility-no-installs"></a>
+<h2 id="check-system-compatibility-no-installs">Check system compatibility (no installs)<a class="anchor" aria-label="anchor" href="#check-system-compatibility-no-installs"></a>
 </h2>
 <p>Before running tables or figures, confirm the machine matches what
 <code>replication.yml</code> declares:</p>
@@ -92,9 +92,9 @@ the host. Maintainers install once during setup.</p>
 <code>install_needed</code>, and per-engine blocks under
 <code>dependencies</code> (<code>r</code>, <code>python</code>,
 <code>stata</code>).</p>
-<p>In Shiny, use <strong>Check compatibility</strong> above the tables
-list. When something is missing, a dialog shows the same maintainer
-commands documented here.</p>
+<p>In Shiny, use <strong>Check system compatibility</strong> above the
+tables list. When something is missing, a dialog shows the same
+maintainer commands documented here.</p>
 </div>
 <div class="section level2">
 <h2 id="install-dependencies-for-one-study">Install dependencies for one study<a class="anchor" aria-label="anchor" href="#install-dependencies-for-one-study"></a>
@@ -114,8 +114,8 @@ builder (paths differ by design):</p>
 <span><span class="fu"><a href="../reference/build_package_artifacts.html">build_package_artifacts</a></span><span class="op">(</span><span class="st">"rep1371journalpone0278337"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>Use [replication_kind()] to inspect layout (<code>"folder"</code>,
 <code>"package"</code>, or <code>"registry"</code>) and
-[study_artifact_dir()] for the artifact root (<code>artifacts/</code> vs
-<code>inst/report/artifacts/</code>).</p>
+[study_output_dir()] for the display output root (<code>outputs/</code>
+vs <code>inst/report/artifacts/</code>).</p>
 </div>
 <div class="section level2">
 <h2 id="install-dependencies-for-every-registry-study">Install dependencies for every registry study<a class="anchor" aria-label="anchor" href="#install-dependencies-for-every-registry-study"></a>
@@ -192,6 +192,71 @@ packages.</li>
 and via <code><a href="../reference/maintainer_dependency_hint.html">maintainer_dependency_hint()</a></code>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/maintainer_dependency_hint.html">maintainer_dependency_hint</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span></code></pre></div>
+<p>See also <em>Meet the functions</em>, the folder replication
+checklist, and <code>inst/ai/skills/include_study_in_registry.md</code>
+for contributor vs maintainer registry workflows.</p>
+</div>
+<div class="section level2">
+<h2 id="register-studies-in-the-central-registry-maintainer">Register studies in the central registry (maintainer)<a class="anchor" aria-label="anchor" href="#register-studies-in-the-central-registry-maintainer"></a>
+</h2>
+<p>Contributors validate their study and write <strong>handoff
+files</strong> inside the study repository with
+[prepare_study_for_registry()]. Maintainers install those files in the
+<a href="https://github.com/replicate-anything/registry" class="external-link">registry
+repository</a>.</p>
+<table class="table">
+<colgroup>
+<col width="20%">
+<col width="79%">
+</colgroup>
+<thead><tr class="header">
+<th>Layout</th>
+<th>Handoff location in study repo</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Folder-backed</td>
+<td>
+<code>registry/replication.yml</code> +
+<code>registry/index.csv</code>
+</td>
+</tr>
+<tr class="even">
+<td>Package-backed</td>
+<td>
+<code>inst/registry/replication.yml</code> +
+<code>inst/registry/index.csv</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Point R at your monorepo checkout:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Sync one study</strong> — copy the handoff stub to
+<code>registry/studies/&lt;folder&gt;.yml</code> and rebuild
+<code>index.csv</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span></span>
+<span>  <span class="st">"../rep-10.1177-00491241211036161"</span>,</span>
+<span>  registry_root <span class="op">=</span> <span class="st">"../registry"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Optional per-study audit after sync:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span></span>
+<span>  <span class="st">"../rep-10.1177-00491241211036161"</span>,</span>
+<span>  registry_root <span class="op">=</span> <span class="st">"../registry"</span>,</span>
+<span>  audit <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  patience <span class="op">=</span> <span class="fl">20</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Refresh the whole registry</strong> after a batch of syncs —
+recompile <code>index.csv</code> from all stubs and rerun
+[audit_everything()]:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
+<p>Internal shortcuts (check + sync in one call):
+<code><a href="../reference/add_folder_paper.html">add_folder_paper()</a></code> for folder studies,
+<code><a href="../reference/add_paper.html">add_paper()</a></code> for package studies.</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
@@ -226,8 +291,8 @@ and via <code><a href="../reference/maintainer_dependency_hint.html">maintainer_
 </td>
 </tr>
 <tr class="odd">
-<td>Artifact directory</td>
-<td><code>study_artifact_dir(meta, ctx)</code></td>
+<td>Display output directory</td>
+<td><code>study_output_dir(meta, ctx)</code></td>
 </tr>
 <tr class="even">
 <td>Build folder artifacts</td>
@@ -241,11 +306,27 @@ and via <code><a href="../reference/maintainer_dependency_hint.html">maintainer_
 <td>Hint text for errors / UI</td>
 <td><code>maintainer_dependency_hint(doi)</code></td>
 </tr>
+<tr class="odd">
+<td>
+<strong>Contributor:</strong> prepare handoff in study repo</td>
+<td><code>prepare_study_for_registry(path)</code></td>
+</tr>
+<tr class="even">
+<td>
+<strong>Maintainer:</strong> sync stub into registry</td>
+<td><code>sync_study_to_registry(path, registry_root = ...)</code></td>
+</tr>
+<tr class="odd">
+<td>
+<strong>Maintainer:</strong> rebuild index + audit all</td>
+<td><code>refresh_registry(registry_root, audit = TRUE)</code></td>
+</tr>
+<tr class="even">
+<td>Rebuild index only</td>
+<td><code>build_registry_index(registry_root)</code></td>
+</tr>
 </tbody>
 </table>
-<p>See also <em>Meet the functions</em> and the folder replication
-checklist for study-repo conventions (<code>languages:</code>,
-<code>python_dependencies:</code>, <code>stata_deps_probe:</code>).</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

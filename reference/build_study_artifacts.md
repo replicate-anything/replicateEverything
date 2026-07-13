@@ -1,8 +1,8 @@
 # Build display artifacts for a folder-backed study
 
 Runs pipeline prep steps from `replication.yml` when present, then every
-registered table and figure, saves formatted outputs under `artifacts/`,
-and writes `artifacts/manifest.json`. Intended to be run from the study
+registered table and figure, saves formatted outputs under `outputs/`,
+and writes `outputs/manifest.json`. Intended to be run from the study
 repository root (or pass the path explicitly).
 
 ## Usage

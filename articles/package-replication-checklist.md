@@ -4,7 +4,7 @@
 
 | Model | Registry | Materials |
 |----|----|----|
-| **Folder-backed** | `studies/<folder>.yml` stub only | Study repo: `code/`, `data/`, `artifacts/` |
+| **Folder-backed** | `studies/<folder>.yml` stub only | Study repo: `code/`, `data/`, `outputs/` |
 | **Package-backed** | `studies/<folder>.yml` stub only | Study R package on GitHub |
 
 This checklist covers **package-backed** studies (recommended for
@@ -22,6 +22,9 @@ multi-table papers).
         format_*.R                  # display formatting
         replication_api.R           # orchestration API (below)
       inst/replication_code/        # synced copies for Code tab / get_code()
+      inst/registry/                 # handoff files (prepare_study_for_registry)
+        replication.yml
+        index.csv
       inst/report/artifacts/        # baked Display outputs (build_report())
       data/                         # analysis datasets (LazyData)
 
@@ -36,6 +39,26 @@ multi-table papers).
 - `paper.package_ref` — branch/tag (default `main`)
 - `paper.package_folder` — optional; sibling folder name for monorepo
   dev
+
+**Maintainer and collections** (required for registry sync)
+
+- `maintainer.name` and `maintainer.email` — contact shown as
+  `[maintainer]` on the Studies tab
+- `collections` — tags for bibliography filtering (`APSR`, `PED`,
+  `World Bank`, `IPI`, …)
+- `languages` — engines used by the package (usually `r`)
+
+``` yaml
+maintainer:
+  name: Jane Maintainer
+  email: maintainer@example.org
+
+collections:
+  - IPI
+
+languages:
+  - r
+```
 
 **Each figure or table**
 
@@ -95,11 +118,42 @@ This writes:
 
 The registry stub does **not** store artifacts.
 
-## Register after checks pass
+## Prepare and register
+
+### Contributor: validate and write handoff files
 
 ``` r
 
 library(replicateEverything)
+
+prepare_study_for_registry(
+  "../rep-10.1371_journal.pone.0278337",
+  build_artifacts = TRUE
+)
+```
+
+Writes `inst/registry/replication.yml` and `inst/registry/index.csv` in
+the package source tree. Commit these with your study PR.
+
+### Maintainer: sync into the central registry
+
+``` r
+
+options(replicateEverything.registry_root = "../registry")
+
+sync_study_to_registry(
+  "../rep-10.1371_journal.pone.0278337",
+  registry_root = "../registry",
+  audit = TRUE
+)
+
+# After several syncs:
+refresh_registry("../registry", audit = TRUE)
+```
+
+### Checks only
+
+``` r
 
 check_package_replication(
   "../rep-10.1371_journal.pone.0278337",
@@ -111,11 +165,6 @@ check_package_replication(
   full_replication = TRUE
 )
 ```
-
-After checks pass, copy the generated registry stub into the [registry
-repository](https://github.com/replicate-anything/registry)
-(`studies/<folder>.yml` and a row in `index.csv` with `handle`, `doi`,
-`title`, etc.).
 
 ## Reference implementation
 

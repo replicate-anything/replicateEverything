@@ -1,6 +1,8 @@
 # Candidate paths for a replication data file
 
-Checks the study checkout, then `<root>/data/<study>/<file>`.
+Checks (1) the study checkout at `study_root/<rel_path>`, (2) a sibling
+monorepo study repo when configured, then (3) deployed Shiny data at
+`<study_data_root>/data/<study_folder>/<basename>`.
 
 ## Usage
 

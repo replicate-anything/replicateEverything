@@ -1,6 +1,8 @@
 # List pipeline prep steps for a paper
 
-Returns entries from the `prep:` block in `replication.yml`.
+Superseded by
+[`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+with `include = "pipeline"`.
 
 ## Usage
 
@@ -12,7 +14,7 @@ list_prep_steps(doi, repo = NULL, folder = NULL)
 
 - doi:
 
-  Character. DOI of the paper.
+  Character. DOI, registry handle, or local study path.
 
 - repo:
 

@@ -5,6 +5,9 @@ browse the registry, run a table or figure, and inspect the code that
 produced it. On the **producer** side you set up a study repository,
 validate it, and register it so others can replicate your work.
 
+Start with the overview:
+[`vignette("why-replicateEverything", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.md).
+
 This vignette walks through the main exported functions on each side.
 For full contributor checklists see the folder and package replication
 articles; for Stata-specific behaviour see *Stata replications*.
@@ -70,13 +73,21 @@ Example output (abbreviated):
     #> $type
     #> [1] "figure"
 
-[`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
-returns **one entry per logical group**. When both R and Stata exist for
-the same table, the default is R.
+`list_replications(..., grouped = TRUE)` returns **one entry per logical
+group**. When both R and Stata exist for the same table, the default is
+R.
 
 ``` r
 
-list_replication_groups("10.1257/aer.91.5.1369")
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE)
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE, language = "stata")
+```
+
+Pipeline steps (transforms) are listed separately:
+
+``` r
+
+list_replications("10.1017/s0003055426101749", include = "pipeline")
 ```
 
 ### Run a replication
@@ -149,9 +160,9 @@ for deployment details. A live demo runs at
 
 ## Ready to contribute to replicateEverything?
 
-These functions are for **authors and maintainers**: you have (or are
-building) a study repository with `replication.yml`, code, data, and
-artifacts, and you want to validate it and register it.
+These functions split **contributors** (authors preparing a study repo)
+from **maintainers** (registry operators syncing stubs and auditing the
+fleet).
 
 When you work inside a monorepo checkout (sibling `registry/` and
 `rep-*` study folders), point the package at local paths before calling
@@ -190,15 +201,15 @@ Build display artifacts separately:
 Full details:
 [`vignette("maintainer-setup")`](https://replicate-anything.github.io/replicateEverything/articles/maintainer-setup.md).
 
-### Folder-backed studies
+### Folder-backed studies (contributor)
 
-Study repos hold `replication.yml`, `code/`, `data/`, and `artifacts/`.
+Study repos hold `replication.yml`, `code/`, `data/`, and `outputs/`.
 See
 [`vignette("folder-replication-checklist")`](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md).
 
 [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
-runs every replication and writes PNG/HTML under `artifacts/` plus
-`manifest.json`.
+runs every replication and writes display files under `outputs/` plus
+`outputs/manifest.json`.
 
 ``` r
 
@@ -214,31 +225,40 @@ optional live runs.
 check_folder_replication(".", full_replication = FALSE)
 ```
 
-[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
-builds artifacts (optional), runs checks, and writes
-`registry/replication.yml` and `registry/index.csv` in the study repo.
+[`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+validates and writes `registry/replication.yml` + `registry/index.csv`
+**in the study repo** (contributor handoff).
 
 ``` r
 
-prepare_folder_paper(".", build_artifacts = FALSE, registry_root = "../registry")
+prepare_study_for_registry(".", build_artifacts = FALSE)
 ```
 
-[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
-copies prepared stub files into a local registry checkout.
+### Registry sync (maintainer)
+
+Maintainers copy handoff files into the central registry checkout:
 
 ``` r
 
 options(replicateEverything.registry_root = "../registry")
-sync_folder_paper(".")
+sync_study_to_registry("../rep-10.1177-00491241211036161")
+refresh_registry("../registry", audit = TRUE)
 ```
 
-### Package-backed studies
+See
+[`vignette("maintainer-setup")`](https://replicate-anything.github.io/replicateEverything/articles/maintainer-setup.md)
+for the full maintainer workflow.
+
+### Package-backed studies (contributor)
 
 Package-backed studies export
 [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md),
 [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md),
 and related helpers from the study package itself. Validate with
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md).
+[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
+then
+[`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+for handoff files under `inst/registry/`.
 
 ``` r
 
@@ -255,10 +275,12 @@ for layout and API requirements.
 [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
 attempts every table and figure in the registry (all engines), with a
 per-object time limit. Use it to check registry health after changes.
+Restrict with `dois =` or `collections =` (e.g. `"APSR"`).
 
 ``` r
 
 audit <- audit_everything(patience = 20, dois = "10.1177/00491241211036161")
+# audit <- audit_everything(patience = 20, collections = "APSR")
 print(audit)
 ```
 
@@ -276,7 +298,7 @@ for the latest snapshot table shipped with the package.
 |----|----|
 | **Consumer** |  |
 | Browse registry | [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md), [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md) |
-| What can I replicate? | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md) |
+| What can I replicate? | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), `list_replications(..., grouped = TRUE)` |
 | Run one result | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Run whole paper | `run_replication(doi, "everything")` |
 | View code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
@@ -286,6 +308,11 @@ for the latest snapshot table shipped with the package.
 | Install deps (one study) | [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md) |
 | Install deps (all studies) | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
 | Build folder artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
-| Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md), [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md), [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
+| Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
+| Prepare registry handoff | [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
 | Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
+| **Maintainer** |  |
+| Sync study into registry | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
+| Rebuild index + audit all | [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md) |
+| Rebuild index only | [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md) |
 | Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |

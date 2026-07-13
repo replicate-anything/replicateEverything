@@ -36,7 +36,7 @@ demo](https://shiny2.wzb.eu/ipi/replicate/).
   to deploy on Shiny Server
 - **Contributor tooling** — validate and register folder- or
   package-backed studies
-  ([`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md),
+  ([`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md),
   [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
   [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md))
 - **Bundled AI skills** — markdown workflow guides for assistants
@@ -331,13 +331,13 @@ Linked study packages should export:
 | Task | Function |
 |----|----|
 | Browse registry | [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md), [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md) |
-| List replications | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md) |
+| List replications | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), `list_replications(..., grouped = TRUE)` |
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Replicate full paper | `run_replication(doi, "everything")` |
 | Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
-| Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md) |
-| Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
+| Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
+| Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
 | Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
 | Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
 | List bundled AI skills | [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md), [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md) |
@@ -395,10 +395,10 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
     move your paper folder into `studies/`, and open a pull request
 
 For **folder-backed** studies, run
-[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
 to build artifacts, validate, and write `registry/replication.yml` +
 `registry/index.csv` in the study repo; then
-[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
 or copy those files into the registry.
 
 For **package-backed** studies, use

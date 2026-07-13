@@ -2,9 +2,12 @@
 
 Returns a single script suitable for the Code tab in Shiny. For Stata
 replications, the substantive analysis from `stata_source` is inlined
-after a short setup section so the script can be copied and run. R
-replications return the analysis script only; optional `format_*`
-helpers in separate files are labeled and omitted for Stata.
+after a short setup section so the script can be copied and run. When
+`stata_source` is omitted but the runner calls nested `do` files, those
+paths are inferred automatically (setup helpers such as
+`init_study_paths.do` are skipped). R replications return the analysis
+script only; optional `format_*` helpers in separate files are labeled
+and omitted for Stata.
 
 ## Usage
 

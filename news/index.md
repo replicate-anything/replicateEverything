@@ -1,5 +1,119 @@
 # Changelog
 
+## replicateEverything 0.6.0
+
+### Step DAG and conditional replication
+
+- Unified **`steps:`** block in `replication.yml` replaces separate
+  `prep:` / `replications:` (legacy blocks still compile automatically).
+- \[run_replication()\] gains **`given`** (`"parents"`, `"nothing"`, or
+  a character vector of assumed-complete steps) and **`force`**. Default
+  `given = "parents"` requires immediate parent outputs to exist and
+  errors if missing.
+- Shiny shows a **faceted** pipeline (Tables / figures / standalone
+  paths) with hover labels; step **labels** name outputs.
+- Study products live under **`outputs/`** (step-named paths);
+  **`artifacts/`** is no longer used for folder-backed studies.
+- **`language`** is optional in \[run_replication()\] when a replication
+  has only one engine.
+- Shiny: collapsible study details (expand after DOI); simplified
+  pipeline key; **Pipeline** tab per object.
+- Shiny: fixed study deep links (`?doi=...`) — wait for browser URL
+  before parsing; skip welcome modal when opening a shared link.
+- Removed legacy path fallbacks (`artifacts/`, `data/processed/` as
+  implicit output locations). Study repos must declare and write
+  **`outputs/`** paths explicitly.
+- Format steps are **`type: format`** children of tables/figures; run
+  via `format = TRUE` unless `format = FALSE`.
+- \[configure_local_monorepo()\] wires registry + sibling study folders
+  for local dev.
+- \[study_output_dir()\] is the preferred name for the display output
+  directory; \[study_artifact_dir()\] is now internal.
+- **Step inheritance** — extension studies declare `paper.extends` and
+  `inherit:` steps; inherited pipeline steps run in the base repo,
+  extension analyses read base `outputs/`. New vignette:
+  [`vignette("reanalysis-studies")`](https://replicate-anything.github.io/replicateEverything/articles/reanalysis-studies.md).
+  Worked example: Fearon & Laitin reanalysis
+  (`rep-10.1017-S0003055403000534--alt-1`).
+- Studies without an article DOI may use **`paper.study_handle`**
+  (registry handle) instead of `paper.doi`.
+- **`paper.article_url`** — optional publisher landing page when
+  `https://doi.org/...` fails; \[paper_article_url()\] and Shiny
+  bibliography links use it. Registry `index.csv` carries `article_url`
+  when set in the stub.
+- \[list_replications()\] gains **`grouped`**, **`include`**
+  (`"display"`, `"pipeline"`, `"all"`), consolidating
+  \[list_replication_groups()\] and \[list_prep_steps()\] (both
+  deprecated).
+- New overview vignette:
+  **[`vignette("why-replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.md)**
+  (first article on the site).
+- \[list_replications()\] gains a compact **print method**
+  (`replication_list` class). `given` defaults to `"nothing"` when
+  `what = "everything"`.
+- \[audit_everything()\] runs published-value checks from
+  `tests/substantive/<step_id>.R` when present (`substantive = TRUE` by
+  default). New helper: \[check_glm_table_benchmark()\] for logit
+  tables. Filter audits with **`collections =`** (e.g. `"APSR"`) or
+  `dois =`.
+- Live replication and Shiny **Run** now execute missing **upstream DAG
+  steps** (`parents:`) before tables and figures; Shiny loads merged
+  study metadata for pipeline graphs and handle-only registry entries.
+- **Output convention:** transform steps write flat
+  `outputs/<step_id>.<ext>` (e.g. `outputs/analysis_data.rds`); data
+  steps appear in the Shiny sidebar with Display/Run and
+  [`head()`](https://rdrr.io/r/utils/head.html) kable preview; pipeline
+  labels add **(R)** / **(Stata)** when the same table label appears
+  twice.
+- **Registry handoff:** \[prepare_study_for_registry()\] (contributor)
+  validates a folder- or package-backed study and writes short yaml to
+  `registry/` or `inst/registry/`. \[sync_study_to_registry()\] and
+  \[refresh_registry()\] (maintainer) install stubs, rebuild
+  `index.csv`, and optionally rerun \[audit_everything()\].
+  [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+  and
+  [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+  are deprecated aliases. New skill: `include_study_in_registry.md`.
+
+## replicateEverything 0.5.1
+
+### Registry index and Shiny
+
+- Registry `index.csv` supports **`collections`**,
+  **`maintainer_name`**, **`maintainer_email`**, and precompiled
+  **`languages`** so the Studies tab does not fetch each study repo on
+  load.
+- Shiny study selector uses **bibliographic labels**
+  (`Acemoglu et al (2001)`) sorted by first author and year.
+- Studies tab: **collection tags column** (APSR, PED, WB, IPI; max three
+  per row) with legend; **maintainer** link on study details
+  (`[maintainer]` hover).
+- Registry study stubs (`studies/*.yml`) now carry **`maintainer`**,
+  **`collections`**, and **`languages`**; \[build_registry_index()\]
+  compiles `index.csv` from stubs alone.
+- Button renamed to **Check system compatibility**.
+
+### Bug fixes
+
+- Shiny footer shows package and app **commit SHA** (`pkg` / `app`)
+  instead of the library install path, so it is easy to see when a
+  deployed `app.R` is stale relative to the installed package.
+  [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+  writes `BUNDLE_SHA` into the deploy directory; a warning banner
+  appears when `app` and `pkg` SHAs differ.
+- Fixed Shiny footer crash (`do.call(tag, ...)` — second argument must
+  be a list) from malformed tag construction in `app_build_footer_ui()`.
+- `stata_packages:` — auto install and probe from SSC (including
+  `reghdfe` / GitHub conflict handling). Custom `stata_dependencies:` /
+  `stata_deps_probe:` `.do` files are optional for rare cases only.
+- Shiny dependency-error UI no longer calls internal
+  `replication_error_message()` as a global function.
+
+### New functions
+
+- \[package_build_info()\] — version plus GitHub `RemoteSha` or bundled
+  `BUNDLE_SHA`.
+
 ## replicateEverything 0.5.0
 
 ### Policy
@@ -128,10 +242,10 @@
 - [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
   — pre-merge checklist (layout, yaml, code/data paths, artifacts,
   tests).
-- [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+- [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
   — build artifacts, validate, write `registry/replication.yml` +
   `registry/index.csv` in study repo.
-- [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+- [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
   — copy prepared stub files into a registry checkout.
 - [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
   — validate and register a folder-backed study stub in the registry.

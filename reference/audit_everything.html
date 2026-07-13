@@ -31,7 +31,7 @@ audit_everything_qmd())."><meta property="og:image" content="https://replicate-a
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,9 +69,11 @@ results are returned in a concise data frame. For a full HTML report, render
 <span>  patience <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  index <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dois <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  collections <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  install_deps <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  registry_root <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  registry_root <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  substantive <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,7 +92,14 @@ Defaults to <code>20</code>.</p></dd>
 
 <dt id="arg-dois">dois<a class="anchor" aria-label="anchor" href="#arg-dois"></a></dt>
 <dd><p>Optional character vector of DOIs to audit. When <code>NULL</code>,
-audits every row in <code>index</code>.</p></dd>
+audits every row in <code>index</code> (after any <code>collections</code> filter).</p></dd>
+
+
+<dt id="arg-collections">collections<a class="anchor" aria-label="anchor" href="#arg-collections"></a></dt>
+<dd><p>Optional character vector of registry collection tags
+(e.g. <code>"APSR"</code>, <code>c("PED", "World Bank")</code>). Keeps index rows
+whose <code>collections</code> field contains at least one listed tag. Ignored
+when <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-install-deps">install_deps<a class="anchor" aria-label="anchor" href="#arg-install-deps"></a></dt>
@@ -106,6 +115,11 @@ audits every row in <code>index</code>.</p></dd>
 writes <code>audit_summary.json</code> (and <code>audit_latest.rds</code>) there after
 the audit completes.</p></dd>
 
+
+<dt id="arg-substantive">substantive<a class="anchor" aria-label="anchor" href="#arg-substantive"></a></dt>
+<dd><p>Logical. When <code>TRUE</code> (default), run published-value
+checks from <code>tests/substantive/&lt;step_id&gt;.R</code> when a study defines them.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -117,6 +131,7 @@ the audit completes.</p></dd>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu">audit_everything</span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, dois <span class="op">=</span> <span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu">audit_everything</span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

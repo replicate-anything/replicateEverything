@@ -12,7 +12,8 @@ audit_run_one(
   patience = 20,
   install_deps = FALSE,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  substantive = TRUE
 )
 ```
 

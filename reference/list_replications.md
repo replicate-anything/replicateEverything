@@ -1,18 +1,31 @@
 # List available replications for a paper
 
-List available replications for a paper
+Returns step entries from `replication.yml`: tables, figures, and (when
+requested) pipeline transforms. Use `grouped = TRUE` for one entry per
+logical product (e.g. a single `tab_1` when both R and Stata exist).
+
+Deprecated alias for `list_replications()` with `grouped = TRUE`.
 
 ## Usage
 
 ``` r
-list_replications(doi, repo = NULL, folder = NULL)
+list_replications(
+  doi,
+  repo = NULL,
+  folder = NULL,
+  grouped = FALSE,
+  language = NULL,
+  include = c("display", "pipeline", "all")
+)
+
+list_replication_groups(doi, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments
 
 - doi:
 
-  Character. DOI of the paper.
+  Character. DOI, registry handle, or local study path.
 
 - repo:
 
@@ -22,14 +35,33 @@ list_replications(doi, repo = NULL, folder = NULL)
 
   Optional registry folder name from `index.csv`.
 
+- grouped:
+
+  Logical. When `TRUE`, return one entry per logical table/figure group
+  (R preferred when `language` is unset).
+
+- language:
+
+  Optional `"R"`, `"stata"`, or `"python"` when `grouped = TRUE`.
+
+- include:
+
+  Which steps to return: `"display"` (tables and figures, default),
+  `"pipeline"` (transform / prep steps), or `"all"` (every non-format
+  step).
+
 ## Value
 
-A list of replication entries from `replication.yml`.
+A `replication_list` object (a list with a compact
+[`print()`](https://rdrr.io/r/base/print.html) method).
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 list_replications("10.1177/00491241211036161")
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE)
+list_replications("10.1257/aer.91.5.1369", grouped = TRUE, language = "stata")
+list_replications("10.1017/s0003055426101749", include = "pipeline")
 } # }
 ```

@@ -33,9 +33,10 @@ A typical workflow using the package is:
 7.  Contribute a folder-backed study with
     [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md),
     [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
-    [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md),
+    [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md),
     and
-    [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md).
+    [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+    (maintainer).
 
 8.  Audit the full registry with
     [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md).

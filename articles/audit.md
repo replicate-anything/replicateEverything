@@ -17,6 +17,10 @@ Key behaviour:
   frame.
 - **Report fields** — study, object id, engine, success, elapsed
   seconds, timed-out flag, and a short error snippet on failure.
+- **Substantive checks** (default `substantive = TRUE`) — when a study
+  defines `tests/substantive/<step_id>.R`, the audit compares replicated
+  estimates to published benchmarks (see Fearon & Laitin `tab_1`).
+  Failures appear as `[substantive]` in the printed summary.
 
 ``` r
 
@@ -33,15 +37,21 @@ audit <- audit_everything(patience = 20)
 print(audit)
 ```
 
-You can restrict to specific DOIs or render the Quarto report in the
-[registry repository](https://github.com/replicate-anything/registry):
+You can restrict to specific DOIs, a **collection** tag, or render the
+Quarto report in the [registry
+repository](https://github.com/replicate-anything/registry):
 
 ``` r
 
 audit <- audit_everything(patience = 30, dois = "10.1257/aer.91.5.1369")
+audit <- audit_everything(patience = 20, collections = "APSR")
 
 # Quarto report lives in the registry repo (sibling registry/ in a monorepo)
 quarto::quarto_render(audit_everything_qmd(), execute_params = list(patience = 20))
+quarto::quarto_render(
+  audit_everything_qmd(),
+  execute_params = list(patience = 20, collections = "APSR")
+)
 ```
 
 ## Latest audit results
@@ -190,4 +200,12 @@ audit <- audit_everything(patience = 20)
 saveRDS(audit, "inst/vignette-data/audit_latest.rds")
 
 # Full HTML report: quarto render audit_everything.qmd (in the registry repo)
+```
+
+After adding or updating registry stubs, maintainers typically run
+\[refresh_registry()\] so `index.csv` and the audit stay in sync:
+
+``` r
+
+refresh_registry("../registry", audit = TRUE, patience = 20)
 ```

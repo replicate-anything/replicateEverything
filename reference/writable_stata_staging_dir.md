@@ -1,6 +1,6 @@
 # Writable staging directory for Stata output
 
-Uses `<study>/artifacts/staging` when the study folder is writable;
+Uses `<study>/outputs/staging` when the study folder is writable;
 otherwise falls back to `<study_data_root>/staging/<study>` (Shiny
 server).
 

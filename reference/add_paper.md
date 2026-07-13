@@ -1,9 +1,11 @@
-# Add a package-backed study to the replication registry
+# Add a package-backed study to the replication registry (maintainer)
 
 Validates a study replication package with
 [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
-then writes a lightweight registry stub (`studies/<folder>.yml`) and
-updates `index.csv`.
+ensures registry handoff files exist (via
+[`write_study_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_study_registry_stub.md)
+when missing), then installs the stub in a registry checkout via
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md).
 
 ## Usage
 
@@ -12,7 +14,8 @@ add_paper(
   location,
   full_replication = FALSE,
   registry_root = NULL,
-  dry_run = FALSE
+  dry_run = FALSE,
+  audit = FALSE
 )
 ```
 
@@ -36,6 +39,12 @@ add_paper(
 
   If `TRUE`, run checks only; do not write registry files.
 
+- audit:
+
+  If `TRUE`, run
+  [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
+  for this study after sync.
+
 ## Value
 
 Invisibly, the result of
@@ -43,6 +52,11 @@ Invisibly, the result of
 with `stub_path` and `index_updated` when registration succeeds.
 
 ## Details
+
+Contributors should run
+[`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+and open a pull request. Maintainers use this function from a local
+registry checkout.
 
 Package-backed studies do **not** copy code, data, or artifacts into the
 registry. Those live in the study package (`inst/report/artifacts/` from

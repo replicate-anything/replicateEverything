@@ -14,9 +14,11 @@ audit_everything(
   patience = 20,
   index = NULL,
   dois = NULL,
+  collections = NULL,
   install_deps = FALSE,
   verbose = TRUE,
-  registry_root = NULL
+  registry_root = NULL,
+  substantive = TRUE
 )
 ```
 
@@ -35,7 +37,13 @@ audit_everything(
 - dois:
 
   Optional character vector of DOIs to audit. When `NULL`, audits every
-  row in `index`.
+  row in `index` (after any `collections` filter).
+
+- collections:
+
+  Optional character vector of registry collection tags (e.g. `"APSR"`,
+  `c("PED", "World Bank")`). Keeps index rows whose `collections` field
+  contains at least one listed tag. Ignored when `NULL`.
 
 - install_deps:
 
@@ -52,6 +60,11 @@ audit_everything(
   `audit_summary.json` (and `audit_latest.rds`) there after the audit
   completes.
 
+- substantive:
+
+  Logical. When `TRUE` (default), run published-value checks from
+  `tests/substantive/<step_id>.R` when a study defines them.
+
 ## Value
 
 An object of class `audit_everything` with components `results` (data
@@ -62,6 +75,7 @@ frame), `summary`, and metadata.
 ``` r
 if (FALSE) { # \dontrun{
 audit <- audit_everything(patience = 20, dois = "10.1177/00491241211036161")
+audit <- audit_everything(patience = 20, collections = "APSR")
 print(audit)
 } # }
 ```

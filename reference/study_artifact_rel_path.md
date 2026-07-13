@@ -1,4 +1,4 @@
-# Artifact path relative to study root (single source of truth)
+# Artifact path relative to study root (primary candidate)
 
 Returns the `artifact:` entry from `replication.yml` when declared,
 otherwise the type-based default from

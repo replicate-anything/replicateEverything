@@ -1,7 +1,7 @@
 # Detect a local replicate-anything monorepo root
 
 Looks for `registry/index.csv` next to the installed or loaded
-replicateEverything package, or uses
+replicateEverything package, the Shiny launch directory, or uses
 `getOption("replicateEverything.study_folders_root")`.
 
 ## Usage

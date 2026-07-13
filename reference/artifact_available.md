@@ -5,7 +5,7 @@ Check whether a precomputed artifact is available
 ## Usage
 
 ``` r
-artifact_available(doi, what, repo = NULL, language = NULL)
+artifact_available(doi, what, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -21,6 +21,10 @@ artifact_available(doi, what, repo = NULL, language = NULL)
 - repo:
 
   Optional repository slug.
+
+- folder:
+
+  Optional registry folder name from `index.csv`.
 
 - language:
 

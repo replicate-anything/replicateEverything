@@ -6,6 +6,8 @@ library(replicateEverything)
 ```
 
 See
+[`vignette("why-replicateEverything", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.md)
+for motivation, then
 [`vignette("meet-the-functions", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.md)
 for a tour of every main function.
 
@@ -44,7 +46,7 @@ and returns typed result objects.
       studies/<folder>.yml  ───────►    replication.yml
       index.csv                        data/
                                        code/
-                                       artifacts/   (folder-backed)
+                                       outputs/   (folder-backed)
                   ↓
           replicateEverything
                   ↓
@@ -58,7 +60,7 @@ and returns typed result objects.
       replication.yml
       data/
       code/
-      artifacts/
+      outputs/
       tests/testthat/
 
 **Package-backed** studies use a standalone R package:

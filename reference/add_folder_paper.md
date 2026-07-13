@@ -1,10 +1,11 @@
-# Add a folder-backed study to the replication registry
+# Add a folder-backed study to the replication registry (maintainer)
 
 Validates a folder-backed study with
 [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
-writes or reuses `registry/replication.yml` and `registry/index.csv` in
-the study repo, then copies them into the registry checkout via
-[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md).
+ensures registry handoff files exist (via
+[`write_study_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_study_registry_stub.md)
+when missing), then installs the stub in a registry checkout via
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md).
 
 ## Usage
 
@@ -15,7 +16,8 @@ add_folder_paper(
   registry_root = NULL,
   dry_run = FALSE,
   build_artifacts = FALSE,
-  install_deps = TRUE
+  install_deps = TRUE,
+  audit = FALSE
 )
 ```
 
@@ -49,6 +51,12 @@ add_folder_paper(
   Passed to
   [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md).
 
+- audit:
+
+  If `TRUE`, run
+  [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
+  for this study after sync.
+
 ## Value
 
 Invisibly, the result of
@@ -57,11 +65,8 @@ with `stub_path` and `index_updated` when registration succeeds.
 
 ## Details
 
-Equivalent to
-[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
-followed by
-[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
-when you already have a local registry checkout. If you only need the
-stub files, use
-[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
-and copy them manually.
+Contributors should run
+[`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+and open a pull request. Maintainers use this function (or
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+directly) from a local registry checkout.

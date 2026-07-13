@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -94,7 +94,7 @@
 <td>
 <code>studies/&lt;folder&gt;.yml</code> stub only</td>
 <td>Study repo: <code>code/</code>, <code>data/</code>,
-<code>artifacts/</code>
+<code>outputs/</code>
 </td>
 </tr>
 <tr class="even">
@@ -121,6 +121,9 @@
     format_*.R                  # display formatting
     replication_api.R           # orchestration API (below)
   inst/replication_code/        # synced copies for Code tab / get_code()
+  inst/registry/                 # handoff files (prepare_study_for_registry)
+    replication.yml
+    index.csv
   inst/report/artifacts/        # baked Display outputs (build_report())
   data/                         # analysis datasets (LazyData)</code></pre>
 </div>
@@ -145,18 +148,41 @@ GitHub slug (<code>org/repo</code>)</li>
 <code>paper.package_folder</code> — optional; sibling folder name
 for monorepo dev</li>
 </ul>
+<p><strong>Maintainer and collections</strong> (required for registry
+sync)</p>
+<ul>
+<li>
+<code>maintainer.name</code> and <code>maintainer.email</code> —
+contact shown as <code>[maintainer]</code> on the Studies tab</li>
+<li>
+<code>collections</code> — tags for bibliography filtering
+(<code>APSR</code>, <code>PED</code>, <code>World Bank</code>,
+<code>IPI</code>, …)</li>
+<li>
+<code>languages</code> — engines used by the package (usually
+<code>r</code>)</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">maintainer</span><span class="kw">:</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Jane Maintainer</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="at">  </span><span class="fu">email</span><span class="kw">:</span><span class="at"> maintainer@example.org</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">collections</span><span class="kw">:</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> IPI</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">languages</span><span class="kw">:</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> r</span></span></code></pre></div>
 <p><strong>Each figure or table</strong></p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">replications</span><span class="kw">:</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="at">    </span><span class="fu">make</span><span class="kw">:</span><span class="at"> make_figure_1</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_figure_1</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> my_dataset</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="at">    </span><span class="fu">make</span><span class="kw">:</span><span class="at"> make_table_1</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_table_1</span></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> my_dataset</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">replications</span><span class="kw">:</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="at">    </span><span class="fu">make</span><span class="kw">:</span><span class="at"> make_figure_1</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_figure_1</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> my_dataset</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="at">    </span><span class="fu">make</span><span class="kw">:</span><span class="at"> make_table_1</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_table_1</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> my_dataset</span></span></code></pre></div>
 <p>Rules:</p>
 <ul>
 <li>
@@ -226,7 +252,7 @@ output (<code>ggplot</code> or HTML string)</li>
 <h2 id="artifacts-display-tab">Artifacts (Display tab)<a class="anchor" aria-label="anchor" href="#artifacts-display-tab"></a>
 </h2>
 <p>Run once before registering:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">build_report</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This writes:</p>
 <ul>
@@ -240,12 +266,42 @@ figure</li>
 <p>The registry stub does <strong>not</strong> store artifacts.</p>
 </div>
 <div class="section level2">
-<h2 id="register-after-checks-pass">Register after checks pass<a class="anchor" aria-label="anchor" href="#register-after-checks-pass"></a>
+<h2 id="prepare-and-register">Prepare and register<a class="anchor" aria-label="anchor" href="#prepare-and-register"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="section level3">
+<h3 id="contributor-validate-and-write-handoff-files">Contributor: validate and write handoff files<a class="anchor" aria-label="anchor" href="#contributor-validate-and-write-handoff-files"></a>
+</h3>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/prepare_study_for_registry.html">prepare_study_for_registry</a></span><span class="op">(</span></span>
+<span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span>,</span>
+<span>  build_artifacts <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Writes <code>inst/registry/replication.yml</code> and
+<code>inst/registry/index.csv</code> in the package source tree. Commit
+these with your study PR.</p>
+</div>
+<div class="section level3">
+<h3 id="maintainer-sync-into-the-central-registry">Maintainer: sync into the central registry<a class="anchor" aria-label="anchor" href="#maintainer-sync-into-the-central-registry"></a>
+</h3>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span></span>
+<span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span>,</span>
+<span>  registry_root <span class="op">=</span> <span class="st">"../registry"</span>,</span>
+<span>  audit <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># After several syncs:</span></span>
+<span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="checks-only">Checks only<a class="anchor" aria-label="anchor" href="#checks-only"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_package_replication.html">check_package_replication</a></span><span class="op">(</span></span>
 <span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span>,</span>
 <span>  full_replication <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
@@ -254,10 +310,7 @@ figure</li>
 <span>  <span class="st">"../rep-10.1371_journal.pone.0278337"</span>,</span>
 <span>  full_replication <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>After checks pass, copy the generated registry stub into the <a href="https://github.com/replicate-anything/registry" class="external-link">registry
-repository</a> (<code>studies/&lt;folder&gt;.yml</code> and a row in
-<code>index.csv</code> with <code>handle</code>, <code>doi</code>,
-<code>title</code>, etc.).</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="reference-implementation">Reference implementation<a class="anchor" aria-label="anchor" href="#reference-implementation"></a>

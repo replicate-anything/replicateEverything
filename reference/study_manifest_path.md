@@ -1,6 +1,6 @@
-# Manifest path for a study's precomputed display artifacts
+# Manifest path for a study's precomputed display outputs
 
-Manifest path for a study's precomputed display artifacts
+Manifest path for a study's precomputed display outputs
 
 ## Usage
 

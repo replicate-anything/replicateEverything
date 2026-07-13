@@ -39,7 +39,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -95,6 +95,13 @@ collected in a data frame.</li>
 <strong>Report fields</strong> — study, object id, engine, success,
 elapsed seconds, timed-out flag, and a short error snippet on
 failure.</li>
+<li>
+<strong>Substantive checks</strong> (default
+<code>substantive = TRUE</code>) — when a study defines
+<code>tests/substantive/&lt;step_id&gt;.R</code>, the audit compares
+replicated estimates to published benchmarks (see Fearon &amp; Laitin
+<code>tab_1</code>). Failures appear as <code>[substantive]</code> in
+the printed summary.</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
@@ -108,14 +115,19 @@ failure.</li>
 <span></span>
 <span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit</span><span class="op">)</span></span></code></pre></div>
-<p>You can restrict to specific DOIs or render the Quarto report in the
-<a href="https://github.com/replicate-anything/registry" class="external-link">registry
+<p>You can restrict to specific DOIs, a <strong>collection</strong> tag,
+or render the Quarto report in the <a href="https://github.com/replicate-anything/registry" class="external-link">registry
 repository</a>:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">30</span>, dois <span class="op">=</span> <span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span>
+<span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Quarto report lives in the registry repo (sibling registry/ in a monorepo)</span></span>
-<span><span class="fu">quarto</span><span class="fu">::</span><span class="fu"><a href="https://quarto-dev.github.io/quarto-r/reference/quarto_render.html" class="external-link">quarto_render</a></span><span class="op">(</span><span class="fu"><a href="../reference/audit_everything_qmd.html">audit_everything_qmd</a></span><span class="op">(</span><span class="op">)</span>, execute_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">quarto</span><span class="fu">::</span><span class="fu"><a href="https://quarto-dev.github.io/quarto-r/reference/quarto_render.html" class="external-link">quarto_render</a></span><span class="op">(</span><span class="fu"><a href="../reference/audit_everything_qmd.html">audit_everything_qmd</a></span><span class="op">(</span><span class="op">)</span>, execute_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu">quarto</span><span class="fu">::</span><span class="fu"><a href="https://quarto-dev.github.io/quarto-r/reference/quarto_render.html" class="external-link">quarto_render</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/audit_everything_qmd.html">audit_everything_qmd</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  execute_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="latest-audit-results">Latest audit results<a class="anchor" aria-label="anchor" href="#latest-audit-results"></a>
@@ -307,6 +319,11 @@ data files downloaded on first run.</li>
 <span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">audit</span>, <span class="st">"inst/vignette-data/audit_latest.rds"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Full HTML report: quarto render audit_everything.qmd (in the registry repo)</span></span></code></pre></div>
+<p>After adding or updating registry stubs, maintainers typically run
+[refresh_registry()] so <code>index.csv</code> and the audit stay in
+sync:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

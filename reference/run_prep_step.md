@@ -41,6 +41,10 @@ run_prep_step(
 
   Optional registry folder name from `index.csv`.
 
+- force:
+
+  Logical. Re-run steps even when outputs already exist.
+
 ## Value
 
 A data preview, file path character vector, or replication result.

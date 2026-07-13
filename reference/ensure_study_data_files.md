@@ -1,7 +1,7 @@
 # Ensure replication data files exist under a study root
 
-Looks in the study checkout, then `data/<study>/<file>` under the
-working directory. When found externally, links or copies into
+Looks in the study checkout, then `data/<study_folder>/<file>` under
+`study_data_root`. When found externally, links or copies into
 `study_root` so Stata paths keep working.
 
 ## Usage

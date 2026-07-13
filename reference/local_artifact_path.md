@@ -5,7 +5,7 @@ Get the local artifact file path for a replication, if available
 ## Usage
 
 ``` r
-local_artifact_path(doi, what, repo = NULL, language = NULL)
+local_artifact_path(doi, what, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -21,6 +21,10 @@ local_artifact_path(doi, what, repo = NULL, language = NULL)
 - repo:
 
   Optional repository slug.
+
+- folder:
+
+  Optional registry folder name from `index.csv`.
 
 - language:
 

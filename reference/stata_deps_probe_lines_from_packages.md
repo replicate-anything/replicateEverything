@@ -1,6 +1,6 @@
-# Build a minimal Stata probe for declared SSC package names
+# Build a Stata probe from `stata_packages:`
 
-Build a minimal Stata probe for declared SSC package names
+Uses `which` plus `help` (and reghdfe runtime checks when needed).
 
 ## Usage
 

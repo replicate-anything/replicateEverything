@@ -5,7 +5,7 @@ Validate that a precomputed artifact exists
 ## Usage
 
 ``` r
-validate_artifact(doi, what, repo = NULL, language = NULL)
+validate_artifact(doi, what, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -21,6 +21,10 @@ validate_artifact(doi, what, repo = NULL, language = NULL)
 - repo:
 
   Optional repository slug.
+
+- folder:
+
+  Optional registry folder name from `index.csv`.
 
 - language:
 

@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,6 +43,61 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="replicateeverything-060">replicateEverything 0.6.0<a class="anchor" aria-label="anchor" href="#replicateeverything-060"></a></h2>
+<div class="section level3">
+<h3 id="step-dag-and-conditional-replication-0-6-0">Step DAG and conditional replication<a class="anchor" aria-label="anchor" href="#step-dag-and-conditional-replication-0-6-0"></a></h3>
+<ul><li>Unified <strong><code>steps:</code></strong> block in <code>replication.yml</code> replaces separate <code>prep:</code> / <code>replications:</code> (legacy blocks still compile automatically).</li>
+<li>[run_replication()] gains <strong><code>given</code></strong> (<code>"parents"</code>, <code>"nothing"</code>, or a character vector of assumed-complete steps) and <strong><code>force</code></strong>. Default <code>given = "parents"</code> requires immediate parent outputs to exist and errors if missing.</li>
+<li>Shiny shows a <strong>faceted</strong> pipeline (Tables / figures / standalone paths) with hover labels; step <strong>labels</strong> name outputs.</li>
+<li>Study products live under <strong><code>outputs/</code></strong> (step-named paths); <strong><code>artifacts/</code></strong> is no longer used for folder-backed studies.</li>
+<li>
+<strong><code>language</code></strong> is optional in [run_replication()] when a replication has only one engine.</li>
+<li>Shiny: collapsible study details (expand after DOI); simplified pipeline key; <strong>Pipeline</strong> tab per object.</li>
+<li>Shiny: fixed study deep links (<code>?doi=...</code>) — wait for browser URL before parsing; skip welcome modal when opening a shared link.</li>
+<li>Removed legacy path fallbacks (<code>artifacts/</code>, <code>data/processed/</code> as implicit output locations). Study repos must declare and write <strong><code>outputs/</code></strong> paths explicitly.</li>
+<li>Format steps are <strong><code>type: format</code></strong> children of tables/figures; run via <code>format = TRUE</code> unless <code>format = FALSE</code>.</li>
+<li>[configure_local_monorepo()] wires registry + sibling study folders for local dev.</li>
+<li>[study_output_dir()] is the preferred name for the display output directory; [study_artifact_dir()] is now internal.</li>
+<li>
+<strong>Step inheritance</strong> — extension studies declare <code>paper.extends</code> and <code>inherit:</code> steps; inherited pipeline steps run in the base repo, extension analyses read base <code>outputs/</code>. New vignette: <code><a href="../articles/reanalysis-studies.html">vignette("reanalysis-studies")</a></code>. Worked example: Fearon &amp; Laitin reanalysis (<code>rep-10.1017-S0003055403000534--alt-1</code>).</li>
+<li>Studies without an article DOI may use <strong><code>paper.study_handle</code></strong> (registry handle) instead of <code>paper.doi</code>.</li>
+<li>
+<strong><code>paper.article_url</code></strong> — optional publisher landing page when <code>https://doi.org/...</code> fails; [paper_article_url()] and Shiny bibliography links use it. Registry <code>index.csv</code> carries <code>article_url</code> when set in the stub.</li>
+<li>[list_replications()] gains <strong><code>grouped</code></strong>, <strong><code>include</code></strong> (<code>"display"</code>, <code>"pipeline"</code>, <code>"all"</code>), consolidating [list_replication_groups()] and [list_prep_steps()] (both deprecated).</li>
+<li>New overview vignette: <strong><code><a href="../articles/why-replicateEverything.html">vignette("why-replicateEverything")</a></code></strong> (first article on the site).</li>
+<li>[list_replications()] gains a compact <strong>print method</strong> (<code>replication_list</code> class). <code>given</code> defaults to <code>"nothing"</code> when <code>what = "everything"</code>.</li>
+<li>[audit_everything()] runs published-value checks from <code>tests/substantive/&lt;step_id&gt;.R</code> when present (<code>substantive = TRUE</code> by default). New helper: [check_glm_table_benchmark()] for logit tables. Filter audits with <strong><code>collections =</code></strong> (e.g. <code>"APSR"</code>) or <code>dois =</code>.</li>
+<li>Live replication and Shiny <strong>Run</strong> now execute missing <strong>upstream DAG steps</strong> (<code>parents:</code>) before tables and figures; Shiny loads merged study metadata for pipeline graphs and handle-only registry entries.</li>
+<li>
+<strong>Output convention:</strong> transform steps write flat <code>outputs/&lt;step_id&gt;.&lt;ext&gt;</code> (e.g. <code>outputs/analysis_data.rds</code>); data steps appear in the Shiny sidebar with Display/Run and <code><a href="https://rdrr.io/r/utils/head.html" class="external-link">head()</a></code> kable preview; pipeline labels add <strong>(R)</strong> / <strong>(Stata)</strong> when the same table label appears twice.</li>
+<li>
+<strong>Registry handoff:</strong> [prepare_study_for_registry()] (contributor) validates a folder- or package-backed study and writes short yaml to <code>registry/</code> or <code>inst/registry/</code>. [sync_study_to_registry()] and [refresh_registry()] (maintainer) install stubs, rebuild <code>index.csv</code>, and optionally rerun [audit_everything()]. <code><a href="../reference/prepare_study_for_registry.html">prepare_folder_paper()</a></code> and <code><a href="../reference/sync_study_to_registry.html">sync_folder_paper()</a></code> are deprecated aliases. New skill: <code>include_study_in_registry.md</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.1" id="replicateeverything-051">replicateEverything 0.5.1<a class="anchor" aria-label="anchor" href="#replicateeverything-051"></a></h2>
+<div class="section level3">
+<h3 id="registry-index-and-shiny-0-5-1">Registry index and Shiny<a class="anchor" aria-label="anchor" href="#registry-index-and-shiny-0-5-1"></a></h3>
+<ul><li>Registry <code>index.csv</code> supports <strong><code>collections</code></strong>, <strong><code>maintainer_name</code></strong>, <strong><code>maintainer_email</code></strong>, and precompiled <strong><code>languages</code></strong> so the Studies tab does not fetch each study repo on load.</li>
+<li>Shiny study selector uses <strong>bibliographic labels</strong> (<code>Acemoglu et al (2001)</code>) sorted by first author and year.</li>
+<li>Studies tab: <strong>collection tags column</strong> (APSR, PED, WB, IPI; max three per row) with legend; <strong>maintainer</strong> link on study details (<code>[maintainer]</code> hover).</li>
+<li>Registry study stubs (<code>studies/*.yml</code>) now carry <strong><code>maintainer</code></strong>, <strong><code>collections</code></strong>, and <strong><code>languages</code></strong>; [build_registry_index()] compiles <code>index.csv</code> from stubs alone.</li>
+<li>Button renamed to <strong>Check system compatibility</strong>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-5-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-5-1"></a></h3>
+<ul><li>Shiny footer shows package and app <strong>commit SHA</strong> (<code>pkg</code> / <code>app</code>) instead of the library install path, so it is easy to see when a deployed <code>app.R</code> is stale relative to the installed package. <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code> writes <code>BUNDLE_SHA</code> into the deploy directory; a warning banner appears when <code>app</code> and <code>pkg</code> SHAs differ.</li>
+<li>Fixed Shiny footer crash (<code>do.call(tag, ...)</code> — second argument must be a list) from malformed tag construction in <code>app_build_footer_ui()</code>.</li>
+<li>
+<code>stata_packages:</code> — auto install and probe from SSC (including <code>reghdfe</code> / GitHub conflict handling). Custom <code>stata_dependencies:</code> / <code>stata_deps_probe:</code> <code>.do</code> files are optional for rare cases only.</li>
+<li>Shiny dependency-error UI no longer calls internal <code>replication_error_message()</code> as a global function.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-functions-0-5-1">New functions<a class="anchor" aria-label="anchor" href="#new-functions-0-5-1"></a></h3>
+<ul><li>[package_build_info()] — version plus GitHub <code>RemoteSha</code> or bundled <code>BUNDLE_SHA</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.5.0" id="replicateeverything-050">replicateEverything 0.5.0<a class="anchor" aria-label="anchor" href="#replicateeverything-050"></a></h2>
 <div class="section level3">
@@ -99,9 +154,9 @@
 <li>
 <code><a href="../reference/check_folder_replication.html">check_folder_replication()</a></code> — pre-merge checklist (layout, yaml, code/data paths, artifacts, tests).</li>
 <li>
-<code><a href="../reference/prepare_folder_paper.html">prepare_folder_paper()</a></code> — build artifacts, validate, write <code>registry/replication.yml</code> + <code>registry/index.csv</code> in study repo.</li>
+<code><a href="../reference/prepare_study_for_registry.html">prepare_folder_paper()</a></code> — build artifacts, validate, write <code>registry/replication.yml</code> + <code>registry/index.csv</code> in study repo.</li>
 <li>
-<code><a href="../reference/sync_folder_paper.html">sync_folder_paper()</a></code> — copy prepared stub files into a registry checkout.</li>
+<code><a href="../reference/sync_study_to_registry.html">sync_folder_paper()</a></code> — copy prepared stub files into a registry checkout.</li>
 <li>
 <code><a href="../reference/add_folder_paper.html">add_folder_paper()</a></code> — validate and register a folder-backed study stub in the registry.</li>
 <li>

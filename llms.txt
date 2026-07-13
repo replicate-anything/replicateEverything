@@ -36,7 +36,7 @@ demo](https://shiny2.wzb.eu/ipi/replicate/).
   to deploy on Shiny Server
 - **Contributor tooling** — validate and register folder- or
   package-backed studies
-  ([`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md),
+  ([`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md),
   [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
   [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md))
 - **Bundled AI skills** — markdown workflow guides for assistants
@@ -331,13 +331,13 @@ Linked study packages should export:
 | Task | Function |
 |----|----|
 | Browse registry | [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md), [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md) |
-| List replications | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md) |
+| List replications | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), `list_replications(..., grouped = TRUE)` |
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Replicate full paper | `run_replication(doi, "everything")` |
 | Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
-| Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md) |
-| Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md) |
+| Prepare folder study | [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
+| Sync folder study to registry | [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
 | Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
 | Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
 | List bundled AI skills | [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md), [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md) |
@@ -395,10 +395,10 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
     move your paper folder into `studies/`, and open a pull request
 
 For **folder-backed** studies, run
-[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
+[`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
 to build artifacts, validate, and write `registry/replication.yml` +
 `registry/index.csv` in the study repo; then
-[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
+[`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
 or copy those files into the registry.
 
 For **package-backed** studies, use
@@ -486,9 +486,12 @@ Find papers and inspect replication metadata.
 - [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md)
   : Search replicated papers
 - [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
   : List available replications for a paper
-- [`list_replication_groups()`](https://replicate-anything.github.io/replicateEverything/reference/list_replication_groups.md)
-  : List one replication entry per logical group
+- [`print(`*`<replication_list>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.replication_list.md)
+  : Compact print method for replication step lists
+- [`paper_article_url()`](https://replicate-anything.github.io/replicateEverything/reference/paper_article_url.md)
+  : Resolve a human-facing URL for a published article
 
 ## Run replications
 
@@ -496,10 +499,34 @@ Run tables and figures from registry scripts.
 
 - [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
   : Run a single replication or all replications for a paper
+
+- [`describe_study_dag()`](https://replicate-anything.github.io/replicateEverything/reference/describe_study_dag.md)
+  : Text representation of the study DAG for Shiny / CLI
+
+- [`study_dag_display()`](https://replicate-anything.github.io/replicateEverything/reference/study_dag_display.md)
+  : Step display data for Shiny (components of paths of id / label /
+  description)
+
+- [`study_dag_facets()`](https://replicate-anything.github.io/replicateEverything/reference/study_dag_facets.md)
+  : Faceted pipeline groups for Shiny (split multi-branch components)
+
+- [`study_output_dir()`](https://replicate-anything.github.io/replicateEverything/reference/study_output_dir.md)
+  [`study_artifact_dir()`](https://replicate-anything.github.io/replicateEverything/reference/study_output_dir.md)
+  :
+
+  Display output directory for a study (legacy name:
+  [`study_artifact_dir()`](https://replicate-anything.github.io/replicateEverything/reference/study_output_dir.md))
+
+- [`migrate_legacy_steps_yaml()`](https://replicate-anything.github.io/replicateEverything/reference/migrate_legacy_steps_yaml.md)
+  : Migrate legacy prep/replications yaml to a unified steps block
+  (character yaml)
+
 - [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
   : Retrieve replication code for a paper
+
 - [`run_prep_step()`](https://replicate-anything.github.io/replicateEverything/reference/run_prep_step.md)
   : Run a single prep step
+
 - [`list_prep_steps()`](https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.md)
   : List pipeline prep steps for a paper
 
@@ -514,7 +541,7 @@ Browse studies and run replications interactively.
 
 ## Contribute
 
-Validate folder-backed studies and sync to the registry.
+Validate studies and prepare registry handoff files in the study repo.
 
 - [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
   : Build display artifacts for a folder-backed study
@@ -522,12 +549,11 @@ Validate folder-backed studies and sync to the registry.
   : Build display artifacts for a package-backed study
 - [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
   : Validate a folder-backed replication study
-- [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_folder_paper.md)
-  : Prepare a folder-backed study for registry sync
-- [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_folder_paper.md)
-  : Copy prepared registry files into the registry repository
 - [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
   : Validate a package-backed replication study
+- [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+  [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+  : Prepare a study repository for registry handoff (contributor)
 - [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md)
   : List bundled AI skills
 - [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md)
@@ -537,9 +563,12 @@ Validate folder-backed studies and sync to the registry.
 
 ## Maintainer setup
 
-Probe and install study dependencies (R, Python, Stata); configure
-executables.
+Probe and install study dependencies; sync studies into the registry.
 
+- [`configure_local_monorepo()`](https://replicate-anything.github.io/replicateEverything/reference/configure_local_monorepo.md)
+  : Configure options for a local replicate-anything monorepo
+- [`package_build_info()`](https://replicate-anything.github.io/replicateEverything/reference/package_build_info.md)
+  : Package version and build identity
 - [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
   : Check yaml-declared dependencies against this machine (no installs)
 - [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)
@@ -550,8 +579,14 @@ executables.
   : Maintainer guidance when dependencies or executables are missing
 - [`replication_kind()`](https://replicate-anything.github.io/replicateEverything/reference/replication_kind.md)
   : Classify a registry study by materials layout
-- [`study_artifact_dir()`](https://replicate-anything.github.io/replicateEverything/reference/study_artifact_dir.md)
-  : Display artifact directory for a study
+- [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+  [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+  : Sync a prepared study into the registry repository (maintainer)
+- [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
+  : Compile registry index.csv from study stub yaml files
+- [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md)
+  : Refresh the registry index and optionally rerun the full audit
+  (maintainer)
 
 ## Registry audit
 
@@ -559,24 +594,30 @@ Run all registry replications and inspect results.
 
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
   : Audit all registry replications
+- [`check_glm_table_benchmark()`](https://replicate-anything.github.io/replicateEverything/reference/check_glm_table_benchmark.md)
+  : Compare replicated GLM tables to published benchmarks
 
 # Articles
 
 ### Articles
 
-- [Maintainer
-  setup](https://replicate-anything.github.io/replicateEverything/articles/maintainer-setup.md):
+- [Why
+  replicateEverything?](https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.md):
 - [Meet the
   functions](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.md):
 - [Replication Examples Using
   Code](https://replicate-anything.github.io/replicateEverything/articles/replication-example.md):
+- [Folder replication
+  checklist](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md):
+- [Reanalysis and extension
+  studies](https://replicate-anything.github.io/replicateEverything/articles/reanalysis-studies.md):
+- [Stata
+  replications](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md):
 - [Shiny demo
   app](https://replicate-anything.github.io/replicateEverything/articles/shiny-app.md):
 - [Registry
   audit](https://replicate-anything.github.io/replicateEverything/articles/audit.md):
-- [Stata
-  replications](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md):
-- [Folder replication
-  checklist](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md):
+- [Maintainer
+  setup](https://replicate-anything.github.io/replicateEverything/articles/maintainer-setup.md):
 - [Package replication
   checklist](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md):

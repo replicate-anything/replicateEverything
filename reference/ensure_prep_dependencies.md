@@ -29,6 +29,10 @@ ensure_prep_dependencies(
 
   Paper context.
 
+- doi:
+
+  Study DOI or handle.
+
 - install_deps:
 
   Passed to prep runners.
