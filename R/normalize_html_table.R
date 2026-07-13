@@ -31,5 +31,17 @@ normalize_html_table <- function(html) {
     }
   }
 
+  if (grepl("\\\\multicolumn|\\\\cmidrule", html)) {
+    html <- sanitize_esttab_html(html)
+  }
+
+  html
+}
+
+#' @keywords internal
+maybe_sanitize_esttab_html <- function(html) {
+  if (grepl("\\\\multicolumn|\\\\cmidrule", html)) {
+    return(sanitize_esttab_html(html))
+  }
   html
 }

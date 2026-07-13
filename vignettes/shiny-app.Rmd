@@ -94,6 +94,28 @@ options(
 If you rely on the public GitHub registry, you do not need a local `registry/`
 checkout; omit `replicateEverything.registry_root`.
 
+## Code tab: inspect sourced files
+
+On the **Code** tab, Stata runners are shown as authored (not inlined). Lines
+such as `do "${maindir}/code/tables/mk_tab_1.do"` are clickable when the target
+file exists under the study root. Breadcrumb navigation and **Back** let you
+walk nested `do` / `source()` calls without stacking modals.
+
+**Path globals:** folder-backed Stata studies set `global maindir` in
+`code/helpers/init_study_paths.do` to the directory containing `replication.yml`
+(walked up from the working directory at run time). The Shiny viewer uses the
+same mapping via `default_stata_globals(study_root)` (`maindir`, `rawdir`,
+`processed`, `result`). Live runs may override `result` with
+`REPLICATE_STATA_RESULT`.
+
+Implementation lives in `R/code_links.R` (`build_code_file_graph()`,
+`render_code_html_with_links()`). A future `code_manifest:` block in
+`replication.yml` may point at Dataverse-hosted scripts (similar to the data
+manifest pattern).
+
+**Not yet parsed:** unquoted `do` paths with embedded spaces, `` `local' `` /
+compound double quotes, `source(file.path(...))`, and Python `exec`/`runpy`.
+
 ## Former standalone repository
 
 The app previously lived in a separate **replicate-shiny** repository beside

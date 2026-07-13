@@ -4,7 +4,14 @@
 \alias{get_code}
 \title{Retrieve replication code for a paper}
 \usage{
-get_code(doi, what, language = NULL, repo = NULL, folder = NULL)
+get_code(
+  doi,
+  what,
+  language = NULL,
+  style = c("inline", "source"),
+  repo = NULL,
+  folder = NULL
+)
 }
 \arguments{
 \item{doi}{Character. DOI of the paper.}
@@ -12,6 +19,9 @@ get_code(doi, what, language = NULL, repo = NULL, folder = NULL)
 \item{what}{Character. Replication identifier (logical id).}
 
 \item{language}{Optional \code{"R"} or \code{"stata"}.}
+
+\item{style}{Display style: \code{"inline"} (default, inlines Stata sources for
+copy-paste) or \code{"source"} (raw runner only, for linked inspection in Shiny).}
 
 \item{repo}{Optional repository slug.}
 

@@ -177,6 +177,14 @@ using_local_replicate_everything <- function() {
   isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))
 }
 
+code_viewer_root_usable <- function(root) {
+  !is.null(root) &&
+    length(root) == 1L &&
+    !is.na(root) &&
+    nzchar(root) &&
+    dir.exists(root)
+}
+
 find_replicate_everything_source_root <- function() {
   candidates <- character(0)
   if (using_local_replicate_everything()) {
@@ -1958,39 +1966,15 @@ resolve_group_replication_id <- function(row, engine = c("r", "stata", "python")
 }
 
 first_author_surname <- function(name) {
-  parts <- strsplit(trimws(name), "\\s+")[[1]]
-  parts <- parts[nzchar(parts)]
-  if (length(parts) == 0) return("Unknown")
-  if (length(parts) >= 4 || (length(parts) >= 3 && grepl("\\.", parts[length(parts) - 1]))) {
-    paste(tail(parts, 2), collapse = " ")
-  } else {
-    parts[[length(parts)]]
-  }
+  replicate_fn("first_author_surname", name)
 }
 
 format_author_label <- function(authors_str) {
-  authors <- trimws(strsplit(authors_str %||% "", ",\\s*")[[1]])
-  authors <- authors[nzchar(authors)]
-  if (length(authors) == 0) return("Unknown")
-  lead <- first_author_surname(authors[[1]])
-  if (length(authors) == 1) return(lead)
-  if (length(authors) == 2) {
-    return(paste0(lead, " and ", first_author_surname(authors[[2]])))
-  }
-  paste0(lead, " et al")
+  replicate_fn("format_author_label", authors_str)
 }
 
 format_authors_summary <- function(authors_str) {
-  authors <- trimws(strsplit(authors_str %||% "", ",\\s*")[[1]])
-  authors <- authors[nzchar(authors)]
-  n <- length(authors)
-  if (n == 0) return("Unknown")
-  if (n > 4L) {
-    return(paste0(paste(head(authors, 4L), collapse = ", "), ", et al."))
-  }
-  if (n == 1L) return(authors[[1]])
-  if (n == 2L) return(paste(authors, collapse = " and "))
-  paste0(paste(head(authors, n - 1L), collapse = ", "), ", and ", authors[[n]])
+  replicate_fn("format_authors_summary", authors_str)
 }
 
 truncate_title <- function(title, max_chars = 52) {
@@ -3556,9 +3540,83 @@ code_block_ui <- function(code_text, block_id, button_id, title = NULL, language
   )
 }
 
-code_panel_ui <- function(simple_code, full_code = NULL, language = "r") {
+code_breadcrumb_ui <- function(paths) {
+  if (!length(paths)) {
+    return(NULL)
+  }
+  items <- lapply(seq_along(paths), function(i) {
+    p <- paths[[i]]
+    if (i < length(paths)) {
+      tags$button(
+        type = "button",
+        class = "code-breadcrumb-link",
+        `data-rel-path` = p,
+        p
+      )
+    } else {
+      tags$span(class = "code-breadcrumb-current", p)
+    }
+  })
+  tags$div(
+    class = "code-breadcrumb",
+    items,
+    if (length(paths) > 1L) {
+      tags$button(type = "button", class = "code-breadcrumb-back", "Back")
+    }
+  )
+}
+
+linked_code_block_ui <- function(
+  html_content,
+  block_id,
+  button_id,
+  title = NULL,
+  language = "r",
+  breadcrumb_paths = NULL,
+  plain_text = NULL
+) {
+  if (is.null(html_content) || !nzchar(html_content)) {
+    return(NULL)
+  }
+  lang_class <- paste0("language-", language)
+  tags$div(
+    class = "replication-code-wrap",
+    if (!is.null(title) && nzchar(title)) {
+      tags$div(class = "replication-code-title", title)
+    },
+    code_breadcrumb_ui(breadcrumb_paths),
+    tags$div(
+      class = "replication-code-block replication-code-block--linked",
+      tags$button(
+        type = "button",
+        class = "replication-code-copy",
+        id = button_id,
+        title = "Copy code",
+        `aria-label` = "Copy code",
+        onclick = sprintf("copyReplicationCode('%s', '%s')", block_id, button_id),
+        code_copy_icon_svg()
+      ),
+      tags$div(
+        class = paste(lang_class, "code-with-links"),
+        id = block_id,
+        `data-plain` = plain_text %||% "",
+        HTML(html_content)
+      )
+    )
+  )
+}
+
+code_panel_ui <- function(
+  simple_code,
+  full_code = NULL,
+  language = "r",
+  linked_html = NULL,
+  breadcrumb_paths = NULL,
+  plain_full_code = NULL
+) {
   if ((is.null(simple_code) || !nzchar(simple_code)) &&
-      (is.null(full_code) || !nzchar(full_code))) {
+      (is.null(full_code) || !nzchar(full_code)) &&
+      (is.null(linked_html) || !nzchar(linked_html))) {
     return(helpText("Select a table or figure to view code."))
   }
   tags$div(
@@ -3570,7 +3628,17 @@ code_panel_ui <- function(simple_code, full_code = NULL, language = "r") {
       "One-line replication",
       language = language
     ),
-    if (!is.null(full_code) && nzchar(full_code)) {
+    if (!is.null(linked_html) && nzchar(linked_html)) {
+      linked_code_block_ui(
+        linked_html,
+        "replication_full_code_block",
+        "copy_full_code_btn",
+        "Full replication code",
+        language = language,
+        breadcrumb_paths = breadcrumb_paths,
+        plain_text = plain_full_code
+      )
+    } else if (!is.null(full_code) && nzchar(full_code)) {
       code_block_ui(
         full_code,
         "replication_full_code_block",
@@ -3596,7 +3664,7 @@ ui <- tagList(
       function copyReplicationCode(elementId, buttonId) {
         var el = document.getElementById(elementId);
         if (!el) return;
-        var text = el.textContent;
+        var text = el.getAttribute('data-plain') || el.textContent;
         var write = navigator.clipboard && navigator.clipboard.writeText
           ? navigator.clipboard.writeText(text)
           : new Promise(function(resolve, reject) {
@@ -3622,9 +3690,25 @@ ui <- tagList(
         });
       }
       Shiny.addCustomMessageHandler('highlightCode', function(msg) {
-        document.querySelectorAll('.replication-code-block code[class*=language-]').forEach(function(el) {
+        document.querySelectorAll('.replication-code-block:not(.replication-code-block--linked) code[class*=language-]').forEach(function(el) {
           if (window.hljs) hljs.highlightElement(el);
         });
+      });
+      $(document).on('click', '.code-file-link--ok', function(e) {
+        e.preventDefault();
+        var path = this.getAttribute('data-rel-path');
+        if (!path) return;
+        Shiny.setInputValue('code_file_open', { path: path, nonce: Date.now() }, { priority: 'event' });
+      });
+      $(document).on('click', '.code-breadcrumb-link', function(e) {
+        e.preventDefault();
+        var path = this.getAttribute('data-rel-path');
+        if (!path) return;
+        Shiny.setInputValue('code_file_open', { path: path, nav: 'jump', nonce: Date.now() }, { priority: 'event' });
+      });
+      $(document).on('click', '.code-breadcrumb-back', function(e) {
+        e.preventDefault();
+        Shiny.setInputValue('code_file_back', Date.now(), { priority: 'event' });
       });
       $(document).on('shiny:connected', function() {
         try {
@@ -3708,6 +3792,84 @@ ui <- tagList(
     .replication-code-copy.copied {
       color: #1a7f37;
       border-color: #4ac26b;
+    }
+    .replication-code-block--linked pre {
+      padding-left: 0;
+    }
+    .replication-code-block--linked .code-with-links {
+      margin: 0;
+      padding: 0.55rem 2.1rem 0.55rem 0.7rem;
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .replication-code-block--linked .code-line {
+      display: flex;
+      gap: 0.65rem;
+      margin: 0;
+      padding: 0;
+      line-height: 1.45;
+      white-space: pre;
+    }
+    .replication-code-block--linked .code-ln {
+      flex: 0 0 2.2rem;
+      text-align: right;
+      color: #8c959f;
+      user-select: none;
+    }
+    .replication-code-block--linked .code-lc {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .code-file-link {
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+    .code-file-link--ok { color: #0969da; }
+    .code-file-link--ok:hover { color: #0550ae; }
+    .code-file-link--missing,
+    .code-file-link--unresolved,
+    .code-file-link--outside_root,
+    .code-file-link--unreadable {
+      color: #57606a;
+      text-decoration: line-through;
+      cursor: not-allowed;
+    }
+    .code-breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.25rem 0.35rem;
+      font-size: 0.75rem;
+      color: #57606a;
+      margin: 0 0 0.35rem 0;
+    }
+    .code-breadcrumb-link {
+      background: none;
+      border: 0;
+      padding: 0;
+      color: #0969da;
+      cursor: pointer;
+      font-size: inherit;
+    }
+    .code-breadcrumb-link:hover { text-decoration: underline; }
+    .code-breadcrumb-current { color: #24292f; font-weight: 600; }
+    .code-breadcrumb-link::after {
+      content: '›';
+      margin: 0 0.35rem;
+      color: #8c959f;
+    }
+    .code-breadcrumb-back {
+      margin-left: auto;
+      font-size: 0.72rem;
+      border: 1px solid #d0d7de;
+      border-radius: 4px;
+      background: #f6f8fa;
+      padding: 0.1rem 0.45rem;
+      cursor: pointer;
     }
     .contribute-prose {
       margin-bottom: 1rem;
@@ -4397,6 +4559,11 @@ server <- function(input, output, session) {
     url_deep_link_parsed = FALSE,
     pending_deep_link_doi = NULL,
     pending_deep_link_what = NULL,
+    code_viewer_stack = character(0),
+    code_viewer_cache = list(),
+    code_viewer_globals = character(0),
+    code_viewer_lang = "r",
+    code_viewer_root = NULL,
     pending_deep_link_language = NULL,
     suppress_url_sync = FALSE,
     welcome_shown = FALSE
@@ -5588,40 +5755,6 @@ server <- function(input, output, session) {
       lang,
       include_language = include_lang
     )
-    full_code <- tryCatch(
-      paste(
-        replicate_fn(
-          "get_code",
-          state$doi,
-          target$id,
-          language = lang,
-          folder = state$registry_folder,
-          repo = state$registry_repo
-        ),
-        collapse = "\n"
-      ),
-      error = function(e) NULL
-    )
-    if (is.null(full_code) || !nzchar(full_code)) {
-      full_code <- tryCatch(
-        paste(
-          fetch_replication_code_shiny(
-            target$id,
-            state$registry_folder,
-            state$registry_repo
-          ),
-          collapse = "\n"
-        ),
-        error = function(e) NULL
-      )
-    }
-    if ((is.null(full_code) || !nzchar(full_code)) && !nzchar(simple_code)) {
-      return(helpText(
-        "Could not load replication code. ",
-        "Package-backed studies need the study R package installed on this server; ",
-        "folder-backed and registry studies load scripts from the study or registry repo."
-      ))
-    }
     code_lang <- tryCatch(
       replicate_fn(
         "replication_code_language_for",
@@ -5633,7 +5766,180 @@ server <- function(input, output, session) {
       ),
       error = function(e) "r"
     )
-    code_panel_ui(simple_code, full_code, language = code_lang)
+    linked_html <- NULL
+    plain_full <- NULL
+    breadcrumb <- state$code_viewer_stack
+    if (length(breadcrumb) == 0L) {
+      entry_path <- tryCatch({
+        rep <- replicate_fn(
+          "find_replication_entry",
+          replicate_fn("get_replication_meta", state$doi, folder = state$registry_folder, repo = state$registry_repo),
+          target$id,
+          language = lang
+        )
+        as.character(rep$code)
+      }, error = function(e) NULL)
+      if (!is.null(entry_path)) {
+        breadcrumb <- entry_path
+      }
+    }
+    current_path <- tail(breadcrumb, 1L)
+    if (!is.null(current_path) && nzchar(current_path) && code_viewer_root_usable(state$code_viewer_root)) {
+      cache_key <- current_path
+      rendered <- state$code_viewer_cache[[cache_key]]
+      if (is.null(rendered)) {
+        rendered <- tryCatch(
+          replicate_fn(
+            "render_linked_code_file",
+            current_path,
+            state$code_viewer_root,
+            language = if (identical(code_lang, "stata")) "stata" else "r",
+            globals = state$code_viewer_globals
+          ),
+          error = function(e) NULL
+        )
+      }
+      if (!is.null(rendered)) {
+        linked_html <- rendered$html
+        plain_full <- paste(rendered$lines, collapse = "\n")
+      }
+    }
+    if (is.null(linked_html) || !nzchar(linked_html)) {
+      full_code <- tryCatch(
+        paste(
+          replicate_fn(
+            "get_code",
+            state$doi,
+            target$id,
+            language = lang,
+            style = "source",
+            folder = state$registry_folder,
+            repo = state$registry_repo
+          ),
+          collapse = "\n"
+        ),
+        error = function(e) NULL
+      )
+      if (is.null(full_code) || !nzchar(full_code)) {
+        full_code <- tryCatch(
+          paste(
+            fetch_replication_code_shiny(
+              target$id,
+              state$registry_folder,
+              state$registry_repo
+            ),
+            collapse = "\n"
+          ),
+          error = function(e) NULL
+        )
+      }
+      plain_full <- full_code
+      if (!is.null(full_code) && nzchar(full_code) && code_viewer_root_usable(state$code_viewer_root)) {
+        rendered <- tryCatch(
+          replicate_fn(
+            "render_code_html_with_links",
+            strsplit(full_code, "\n", fixed = TRUE)[[1]],
+            language = if (identical(code_lang, "stata")) "stata" else "r",
+            study_root = state$code_viewer_root,
+            source_path = current_path,
+            globals = state$code_viewer_globals
+          ),
+          error = function(e) NULL
+        )
+        if (!is.null(rendered)) {
+          linked_html <- rendered$html
+        }
+      }
+    }
+    if ((is.null(linked_html) || !nzchar(linked_html)) && !nzchar(simple_code)) {
+      return(helpText(
+        "Could not load replication code. ",
+        "Package-backed studies need the study R package installed on this server; ",
+        "folder-backed and registry studies load scripts from the study or registry repo."
+      ))
+    }
+    code_panel_ui(
+      simple_code,
+      full_code = NULL,
+      language = code_lang,
+      linked_html = linked_html,
+      breadcrumb_paths = breadcrumb,
+      plain_full_code = plain_full
+    )
+  })
+
+  observeEvent(list(state$selected_replication, state$doi), {
+    req(state$doi, state$selected_replication)
+    target <- selected_replication_id_and_language()
+    viewer <- tryCatch(
+      replicate_fn(
+        "prepare_code_viewer_state",
+        state$doi,
+        target$id,
+        language = target$language,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      ),
+      error = function(e) NULL
+    )
+    if (is.null(viewer)) {
+      state$code_viewer_stack <- character(0)
+      state$code_viewer_cache <- list()
+      state$code_viewer_globals <- character(0)
+      state$code_viewer_root <- NULL
+      return()
+    }
+    state$code_viewer_root <- viewer$study_root
+    state$code_viewer_globals <- as.list(viewer$graph$globals %||% character())
+    state$code_viewer_lang <- viewer$language
+    state$code_viewer_stack <- viewer$entry_path
+    entry_rendered <- viewer$rendered
+    state$code_viewer_cache <- stats::setNames(
+      list(entry_rendered),
+      viewer$entry_path
+    )
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$code_file_open, {
+    req(input$code_file_open, code_viewer_root_usable(state$code_viewer_root))
+    path <- input$code_file_open$path
+    req(nzchar(path))
+    if (identical(input$code_file_open$nav, "jump")) {
+      idx <- match(path, state$code_viewer_stack)
+      if (!is.na(idx)) {
+        state$code_viewer_stack <- state$code_viewer_stack[seq_len(idx)]
+      } else {
+        state$code_viewer_stack <- c(state$code_viewer_stack, path)
+      }
+    } else if (path %in% state$code_viewer_stack) {
+      idx <- match(path, state$code_viewer_stack)
+      state$code_viewer_stack <- state$code_viewer_stack[seq_len(idx)]
+    } else {
+      state$code_viewer_stack <- c(state$code_viewer_stack, path)
+    }
+    cache_key <- tail(state$code_viewer_stack, 1L)
+    if (is.null(state$code_viewer_cache[[cache_key]])) {
+      rendered <- tryCatch(
+        replicate_fn(
+          "render_linked_code_file",
+          cache_key,
+          state$code_viewer_root,
+          language = if (identical(state$code_viewer_lang, "stata")) "stata" else "r",
+          globals = state$code_viewer_globals
+        ),
+        error = function(e) NULL
+      )
+      if (!is.null(rendered)) {
+        state$code_viewer_cache[[cache_key]] <- rendered
+      }
+    }
+  })
+
+  observeEvent(input$code_file_back, {
+    if (length(state$code_viewer_stack) <= 1L) {
+      return()
+    }
+    state$code_viewer_stack <- state$code_viewer_stack[-length(state$code_viewer_stack)]
   })
 
   observeEvent(input$show_study_pipeline, {

@@ -16,6 +16,8 @@
 #' @param doi Character. DOI of the paper.
 #' @param what Character. Replication identifier (logical id).
 #' @param language Optional \code{"R"} or \code{"stata"}.
+#' @param style Display style: \code{"inline"} (default, inlines Stata sources for
+#'   copy-paste) or \code{"source"} (raw runner only, for linked inspection in Shiny).
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #' @return A character vector containing the lines of the replication script(s).
@@ -27,7 +29,8 @@
 #' }
 #'
 #' @export
-get_code <- function(doi, what, language = NULL, repo = NULL, folder = NULL) {
+get_code <- function(doi, what, language = NULL, style = c("inline", "source"), repo = NULL, folder = NULL) {
+  style <- match.arg(style)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
@@ -83,6 +86,9 @@ get_code <- function(doi, what, language = NULL, repo = NULL, folder = NULL) {
   }
 
   if (is_stata_replication(rep, meta$paper)) {
+    if (identical(style, "source")) {
+      return(read_code_file(rep$code))
+    }
     return(assemble_stata_display_code(rep, read_code_file))
   }
 

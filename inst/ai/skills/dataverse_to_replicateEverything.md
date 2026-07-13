@@ -53,6 +53,7 @@ folder-replication Step 4b.
 - [ ] 3. Inventory engines (Stata / R / Python) and pipeline order
 - [ ] 4. Create study repo layout (see Target layout)
 - [ ] 5. **Data:** commit `data/raw/` (≤50MB) **or** wire `access_data` from Dataverse (preferred when deposit is public)
+- [ ] 5b. **Check native format** — inspect `originalFileName` / `originalFormatLabel` before any `.tab` conversion
 - [ ] 6. **Search all code for dependencies** — folder-replication Step 4a + Dataverse delivery patterns below
 - [ ] 7. Add dependency automation (Stata install script, R CRAN, Python pip)
 - [ ] 8. Extract pipeline → code/steps/ + transform steps in replication.yml
@@ -189,6 +190,98 @@ Map paper DOI ↔ Dataverse DOI via readme, Cambridge SI link, or
 
 Two patterns — pick one per study.
 
+### Prefer: download full original archive, unzip, inspect
+
+For multi-file R deposits (data + scripts + Rmd), **do not** download `.tab` files
+one at a time. Fetch the whole dataset in native upload format, unzip, and
+confirm the author layout matches `ReadMe.txt`:
+
+```r
+library(httr)
+
+url <- paste0(
+  "https://dataverse.harvard.edu/api/access/dataset/:persistentId/",
+  "?persistentId=doi:10.7910/DVN/BZOCDJ&format=original"
+)
+GET(url, write_disk("dataset.zip", overwrite = TRUE), timeout(600))
+
+utils::unzip("dataset.zip", exdir = "outputs/deposit")
+list.files("outputs/deposit", recursive = TRUE)  # expect data/*.csv, scripts/*.R
+```
+
+Package helpers (`replicateEverything/R/dataverse_manifest.R`):
+
+- `download_dataverse_dataset_archive()`
+- `extract_dataverse_deposit_archive()`
+- `access_dataverse_deposit_archive()`
+- `verify_deposit_paths()` — checks a manifest inventory after unzip
+
+Study yaml:
+
+```yaml
+dataverse:
+  fetch: archive_original
+  manifest: manifest/dataverse_files.csv   # expected paths + phase, not file ids
+```
+
+Manifest is an **inventory** (paths to verify), not a per-file download list:
+
+```csv
+path,phase
+data/study1.csv,mvp
+scripts/recodes_s1.R,mvp
+ReadMe.txt,meta
+```
+
+Onboarding flow: download archive → unzip to scratch or `outputs/deposit/` → read
+`ReadMe.txt` → commit manifest paths → wire `prep_studies` to `source()` author
+scripts unchanged.
+
+### Check native format before converting (single-file fallback)
+
+When **not** using the full archive (e.g. one `.dta` for a Stata table), inspect
+metadata before any `.tab` conversion:
+
+1. Call `get_dataset("doi:10.7910/DVN/…")` and inspect each tabular file's
+   `originalFileName` and `originalFormatLabel` in the API metadata (or the
+   Dataverse web UI file list).
+2. Check whether a **separate file** with the native extension already exists in
+   `ds$files$filename` (e.g. `data-1.dta` alongside `data-1.tab`).
+3. Choose the lightest path:
+
+| Situation | Action | Example |
+|-----------|--------|---------|
+| Native Stata (`.dta`) behind a `.tab` name | `get_dataframe_by_name(..., original = TRUE, .f = haven::read_dta)` — **no tab conversion** | Blair: `data-1.tab` → orig `data-1.dta` |
+| Native CSV behind a `.tab` name; multi-file R deposit | **Full archive** `format=original` → unzip (preferred) | Velez: zip contains `data/study1.csv`, `scripts/recodes_s1.R` |
+| Native CSV; one-off file only | `?format=original` on file id, or `get_dataframe_by_name(..., original = TRUE)` | — |
+| Separate native file already on deposit | Fetch or commit that file; skip conversion entirely | — |
+| Author scripts expect paths the deposit does not ship | Thin adapter in `code/deposit/` that reads `.tab` (or uses `original = TRUE`) — still **no** disk conversion step unless proven necessary | Velez `read_study_tab()` |
+
+Quick inventory helper (run once per dataset during onboarding):
+
+```r
+inspect_dataverse_formats <- function(dataset, server = "dataverse.harvard.edu") {
+  meta <- dataverse::get_dataset(dataset, server = server)
+  files <- meta$files
+  tabular <- files[files$contentType == "text/tab-separated-values" | files$tabularData %in% TRUE, ]
+  if (nrow(tabular) == 0) {
+    tabular <- files[grepl("\\.(tab|csv|dta|rds)$", files$filename, ignore.case = TRUE), ]
+  }
+  data.frame(
+    filename = tabular$filename,
+    original = tabular$originalFileName %||% NA_character_,
+    format = tabular$originalFormatLabel %||% NA_character_,
+    stringsAsFactors = FALSE
+  )
+}
+# inspect_dataverse_formats("doi:10.7910/DVN/OXSQMU")  # data-1.tab → data-1.dta
+# inspect_dataverse_formats("doi:10.7910/DVN/BZOCDJ")  # study1.tab → study1.csv (tab only)
+```
+
+**Anti-pattern:** converting `.tab` to `.csv` on disk because the readme mentions
+`.csv` names, when Dataverse already serves the native format via `original = TRUE`
+or the `.tab` file is directly readable.
+
 ### Pattern A — Dataverse fetch (preferred for public deposits)
 
 **Do not commit** the analysis `.dta`. Add a root R transform:
@@ -203,22 +296,28 @@ Two patterns — pick one per study.
 | `code` | `code/steps/access_data.R` |
 | `outputs` | `outputs/data.dta` |
 
-Study-level `dataverse:` block in `replication.yml`:
+Study-level `dataverse:` block in `replication.yml`. Use the **paper DOI** in
+`paper.doi` (registry id, repo naming). Always record the **Dataverse dataset DOI**
+in `dataverse.doi` when materials are fetched from Harvard Dataverse:
 
 ```yaml
-dataverse:
-  server: dataverse.harvard.edu
-  dataset: "10.7910/DVN/OXSQMU"
-  file: data-1.tab
-
 paper:
+  doi: https://doi.org/10.1017/S0003055422000284
   dependencies:
     - dataverse
     - haven
     - yaml
+
+dataverse:
+  doi: https://doi.org/10.7910/DVN/OXSQMU
+  server: dataverse.harvard.edu
+  dataset: "10.7910/DVN/OXSQMU"
+  file: data-1.tab
 ```
 
-`code/steps/access_data.R` — `make_access_data()`:
+`code/steps/access_data.R` — `make_access_data()`. The deposit lists `data-1.tab`
+but metadata shows `originalFileName = data-1.dta`; `original = TRUE` fetches the
+native Stata file — **no `.tab` conversion step**:
 
 ```r
 make_access_data <- function() {
@@ -262,6 +361,57 @@ artifacts (`outputs/tab_1.html`) stay committed; intermediate `.dta` is local ca
 **Publish:** init git in the study folder, `.gitignore` `outputs/data.dta`, commit
 code + yaml + display artifacts, push to `replicate-anything/rep-<doi-slug>` on
 GitHub. Registry stub sync stays in the monorepo via `sync_study_to_registry()`.
+
+### Pattern C — Full deposit cache + source author scripts in place
+
+When the Dataverse deposit includes standalone `.R` / `.do` scripts (not only a
+monolithic `Replication.Rmd`), **do not copy** them into `code/` if they can run
+unchanged. Instead:
+
+1. Commit `manifest/dataverse_files.csv` (file id + relative path + phase).
+2. Add **`access_deposit`** transform → downloads into `outputs/deposit/` (gitignored).
+3. **`load_studies`** (or similar) — thin wrapper that `source()`s
+   `outputs/deposit/scripts/recodes_*.R` with `setwd()` on the deposit root.
+4. Tables/figures — thin `code/tables/tab_N.R` only when logic lives in `.Rmd`
+   chunks without a separate author file; document the deposit driver in README.
+
+```yaml
+dataverse:
+  doi: https://doi.org/10.7910/DVN/BZOCDJ
+  server: dataverse.harvard.edu
+  dataset: "10.7910/DVN/BZOCDJ"
+  manifest: manifest/dataverse_files.csv
+  deposit_root: outputs/deposit
+
+steps:
+  - id: access_deposit
+    type: transform
+    code: code/steps/access_deposit.R
+    outputs: [outputs/deposit/.manifest_applied]
+
+  - id: prep_studies
+    type: transform
+    parents: [access_deposit]
+    code: code/steps/prep_studies.R
+    description: >
+      setwd(outputs/deposit); source scripts/recodes_*.R unchanged.
+```
+
+**Manifest columns** (`manifest/dataverse_files.csv`):
+
+| Column | Example | Role |
+|--------|---------|------|
+| `id` | `13435035` | Dataverse file id |
+| `path` | `data/study1.csv` | **Author-native** path under deposit root |
+| `dataverse_file` | `study1.tab` | Listed filename on Dataverse |
+| `original` | `true` | Download via `?format=original` (CSV, not `.tab`) |
+| `phase` | `mvp` | Optional fetch batch |
+
+Scripts (`recodes_s1.R`) use `original=false` and land at `scripts/recodes_s1.R`.
+Use `replicateEverything:::build_dataverse_manifest_from_dataset()` to draft rows from
+`originalFileName` metadata.
+
+**Canonical example:** [`rep-10.1017-s0003055426101622`](https://github.com/replicate-anything/rep-10.1017-s0003055426101622) (Velez et al., R + deposit cache).
 
 ### Pattern B — Commit data in `data/raw/` (legacy / offline / private data)
 

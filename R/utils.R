@@ -1,6 +1,12 @@
 #' @importFrom utils read.csv write.csv download.file
 NULL
 
+#' Null-coalescing infix
+#' @keywords internal
+`%||%` <- function(a, b) {
+  if (is.null(a)) b else a
+}
+
 #' Report progress to UIs (Shiny) and the R console
 #'
 #' Invokes \code{getOption("replicateEverything.progress")} when set, and also
