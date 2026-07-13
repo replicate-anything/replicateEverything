@@ -24,6 +24,8 @@ reference:
   - load_index
   - search_papers
   - list_replications
+  - list_replication_groups
+  - print.replication_list
   - paper_article_url
 - title: Run replications
   desc: Run tables and figures from registry scripts.
@@ -36,31 +38,38 @@ reference:
   - migrate_legacy_steps_yaml
   - get_code
   - run_prep_step
+  - list_prep_steps
 - title: Shiny demo
   desc: Browse studies and run replications interactively.
   contents:
   - run_shiny_app
   - save_local_shiny
 - title: Contribute
-  desc: Validate folder-backed studies and sync to the registry.
+  desc: Validate studies and prepare registry handoff files in the study repo.
   contents:
   - build_study_artifacts
   - build_package_artifacts
   - check_folder_replication
-  - prepare_folder_paper
-  - sync_folder_paper
   - check_package_replication
+  - prepare_study_for_registry
+  - prepare_folder_paper
   - ai_skills
   - ai_skill
   - ai_skill_path
 - title: Maintainer setup
-  desc: Probe and install study dependencies (R, Python, Stata); configure executables.
+  desc: Probe and install study dependencies; sync studies into the registry.
   contents:
+  - configure_local_monorepo
+  - package_build_info
   - check_study_compatibility
   - install_study_dependencies
   - install_registry_dependencies
   - maintainer_dependency_hint
   - replication_kind
+  - sync_study_to_registry
+  - sync_folder_paper
+  - build_registry_index
+  - refresh_registry
 - title: Registry audit
   desc: Run all registry replications and inspect results.
   contents:

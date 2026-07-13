@@ -2,13 +2,14 @@
 % Please edit documentation in R/add_paper.R
 \name{add_paper}
 \alias{add_paper}
-\title{Add a package-backed study to the replication registry}
+\title{Add a package-backed study to the replication registry (maintainer)}
 \usage{
 add_paper(
   location,
   full_replication = FALSE,
   registry_root = NULL,
-  dry_run = FALSE
+  dry_run = FALSE,
+  audit = FALSE
 )
 }
 \arguments{
@@ -21,6 +22,8 @@ add_paper(
 \code{getOption("replicateEverything.registry_root")}.}
 
 \item{dry_run}{If \code{TRUE}, run checks only; do not write registry files.}
+
+\item{audit}{If \code{TRUE}, run \code{\link[=audit_everything]{audit_everything()}} for this study after sync.}
 }
 \value{
 Invisibly, the result of \code{\link[=check_package_replication]{check_package_replication()}}, with
@@ -28,10 +31,14 @@ Invisibly, the result of \code{\link[=check_package_replication]{check_package_r
 }
 \description{
 Validates a study replication package with \code{\link[=check_package_replication]{check_package_replication()}},
-then writes a lightweight registry stub (\verb{studies/<folder>.yml})
-and updates \code{index.csv}.
+ensures registry handoff files exist (via \code{\link[=write_study_registry_stub]{write_study_registry_stub()}} when
+missing), then installs the stub in a registry checkout via
+\code{\link[=sync_study_to_registry]{sync_study_to_registry()}}.
 }
 \details{
+Contributors should run \code{\link[=prepare_study_for_registry]{prepare_study_for_registry()}} and open a pull request.
+Maintainers use this function from a local registry checkout.
+
 Package-backed studies do \strong{not} copy code, data, or artifacts into the
 registry. Those live in the study package (\verb{inst/report/artifacts/} from
 \code{build_report()}).

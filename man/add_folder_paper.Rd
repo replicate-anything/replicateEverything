@@ -2,7 +2,7 @@
 % Please edit documentation in R/add_folder_paper.R
 \name{add_folder_paper}
 \alias{add_folder_paper}
-\title{Add a folder-backed study to the replication registry}
+\title{Add a folder-backed study to the replication registry (maintainer)}
 \usage{
 add_folder_paper(
   location = ".",
@@ -10,7 +10,8 @@ add_folder_paper(
   registry_root = NULL,
   dry_run = FALSE,
   build_artifacts = FALSE,
-  install_deps = TRUE
+  install_deps = TRUE,
+  audit = FALSE
 )
 }
 \arguments{
@@ -26,19 +27,21 @@ add_folder_paper(
 \item{build_artifacts}{If \code{TRUE}, run \code{\link[=build_study_artifacts]{build_study_artifacts()}} before checks.}
 
 \item{install_deps}{Passed to \code{\link[=build_study_artifacts]{build_study_artifacts()}}.}
+
+\item{audit}{If \code{TRUE}, run \code{\link[=audit_everything]{audit_everything()}} for this study after sync.}
 }
 \value{
 Invisibly, the result of \code{\link[=check_folder_replication]{check_folder_replication()}}, with
 \code{stub_path} and \code{index_updated} when registration succeeds.
 }
 \description{
-Validates a folder-backed study with \code{\link[=check_folder_replication]{check_folder_replication()}}, writes
-or reuses \code{registry/replication.yml} and \code{registry/index.csv} in the study
-repo, then copies them into the registry checkout via \code{\link[=sync_folder_paper]{sync_folder_paper()}}.
+Validates a folder-backed study with \code{\link[=check_folder_replication]{check_folder_replication()}}, ensures
+registry handoff files exist (via \code{\link[=write_study_registry_stub]{write_study_registry_stub()}} when missing),
+then installs the stub in a registry checkout via \code{\link[=sync_study_to_registry]{sync_study_to_registry()}}.
 }
 \details{
-Equivalent to \code{\link[=prepare_folder_paper]{prepare_folder_paper()}} followed by \code{\link[=sync_folder_paper]{sync_folder_paper()}} when
-you already have a local registry checkout. If you only need the stub files,
-use \code{\link[=prepare_folder_paper]{prepare_folder_paper()}} and copy them manually.
+Contributors should run \code{\link[=prepare_study_for_registry]{prepare_study_for_registry()}} and open a pull request.
+Maintainers use this function (or \code{sync_study_to_registry()} directly) from a
+local registry checkout.
 }
 \keyword{internal}

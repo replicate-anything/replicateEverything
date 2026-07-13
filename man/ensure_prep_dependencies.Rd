@@ -20,6 +20,8 @@ ensure_prep_dependencies(
 
 \item{ctx}{Paper context.}
 
+\item{doi}{Study DOI or handle.}
+
 \item{install_deps}{Passed to prep runners.}
 
 \item{force}{Re-run prep even when outputs exist.}

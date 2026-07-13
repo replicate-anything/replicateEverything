@@ -3,24 +3,24 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
   dir.create(root)
   on.exit(unlink(root, recursive = TRUE), add = TRUE)
   dir.create(file.path(root, "code"), recursive = TRUE)
-  dir.create(file.path(root, "outputs", "prep_data"), recursive = TRUE)
+  dir.create(file.path(root, "outputs"), recursive = TRUE)
   dir.create(file.path(root, "data"), recursive = TRUE)
 
   writeLines("1,2\n", file.path(root, "data", "raw.csv"))
   writeLines(
     c(
-      "prep_step <- function(data) {",
-      "  write.csv(data.frame(x = 1), file.path('outputs', 'prep_data', 'out.csv'))",
+      "make_analysis_data <- function(data) {",
+      "  write.csv(data.frame(x = 1), file.path('outputs', 'analysis_data.csv'))",
       "  data.frame(x = 1)",
       "}"
     ),
-    file.path(root, "code", "prep_data.R")
+    file.path(root, "code", "analysis_data.R")
   )
   writeLines(
     c(
       "tab_1 <- function(data) {",
-      "  if (!file.exists(file.path('outputs', 'prep_data', 'out.csv'))) {",
-      "    stop('prep output missing')",
+      "  if (!file.exists(file.path('outputs', 'analysis_data.csv'))) {",
+      "    stop('analysis_data output missing')",
       "  }",
       "  data",
       "}"
@@ -31,20 +31,20 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
     paper = list(doi = "10.9999/ancestor.test"),
     steps = list(
       list(
-        id = "prep_data",
+        id = "analysis_data",
         type = "transform",
         parents = list(),
         data = "data/raw.csv",
-        code = "code/prep_data.R",
-        outputs = list("outputs/prep_data/out.csv"),
+        code = "code/analysis_data.R",
+        outputs = list("outputs/analysis_data.csv"),
         engine = "r"
       ),
       list(
         id = "tab_1",
         group = "tab_1",
         type = "table",
-        parents = list("prep_data"),
-        data = "outputs/prep_data/out.csv",
+        parents = list("analysis_data"),
+        data = "outputs/analysis_data.csv",
         code = "code/tab_1.R",
         outputs = list("outputs/tab_1.html"),
         engine = "r"
@@ -60,7 +60,7 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
 
   expect_false(
     replicateEverything:::step_outputs_ready(
-      replicateEverything:::find_prep_entry(meta, "prep_data"),
+      replicateEverything:::find_prep_entry(meta, "analysis_data"),
       ctx,
       meta = meta
     )
@@ -73,5 +73,5 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
     doi = "10.9999/ancestor.test"
   )
 
-  expect_true(file.exists(file.path(root, "outputs", "prep_data", "out.csv")))
+  expect_true(file.exists(file.path(root, "outputs", "analysis_data.csv")))
 })

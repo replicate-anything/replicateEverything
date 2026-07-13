@@ -119,6 +119,19 @@ test_that("describe_study_dag renders parallel paths not false linear chain", {
   expect_false(grepl("Table 1.*Table 2", lines[[1]]))
 })
 
+test_that("step_graph_display_label adds engine tag for duplicate table labels", {
+  meta <- list(
+    steps = list(
+      list(id = "tab_1", group = "tab_1", type = "table", label = "Table 1", engine = "r", parents = list()),
+      list(id = "tab_1_stata", group = "tab_1", type = "table", label = "Table 1", engine = "stata", parents = list())
+    )
+  )
+  steps <- normalize_study_steps(meta)
+  graph <- study_step_graph(steps)
+  expect_equal(step_graph_display_label("tab_1", graph, steps), "Table 1 (R)")
+  expect_equal(step_graph_display_label("tab_1_stata", graph, steps), "Table 1 (Stata)")
+})
+
 test_that("study_dag_for_step returns paths ending at the selected step", {
   meta <- list(
     steps = list(

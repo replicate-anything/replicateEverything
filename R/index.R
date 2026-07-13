@@ -93,6 +93,41 @@ index_needs_stub_refresh <- function(index) {
   !any(nzchar(index$collections))
 }
 
+#' Subset registry index rows by collection tag(s)
+#'
+#' Registry \code{collections} are pipe-separated in \code{index.csv}
+#' (e.g. \code{"World Bank|PED"}). A row is kept when any requested tag
+#' appears in that row's tags.
+#'
+#' @param index Registry index data frame from [load_index()].
+#' @param collections Character vector of collection tags (e.g. \code{"APSR"}).
+#' @return Filtered index data frame.
+#' @keywords internal
+filter_index_by_collections <- function(index, collections) {
+  if (is.null(collections) || length(collections) == 0L) {
+    return(index)
+  }
+  want <- unique(na.omit(trimws(as.character(collections))))
+  want <- want[nzchar(want)]
+  if (length(want) == 0L) {
+    return(index)
+  }
+  if (!is.data.frame(index) || nrow(index) == 0L) {
+    return(index)
+  }
+  index <- ensure_index_handles(index)
+  if (!"collections" %in% names(index)) {
+    stop("Registry index has no collections column.", call. = FALSE)
+  }
+  row_tags <- strsplit(as.character(index$collections), "|", fixed = TRUE)
+  row_tags <- lapply(row_tags, function(tags) {
+    tags <- trimws(tags)
+    tags[nzchar(tags)]
+  })
+  keep <- vapply(row_tags, function(tags) any(want %in% tags), logical(1))
+  index[keep, , drop = FALSE]
+}
+
 #' Resolve a registry handle to a DOI
 #' @keywords internal
 resolve_registry_handle <- function(x) {

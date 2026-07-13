@@ -309,20 +309,20 @@ run_build_prep_steps <- function(
   list(statuses = statuses, failures = failures)
 }
 
-#' Ensure prep dependencies exist before running a replication
-#'
-#' @param meta Parsed metadata.
-#' @param rep Replication entry.
-#' @param ctx Paper context.
-#' @param install_deps Passed to prep runners.
-#' @param force Re-run prep even when outputs exist.
-#' @keywords internal
 #' Run missing upstream DAG steps before a display replication
 #'
 #' When a study uses the unified \code{steps:} block, display steps declare
 #' \code{parents:} rather than legacy \code{requires:}. This runs any ancestor
 #' transform steps whose outputs are not yet present.
 #'
+#' @param meta Parsed metadata.
+#' @param rep Replication entry.
+#' @param ctx Paper context.
+#' @param doi Study DOI or handle.
+#' @param install_deps Passed to step runners.
+#' @param force Re-run steps even when outputs exist.
+#' @param repo Optional registry repo slug.
+#' @param folder Optional registry folder.
 #' @keywords internal
 ensure_study_ancestor_steps <- function(
   meta,
@@ -375,6 +375,15 @@ ensure_study_ancestor_steps <- function(
   invisible(NULL)
 }
 
+#' Ensure prep dependencies exist before running a replication
+#'
+#' @param meta Parsed metadata.
+#' @param rep Replication entry.
+#' @param ctx Paper context.
+#' @param doi Study DOI or handle.
+#' @param install_deps Passed to prep runners.
+#' @param force Re-run prep even when outputs exist.
+#' @keywords internal
 ensure_prep_dependencies <- function(
   meta,
   rep,

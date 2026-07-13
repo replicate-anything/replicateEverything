@@ -1,20 +1,20 @@
-test_that("merge_extended_study_steps pulls inherited prep_data step", {
+test_that("merge_extended_study_steps pulls inherited analysis_data step", {
   base_meta <- list(
     steps = list(
       list(
-        id = "prep_data",
+        id = "analysis_data",
         type = "transform",
         label = "Prep",
         parents = list(),
-        outputs = list("outputs/prep_data/repdata.rds"),
+        outputs = list("outputs/analysis_data.rds"),
         engine = "r",
-        code = "code/steps/prep_data.R"
+        code = "code/steps/analysis_data.R"
       ),
       list(
         id = "tab_1",
         type = "table",
         label = "Table 1",
-        parents = list("prep_data"),
+        parents = list("analysis_data"),
         artifact = "outputs/tab_1.html"
       ),
       list(
@@ -35,12 +35,12 @@ test_that("merge_extended_study_steps pulls inherited prep_data step", {
       )
     ),
     steps = list(
-      list(inherit = "prep_data"),
+      list(inherit = "analysis_data"),
       list(
         id = "tab_1",
         type = "table",
         label = "Reanalysis",
-        parents = list("prep_data"),
+        parents = list("analysis_data"),
         code = "code/tab_1.R",
         artifact = "outputs/tab_1.html"
       )
@@ -49,9 +49,9 @@ test_that("merge_extended_study_steps pulls inherited prep_data step", {
 
   merged <- merge_extended_study_steps(ext_meta, base_meta, ext_meta$paper$extends)
   ids <- vapply(merged, function(x) x$id, character(1))
-  expect_true("prep_data" %in% ids)
+  expect_true("analysis_data" %in% ids)
   expect_true("tab_1" %in% ids)
-  prep <- merged[[match("prep_data", ids)]]
+  prep <- merged[[match("analysis_data", ids)]]
   expect_true(isTRUE(prep$.inherited))
   tab <- merged[[match("tab_1", ids)]]
   expect_equal(tab$label, "Reanalysis")
@@ -65,19 +65,19 @@ test_that("resolve_study_file reads base outputs for extension studies", {
     unlink(base_dir, recursive = TRUE)
     unlink(ext_dir, recursive = TRUE)
   }, add = TRUE)
-  dir.create(file.path(base_dir, "outputs/prep_data"), recursive = TRUE)
-  writeLines("x", file.path(base_dir, "outputs/prep_data/repdata.rds"))
+  dir.create(file.path(base_dir, "outputs"), recursive = TRUE)
+  writeLines("x", file.path(base_dir, "outputs/analysis_data.rds"))
   dir.create(ext_dir, recursive = TRUE)
 
   meta <- list(
     .extends_context = list(local_root = base_dir)
   )
   ctx <- list(local_root = ext_dir)
-  hit <- resolve_study_file("outputs/prep_data/repdata.rds", ctx, meta = meta, local_only = TRUE)
+  hit <- resolve_study_file("outputs/analysis_data.rds", ctx, meta = meta, local_only = TRUE)
   expect_true(file.exists(hit))
   expect_equal(
     normalizePath(hit, winslash = "/"),
-    normalizePath(file.path(base_dir, "outputs/prep_data/repdata.rds"), winslash = "/")
+    normalizePath(file.path(base_dir, "outputs/analysis_data.rds"), winslash = "/")
   )
 })
 
@@ -88,7 +88,7 @@ test_that("inherit entry can override format child code path", {
         id = "tab_1",
         type = "table",
         label = "Table 1",
-        parents = list("prep_data"),
+        parents = list("analysis_data"),
         format = "format_tab_1",
         code = "code/tab_1.R"
       ),
@@ -116,13 +116,13 @@ test_that("inherit entry can override format child code path", {
 test_that("study_everything_step_ids excludes format children", {
   meta <- list(
     steps = list(
-      list(id = "prep_data", type = "transform", parents = list()),
-      list(id = "tab_1", type = "table", parents = list("prep_data")),
+      list(id = "analysis_data", type = "transform", parents = list()),
+      list(id = "tab_1", type = "table", parents = list("analysis_data")),
       list(id = "tab_1_format", type = "format", parent = "tab_1")
     )
   )
   ids <- study_everything_step_ids(meta)
-  expect_equal(ids, c("prep_data", "tab_1"))
+  expect_equal(ids, c("analysis_data", "tab_1"))
   expect_false("tab_1_format" %in% ids)
 })
 
@@ -133,7 +133,7 @@ test_that("step_run_context routes inherited steps to base local_root", {
       base_url = "https://example.com/base/"
     )
   )
-  step <- list(id = "prep_data", .inherited = TRUE)
+  step <- list(id = "analysis_data", .inherited = TRUE)
   ctx <- list(local_root = "/ext/path", base_url = "https://example.com/ext/")
   run_ctx <- step_run_context(step, meta, ctx)
   expect_equal(run_ctx$local_root, "/base/path")

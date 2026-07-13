@@ -140,7 +140,7 @@ test_that("build_study_artifacts writes manifest for fixture study", {
   })
 })
 
-test_that("prepare_folder_paper writes registry stub when checks pass", {
+test_that("prepare_study_for_registry writes registry stub when checks pass", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
@@ -151,13 +151,13 @@ test_that("prepare_folder_paper writes registry stub when checks pass", {
     tmp <- withr::local_tempdir()
     file.copy(study_dir, tmp, recursive = TRUE)
     copy_root <- file.path(tmp, basename(study_dir))
-    dir.create(file.path(copy_root, "artifacts"), showWarnings = FALSE)
+    dir.create(file.path(copy_root, "outputs"), showWarnings = FALSE)
     writeLines(
       '{"version":1,"artifacts":[]}',
-      file.path(copy_root, "artifacts", "manifest.json")
+      file.path(copy_root, "outputs", "manifest.json")
     )
 
-    result <- prepare_folder_paper(
+    result <- prepare_study_for_registry(
       copy_root,
       build_artifacts = FALSE,
       registry_root = getOption("replicateEverything.registry_root")
@@ -170,7 +170,26 @@ test_that("prepare_folder_paper writes registry stub when checks pass", {
   })
 })
 
-test_that("sync_folder_paper copies stub into registry checkout", {
+test_that("prepare_folder_paper is deprecated alias", {
+  with_fixture_opts({
+    study_dir <- file.path(
+      getOption("replicateEverything.study_folders_root"),
+      "rep-10.9999_example"
+    )
+    skip_if_not(dir.exists(study_dir), "fixture study repo missing")
+
+    tmp <- withr::local_tempdir()
+    file.copy(study_dir, tmp, recursive = TRUE)
+    copy_root <- file.path(tmp, basename(study_dir))
+
+    expect_warning(
+      suppressMessages(prepare_folder_paper(copy_root, build_artifacts = FALSE)),
+      "prepare_study_for_registry"
+    )
+  })
+})
+
+test_that("sync_study_to_registry copies stub into registry checkout", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
@@ -191,7 +210,7 @@ test_that("sync_folder_paper copies stub into registry checkout", {
     copy_root <- file.path(tmp, basename(study_dir))
     write_folder_registry_stub(copy_root)
 
-    synced <- sync_folder_paper(copy_root, registry_root = reg)
+    synced <- sync_study_to_registry(copy_root, registry_root = reg)
     expect_true(file.exists(synced$stub_path))
     expect_true(file.exists(file.path(studies, paste0(synced$folder, ".yml"))))
   })

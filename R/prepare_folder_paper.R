@@ -1,184 +1,114 @@
-#' Build registry index row for a folder-backed study
-#' @keywords internal
-folder_registry_index_row <- function(meta, study_root) {
-  registry_index_row_from_meta(meta, study_root = study_root)
-}
-
-#' Registry folder / handle from paper metadata
-#' @keywords internal
-registry_folder_from_paper <- function(paper) {
-  doi_val <- paper$doi %||% NULL
-  if (!is.null(doi_val)) {
-    doi_chr <- trimws(as.character(doi_val[[1]] %||% doi_val))
-    if (nzchar(doi_chr)) {
-      return(doi_to_registry_folder(doi_val))
-    }
-  }
-  handle <- as.character(
-    paper$study_handle %||% paper$study_folder %||% paper$handle %||% ""
-  )
-  handle <- trimws(handle[[1]] %||% handle)
-  if (nzchar(handle)) {
-    return(handle)
-  }
-  stop("paper needs doi or study_handle for registry index", call. = FALSE)
-}
-
-#' Build a registry index row from study or registry stub metadata
-#' @keywords internal
-registry_index_row_from_meta <- function(meta, study_root = NULL) {
-  paper <- meta$paper
-  authors <- paper$authors %||% ""
-  if (length(authors) > 1) {
-    authors <- paste(authors, collapse = ", ")
-  } else {
-    authors <- as.character(authors[[1]] %||% "")
-  }
-  folder <- registry_folder_from_paper(paper)
-  handle <- as.character(paper$handle %||% paper$study_handle %||% folder)
-  handle <- trimws(handle[[1]] %||% handle)
-  if (!nzchar(handle)) {
-    handle <- folder
-  }
-  doi_val <- paper$doi %||% NULL
-  doi_out <- if (!is.null(doi_val) && nzchar(trimws(as.character(doi_val[[1]] %||% doi_val)))) {
-    normalize_doi(doi_val)
-  } else {
-    ""
-  }
-  collections <- meta$collections %||% paper$collections %||% character(0)
-  collections <- unique(na.omit(as.character(unlist(collections, use.names = FALSE))))
-  collections <- paste(collections[nzchar(collections)], collapse = "|")
-  maintainer <- meta$maintainer %||% list()
-  maintainer_name <- as.character(maintainer$name %||% maintainer$Name %||% "")
-  maintainer_email <- as.character(maintainer$email %||% maintainer$Email %||% "")
-  languages <- study_declared_languages(meta)
-  languages <- paste(languages[nzchar(languages)], collapse = ";")
-  article_url <- as.character(paper$article_url %||% paper$landing_url %||% paper$study_url %||% "")
-  repo <- if (!is.null(study_root)) {
-    infer_study_repo_slug(study_root, meta)
-  } else {
-    NULL
-  }
-  if (is.null(repo) || !nzchar(repo)) {
-    repo <- as.character((
-      meta$repo %||%
-        paper$study_repo %||%
-        paper$package_repo %||%
-        ""
-    )[[1]])
-  }
-  data.frame(
-    folder = folder,
-    handle = handle,
-    doi = doi_out,
-    title = as.character(paper$title[[1]]),
-    journal = as.character(paper$journal %||% ""),
-    year = as.integer(paper$year %||% NA_integer_),
-    authors = authors,
-    repo = repo,
-    collections = collections,
-    maintainer_name = maintainer_name,
-    maintainer_email = maintainer_email,
-    languages = languages,
-    article_url = article_url,
-    stringsAsFactors = FALSE
-  )
-}
-
-#' Write registry stub files into a study repository
+#' Prepare a study repository for registry handoff (contributor)
 #'
-#' Creates `registry/replication.yml` and `registry/index.csv` (one row) under the
-#' study repo. After [check_folder_replication()] passes, copy these into the
-#' [registry repository](https://github.com/replicate-anything/registry):
+#' Validates a folder- or package-backed study, then writes the short registry
+#' yaml and one-row `index.csv` into the study repository:
 #'
-#' - `registry/replication.yml` -> `studies/<folder>.yml`
-#' - run [build_registry_index()] on the registry repo (or merge `registry/index.csv`)
+#' \itemize{
+#'   \item Folder studies: `registry/replication.yml` and `registry/index.csv`
+#'   \item Package studies: `inst/registry/replication.yml` and `inst/registry/index.csv`
+#' }
 #'
-#' @param location Study repo path. Defaults to `"."`.
-#' @param stub_dir Subdirectory under the study root; default `"registry"`.
-#' @return List with `stub_dir`, `stub_path`, `index_path`, and `folder`.
-#' @keywords internal
-write_folder_registry_stub <- function(location = ".", stub_dir = NULL) {
-  study_root <- resolve_study_location(location)
-  meta <- read_study_replication_yaml(study_root)
-  if (is.null(meta)) {
-    stop("Missing replication.yml in ", study_root, call. = FALSE)
-  }
-
-  if (is.null(stub_dir) || !nzchar(stub_dir)) {
-    stub_dir <- file.path(study_root, "registry")
-  } else if (!dir.exists(stub_dir) && !grepl("^[A-Za-z]:[/\\\\]|^/", stub_dir)) {
-    stub_dir <- file.path(study_root, stub_dir)
-  }
-  dir.create(stub_dir, recursive = TRUE, showWarnings = FALSE)
-
-  study_folder <- basename(study_root)
-  stub <- registry_stub_from_folder_meta(
-    meta,
-    study_folder = study_folder,
-    study_root = study_root
-  )
-  folder <- doi_to_registry_folder(meta$paper$doi)
-
-  stub_path <- file.path(stub_dir, "replication.yml")
-  stub_yaml <- yaml::as.yaml(stub)
-  header <- c(
-    "# Lightweight registry stub for a folder-backed study.",
-    "# Copy to registry/studies/<folder>.yml in the registry repo.",
-    paste0("# Registry folder: ", folder),
-    ""
-  )
-  writeLines(c(header, stub_yaml), stub_path, useBytes = TRUE)
-
-  index_path <- file.path(stub_dir, "index.csv")
-  utils::write.csv(folder_registry_index_row(meta, study_root), index_path, row.names = FALSE)
-
-  readme_path <- file.path(stub_dir, "README.md")
-  if (!file.exists(readme_path)) {
-    writeLines(
-      c(
-        "# Registry sync files",
-        "",
-        "Generated by `replicateEverything::prepare_folder_paper()`.",
-        "",
-        paste0("- Copy `replication.yml` to `registry/studies/", folder, ".yml`"),
-        "- Run `replicateEverything::build_registry_index(registry_root)` to rebuild `index.csv` from all stubs.",
-        "",
-        "Or run `replicateEverything::sync_folder_paper()` with `registry_root` pointing at your registry checkout."
-      ),
-      readme_path
-    )
-  }
-
-  invisible(list(
-    stub_dir = stub_dir,
-    stub_path = stub_path,
-    index_path = index_path,
-    folder = folder
-  ))
-}
-
-#' Prepare a folder-backed study for registry sync
+#' This is the **contributor** step. A registry maintainer installs those files
+#' with [sync_study_to_registry()] and refreshes the central index with
+#' [refresh_registry()].
 #'
-#' Runs [build_study_artifacts()], [check_folder_replication()], and on success
-#' writes `registry/replication.yml` and `registry/index.csv` in the study
-#' repository. The only registry step left is syncing those files (see
-#' [sync_folder_paper()]).
+#' Runs [build_study_artifacts()] or [build_package_artifacts()] (optional),
+#' then [check_folder_replication()] or [check_package_replication()], and on
+#' success writes and validates the registry stub via [write_study_registry_stub()].
 #'
-#' @param location Study repo path. Defaults to `"."`.
-#' @param build_artifacts If `TRUE`, run [build_study_artifacts()] first.
-#' @param install_deps Passed to [build_study_artifacts()].
-#' @param full_replication Passed to [check_folder_replication()].
-#' @param registry_root Optional registry checkout for monorepo dev.
-#' @return Invisibly, the result of [check_folder_replication()] with
-#'   `registry_stub_path` and `registry_index_path` when successful.
+#' @param location Study repo path or GitHub address. Defaults to `"."`.
+#' @param build_artifacts If `TRUE`, build precomputed outputs first.
+#' @param install_deps Passed to the build function.
+#' @param full_replication If `TRUE`, also run every table and figure live.
+#' @param registry_root Optional registry checkout (passed to build/check helpers).
+#' @return Invisibly, a checklist result with `registry_stub_path` and
+#'   `registry_index_path` when successful.
 #'
 #' @examples
 #' \dontrun{
-#' prepare_folder_paper(".", registry_root = "../registry")
+#' prepare_study_for_registry(".")
 #' }
 #'
+#' @export
+prepare_study_for_registry <- function(
+  location = ".",
+  build_artifacts = TRUE,
+  install_deps = TRUE,
+  full_replication = FALSE,
+  registry_root = NULL
+) {
+  study_root <- resolve_study_root(location)
+  kind <- detect_study_kind_from_root(study_root)
+
+  if (isTRUE(build_artifacts)) {
+    if (identical(kind, "package")) {
+      build_package_artifacts(
+        package = package_name_from_root(study_root),
+        install_deps = install_deps
+      )
+    } else {
+      build_study_artifacts(
+        location = study_root,
+        install_deps = install_deps,
+        registry_root = registry_root
+      )
+    }
+  }
+
+  result <- if (identical(kind, "package")) {
+    check_package_replication(
+      study_root,
+      full_replication = full_replication
+    )
+  } else {
+    check_folder_replication(
+      study_root,
+      full_replication = full_replication,
+      registry_root = registry_root
+    )
+  }
+
+  if (!isTRUE(result$ok)) {
+    message("Study validation failed:")
+    failed <- result$checks[!result$checks$passed, , drop = FALSE]
+    for (i in seq_len(nrow(failed))) {
+      message("  [FAIL] ", failed$check[i], ": ", failed$message[i])
+    }
+    vignette <- if (identical(kind, "package")) {
+      "package-replication-checklist"
+    } else {
+      "folder-replication-checklist"
+    }
+    message(
+      "\nSee vignette('", vignette, "', package = 'replicateEverything') ",
+      "for requirements."
+    )
+    return(invisible(result))
+  }
+
+  written <- write_study_registry_stub(study_root)
+  message(
+    "All checks passed (", nrow(result$checks), " items). ",
+    "Registry handoff written under ", written$stub_dir
+  )
+  message(
+    "A registry maintainer can install this with sync_study_to_registry() ",
+    "and refresh_registry()."
+  )
+
+  result$registry_stub_path <- written$stub_path
+  result$registry_index_path <- written$index_path
+  result$folder <- written$folder
+  result$study_kind <- kind
+  cls <- if (identical(kind, "package")) {
+    c("package_replication_check", "replication_check", "list")
+  } else {
+    c("folder_replication_check", "replication_check", "list")
+  }
+  invisible(structure(result, class = cls))
+}
+
+#' @describeIn prepare_study_for_registry Deprecated alias for folder studies.
 #' @export
 prepare_folder_paper <- function(
   location = ".",
@@ -187,80 +117,68 @@ prepare_folder_paper <- function(
   full_replication = FALSE,
   registry_root = NULL
 ) {
-  if (isTRUE(build_artifacts)) {
-    build_study_artifacts(
-      location = location,
-      install_deps = install_deps,
-      registry_root = registry_root
-    )
-  }
-
-  result <- check_folder_replication(
+  .Deprecated("prepare_study_for_registry")
+  prepare_study_for_registry(
     location = location,
+    build_artifacts = build_artifacts,
+    install_deps = install_deps,
     full_replication = full_replication,
     registry_root = registry_root
   )
-
-  if (!isTRUE(result$ok)) {
-    message("Folder study validation failed:")
-    failed <- result$checks[!result$checks$passed, , drop = FALSE]
-    for (i in seq_len(nrow(failed))) {
-      message("  [FAIL] ", failed$check[i], ": ", failed$message[i])
-    }
-    message(
-      "\nSee vignette('folder-replication-checklist', package = 'replicateEverything') ",
-      "for requirements."
-    )
-    return(invisible(result))
-  }
-
-  written <- write_folder_registry_stub(location)
-  message(
-    "All checks passed (", nrow(result$checks), " items). ",
-    "Registry stub written under ", written$stub_dir
-  )
-  message("Sync to the registry with sync_folder_paper() or copy the files manually.")
-
-  result$registry_stub_path <- written$stub_path
-  result$registry_index_path <- written$index_path
-  result$folder <- written$folder
-  invisible(structure(result, class = c("folder_replication_check", "replication_check", "list")))
 }
 
-#' Copy prepared registry files into the registry repository
+#' Sync a prepared study into the registry repository (maintainer)
 #'
-#' Reads `registry/replication.yml` and `registry/index.csv` from the study
-#' repo (written by [prepare_folder_paper()]) and installs them in a local
-#' registry checkout.
+#' Reads the short registry yaml from the study repository (`registry/` or
+#' `inst/registry/`), copies it to `studies/<folder>.yml` in a registry
+#' checkout, and rebuilds `index.csv` via [build_registry_index()].
 #'
-#' @param location Study repo path. Defaults to `"."`.
+#' This is a **maintainer** function. Contributors should run
+#' [prepare_study_for_registry()] and open a pull request; maintainers run this
+#' (or [refresh_registry()]) from a local registry checkout.
+#'
+#' @param location Study repo path or GitHub address. Defaults to `"."`.
 #' @param registry_root Path to the registry repository root. Defaults to
 #'   `getOption("replicateEverything.registry_root")`.
-#' @return Invisibly, a list with `stub_path`, `index_updated`, and `folder`.
+#' @param audit If `TRUE`, run [audit_everything()] for this study after sync.
+#' @param patience Seconds per replication when `audit = TRUE`.
+#' @param install_deps Passed to [audit_everything()] when `audit = TRUE`.
+#' @param verbose Passed to [audit_everything()] when `audit = TRUE`.
+#' @return Invisibly, a list with `stub_path`, `index_updated`, `folder`, and
+#'   optional `audit`.
 #'
 #' @examples
 #' \dontrun{
 #' options(replicateEverything.registry_root = "../registry")
-#' sync_folder_paper(".")
+#' sync_study_to_registry(".")
 #' }
 #'
 #' @export
-sync_folder_paper <- function(location = ".", registry_root = NULL) {
-  study_root <- resolve_study_location(location)
-  local_stub <- file.path(study_root, "registry", "replication.yml")
-  local_index <- file.path(study_root, "registry", "index.csv")
+sync_study_to_registry <- function(
+  location = ".",
+  registry_root = NULL,
+  audit = FALSE,
+  patience = 20,
+  install_deps = FALSE,
+  verbose = TRUE
+) {
+  study_root <- resolve_study_root(location)
+  kind <- detect_study_kind_from_root(study_root)
+  paths <- study_registry_handoff_paths(study_root, kind = kind)
+  local_stub <- paths$stub_path
+  local_index <- paths$index_path
 
   if (!file.exists(local_stub)) {
     stop(
-      "No registry/replication.yml in study repo. ",
-      "Run prepare_folder_paper() first.",
+      "No registry handoff yaml at ", local_stub, ". ",
+      "Run prepare_study_for_registry() in the study repository first.",
       call. = FALSE
     )
   }
   if (!file.exists(local_index)) {
     stop(
-      "No registry/index.csv in study repo. ",
-      "Run prepare_folder_paper() first.",
+      "No registry handoff index at ", local_index, ". ",
+      "Run prepare_study_for_registry() in the study repository first.",
       call. = FALSE
     )
   }
@@ -278,7 +196,7 @@ sync_folder_paper <- function(location = ".", registry_root = NULL) {
 
   row <- utils::read.csv(local_index, stringsAsFactors = FALSE)
   if (nrow(row) != 1L) {
-    stop("registry/index.csv must contain exactly one row.", call. = FALSE)
+    stop("Study registry/index.csv must contain exactly one row.", call. = FALSE)
   }
   folder <- row$folder[[1]]
 
@@ -296,9 +214,93 @@ sync_folder_paper <- function(location = ".", registry_root = NULL) {
   message("Synced registry stub: ", stub_path)
   message("Updated index: ", index_updated$index_path)
 
+  audit_out <- NULL
+  if (isTRUE(audit)) {
+    doi <- as.character(row$doi[[1]] %||% "")
+    handle <- as.character(row$handle[[1]] %||% folder)
+    audit_target <- if (nzchar(trimws(doi))) {
+      doi
+    } else {
+      handle
+    }
+    message("Running audit_everything for ", audit_target)
+    audit_out <- audit_everything(
+      patience = patience,
+      dois = audit_target,
+      install_deps = install_deps,
+      verbose = verbose,
+      registry_root = registry_root
+    )
+  }
+
   invisible(list(
     stub_path = stub_path,
     index_updated = index_updated$index_path,
-    folder = folder
+    folder = folder,
+    kind = kind,
+    audit = audit_out
   ))
+}
+
+#' @describeIn sync_study_to_registry Deprecated alias.
+#' @export
+sync_folder_paper <- function(location = ".", registry_root = NULL) {
+  .Deprecated("sync_study_to_registry")
+  sync_study_to_registry(location = location, registry_root = registry_root)
+}
+
+#' Refresh the registry index and optionally rerun the full audit (maintainer)
+#'
+#' Recompiles `index.csv` from all `studies/*.yml` stubs, then optionally runs
+#' [audit_everything()] across the registry.
+#'
+#' @param registry_root Path to the registry repository root.
+#' @param audit If `TRUE`, run [audit_everything()] after rebuilding the index.
+#' @param patience Seconds per replication when auditing.
+#' @param install_deps Passed to [audit_everything()].
+#' @param verbose Passed to [audit_everything()].
+#' @param substantive Passed to [audit_everything()].
+#' @return Invisibly, a list with `index` and optional `audit`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' options(replicateEverything.registry_root = "../registry")
+#' refresh_registry(audit = TRUE)
+#' }
+refresh_registry <- function(
+  registry_root = NULL,
+  audit = TRUE,
+  patience = 20,
+  install_deps = FALSE,
+  verbose = TRUE,
+  substantive = TRUE
+) {
+  if (is.null(registry_root) || !nzchar(registry_root)) {
+    registry_root <- getOption("replicateEverything.registry_root", NULL)
+  }
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    stop(
+      "registry_root not found. Pass the path to the registry repository or set ",
+      "options(replicateEverything.registry_root = ...).",
+      call. = FALSE
+    )
+  }
+
+  index <- build_registry_index(registry_root)
+  message("Rebuilt index: ", index$index_path, " (", index$n, " studies)")
+
+  audit_out <- NULL
+  if (isTRUE(audit)) {
+    message("Running audit_everything across the registry")
+    audit_out <- audit_everything(
+      patience = patience,
+      install_deps = install_deps,
+      verbose = verbose,
+      registry_root = registry_root,
+      substantive = substantive
+    )
+  }
+
+  invisible(list(index = index, audit = audit_out))
 }

@@ -210,7 +210,11 @@ audit_run_one <- function(
 #'   Defaults to \code{20}.
 #' @param index Registry index data frame; defaults to [load_index()].
 #' @param dois Optional character vector of DOIs to audit. When \code{NULL},
-#'   audits every row in \code{index}.
+#'   audits every row in \code{index} (after any \code{collections} filter).
+#' @param collections Optional character vector of registry collection tags
+#'   (e.g. \code{"APSR"}, \code{c("PED", "World Bank")}). Keeps index rows
+#'   whose \code{collections} field contains at least one listed tag. Ignored
+#'   when \code{NULL}.
 #' @param install_deps Logical. Passed to [render_replication()].
 #' @param verbose Logical. Print progress messages.
 #' @param registry_root Optional path to the registry repository. When set,
@@ -225,12 +229,14 @@ audit_run_one <- function(
 #' @examples
 #' \dontrun{
 #' audit <- audit_everything(patience = 20, dois = "10.1177/00491241211036161")
+#' audit <- audit_everything(patience = 20, collections = "APSR")
 #' print(audit)
 #' }
 audit_everything <- function(
   patience = 20,
   index = NULL,
   dois = NULL,
+  collections = NULL,
   install_deps = FALSE,
   verbose = TRUE,
   registry_root = NULL,
@@ -239,6 +245,29 @@ audit_everything <- function(
   patience <- as.numeric(patience)
   if (!is.finite(patience) || patience <= 0) {
     stop("patience must be a positive number of seconds.", call. = FALSE)
+  }
+
+  if (!is.null(registry_root) && nzchar(registry_root) && dir.exists(registry_root)) {
+    options(
+      replicateEverything.registry_root = normalizePath(
+        registry_root,
+        winslash = "/",
+        mustWork = FALSE
+      )
+    )
+  }
+  if (!isTRUE(getOption("replicateEverything.use_sibling_packages", FALSE))) {
+    monorepo <- if (!is.null(registry_root) && dir.exists(registry_root)) {
+      normalizePath(file.path(registry_root, ".."), winslash = "/", mustWork = FALSE)
+    } else {
+      auto_detect_monorepo_root()
+    }
+    if (
+      !is.null(monorepo) &&
+        file.exists(file.path(monorepo, "registry", "index.csv"))
+    ) {
+      tryCatch(configure_local_monorepo(monorepo), error = function(e) NULL)
+    }
   }
 
   if (is.null(index)) {
@@ -255,6 +284,23 @@ audit_everything <- function(
     if (nrow(index) == 0) {
       stop("No matching studies in registry index.", call. = FALSE)
     }
+  }
+
+  if (!is.null(collections)) {
+    index <- filter_index_by_collections(index, collections)
+    if (nrow(index) == 0) {
+      stop(
+        "No matching studies for collection(s): ",
+        paste(unique(na.omit(as.character(collections))), collapse = ", "),
+        call. = FALSE
+      )
+    }
+  }
+
+  collections_filter <- if (!is.null(collections)) {
+    unique(na.omit(trimws(as.character(collections))))
+  } else {
+    NULL
   }
 
   started_at <- Sys.time()
@@ -386,6 +432,7 @@ audit_everything <- function(
     list(
       patience = patience,
       substantive = substantive,
+      collections = collections_filter,
       started_at = started_at,
       finished_at = finished_at,
       results = results_df,
@@ -425,10 +472,16 @@ print.audit_everything <- function(x, ...) {
   } else {
     ""
   }
+  collections_line <- if (!is.null(x$collections) && length(x$collections) > 0L) {
+    sprintf("Collections: %s | ", paste(x$collections, collapse = ", "))
+  } else {
+    ""
+  }
   cat(
     "replicateEverything registry audit\n",
     sprintf(
-      "Patience: %gs | Studies: %d | Runs: %d | OK: %d | Failed: %d | Timed out: %d%s\n",
+      "%sPatience: %gs | Studies: %d | Runs: %d | OK: %d | Failed: %d | Timed out: %d%s\n",
+      collections_line,
       x$patience,
       sm$studies,
       sm$runs,

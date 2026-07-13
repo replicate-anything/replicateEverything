@@ -655,7 +655,8 @@ is_table_replication <- function(type) {
 }
 
 is_step_replication <- function(type) {
-  identical(as.character(type), "step")
+  type <- tolower(as.character(type %||% ""))
+  type %in% c("step", "prep", "pipeline", "transform")
 }
 
 entry_engine <- function(x) {
@@ -1851,7 +1852,7 @@ prep_to_df <- function(prep_steps) {
       label = truncate_label(label, 40L),
       label_full = label_full,
       engine = entry_engine(x),
-      type = "step",
+      type = "transform",
       stringsAsFactors = FALSE
     )
   })
@@ -3109,12 +3110,12 @@ contribute_tab_ui <- function() {
     "\n",
     "build_study_artifacts(\".\", install_deps = TRUE)\n",
     "testthat::test_dir(\"tests/testthat\")\n",
-    "prepare_folder_paper(\".\", build_artifacts = FALSE)"
+    "prepare_study_for_registry(\".\", build_artifacts = FALSE)"
   )
 
   example_sync_folder <- paste0(
     "options(replicateEverything.registry_root = \"../registry\")\n",
-    "sync_folder_paper(\".\")"
+    "sync_study_to_registry(\".\")"
   )
 
   example_local_dev <- paste0(
@@ -3218,7 +3219,7 @@ contribute_tab_ui <- function() {
         ", ",
         code("IPI"),
         ") so readers can filter the bibliography. ",
-        code("prepare_folder_paper()"),
+        code("prepare_study_for_registry()"),
         " copies these fields into the registry stub and ",
         code("index.csv"),
         " row."
@@ -3282,7 +3283,7 @@ contribute_tab_ui <- function() {
       contribute_prose("When local checks pass, add your study to the central registry:"),
       tags$ul(
         tags$li(
-          contribute_hint(code("prepare_folder_paper()"), example_folder_build, "Prepare registry stubs"),
+          contribute_hint(code("prepare_study_for_registry()"), example_folder_build, "Prepare registry handoff"),
           " — writes ",
           code("registry/replication.yml"),
           " and ",
@@ -3290,7 +3291,7 @@ contribute_tab_ui <- function() {
           " snippets inside your study repo."
         ),
         tags$li(
-          contribute_hint(code("sync_folder_paper()"), example_sync_folder, "Sync stub files"),
+          contribute_hint(code("sync_study_to_registry()"), example_sync_folder, "Maintainer — sync stub to registry"),
           " — copies those stubs into your local ",
           code("registry/"),
           " checkout (or copy manually)."
@@ -3405,7 +3406,7 @@ contribute_tab_ui <- function() {
           " with ",
           contribute_hint(code("build_registry_index()"), example_build_registry_index, "Compile index from stubs"),
           " (or merge the row from ",
-          code("prepare_folder_paper()"),
+          code("prepare_study_for_registry()"),
           " for folder studies)."
         ),
         tags$li(
@@ -4967,6 +4968,56 @@ server <- function(input, output, session) {
     active <- state$selected_replication
 
     tagList(
+      if (!is.null(state$prep_df) && nrow(state$prep_df) > 0) {
+        tagList(
+          tags$h6(class = "text-muted mb-2", "Data steps"),
+          lapply(seq_len(nrow(state$prep_df)), function(i) {
+            row <- state$prep_df[i, , drop = FALSE]
+            step_id <- row$id[[1]]
+            step_engine <- row$engine[[1]] %||% "r"
+            safe_id <- gsub("[^a-zA-Z0-9]", "_", step_id)
+            engine_badge <- switch(
+              step_engine,
+              stata = tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
+              python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
+              tags$span(class = "engine-badge", title = "R", engine_icon_r())
+            )
+            tags$div(
+              class = paste(
+                "replication-row d-flex align-items-center rounded",
+                if (identical(active, step_id)) {
+                  "bg-light border border-primary"
+                } else {
+                  ""
+                }
+              ),
+              engine_badge,
+              tags$span(row$label[[1]], class = "replication-label", title = row$label_full[[1]]),
+              tags$div(
+                class = "replication-actions",
+                actionButton(
+                  paste0("data_display_", safe_id),
+                  "Display",
+                  class = "btn-outline-secondary btn-sm",
+                  onclick = sprintf(
+                    "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
+                    step_id
+                  )
+                ),
+                actionButton(
+                  paste0("data_run_", safe_id),
+                  "Run",
+                  class = "btn-outline-primary btn-sm",
+                  onclick = sprintf(
+                    "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
+                    step_id
+                  )
+                )
+              )
+            )
+          })
+        )
+      },
       if (nrow(tabs) > 0) {
         tagList(
           tags$h6(class = "text-muted mb-2", "Tables"),
@@ -5029,14 +5080,17 @@ server <- function(input, output, session) {
     if (!is.null(state$prep_df) && nrow(state$prep_df) > 0 &&
         group_or_id %in% state$prep_df$id) {
       state$selected_replication <- group_or_id
-      state$selected_type <- "step"
+      state$selected_type <- "transform"
       state$selected_result <- NULL
+      state$selected_source <- "artifact"
       if (action == "replicate") {
         run_live_replication(
           state$doi,
           group_or_id,
           prep_step_language(group_or_id, state$prep_steps)
         )
+      } else if (action == "display") {
+        load_selected_artifact(fallback_live = FALSE)
       }
       updateTabsetPanel(session, "result_tabs", selected = "Output")
       return()
@@ -5255,7 +5309,11 @@ server <- function(input, output, session) {
         if (is.data.frame(obj)) {
           tagList(
             tags$p(class = "text-muted mb-1", "Preview (first rows):"),
-            tableOutput("selected_prep_table")
+            if (requireNamespace("knitr", quietly = TRUE)) {
+              htmltools::HTML(knitr::kable(utils::head(obj, 6), format = "html", table.attr = 'class="table table-sm"'))
+            } else {
+              tableOutput("selected_prep_table")
+            }
           )
         } else if (is.list(obj) && !is.null(obj$note)) {
           tags$p(class = "mb-0", obj$note)

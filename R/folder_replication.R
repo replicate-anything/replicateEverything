@@ -590,17 +590,15 @@ merge_folder_study_meta_fields <- function(meta, study_meta) {
     if (is.null(val) || length(val) == 0L) {
       return(TRUE)
     }
-    if (is.list(val) && !is.null(names(val))) {
+    if (is.list(val) && !is.null(names(val)) && length(names(val)) > 0L) {
       return(FALSE)
     }
-    if (length(val) == 1L && is.na(val[[1]])) {
-      return(TRUE)
+    if (is.list(val)) {
+      return(length(val) == 0L)
     }
-    chr <- as.character(val[[1]] %||% val %||% "")
-    if (length(chr) != 1L) {
-      return(FALSE)
-    }
-    !nzchar(chr) || identical(chr, "NA")
+    chr <- as.character(unlist(val, use.names = FALSE))
+    chr <- chr[!is.na(chr)]
+    length(chr) == 0L || all(!nzchar(chr))
   }
 
   if (length(meta$steps %||% list()) == 0L) {

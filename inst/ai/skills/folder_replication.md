@@ -23,7 +23,7 @@ rep-<doi-with-hyphens>/
   README.md
   code/                # one script per step (transform / table / figure / format)
   data/                # raw inputs only; paths relative to repo root
-  outputs/             # step products + display files (tab_1.html, prep_data/*.rds)
+  outputs/             # flat step products: analysis_data.rds, tab_1.html, …
   tests/
     testthat.R
     testthat/
@@ -74,7 +74,7 @@ Copy and track progress:
 
 For each table/figure identify:
 
-- **id** (`tab_1`, `fig_1`, `prep_data`, …)
+- **id** (`tab_1`, `fig_1`, `analysis_data`, …)
 - **type** (`transform` | `table` | `figure` | `format`)
 - **parents** — which upstream step outputs (or raw `data/` files) this step reads
 - **data** / **inputs** paths (raw roots under `data/` or prior `outputs/…`)
@@ -107,7 +107,7 @@ author pipeline.
 
 1. **List raw roots** — files under `data/` that no script in the repo produces (only consumed). These have **no parent step**; cite them in downstream `inputs:` / `data:`.
 2. **Walk README order** — each numbered author step becomes one or more `type: transform` steps (or a table/figure if it only produces a display output).
-3. **Follow writes** — every `save`, `export`, `write.csv`, `ggsave` becomes an `outputs:` path. Prefer `outputs/<step_id>/…` for intermediates, `outputs/<id>.html` or `.png` for display sinks.
+3. **Follow writes** — every `save`, `export`, `write.csv`, `ggsave` becomes an `outputs:` path. Use flat `outputs/<step_id>.<ext>` for transform steps (e.g. `outputs/analysis_data.rds`); display sinks use `outputs/<id>.html` or `.png`.
 4. **Split shared prep** — if three tables all `use` the same constructed `.dta`, declare **one** transform step and set `parents: [that_step]` on each table (do not duplicate prep inside every table script).
 5. **Parallel engines** — when authors ship both Stata and R for the same table, use **separate step ids** (`tab_1`, `tab_1_stata`) with optional `group: tab_1`. They may read different inputs (raw vs cleaned) if that matches the author code.
 6. **Format children** — when Display needs HTML/PNG but analysis returns a model or temp file, add `type: format` with `parent: <table_or_figure_id>` (or rely on auto-generated `<id>_format` from legacy migration).
@@ -116,7 +116,7 @@ author pipeline.
 Example (Fearon & Laitin):
 
 ```
-data/repdata.dta  →  prep_data  →  tab_1 (R, reads outputs/prep_data/…)
+data/repdata.dta  →  analysis_data  →  tab_1 (R, reads outputs/analysis_data.rds)
                 └────────────────→  tab_1_stata (Stata, reads raw data/repdata.dta)
 ```
 
@@ -126,7 +126,7 @@ Reference repos: `rep-10.1017-S0003055403000534`, `rep-10.1017-s0003055426101749
 
 | `type` | Role | Shiny sidebar |
 |--------|------|---------------|
-| `transform` (aliases: `prep`, `pipeline`, `step`) | Build intermediate datasets | Pipeline |
+| `transform` (aliases: `prep`, `pipeline`, `step`) | Build intermediate datasets | Data steps (sidebar) |
 | `table` / `figure` | Analysis + display sink | Tables / Figures |
 | `format` | Format parent output for Display | Hidden (runs with `format = TRUE`) |
 
@@ -648,7 +648,7 @@ When merging a study row into [registry/index.csv](https://github.com/replicate-
 | `maintainer_name`, `maintainer_email` | stub `maintainer:` block |
 | `languages` | Semicolon-separated engines from stub `languages:` |
 
-`prepare_folder_paper()` / `write_folder_registry_stub()` copy these fields into the study's `registry/replication.yml`. **Every new contribution must name a maintainer** — do not leave these blank.
+`prepare_study_for_registry()` / `write_study_registry_stub()` copy these fields into the study's `registry/replication.yml` (or `inst/registry/` for packages). **Every new contribution must name a maintainer** — do not leave these blank.
 
 ## Common pitfalls
 

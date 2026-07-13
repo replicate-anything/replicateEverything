@@ -8,6 +8,7 @@ audit_everything(
   patience = 20,
   index = NULL,
   dois = NULL,
+  collections = NULL,
   install_deps = FALSE,
   verbose = TRUE,
   registry_root = NULL,
@@ -21,7 +22,12 @@ Defaults to \code{20}.}
 \item{index}{Registry index data frame; defaults to \code{\link[=load_index]{load_index()}}.}
 
 \item{dois}{Optional character vector of DOIs to audit. When \code{NULL},
-audits every row in \code{index}.}
+audits every row in \code{index} (after any \code{collections} filter).}
+
+\item{collections}{Optional character vector of registry collection tags
+(e.g. \code{"APSR"}, \code{c("PED", "World Bank")}). Keeps index rows
+whose \code{collections} field contains at least one listed tag. Ignored
+when \code{NULL}.}
 
 \item{install_deps}{Logical. Passed to \code{\link[=render_replication]{render_replication()}}.}
 
@@ -49,6 +55,7 @@ results are returned in a concise data frame. For a full HTML report, render
 \examples{
 \dontrun{
 audit <- audit_everything(patience = 20, dois = "10.1177/00491241211036161")
+audit <- audit_everything(patience = 20, collections = "APSR")
 print(audit)
 }
 }

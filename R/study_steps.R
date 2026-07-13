@@ -234,6 +234,14 @@ step_declared_output_paths <- function(step) {
     return(as.character(single[[1]] %||% single))
   }
   id <- as.character(step$id)
+  type <- tolower(as.character(step$type %||% ""))
+  if (type %in% c("step", "prep", "pipeline", "transform")) {
+    return(c(
+      paste0("outputs/", id, ".rds"),
+      paste0("outputs/", id, ".dta"),
+      paste0("outputs/", id, ".csv")
+    ))
+  }
   c(
     paste0("outputs/", id, ".html"),
     paste0("outputs/", id, ".png")

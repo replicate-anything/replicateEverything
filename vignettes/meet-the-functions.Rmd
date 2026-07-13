@@ -131,7 +131,7 @@ See `vignette("shiny-app", package = "replicateEverything")` for deployment deta
 
 ## Ready to contribute to replicateEverything?
 
-These functions are for **authors and maintainers**: you have (or are building) a study repository with `replication.yml`, code, data, and artifacts, and you want to validate it and register it.
+These functions split **contributors** (authors preparing a study repo) from **maintainers** (registry operators syncing stubs and auditing the fleet).
 
 When you work inside a monorepo checkout (sibling `registry/` and `rep-*` study folders), point the package at local paths before calling discovery or run functions:
 
@@ -157,7 +157,7 @@ install_registry_dependencies()
 
 Build display artifacts separately: `build_study_artifacts()` (folder) or `build_package_artifacts()` (package). Inspect layout with `replication_kind()`. Full details: `vignette("maintainer-setup")`.
 
-### Folder-backed studies
+### Folder-backed studies (contributor)
 
 Study repos hold `replication.yml`, `code/`, `data/`, and `outputs/`. See `vignette("folder-replication-checklist")`.
 
@@ -173,22 +173,27 @@ build_study_artifacts(".", install_deps = TRUE)
 check_folder_replication(".", full_replication = FALSE)
 ```
 
-`prepare_folder_paper()` builds artifacts (optional), runs checks, and writes `registry/replication.yml` and `registry/index.csv` in the study repo.
+`prepare_study_for_registry()` validates and writes `registry/replication.yml` + `registry/index.csv` **in the study repo** (contributor handoff).
 
 ```{r}
-prepare_folder_paper(".", build_artifacts = FALSE, registry_root = "../registry")
+prepare_study_for_registry(".", build_artifacts = FALSE)
 ```
 
-`sync_folder_paper()` copies prepared stub files into a local registry checkout.
+### Registry sync (maintainer)
+
+Maintainers copy handoff files into the central registry checkout:
 
 ```{r}
 options(replicateEverything.registry_root = "../registry")
-sync_folder_paper(".")
+sync_study_to_registry("../rep-10.1177-00491241211036161")
+refresh_registry("../registry", audit = TRUE)
 ```
 
-### Package-backed studies
+See `vignette("maintainer-setup")` for the full maintainer workflow.
 
-Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package itself. Validate with `check_package_replication()`.
+### Package-backed studies (contributor)
+
+Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package itself. Validate with `check_package_replication()`, then `prepare_study_for_registry()` for handoff files under `inst/registry/`.
 
 ```{r}
 check_package_replication("../rep-10.1371_journal.pone.0278337")
@@ -199,10 +204,11 @@ See `vignette("package-replication-checklist")` for layout and API requirements.
 
 ### Registry audit
 
-`audit_everything()` attempts every table and figure in the registry (all engines), with a per-object time limit. Use it to check registry health after changes.
+`audit_everything()` attempts every table and figure in the registry (all engines), with a per-object time limit. Use it to check registry health after changes. Restrict with `dois =` or `collections =` (e.g. `"APSR"`).
 
 ```{r}
 audit <- audit_everything(patience = 20, dois = "10.1177/00491241211036161")
+# audit <- audit_everything(patience = 20, collections = "APSR")
 print(audit)
 ```
 
@@ -230,6 +236,11 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | Install deps (one study) | `install_study_dependencies()` |
 | Install deps (all studies) | `install_registry_dependencies()` |
 | Build folder artifacts | `build_study_artifacts()` |
-| Validate folder study | `check_folder_replication()`, `prepare_folder_paper()`, `sync_folder_paper()` |
+| Validate folder study | `check_folder_replication()` |
+| Prepare registry handoff | `prepare_study_for_registry()` |
 | Validate package study | `check_package_replication()` |
+| **Maintainer** | |
+| Sync study into registry | `sync_study_to_registry()` |
+| Rebuild index + audit all | `refresh_registry()` |
+| Rebuild index only | `build_registry_index()` |
 | Registry health check | `audit_everything()` |

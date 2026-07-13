@@ -411,13 +411,42 @@ dag_path_node_records <- function(path_ids, graph, steps, produced_outputs) {
   for (id in path_ids) {
     out[[length(out) + 1L]] <- list(
       id = id,
-      label = graph$labels[[id]],
+      label = step_graph_display_label(id, graph, steps),
       description = graph$descriptions[[id]],
       type = graph$types[[id]],
       kind = "step"
     )
   }
   out
+}
+
+#' Display label for one DAG node (adds engine tag when labels collide)
+#' @keywords internal
+step_graph_display_label <- function(step_id, graph, steps) {
+  base <- graph$labels[[step_id]] %||% step_id
+  type <- graph$types[[step_id]] %||% ""
+  if (!type %in% c("table", "figure")) {
+    return(as.character(base))
+  }
+  dup <- graph$ids[
+    graph$labels == base &
+      graph$ids != step_id &
+      graph$types %in% c("table", "figure")
+  ]
+  if (length(dup) == 0L) {
+    return(as.character(base))
+  }
+  step_by_id <- setNames(steps, vapply(steps, function(x) as.character(x$id), character(1)))
+  step <- step_by_id[[step_id]]
+  if (is.null(step)) {
+    return(as.character(base))
+  }
+  eng <- replication_engine(step, NULL)
+  tag <- switch(eng, r = "R", stata = "Stata", python = "Python", toupper(eng))
+  if (!nzchar(tag)) {
+    return(as.character(base))
+  }
+  paste0(base, " (", tag, ")")
 }
 
 #' Format one component as edge-respecting path strings

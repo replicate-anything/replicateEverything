@@ -7,9 +7,20 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+**replicateEverything** is a prototype system to:
+
+- structure replication code as a connected pipeline
+- fetch and run that code from a DOI (or registry handle)
+- check that it still works — one study, or a whole journal at once
+- link base replications to downstream re-analyses without copying files
+
+You can use it from `R` or your [browser](https://shiny2.wzb.eu/ipi/replicate/).
+
 ```{r, include = FALSE}
+library(replicateEverything)
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
-live <- identical(tolower(Sys.getenv("REPLICATE_VIGNETTE_LIVE", unset = "")), "true")
+options(replicateEverything.quiet_run = TRUE)
+replicateEverything::configure_local_monorepo()
 ```
 
 <style>
@@ -33,46 +44,33 @@ live <- identical(tolower(Sys.getenv("REPLICATE_VIGNETTE_LIVE", unset = "")), "t
 
 <p class="tldr-label">TL;DR — just do this</p>
 
-```{r tldr-code, eval=live, fig.height=4.5, fig.width=6, fig.align='left', message=FALSE, warning=FALSE}
-library(replicateEverything)
-options(replicateEverything.quiet_run = TRUE)
-fig <- replicateEverything::run_replication(
-  doi = "10.1017/s0003055426101749",
-  what = "fig_4",
-  format = TRUE
-)
-if (inherits(fig, "ggplot")) {
-  print(fig)
-} else {
-  plot(1, 1, type = "n", axes = FALSE, xlab = "", ylab = "")
-  text(1, 1, "Set REPLICATE_VIGNETTE_LIVE=true to render fig_4")
-}
-```
-
-```{r tldr-code-static, eval=!live, echo=TRUE}
-library(replicateEverything)
+```{r tldr-code, eval=FALSE}
 replicateEverything::run_replication(
   doi = "10.1017/s0003055426101749",
   what = "fig_4"
 )
 ```
 
+```{r tldr-fig, echo=FALSE, fig.height=4.5, fig.width=10, fig.align='left', message=FALSE, warning=FALSE, fig.cap = "Fig 4 from study 10.1017/s0003055426101749 (Jiang et al 2026)"}
+print(replicateEverything::run_replication(
+  doi = "10.1017/s0003055426101749",
+  what = "fig_4"
+))
+```
+
 </div>
 
-**replicateEverything** is a prototype system to:
 
-- structure replication code as a connected pipeline
-- fetch and run that code from a DOI (or registry handle)
-- check that it still works — one study, or a whole journal at once
-- link base replications to downstream re-analyses without copying files
-
-You can use it from `R` or from the browser: [shiny2.wzb.eu/ipi/replicate/](https://shiny2.wzb.eu/ipi/replicate/).
 
 ## Why bother?
 
-Computational replication has never been easier to *attempt*; it is still surprisingly hard to *repeat* someone else's analysis on demand. Archives are ad hoc, paths differ, dependencies drift, and every new reader retraces the same scavenger hunt. Nobody runs a standing check that the archive still runs today.
+Computational replication has never been easier. But it is still a bit of a jungle. Archives are *ad hoc* in structure, paths differ, dependencies drift, and every new reader has to re-wrangle the collection of files they download from dataverse or osf. Plus there are no guarantees: Nobody runs a standing check that the archive still runs today.
 
-Are we fighting the lat battle. You might wonder: if an AI can rewrite the analysis from the paper, why keep an authoritative codebase? Our answe: Because the code *is* the record of analytic choices. When results disagree, you need a shared artifact to inspect, not a fresh vibe-coded reimplementation. That case gets stronger  as models get better at improvising.
+`replicateEverything` contributes by proposing a format that makes code quickly accessible and runnable. Are we fighting the last battle? 
+
+You might wonder (we certainly wonder): if an AI can rewrite the analysis from a paper on the fly, why keep an authoritative codebase? Our answer: Because the code is a *record* of analytic choices. When results disagree, you need a shared object to inspect, not a fresh vibe-coded reimplementation. That case gets stronger, we think,  as models get better at improvising.
+
+Here's a walk through of the main elements plus the bells and whistles.
 
 ## The registry (what is in there so far)
 
@@ -91,8 +89,9 @@ Example output:
 #> 2 10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War    2003 APSR
 #> 3 10.1017/s0003055426101749   ...                                     2026 APSR
 ```
+Each study in the registry has a designated maintainer; right now that is us, but we hope that others will start adding and commit to maintaining.  
 
-## Run one result
+## Run one result, from the top or from the middle
 
 Pass a DOI and a step id (`fig_1`, `tab_1`, …):
 
@@ -112,7 +111,7 @@ run_replication(
 )
 ```
 
-`list_replications()` shows what you can run — now with a compact print method instead of dumping nested lists:
+`list_replications()` shows what you can run from a given study:
 
 ```{r list-reps, eval=FALSE}
 list_replications("10.1017/S0003055403000534")
@@ -122,29 +121,30 @@ list_replications("10.1017/S0003055403000534")
 # tab_1_stata table  stata                     Table 1
 ```
 
-Use `grouped = TRUE` when you want one row per logical table or figure (R by default when both exist).
 
-Pull the script any time:
-
-```{r get-code, eval=FALSE}
-get_code("10.1017/S0003055403000534", "tab_1")
-```
-
-Run every non-format step in the study pipeline:
+Run from top to bottom to get a list of all objects created including all intermediate datasets. 
 
 ```{r everything, eval=FALSE}
-run_replication("10.1017/S0003055403000534", "everything")
+run_replication("10.1017/S0003055403000534", what = "everything")
 ```
 
 For `what = "everything"`, upstream prep runs automatically (`given` defaults to `"nothing"`). For a single table or figure, the default is `"parents"` — use existing intermediate outputs when they are already on disk.
 
 Pass `format = TRUE` for display-ready HTML or formatted plots; the default returns raw analysis objects (models, `ggplot`s, and so on).
 
-## Wrinkles worth knowing
+## Inspect code
 
-### Multi-step pipelines (DAGs)
+You can pull the script any time:
 
-A serious archive is a **DAG**: raw data → transforms → tables and figures. `replicateEverything` reads that graph from `replication.yml` so you can start from prepared data or from scratch.
+```{r get-code, eval=FALSE}
+get_code("10.1017/S0003055403000534", "tab_1")
+```
+
+## Wrinkles and features
+
+### Replication archives are DAGs
+
+A minimally complex replication archive specifes a set of steps to get from raw data to publication ready outputs.  It has an implied directed acyclical graphical (DAG)  structure. `replicateEverything` reads that graph from `replication.yml` so you can start from prepared data or from scratch.
 
 ```{r dag, eval=FALSE}
 describe_study_dag("10.1017/S0003055403000534")
@@ -154,7 +154,7 @@ See *Reanalysis and extension studies* for downstream repos that inherit upstrea
 
 ### Reanalysis without redundancy
 
-Extension studies set `paper.extends` and `inherit:` steps. Inherited prep runs in the base repo; new analysis reads base `outputs/`. Details: `vignette("reanalysis-studies")`.
+You want to re-analyze a study with minimal alterations? Extension studies set `paper.extends` and `inherit:` steps. Inherited prep runs in the base repo; new analysis reads base `outputs/`. Details: `vignette("reanalysis-studies")`.
 
 ### Many languages, one entry point
 
@@ -162,7 +162,11 @@ Folder-backed studies may mix R, Stata, and Python. Pick the engine with `langua
 
 ### Collections
 
-Registry rows carry `collections` tags (`APSR`, `PED`, `IPI`, `World Bank`, …) for filtering in the Shiny bibliography.
+Registry rows carry `collections` tags (`APSR`, `PED`, `IPI`, `World Bank`, …) for filtering in the Shiny bibliography. To audit every study in a collection:
+
+```{r audit-collection, eval=FALSE}
+audit_everything(patience = 20, collections = "APSR")
+```
 
 ## Using AI to prep your archive
 
@@ -180,7 +184,7 @@ Practical tips without an agent:
 
 1. **Start from the published code**, not a rewrite — discover the true pipeline (what reads what) before you yaml it.
 2. **One script per step**; declare inputs, outputs, and parents in `steps:`.
-3. **Run** `check_folder_replication()` and `prepare_folder_paper()` before opening a registry PR.
+3. **Run** `check_folder_replication()` and `prepare_study_for_registry()` before opening a registry PR.
 4. **Add substantive tests** under `tests/substantive/` when you have published benchmarks (see Fearon & Laitin `tab_1`).
 
 Skill files live at `system.file("ai/skills", package = "replicateEverything")` after install.

@@ -92,6 +92,51 @@ Maintainers see the same hint text in the console, in Shiny modals, and via `mai
 maintainer_dependency_hint("10.1017/S0003055426101749")
 ```
 
+See also *Meet the functions*, the folder replication checklist, and `inst/ai/skills/include_study_in_registry.md` for contributor vs maintainer registry workflows.
+
+## Register studies in the central registry (maintainer)
+
+Contributors validate their study and write **handoff files** inside the study repository with [prepare_study_for_registry()]. Maintainers install those files in the [registry repository](https://github.com/replicate-anything/registry).
+
+| Layout | Handoff location in study repo |
+|--------|-------------------------------|
+| Folder-backed | `registry/replication.yml` + `registry/index.csv` |
+| Package-backed | `inst/registry/replication.yml` + `inst/registry/index.csv` |
+
+Point R at your monorepo checkout:
+
+```{r}
+options(replicateEverything.registry_root = "../registry")
+```
+
+**Sync one study** — copy the handoff stub to `registry/studies/<folder>.yml` and rebuild `index.csv`:
+
+```{r}
+sync_study_to_registry(
+  "../rep-10.1177-00491241211036161",
+  registry_root = "../registry"
+)
+```
+
+Optional per-study audit after sync:
+
+```{r}
+sync_study_to_registry(
+  "../rep-10.1177-00491241211036161",
+  registry_root = "../registry",
+  audit = TRUE,
+  patience = 20
+)
+```
+
+**Refresh the whole registry** after a batch of syncs — recompile `index.csv` from all stubs and rerun [audit_everything()]:
+
+```{r}
+refresh_registry("../registry", audit = TRUE, patience = 20)
+```
+
+Internal shortcuts (check + sync in one call): `add_folder_paper()` for folder studies, `add_paper()` for package studies.
+
 ## Summary
 
 | Task | Function |
@@ -104,5 +149,7 @@ maintainer_dependency_hint("10.1017/S0003055426101749")
 | Build folder artifacts | `build_study_artifacts(path, install_deps = TRUE)` |
 | Build package artifacts | `build_package_artifacts(pkg, install_deps = TRUE)` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
-
-See also *Meet the functions* and the folder replication checklist for study-repo conventions (`languages:`, `python_dependencies:`, `stata_deps_probe:`).
+| **Contributor:** prepare handoff in study repo | `prepare_study_for_registry(path)` |
+| **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |
+| **Maintainer:** rebuild index + audit all | `refresh_registry(registry_root, audit = TRUE)` |
+| Rebuild index only | `build_registry_index(registry_root)` |

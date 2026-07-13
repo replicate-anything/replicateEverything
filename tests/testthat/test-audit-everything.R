@@ -24,6 +24,23 @@ test_that("audit_error_snippet truncates long messages", {
   expect_match(out, "\\.\\.\\.$")
 })
 
+test_that("filter_index_by_collections keeps rows with matching tags", {
+  index <- data.frame(
+    folder = c("a", "b", "c"),
+    collections = c("APSR", "World Bank|PED", ""),
+    stringsAsFactors = FALSE
+  )
+  out <- filter_index_by_collections(index, "APSR")
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$folder, "a")
+
+  out2 <- filter_index_by_collections(index, c("PED", "IPI"))
+  expect_equal(nrow(out2), 1L)
+  expect_equal(out2$folder, "b")
+
+  expect_equal(nrow(filter_index_by_collections(index, NULL)), 3L)
+})
+
 test_that("audit_everything_qmd resolves registry report path", {
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),
