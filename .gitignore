@@ -10,4 +10,7 @@ Rplots.pdf
 /Meta/
 *.log
 replicate_*.log
+re_tab1_test.log
+run_test.log
+translate_tab1.log
 .git-commit-msg.tmp

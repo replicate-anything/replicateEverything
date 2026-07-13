@@ -317,11 +317,19 @@ study_artifact_rel_candidates <- function(rep) {
     cands <- c(cands, display)
   }
   if (nzchar(id)) {
-    cands <- c(
-      cands,
-      paste0("outputs/", id, ".html"),
-      paste0("outputs/", id, ".png")
-    )
+    if (identical(rep$type, "figure")) {
+      cands <- c(
+        cands,
+        paste0("outputs/", id, ".png"),
+        paste0("outputs/", id, ".html")
+      )
+    } else {
+      cands <- c(
+        cands,
+        paste0("outputs/", id, ".html"),
+        paste0("outputs/", id, ".png")
+      )
+    }
   }
   legacy <- default_artifact_path(rep, id)
   cands <- c(cands, legacy)

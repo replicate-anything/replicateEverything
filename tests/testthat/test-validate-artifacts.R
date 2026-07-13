@@ -47,15 +47,17 @@ test_that("study_artifact_rel_candidates uses outputs paths only", {
 test_that("get_artifact_path resolves figure png under local folder-backed study", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555_test")
-  dir.create(file.path(study_dir, "artifacts"), recursive = TRUE)
+  dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
       "  doi: 10.5555/test",
-      "replications:",
+      "steps:",
       "  - id: fig_1",
       "    type: figure",
-      "    code: code/fig_1.R"
+      "    code: code/fig_1.R",
+      "    outputs:",
+      "      - outputs/fig_1.png"
     ),
     file.path(study_dir, "replication.yml")
   )
@@ -71,7 +73,7 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
     ),
     file.path(local_root, "studies", "10.5555_test.yml")
   )
-  png_path <- file.path(study_dir, "artifacts", "fig_1.png")
+  png_path <- file.path(study_dir, "outputs", "fig_1.png")
   writeBin(as.raw(0), png_path)
 
   local_index <- data.frame(
@@ -107,15 +109,17 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
 test_that("validate_artifact fails when file is missing", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555_missing")
-  dir.create(file.path(study_dir, "artifacts"), recursive = TRUE)
+  dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
       "  doi: 10.5555/missing",
-      "replications:",
+      "steps:",
       "  - id: fig_1",
       "    type: figure",
-      "    code: code/fig_1.R"
+      "    code: code/fig_1.R",
+      "    outputs:",
+      "      - outputs/fig_1.png"
     ),
     file.path(study_dir, "replication.yml")
   )
@@ -125,7 +129,7 @@ test_that("validate_artifact fails when file is missing", {
       "paper:",
       "  doi: 10.5555/missing",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_missing",
+      "study_repo: replicate-anything/rep-10.5555_missing",
       "  study_folder: rep-10.5555_missing",
       "repo: replicate-anything/rep-10.5555_missing"
     ),
@@ -154,7 +158,7 @@ test_that("validate_artifact fails when file is missing", {
       expect_false(artifact_available("10.5555/missing", "fig_1"))
       expect_error(
         validate_artifact("10.5555/missing", "fig_1"),
-        "Missing artifact file"
+        "Artifact not available"
       )
     }
   )

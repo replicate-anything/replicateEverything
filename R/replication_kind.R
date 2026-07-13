@@ -110,7 +110,7 @@ study_output_dir <- function(
   if (identical(kind, "folder")) {
     root <- resolve_study_folder_path(meta, ctx)
     if (
-      (is.null(root) || !dir.exists(root)) &&
+      (is.null(root) || !nzchar(root) || !dir.exists(root)) &&
       !is.null(ctx) &&
       !is.null(ctx$local_root) &&
       dir.exists(ctx$local_root) &&

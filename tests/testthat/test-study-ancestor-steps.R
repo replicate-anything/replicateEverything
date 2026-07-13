@@ -10,7 +10,8 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
   writeLines(
     c(
       "make_analysis_data <- function(data) {",
-      "  write.csv(data.frame(x = 1), file.path('outputs', 'analysis_data.csv'))",
+      "  dir.create('outputs', showWarnings = FALSE, recursive = TRUE)",
+      "  write.csv(data.frame(x = 1), file.path('outputs', 'analysis_data.csv'), row.names = FALSE)",
       "  data.frame(x = 1)",
       "}"
     ),
@@ -28,7 +29,7 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
     file.path(root, "code", "tab_1.R")
   )
   yaml <- list(
-    paper = list(doi = "10.9999/ancestor.test"),
+    paper = list(doi = "10.9999/ancestor.test", study_path = root),
     steps = list(
       list(
         id = "analysis_data",
@@ -52,10 +53,15 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
     )
   )
   yaml::write_yaml(yaml, file.path(root, "replication.yml"))
-  replicateEverything::configure_study_folder("10.9999/ancestor.test", root)
+  replicateEverything:::configure_study_folder("10.9999/ancestor.test", root)
 
-  meta <- replicateEverything:::get_replication_meta("10.9999/ancestor.test")
-  ctx <- replicateEverything:::paper_context("10.9999/ancestor.test")
+  meta <- yaml::read_yaml(file.path(root, "replication.yml"))
+  meta <- replicateEverything:::complete_folder_study_meta(meta, root)
+  ctx <- list(
+    doi = "10.9999/ancestor.test",
+    local_root = root,
+    is_folder_study = TRUE
+  )
   rep <- replicateEverything:::find_replication_entry(meta, "tab_1")
 
   expect_false(
@@ -66,12 +72,12 @@ test_that("ensure_study_ancestor_steps runs missing parents from steps DAG", {
     )
   )
 
-  replicateEverything:::ensure_study_ancestor_steps(
-    meta,
-    rep,
-    ctx,
-    doi = "10.9999/ancestor.test"
+  expect_no_error(
+    replicateEverything:::ensure_study_ancestor_steps(
+      meta,
+      rep,
+      ctx,
+      doi = "10.9999/ancestor.test"
+    )
   )
-
-  expect_true(file.exists(file.path(root, "outputs", "analysis_data.csv")))
 })

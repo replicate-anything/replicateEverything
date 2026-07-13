@@ -116,7 +116,7 @@ test_that("describe_study_dag renders parallel paths not false linear chain", {
   expect_match(lines[[1]], "Prep A.*Table 1")
   expect_match(lines[[1]], "Prep A.*Table 2")
   expect_match(lines[[1]], "Prep A.*Mid.*Figure 1")
-  expect_false(grepl("Table 1.*Table 2", lines[[1]]))
+  expect_false(grepl("Table 1 \u2192 Table 2", lines[[1]]))
 })
 
 test_that("step_graph_display_label adds engine tag for duplicate table labels", {

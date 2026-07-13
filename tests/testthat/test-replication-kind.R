@@ -13,18 +13,25 @@ test_that("replication_kind classifies package and folder studies", {
   )
 })
 
-test_that("study_artifact_dir returns folder and package paths", {
-  tmp <- normalizePath(tempfile("study-art-"), winslash = "/", mustWork = FALSE)
+test_that("study_output_dir resolves folder studies with explicit study_path", {
+  tmp <- tempfile("study-art-")
   dir.create(tmp, recursive = TRUE)
-  dir.create(file.path(tmp, "artifacts"), recursive = TRUE)
+  tmp <- normalizePath(tmp, winslash = "/", mustWork = TRUE)
+  dir.create(file.path(tmp, "outputs"), recursive = TRUE)
   writeLines("paper:\n  doi: https://doi.org/10.9999/test\n", file.path(tmp, "replication.yml"))
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  folder_meta <- list(paper = list(materials = "folder", doi = "10.9999/test"))
-  ctx <- list(local_root = tmp, is_folder_study = TRUE)
-  path <- replicateEverything:::study_artifact_dir(folder_meta, ctx, installed = FALSE)
+  folder_meta <- list(
+    paper = list(doi = "10.9999/test", study_path = tmp),
+    repo = "replicate-anything/rep-10.9999_test"
+  )
+  expect_equal(replication_kind(folder_meta), "folder")
   expect_equal(
-    normalizePath(path, winslash = "/", mustWork = FALSE),
-    normalizePath(file.path(tmp, "artifacts"), winslash = "/", mustWork = FALSE)
+    normalizePath(
+      replicateEverything:::resolve_study_folder_path(folder_meta),
+      winslash = "/",
+      mustWork = FALSE
+    ),
+    normalizePath(tmp, winslash = "/", mustWork = FALSE)
   )
 
   pkg_meta <- list(paper = list(package = "__not_installed_pkg__"))
