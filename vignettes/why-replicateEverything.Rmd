@@ -20,7 +20,22 @@ You can use it from `R` or your [browser](https://shiny2.wzb.eu/ipi/replicate/).
 library(replicateEverything)
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 options(replicateEverything.quiet_run = TRUE)
-replicateEverything::configure_local_monorepo()
+monorepo_ok <- tryCatch({
+  replicateEverything::configure_local_monorepo()
+  TRUE
+}, error = function(e) FALSE)
+fig_snapshot <- system.file("vignette-data", "jiang_fig_4.png", package = "replicateEverything")
+if (!nzchar(fig_snapshot) || !file.exists(fig_snapshot)) {
+  for (candidate in c(
+    "inst/vignette-data/jiang_fig_4.png",
+    "../inst/vignette-data/jiang_fig_4.png"
+  )) {
+    if (file.exists(candidate)) {
+      fig_snapshot <- candidate
+      break
+    }
+  }
+}
 ```
 
 <style>
@@ -51,11 +66,15 @@ replicateEverything::run_replication(
 )
 ```
 
-```{r tldr-fig, echo=FALSE, fig.height=4.5, fig.width=10, fig.align='left', message=FALSE, warning=FALSE, fig.cap = "Fig 4 from study 10.1017/s0003055426101749 (Jiang et al 2026)"}
-print(replicateEverything::run_replication(
-  doi = "10.1017/s0003055426101749",
-  what = "fig_4"
-))
+```{r tldr-fig, echo=FALSE, fig.height=4.5, fig.width=10, fig.align='left', message=FALSE, warning=FALSE}
+if (isTRUE(monorepo_ok)) {
+  print(replicateEverything::run_replication(
+    doi = "10.1017/s0003055426101749",
+    what = "fig_4"
+  ))
+} else if (nzchar(fig_snapshot) && file.exists(fig_snapshot)) {
+  knitr::include_graphics(fig_snapshot)
+}
 ```
 
 </div>
