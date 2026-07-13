@@ -2,7 +2,9 @@ url: https://replicate-anything.github.io/replicateEverything/
 template:
   bootstrap: 5
   includes:
-    in_header: mermaid.html
+    in_header: |
+      <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+      <script>mermaid.initialize({ startOnLoad: true });</script>
 home:
   title: replicateEverything
   description: Discover, run, and contribute computational replications — with a bundled Shiny demo and live app at shiny2.wzb.eu/ipi/replicate/

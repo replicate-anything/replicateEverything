@@ -14,13 +14,14 @@ TL;DR — just do this
 
 ``` r
 
+# Figure 2 from Jiang and Yang (2026)
 replicateEverything::run_replication(
   doi = "10.1017/s0003055426101749",
   what = "fig_4"
 )
 ```
 
-![](why-replicateEverything_files/figure-html/tldr-fig-1.png)
+![](../inst/vignette-data/jiang_fig_4.png)
 
 ## Why bother?
 

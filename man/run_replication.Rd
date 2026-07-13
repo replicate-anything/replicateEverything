@@ -64,7 +64,7 @@ registered \code{format_*} step when \code{replication.yml} defines one
 }
 \examples{
 \dontrun{
-run_replication("10.1177/00491241211036161", "fig_1")
+run_replication("10.1177/00491241211036161", "fig_1", format = TRUE)
 run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")

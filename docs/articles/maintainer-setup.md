@@ -187,3 +187,17 @@ for package studies.
 | **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |
 | **Maintainer:** rebuild index + audit all | `refresh_registry(registry_root, audit = TRUE)` |
 | Rebuild index only | `build_registry_index(registry_root)` |
+
+## Package website (pkgdown)
+
+The site is served from **`docs/` on `main`** (GitHub Pages → `/docs`).
+CI does **not** build or deploy it.
+
+``` r
+# from replicateEverything/
+Rscript scripts/build_pkgdown.R
+# then: git add docs/ && git commit && git push
+```
+
+Commit the **entire** `docs/` tree (`deps/`, `articles/`, `reference/`,
+…). Pushing only `index.html` breaks Bootstrap styling on GitHub.

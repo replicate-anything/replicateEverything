@@ -58,6 +58,10 @@
   defined checks when `full_replication = TRUE`. New helper:
   \[check_glm_table_benchmark()\] for logit tables. Filter audits with
   **`collections =`** (e.g. `"APSR"`) or `dois =`.
+- Package website: serve from **`docs/` on `main`**; run
+  `Rscript scripts/build_pkgdown.R` locally and commit the full `docs/`
+  tree (not CI). pkgdown CI workflow is manual-only
+  (`workflow_dispatch`).
 - Live replication and Shiny **Run** now execute missing **upstream DAG
   steps** (`parents:`) before tables and figures; Shiny loads merged
   study metadata for pipeline graphs and handle-only registry entries.

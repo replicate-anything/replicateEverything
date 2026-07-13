@@ -13,6 +13,12 @@
 # REPLICATE_AUDIT_LIVE=true.
 Sys.setenv(REPLICATE_AUDIT_LIVE = "false")
 
+if (requireNamespace("devtools", quietly = TRUE)) {
+  devtools::document(quiet = TRUE)
+}
+
+# install = TRUE avoids "no package.rds" / missing S3 method warnings from
+# loadNamespace() on a half-installed package.
 pkgdown::build_site_github_pages(
   new_process = FALSE,
   install = TRUE,

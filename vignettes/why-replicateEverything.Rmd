@@ -60,6 +60,7 @@ if (!nzchar(fig_snapshot) || !file.exists(fig_snapshot)) {
 <p class="tldr-label">TL;DR — just do this</p>
 
 ```{r tldr-code, eval=FALSE}
+# Figure 2 from Jiang and Yang (2026)
 replicateEverything::run_replication(
   doi = "10.1017/s0003055426101749",
   what = "fig_4"
