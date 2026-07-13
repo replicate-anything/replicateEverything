@@ -173,6 +173,84 @@ has_substantive_check <- function(study_root, what) {
   nzchar(substantive_check_path(study_root, what))
 }
 
+#' Add substantive-check rows to a replication checklist
+#'
+#' Submitters should add \code{tests/substantive/<step_id>.R} when published
+#' benchmarks are available. Maintainers see coverage here and in
+#' [audit_everything()] (\code{substantive = TRUE}).
+#'
+#' @param checks Existing checklist data frame from [bind_check_results()].
+#' @param study_root Study repository root.
+#' @param display_reps Display replication entries (tables and figures).
+#' @param objects Optional named list of analysis objects from live runs
+#'   (step id → object). When provided, defined checks are executed.
+#' @param doi Study DOI for [run_substantive_check()].
+#' @keywords internal
+append_substantive_check_rows <- function(
+  checks,
+  study_root,
+  display_reps,
+  objects = NULL,
+  doi = NULL
+) {
+  for (rep in display_reps) {
+    rid <- as.character(rep$id[[1]])
+    path <- substantive_check_path(study_root, rid)
+    if (!nzchar(path)) {
+      checks <- bind_check_results(
+        checks,
+        check_result(
+          paste0("substantive_", rid),
+          TRUE,
+          paste0(
+            "Recommended: tests/substantive/", rid,
+            ".R defining substantive_check_", rid,
+            "() — compare replicated estimates to published values ",
+            "(see Fearon & Laitin tab_1)"
+          )
+        )
+      )
+      next
+    }
+
+    obj <- objects[[rid]] %||% NULL
+    if (is.null(obj)) {
+      checks <- bind_check_results(
+        checks,
+        check_result(
+          paste0("substantive_", rid),
+          TRUE,
+          paste0(
+            "Found tests/substantive/", rid,
+            ".R (use full_replication = TRUE to run published-value check)"
+          )
+        )
+      )
+      next
+    }
+
+    sub <- run_substantive_check(
+      obj,
+      doi = doi %||% "",
+      what = rid,
+      study_root = study_root
+    )
+    checks <- bind_check_results(
+      checks,
+      check_result(
+        paste0("substantive_", rid),
+        isTRUE(sub$ok),
+        if (isTRUE(sub$ok)) {
+          "Published benchmark check passed"
+        } else {
+          sub$message %||% "Published benchmark check failed"
+        }
+      )
+    )
+  }
+  checks
+}
+
 #' Resolve local study root for substantive checks
 #' @keywords internal
 substantive_check_study_root <- function(doi, repo = NULL, folder = NULL) {

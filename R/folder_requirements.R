@@ -170,7 +170,7 @@ folder_study_run_options <- function(study_root, meta, registry_root = NULL) {
   opts
 }
 
-#' Portable study metadata for artifacts/manifest.json
+#' Portable study metadata for outputs/manifest.json
 #'
 #' Committed manifests should reference the GitHub slug and monorepo-relative
 #' folder name, not machine-specific absolute paths.

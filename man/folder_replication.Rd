@@ -5,6 +5,6 @@
 \title{Folder-backed replication helpers}
 \description{
 Studies whose materials live in a separate Git repository as a simple
-\code{data/}, \code{code/}, and \code{artifacts/} tree (not an R package).
+\code{data/}, \code{code/}, and \code{outputs/} tree (not an R package).
 }
 \keyword{internal}

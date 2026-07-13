@@ -20,7 +20,7 @@ replications:
     description: Example Stata table
     engine: stata
     code: code/tab_1.do
-    artifact: artifacts/tab_1.html
+    artifact: outputs/tab_1.html
 
   - id: tab_2
     type: table
@@ -29,4 +29,4 @@ replications:
     engine: stata
     code: code/tab_2.do
     format: code/helpers/format_stata.R
-    artifact: artifacts/tab_2.html
+    artifact: outputs/tab_2.html

@@ -13,7 +13,7 @@ stata_run_dir(workdir, staging_dir = NULL)
 }
 \description{
 Runners and Stata batch logs live under the R session temp directory so study
-repos are not littered with \code{artifacts/staging/.run} and paths with
+repos are not littered with \code{outputs/staging/.run} and paths with
 spaces do not break the Stata command line.
 }
 \keyword{internal}

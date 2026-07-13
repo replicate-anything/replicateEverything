@@ -2,7 +2,7 @@
 % Please edit documentation in R/folder_requirements.R
 \name{folder_manifest_metadata}
 \alias{folder_manifest_metadata}
-\title{Portable study metadata for artifacts/manifest.json}
+\title{Portable study metadata for outputs/manifest.json}
 \usage{
 folder_manifest_metadata(study_root, meta)
 }

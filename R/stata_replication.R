@@ -1339,7 +1339,7 @@ staging_dir_is_writable <- function(path) {
 #' Directory for ephemeral Stata runner scripts and batch logs
 #'
 #' Runners and Stata batch logs live under the R session temp directory so study
-#' repos are not littered with \code{artifacts/staging/.run} and paths with
+#' repos are not littered with \code{outputs/staging/.run} and paths with
 #' spaces do not break the Stata command line.
 #'
 #' @param workdir Study repository root.

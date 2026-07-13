@@ -38,6 +38,8 @@ rep-<doi-slug>/
     testthat.R
     testthat/
       test-<id>.R
+    substantive/          # published-value benchmarks (recommended)
+      <step_id>.R
 ```
 
 ## Required `replication.yml` fields
@@ -191,9 +193,11 @@ testthat::test_dir("tests/testthat")
 
 Run tests before `prepare_study_for_registry()` so the checklist reflects a merge-ready study.
 
-### Substantive (published-value) tests
+### Substantive (published-value) checks
 
-Beyond smoke tests (`run_replication` returns an object), studies should verify **published numbers** where possible. Add `tests/substantive/<step_id>.R` defining `substantive_check_<step_id>(object)`:
+Smoke tests confirm that `run_replication()` returns an object. **Substantive checks** go further: they compare replicated estimates to **numbers in the published table** (coefficients, standard errors, sample sizes, etc.).
+
+**Submitters:** add `tests/substantive/<step_id>.R` for each table or figure where you can quote benchmarks from the paper. Reference implementation: [Fearon & Laitin `tab_1`](https://github.com/replicate-anything/rep-10.1017-S0003055403000534/blob/main/tests/substantive/tab_1.R).
 
 ```r
 # tests/substantive/tab_1.R — Fearon & Laitin Table 1
@@ -207,7 +211,9 @@ substantive_check_tab_1 <- function(object) {
 }
 ```
 
-Call the same check from `tests/testthat/test-<step_id>.R`. [audit_everything()] runs substantive checks automatically when the script exists (`substantive = TRUE`, default).
+Call the same function from `tests/testthat/test-<step_id>.R` so `testthat::test_dir()` exercises it locally.
+
+**Maintainers:** [check_folder_replication()] reports substantive coverage (`substantive_<step_id>` rows). Use `full_replication = TRUE` to run defined checks. [audit_everything()] runs them registry-wide by default (`substantive = TRUE`); failures appear as `[substantive]` in the audit summary.
 
 ### Maintainer shortcut
 

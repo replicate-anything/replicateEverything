@@ -17,7 +17,8 @@ A list with \code{ok} (logical), \code{checks} (data frame), and \code{package_p
 }
 \description{
 Runs a transparent checklist: package layout, \code{replication.yml}, exported API,
-baked artifacts, and (optionally) live execution of every table and figure.
+baked artifacts, substantive (published-value) checks under
+\verb{tests/substantive/}, and (optionally) live execution of every table and figure.
 }
 \examples{
 \dontrun{

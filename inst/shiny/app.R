@@ -2983,8 +2983,8 @@ contribute_tab_ui <- function() {
     "replication.yml\n",
     "data/repdata.dta\n",
     "code/tab_1.R\n",
-    "artifacts/tab_1.html\n",
-    "artifacts/manifest.json"
+    "outputs/tab_1.html\n",
+    "outputs/manifest.json"
   )
 
   example_yaml <- paste0(
@@ -3014,7 +3014,7 @@ contribute_tab_ui <- function() {
     "    data: data/repdata.dta\n",
     "    code: code/tab_1.R\n",
     "    format: format_tab_1\n",
-    "    artifact: artifacts/tab_1.rds"
+    "    artifact: outputs/tab_1.rds"
   )
 
   example_make_format <- paste0(
@@ -3050,7 +3050,7 @@ contribute_tab_ui <- function() {
     "    type: figure\n",
     "    data: data/example.csv\n",
     "    code: code/fig_1.R\n",
-    "    artifact: artifacts/fig_1.png\n",
+    "    artifact: outputs/fig_1.png\n",
     "\n",
     "make_fig_1 <- function(data) {\n",
     "  ggplot2::ggplot(data, ggplot2::aes(x, y)) +\n",
@@ -3138,8 +3138,8 @@ contribute_tab_ui <- function() {
     "library(replicateEverything)\n",
     "options(replicateEverything.registry_root = \"../registry\")\n",
     "\n",
-    "prepare_folder_paper(\".\", build_artifacts = FALSE)\n",
-    "sync_folder_paper(\".\")\n",
+    "prepare_study_for_registry(\".\", build_artifacts = FALSE)\n",
+    "sync_study_to_registry(\".\")\n",
     "add_folder_paper(\".\")"
   )
 
@@ -3197,7 +3197,7 @@ contribute_tab_ui <- function() {
         ", ",
         code("data/"),
         ", and ",
-        code("artifacts/"),
+        code("outputs/"),
         " — plus a ",
         contribute_hint(code("replication.yml"), example_yaml),
         " that tells replicateEverything how code, data, and outputs relate."
@@ -3245,7 +3245,7 @@ contribute_tab_ui <- function() {
         "Run ",
         contribute_hint(code("build_study_artifacts()"), example_folder_build),
         " so ",
-        code("artifacts/"),
+        code("outputs/"),
         " contains precomputed HTML tables, figures, and ",
         code("manifest.json"),
         " for fast Display in Shiny."

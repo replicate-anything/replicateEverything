@@ -64,6 +64,7 @@ Copy and track progress:
 - [ ] 6. Refactor code into one script per step; make_<id>() + format_<id>() where needed
 - [ ] 7. Build outputs; write outputs/manifest.json
 - [ ] 8. Add testthat tests (run_replication + output match)
+- [ ] 8b. Add substantive checks under `tests/substantive/<step_id>.R` when published benchmarks are available (see Fearon & Laitin tab_1)
 - [ ] 9. Slim registry stub; run **`build_registry_index()`** so `index.csv` has repo, **collections**, **maintainer**, **languages**
 - [ ] 10. Remove code/data from registry study folder (if migrating)
 - [ ] 11. Verify replicateEverything + Shiny (Display + Run + system compatibility check)

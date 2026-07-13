@@ -27,7 +27,8 @@ A list with \code{ok} (logical), \code{checks} (data frame), and \code{study_pat
 }
 \description{
 Runs a transparent checklist: study layout, \code{replication.yml}, code and data
-paths, baked artifacts under \verb{artifacts/}, optional \verb{tests/testthat/}, and
+paths, baked display outputs under \verb{outputs/}, optional \verb{tests/testthat/},
+substantive (published-value) checks under \verb{tests/substantive/}, and
 (optionally) live execution of every table and figure.
 }
 \examples{

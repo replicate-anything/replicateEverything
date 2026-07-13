@@ -1,7 +1,8 @@
 #' Validate a package-backed replication study
 #'
 #' Runs a transparent checklist: package layout, `replication.yml`, exported API,
-#' baked artifacts, and (optionally) live execution of every table and figure.
+#' baked artifacts, substantive (published-value) checks under
+#' `tests/substantive/`, and (optionally) live execution of every table and figure.
 #'
 #' @param location Local package path or GitHub address (`org/repo` or URL).
 #' @param full_replication If `TRUE`, also run every table and figure via
@@ -306,11 +307,13 @@ check_package_replication <- function(location, full_replication = FALSE) {
   }
 
   if (isTRUE(full_replication)) {
+    live_objects <- list()
     for (rep in display_reps) {
       rid <- as.character(rep$id[[1]])
       live_ok <- tryCatch(
         {
           obj <- call_replication_package(pkg_name, "run_replication", rid)
+          live_objects[[rid]] <- obj
           if (identical(rep$type, "figure")) {
             inherits(obj, "ggplot") || inherits(obj, "gg") || inherits(obj, "gtable")
           } else {
@@ -340,6 +343,21 @@ check_package_replication <- function(location, full_replication = FALSE) {
         )
       }
     }
+    checks <- append_substantive_check_rows(
+      checks,
+      study_root = pkg_root,
+      display_reps = display_reps,
+      objects = live_objects,
+      doi = if (doi_ok) normalize_doi(paper$doi) else NULL
+    )
+  } else {
+    checks <- append_substantive_check_rows(
+      checks,
+      study_root = pkg_root,
+      display_reps = display_reps,
+      objects = NULL,
+      doi = if (doi_ok) normalize_doi(paper$doi) else NULL
+    )
   }
 
   list(

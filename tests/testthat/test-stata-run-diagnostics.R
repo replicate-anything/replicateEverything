@@ -1,6 +1,6 @@
 test_that("stata_batch_log_name derives runner log basename", {
   expect_equal(
-    stata_batch_log_name("/tmp/study/artifacts/staging/.run/replicate_tab_1.do"),
+    stata_batch_log_name("/tmp/study/outputs/staging/.run/replicate_tab_1.do"),
     "replicate_tab_1.log"
   )
 })
@@ -21,7 +21,7 @@ test_that("cleanup_stata_stray_batch_logs removes logs outside run dir", {
 })
 
 test_that("stata_run_dir uses ephemeral temp directory", {
-  run_dir <- stata_run_dir("/tmp/study", "/tmp/study/artifacts/staging")
+  run_dir <- stata_run_dir("/tmp/study", "/tmp/study/outputs/staging")
   expect_match(run_dir, "replicateEverything-stata")
   expect_true(grepl("[\\\\/]\\.run$", run_dir))
   expect_true(dir.exists(run_dir))
@@ -105,7 +105,7 @@ test_that("stata_output_missing_message lists staging directories", {
     log_tail = "end of log"
   )
   msg <- stata_output_missing_message(
-    "/tmp/study/artifacts/staging/Table1.smcl",
+    "/tmp/study/outputs/staging/Table1.smcl",
     "/tmp/study",
     run,
     staging_dir = "/tmp/staging/rep-study"

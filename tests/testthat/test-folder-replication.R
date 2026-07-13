@@ -230,12 +230,12 @@ test_that("portable_path_in_text rewrites study and monorepo roots", {
   study <- file.path(monorepo, "rep-10.9999_paths")
   dir.create(study, recursive = TRUE)
   raw <- paste0(
-    "Missing file: ", study, "/artifacts/tab_1.html\n",
+    "Missing file: ", study, "/outputs/tab_1.html\n",
     "Monorepo: ", monorepo, "/registry"
   )
   withr::with_options(list(replicateEverything.study_folders_root = monorepo), {
     out <- portable_path_in_text(raw, study)
-    expect_match(out, "rep-10.9999_paths/artifacts/tab_1.html", fixed = TRUE)
+    expect_match(out, "rep-10.9999_paths/outputs/tab_1.html", fixed = TRUE)
     expect_match(out, "./registry", fixed = TRUE)
     expect_false(grepl(monorepo, out, fixed = TRUE))
   })

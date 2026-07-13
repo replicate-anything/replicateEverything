@@ -54,3 +54,22 @@ test_that("run_substantive_check loads study check script", {
   expect_true(bad$checked)
   expect_false(bad$ok)
 })
+
+test_that("check_folder_replication reports substantive check coverage", {
+  with_fixture_opts({
+    study_dir <- file.path(
+      getOption("replicateEverything.study_folders_root"),
+      "rep-10.9999_example"
+    )
+    skip_if_not(dir.exists(study_dir), "fixture study repo missing")
+    result <- check_folder_replication(
+      study_dir,
+      full_replication = FALSE,
+      registry_root = getOption("replicateEverything.registry_root")
+    )
+    substantive <- result$checks[grepl("^substantive_", result$checks$check), , drop = FALSE]
+    expect_gt(nrow(substantive), 0L)
+    expect_true(all(substantive$passed))
+    expect_true(any(grepl("Recommended: tests/substantive/", substantive$message)))
+  })
+})

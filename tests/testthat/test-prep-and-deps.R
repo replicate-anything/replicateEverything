@@ -2,8 +2,8 @@ test_that("is_prep_entry does not treat figures with output as prep", {
   fig <- list(
     id = "fig_2",
     type = "figure",
-    output = "artifacts/fig_2.png",
-    artifact = "artifacts/fig_2.png"
+    output = "outputs/fig_2.png",
+    artifact = "outputs/fig_2.png"
   )
   expect_false(replicateEverything:::is_prep_entry(fig))
 })

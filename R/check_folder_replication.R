@@ -1,7 +1,8 @@
 #' Validate a folder-backed replication study
 #'
 #' Runs a transparent checklist: study layout, `replication.yml`, code and data
-#' paths, baked artifacts under `artifacts/`, optional `tests/testthat/`, and
+#' paths, baked display outputs under `outputs/`, optional `tests/testthat/`,
+#' substantive (published-value) checks under `tests/substantive/`, and
 #' (optionally) live execution of every table and figure.
 #'
 #' @param location Local study path or GitHub address (`org/repo` or URL).
@@ -283,6 +284,7 @@ check_folder_replication <- function(
     )
   )
 
+  live_objects <- list()
   if (isTRUE(full_replication)) {
     if (is.null(registry_root) || !nzchar(registry_root)) {
       registry_root <- getOption("replicateEverything.registry_root", NULL)
@@ -304,6 +306,7 @@ check_folder_replication <- function(
             install_deps = TRUE,
             format = use_format
           )
+          live_objects[[rid]] <- obj
           if (identical(rep$type, "figure")) {
             inherits(obj, "ggplot") || inherits(obj, "gg") || inherits(obj, "gtable")
           } else if (use_format) {
@@ -336,6 +339,14 @@ check_folder_replication <- function(
       }
     }
   }
+
+  checks <- append_substantive_check_rows(
+    checks,
+    study_root = study_root,
+    display_reps = display_reps,
+    objects = if (length(live_objects) > 0L) live_objects else NULL,
+    doi = if (doi_ok) normalize_doi(paper$doi) else NULL
+  )
 
   list(
     ok = all(checks$passed),

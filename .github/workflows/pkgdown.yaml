@@ -1,11 +1,7 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+# Optional manual check only — the live site is built locally and committed under docs/.
+# GitHub Pages serves docs/ from main (repo Settings → Pages → /docs).
+# Run: Rscript scripts/build_pkgdown.R  then commit and push docs/
 on:
-  push:
-    branches: [main, master]
-  pull_request:
-  release:
-    types: [published]
   workflow_dispatch:
 
 name: pkgdown.yaml
@@ -15,14 +11,8 @@ permissions: read-all
 jobs:
   pkgdown:
     runs-on: ubuntu-latest
-    # Only restrict concurrency for non-PR jobs
-    concurrency:
-      group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       REPLICATE_AUDIT_LIVE: "false"
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -39,14 +29,6 @@ jobs:
 
       - uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Build site
+      - name: Build site (verify only; does not commit or deploy)
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
-
-      - name: Deploy to GitHub pages 🚀
-        if: github.event_name != 'pull_request'
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
-        with:
-          clean: true
-          branch: gh-pages
-          folder: docs

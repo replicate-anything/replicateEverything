@@ -23,6 +23,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ai_skills_dir.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ai_skill_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/allow_dependency_install.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/append_substantive_check_rows.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/artifact_available.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/artifact_display_missing.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/artifact_lookup_candidates.html</loc></url>
@@ -95,6 +96,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/extended_study_base_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/fetch_folder_study_replication_yaml.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/fetch_package_replication_yaml.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/filter_index_by_collections.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/filter_replication_entries.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/find_local_study_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/find_prep_entry.html</loc></url>

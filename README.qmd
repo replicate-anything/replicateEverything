@@ -184,7 +184,7 @@ get_doi_metadata("10.1177/00491241211036161")
 ```
 
 ### Set up a folder-backed study
-Follow `vignette("folder-replication-checklist", package = "replicateEverything")` to scaffold a study repo, add data and code, then run `prepare_folder_paper()` and `sync_folder_paper()`.
+Follow `vignette("folder-replication-checklist", package = "replicateEverything")` to scaffold a study repo, add data and code, then run `prepare_study_for_registry()` and `sync_study_to_registry()`.
 
 ### Clone the registry repository from Github
 Now, clone the Git repo: 

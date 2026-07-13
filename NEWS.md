@@ -19,7 +19,7 @@
 * [list_replications()] gains **`grouped`**, **`include`** (`"display"`, `"pipeline"`, `"all"`), consolidating [list_replication_groups()] and [list_prep_steps()] (both deprecated).
 * New overview vignette: **`vignette("why-replicateEverything")`** (first article on the site).
 * [list_replications()] gains a compact **print method** (`replication_list` class). `given` defaults to `"nothing"` when `what = "everything"`.
-* [audit_everything()] runs published-value checks from `tests/substantive/<step_id>.R` when present (`substantive = TRUE` by default). New helper: [check_glm_table_benchmark()] for logit tables. Filter audits with **`collections =`** (e.g. `"APSR"`) or `dois =`.
+* [audit_everything()] runs published-value checks from `tests/substantive/<step_id>.R` when present (`substantive = TRUE` by default). [check_folder_replication()] and [check_package_replication()] report substantive coverage and run defined checks when `full_replication = TRUE`. New helper: [check_glm_table_benchmark()] for logit tables. Filter audits with **`collections =`** (e.g. `"APSR"`) or `dois =`.
 * Live replication and Shiny **Run** now execute missing **upstream DAG steps** (`parents:`) before tables and figures; Shiny loads merged study metadata for pipeline graphs and handle-only registry entries.
 * **Output convention:** transform steps write flat `outputs/<step_id>.<ext>` (e.g. `outputs/analysis_data.rds`); data steps appear in the Shiny sidebar with Display/Run and `head()` kable preview; pipeline labels add **(R)** / **(Stata)** when the same table label appears twice.
 * **Registry handoff:** [prepare_study_for_registry()] (contributor) validates a folder- or package-backed study and writes short yaml to `registry/` or `inst/registry/`. [sync_study_to_registry()] and [refresh_registry()] (maintainer) install stubs, rebuild `index.csv`, and optionally rerun [audit_everything()]. `prepare_folder_paper()` and `sync_folder_paper()` are deprecated aliases. New skill: `include_study_in_registry.md`.
@@ -89,7 +89,7 @@
 
 ## Folder-backed study workflow
 
-* `build_study_artifacts()` — run replications and write `artifacts/` + `manifest.json` from a study repo.
+* `build_study_artifacts()` — run replications and write `outputs/` + `manifest.json` from a study repo.
 * `check_folder_replication()` — pre-merge checklist (layout, yaml, code/data paths, artifacts, tests).
 * `prepare_folder_paper()` — build artifacts, validate, write `registry/replication.yml` + `registry/index.csv` in study repo.
 * `sync_folder_paper()` — copy prepared stub files into a registry checkout.

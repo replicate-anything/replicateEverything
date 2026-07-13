@@ -35,7 +35,8 @@ The full contract stays at repo root: `replication.yml` (folder) or `replication
 - [ ] 1. Full `replication.yml` uses `steps:` DAG (folder) or package prep/replications
 - [ ] 2. `maintainer:` (name + email) and `collections:` declared
 - [ ] 3. Build outputs: `build_study_artifacts()` or `build_package_artifacts()`
-- [ ] 4. Validate: `check_folder_replication()` or `check_package_replication()`
+- [ ] 4. Validate: `check_folder_replication()` or `check_package_replication()` (includes substantive-check coverage)
+- [ ] 4b. Add `tests/substantive/<step_id>.R` for published benchmarks where possible (see Fearon & Laitin tab_1)
 - [ ] 5. Prepare handoff: `prepare_study_for_registry(".")`
 - [ ] 6. Commit study repo including `registry/` or `inst/registry/` handoff files
 - [ ] 7. Open PR on study repo; notify registry maintainer

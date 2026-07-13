@@ -1,0 +1,189 @@
+# Maintainer setup
+
+**replicateEverything** separates **readers** (browse, Run) from
+**maintainers** (onboard a study or server). Live Run and Shiny
+**probe** dependencies only — they never install R, Python, or Stata
+packages on the host. Maintainers install once during setup.
+
+``` r
+
+library(replicateEverything)
+```
+
+## Check system compatibility (no installs)
+
+Before running tables or figures, confirm the machine matches what
+`replication.yml` declares:
+
+``` r
+
+check_study_compatibility("10.1017/S0003055426101749")
+```
+
+The returned list includes `ready` (logical), `install_needed`, and
+per-engine blocks under `dependencies` (`r`, `python`, `stata`).
+
+In Shiny, use **Check system compatibility** above the tables list. When
+something is missing, a dialog shows the same maintainer commands
+documented here.
+
+## Install dependencies for one study
+
+Use **one function** for folder-backed and package-backed registry
+studies (R CRAN, Python pip, Stata `install_stata_deps.do`):
+
+``` r
+
+install_study_dependencies("10.1017/S0003055426101749")
+install_study_dependencies("10.1371/journal.pone.0278337")  # package-backed too
+install_study_dependencies("path/to/study-repo")
+```
+
+This does **not** rebuild display artifacts — only dependencies. After
+setup, build artifacts with the kind-specific builder (paths differ by
+design):
+
+``` r
+
+build_study_artifacts("path/to/folder-study", install_deps = TRUE)
+build_package_artifacts("rep1371journalpone0278337", install_deps = TRUE)
+```
+
+Use \[replication_kind()\] to inspect layout (`"folder"`, `"package"`,
+or `"registry"`) and \[study_output_dir()\] for the display output root
+(`outputs/` vs `inst/report/artifacts/`).
+
+## Install dependencies for every registry study
+
+On a shared audit or Shiny server, run once:
+
+``` r
+
+install_registry_dependencies()
+```
+
+Covers folder- and package-backed entries. Failures are collected per
+DOI; other studies continue.
+
+## Point R at Python and Stata permanently
+
+Session [`options()`](https://rdrr.io/r/base/options.html) are not the
+right place for production servers. Set environment variables in
+**`~/.Renviron`** and restart R:
+
+``` text
+PYTHON=C:/Users/you/AppData/Local/Python/pythoncore-3.14-64/python.exe
+STATA=C:/Program Files/Stata17/StataMP-64.exe
+```
+
+On Linux or macOS, use the corresponding paths (for example
+`/usr/bin/python3` or
+`/Applications/Stata/StataMP.app/Contents/MacOS/stata-mp`).
+
+In R you can open the file with
+[`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html)
+if you use **usethis**.
+
+Priority order:
+
+| Engine | Permanent config | Fallback |
+|----|----|----|
+| Python | `PYTHON` or `RETICULATE_PYTHON` in `.Renviron` | Windows `py -0p` installs, then `PATH` |
+| Stata | `STATA` or `REPLICATE_STATA_EXECUTABLE` in `.Renviron` | `options(replicateEverything.stata_executable)`, then common install paths |
+
+## What happens on Run
+
+When a reader calls
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+or Shiny **Run**, the package:
+
+1.  Checks declared dependencies
+    ([`assert_study_ready_for_replication()`](https://replicate-anything.github.io/replicateEverything/reference/assert_study_ready_for_replication.md)).
+2.  Stops with \[maintainer_dependency_hint()\] if anything is missing.
+3.  Runs the replication **without** installing packages.
+
+Maintainers see the same hint text in the console, in Shiny modals, and
+via
+[`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md):
+
+``` r
+
+maintainer_dependency_hint("10.1017/S0003055426101749")
+```
+
+See also *Meet the functions*, the folder replication checklist, and
+`inst/ai/skills/include_study_in_registry.md` for contributor vs
+maintainer registry workflows.
+
+## Register studies in the central registry (maintainer)
+
+Contributors validate their study and write **handoff files** inside the
+study repository with \[prepare_study_for_registry()\]. Maintainers
+install those files in the [registry
+repository](https://github.com/replicate-anything/registry).
+
+| Layout | Handoff location in study repo |
+|----|----|
+| Folder-backed | `registry/replication.yml` + `registry/index.csv` |
+| Package-backed | `inst/registry/replication.yml` + `inst/registry/index.csv` |
+
+Point R at your monorepo checkout:
+
+``` r
+
+options(replicateEverything.registry_root = "../registry")
+```
+
+**Sync one study** — copy the handoff stub to
+`registry/studies/<folder>.yml` and rebuild `index.csv`:
+
+``` r
+
+sync_study_to_registry(
+  "../rep-10.1177-00491241211036161",
+  registry_root = "../registry"
+)
+```
+
+Optional per-study audit after sync:
+
+``` r
+
+sync_study_to_registry(
+  "../rep-10.1177-00491241211036161",
+  registry_root = "../registry",
+  audit = TRUE,
+  patience = 20
+)
+```
+
+**Refresh the whole registry** after a batch of syncs — recompile
+`index.csv` from all stubs and rerun \[audit_everything()\]:
+
+``` r
+
+refresh_registry("../registry", audit = TRUE, patience = 20)
+```
+
+Internal shortcuts (check + sync in one call):
+[`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
+for folder studies,
+[`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
+for package studies.
+
+## Summary
+
+| Task | Function |
+|----|----|
+| Probe this machine | `check_study_compatibility(doi)` |
+| Install one study (all kinds, all languages) | `install_study_dependencies(doi)` |
+| Install entire registry | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
+| Study layout | `replication_kind(meta)` → `"folder"` / `"package"` |
+| Display output directory | `study_output_dir(meta, ctx)` |
+| Build folder artifacts | `build_study_artifacts(path, install_deps = TRUE)` |
+| Build package artifacts | `build_package_artifacts(pkg, install_deps = TRUE)` |
+| Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
+| **Contributor:** prepare handoff in study repo | `prepare_study_for_registry(path)` |
+| **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |
+| **Maintainer:** rebuild index + audit all | `refresh_registry(registry_root, audit = TRUE)` |
+| Rebuild index only | `build_registry_index(registry_root)` |

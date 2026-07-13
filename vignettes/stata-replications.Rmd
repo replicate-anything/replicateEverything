@@ -107,7 +107,7 @@ From the **study repo root** in Stata:
 do "code/tab_1.do"
 ```
 
-The runner sets `global maindir` to the repo root, `global datadir` to `data/`, and writes `artifacts/staging/tab_1_stata.log`. That matches what R runs via `run_stata_replication()`.
+The runner sets `global maindir` to the repo root, `global datadir` to `data/`, and writes `outputs/staging/tab_1_stata.log`. That matches what R runs via `run_stata_replication()`.
 
 ### 3. View code from R before opening Stata
 
@@ -146,7 +146,7 @@ Acemoglu Table 1 is declared twice:
     code: code/tab_1.do
     stata_source: code/maketable1.do
     format: code/format_stata.R
-    output: artifacts/staging/tab_1_stata.log
+    output: outputs/staging/tab_1_stata.log
 ```
 
 Shiny and `audit_everything()` treat `group` as one logical table and run **both** engines when listed.
