@@ -26,21 +26,13 @@ reference:
   - load_index
   - search_papers
   - list_replications
-  - list_replication_groups
-  - print.replication_list
   - paper_article_url
 - title: Run replications
   desc: Run tables and figures from registry scripts.
   contents:
   - run_replication
   - describe_study_dag
-  - study_dag_display
-  - study_dag_facets
-  - study_output_dir
-  - migrate_legacy_steps_yaml
   - get_code
-  - run_prep_step
-  - list_prep_steps
 - title: Shiny demo
   desc: Browse studies and run replications interactively.
   contents:
@@ -49,12 +41,9 @@ reference:
 - title: Contribute
   desc: Validate studies and prepare registry handoff files in the study repo.
   contents:
-  - build_study_artifacts
-  - build_package_artifacts
-  - check_folder_replication
-  - check_package_replication
+  - build_study_outputs
+  - check_replication
   - prepare_study_for_registry
-  - prepare_folder_paper
   - ai_skills
   - ai_skill
   - ai_skill_path
@@ -67,14 +56,12 @@ reference:
   - install_study_dependencies
   - install_registry_dependencies
   - maintainer_dependency_hint
-  - replication_kind
   - sync_study_to_registry
-  - sync_folder_paper
   - build_registry_index
-  - refresh_registry
 - title: Registry audit
   desc: Run all registry replications and inspect results.
   contents:
+  - refresh_registry
   - audit_everything
   - check_glm_table_benchmark
 build:

@@ -970,7 +970,7 @@ stata_dependencies_satisfied <- function(
 #'
 #' Live Run and Shiny probe dependencies only. Set
 #' \code{options(replicateEverything.install_stata_deps = TRUE)} to allow
-#' \code{install_stata_deps.do} (e.g. \code{build_study_artifacts(install_deps = TRUE)}).
+#' \code{install_stata_deps.do} (e.g. \code{build_study_outputs(install_deps = TRUE)}).
 #' @keywords internal
 stata_install_scripts_enabled <- function() {
   isTRUE(getOption("replicateEverything.install_stata_deps", FALSE))

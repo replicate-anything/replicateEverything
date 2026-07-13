@@ -14,6 +14,6 @@ install_package_dependencies(meta, ctx)
 \description{
 Loads or installs the study package, then installs declared R, Python, and
 Stata dependencies from its \code{replication.yml}. Does not build
-\code{inst/report/artifacts/} — use \code{\link[=build_package_artifacts]{build_package_artifacts()}} for that.
+\code{inst/report/outputs/} — use \code{\link[=build_study_outputs]{build_study_outputs()}} for that.
 }
 \keyword{internal}

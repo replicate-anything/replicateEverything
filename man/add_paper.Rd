@@ -26,11 +26,11 @@ add_paper(
 \item{audit}{If \code{TRUE}, run \code{\link[=audit_everything]{audit_everything()}} for this study after sync.}
 }
 \value{
-Invisibly, the result of \code{\link[=check_package_replication]{check_package_replication()}}, with
+Invisibly, the result of \code{\link[=check_replication]{check_replication()}}, with
 \code{stub_path} and \code{index_updated} when registration succeeds.
 }
 \description{
-Validates a study replication package with \code{\link[=check_package_replication]{check_package_replication()}},
+Validates a study replication package with \code{\link[=check_replication]{check_replication()}},
 ensures registry handoff files exist (via \code{\link[=write_study_registry_stub]{write_study_registry_stub()}} when
 missing), then installs the stub in a registry checkout via
 \code{\link[=sync_study_to_registry]{sync_study_to_registry()}}.

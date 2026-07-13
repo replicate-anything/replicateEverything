@@ -19,3 +19,4 @@ List of facets, each with \code{title} and \code{paths}.
 \description{
 Faceted pipeline groups for Shiny (split multi-branch components)
 }
+\keyword{internal}

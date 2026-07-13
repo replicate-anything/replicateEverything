@@ -155,22 +155,22 @@ install_study_dependencies("10.1017/S0003055426101749")  # folder or package DOI
 install_registry_dependencies()
 ```
 
-Build display artifacts separately: `build_study_artifacts()` (folder) or `build_package_artifacts()` (package). Inspect layout with `replication_kind()`. Full details: `vignette("maintainer-setup")`.
+Build display outputs with [build_study_outputs()]. Full details: `vignette("maintainer-setup")`.
 
 ### Folder-backed studies (contributor)
 
 Study repos hold `replication.yml`, `code/`, `data/`, and `outputs/`. See `vignette("folder-replication-checklist")`.
 
-`build_study_artifacts()` runs every replication and writes display files under `outputs/` plus `outputs/manifest.json`.
+[build_study_outputs()] runs every replication and writes display files under `outputs/` plus `outputs/manifest.json`.
 
 ```{r}
-build_study_artifacts(".", install_deps = TRUE)
+build_study_outputs(".", install_deps = TRUE)
 ```
 
-`check_folder_replication()` runs a transparent checklist: layout, yaml, artifacts, tests, and optional live runs.
+[check_replication()] runs a transparent checklist: layout, yaml, outputs, tests, and optional live runs.
 
 ```{r}
-check_folder_replication(".", full_replication = FALSE)
+check_replication(".", full_replication = FALSE)
 ```
 
 `prepare_study_for_registry()` validates and writes `registry/replication.yml` + `registry/index.csv` **in the study repo** (contributor handoff).
@@ -193,11 +193,11 @@ See `vignette("maintainer-setup")` for the full maintainer workflow.
 
 ### Package-backed studies (contributor)
 
-Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package itself. Validate with `check_package_replication()`, then `prepare_study_for_registry()` for handoff files under `inst/registry/`.
+Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package itself. Validate with [check_replication()], then `prepare_study_for_registry()` for handoff files under `inst/registry/`.
 
 ```{r}
-check_package_replication("../rep-10.1371_journal.pone.0278337")
-check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
+check_replication("../rep-10.1371_journal.pone.0278337")
+check_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
 ```
 
 See `vignette("package-replication-checklist")` for layout and API requirements.
@@ -235,10 +235,9 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | Check machine vs study yaml | `check_study_compatibility()` |
 | Install deps (one study) | `install_study_dependencies()` |
 | Install deps (all studies) | `install_registry_dependencies()` |
-| Build folder artifacts | `build_study_artifacts()` |
-| Validate folder study | `check_folder_replication()` |
+| Build study outputs | `build_study_outputs()` |
+| Validate study | `check_replication()` |
 | Prepare registry handoff | `prepare_study_for_registry()` |
-| Validate package study | `check_package_replication()` |
 | **Maintainer** | |
 | Sync study into registry | `sync_study_to_registry()` |
 | Rebuild index + audit all | `refresh_registry()` |

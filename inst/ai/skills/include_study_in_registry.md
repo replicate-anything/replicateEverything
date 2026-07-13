@@ -34,8 +34,8 @@ The full contract stays at repo root: `replication.yml` (folder) or `replication
 ```
 - [ ] 1. Full `replication.yml` uses `steps:` DAG (folder) or package prep/replications
 - [ ] 2. `maintainer:` (name + email) and `collections:` declared
-- [ ] 3. Build outputs: `build_study_artifacts()` or `build_package_artifacts()`
-- [ ] 4. Validate: `check_folder_replication()` or `check_package_replication()` (includes substantive-check coverage)
+- [ ] 3. Build outputs: `build_study_outputs()`
+- [ ] 4. Validate: `check_replication()` (includes substantive-check coverage)
 - [ ] 4b. Add `tests/substantive/<step_id>.R` for published benchmarks where possible (see Fearon & Laitin tab_1)
 - [ ] 5. Prepare handoff: `prepare_study_for_registry(".")`
 - [ ] 6. Commit study repo including `registry/` or `inst/registry/` handoff files
@@ -63,7 +63,7 @@ prepare_study_for_registry("../rep-10.1371_journal.pone.0278337")
 
 ```
 - [ ] 1. Study PR merged; handoff files present in study repo
-- [ ] 2. Re-validate if needed: `check_folder_replication()` / `check_package_replication()`
+- [ ] 2. Re-validate if needed: `check_replication()`
 - [ ] 3. Sync stub: `sync_study_to_registry(study_path, registry_root = "../registry")`
 - [ ] 4. Full refresh: `refresh_registry("../registry", audit = TRUE)`
 - [ ] 5. Commit registry: `studies/<folder>.yml`, `index.csv`, audit outputs
@@ -103,11 +103,9 @@ No `steps:` block in the registry stub.
 ## Related skills
 
 - Folder layout and DAG: `folder_replication.md`
-- APSR deliveries: `APSR_to_replicateEverything.md`
+- Dataverse deliveries: `dataverse_to_replicateEverything.md`
 
 ## Deprecated names
 
 | Old | New |
 |-----|-----|
-| `prepare_folder_paper()` | `prepare_study_for_registry()` |
-| `sync_folder_paper()` | `sync_study_to_registry()` |

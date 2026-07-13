@@ -17,3 +17,4 @@ replication_kind(meta, ctx = NULL)
 \description{
 Classify a registry study by materials layout
 }
+\keyword{internal}

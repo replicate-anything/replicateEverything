@@ -1,26 +1,29 @@
 ---
-name: apsr-to-replicate-everything
+name: dataverse-to-replicate-everything
 description: >-
-  Convert an APSR Cambridge Dataverse replication package into a folder-backed
-  replicateEverything study repo (infer step DAG from author delivery, Stata/R/Python
-  engines, replication.yml with steps:, registry stub, outputs/, tests, Shiny). Use
-  when onboarding APSR Dataverse deliveries, Cambridge Core archives, rep-10.1017-*
-  study repos, or when the user mentions APSR_to_replicateEverything.
+  Convert a Harvard Dataverse replication deposit into a folder-backed
+  replicateEverything study repo (discover via get_dataset, download author README,
+  infer step DAG, Stata/R/Python engines, replication.yml with steps:, registry stub,
+  outputs/, tests, Shiny). Use when onboarding Dataverse deliveries (doi:10.7910/DVN/…),
+  Cambridge Core archives, rep-* study repos, or when the user mentions
+  dataverse_to_replicateEverything.
 ---
 
-# APSR Dataverse → replicateEverything
+# Harvard Dataverse → replicateEverything
 
-Turn a **flat APSR Dataverse delivery** (`README.txt`, `Codebook.pdf`, monolithic `.do` files, mixed Stata/R/Python) into a **folder-backed study repo** wired to [replicateEverything](https://github.com/replicate-anything/replicateEverything) and the [registry](https://github.com/replicate-anything/registry).
+Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `readme.rtf`,
+`Codebook.pdf`, monolithic `.do` / `.Rmd` files, mixed Stata/R/Python) into a
+**folder-backed study repo** wired to [replicateEverything](https://github.com/replicate-anything/replicateEverything) and the [registry](https://github.com/replicate-anything/registry).
 
 **Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml), `update-my-skills` (sync this folder to Cursor).
 
-**Canonical example:** `rep-10.1017-s0003055426101749` (Jiang & Yang, *Portraits of Power*).
+**Canonical examples:** `rep-10.1017-s0003055426101749` (Jiang & Yang, multi-engine); [`rep-10.1017-s0003055422000284`](https://github.com/replicate-anything/rep-10.1017-s0003055422000284) (Blair et al., Dataverse fetch + Stata).
 
 ## When to use
 
-- User drops an APSR/Cambridge replication zip or folder
-- Paper DOI starts with `10.1017/S` (APSR)
-- Files look like `DO*.do`, `(RCODE)_*.R`, `(Python)_*.ipynb`, `README.txt`
+- User gives a **Dataverse dataset DOI** (`doi:10.7910/DVN/…`) or a downloaded zip/folder
+- Deposit includes author readme + replication code (Stata `.do`, R `.R` / `.Rmd`, Python `.ipynb`)
+- Common sources: APSR / Cambridge Core (`10.1017/S…`), but any journal on Harvard Dataverse
 - Goal is Shiny display + `run_replication()` / `run_prep_step()`, not an R package
 
 ## Naming
@@ -37,15 +40,20 @@ Study repo is a **sibling** of `registry/` and `replicateEverything/` in the mon
 
 ## Workflow checklist
 
-Every study needs **`maintainer:`** (name + email) and should list **`collections:`** (typically `APSR` for this workflow) in root `replication.yml`. Sync to registry `index.csv` with **`build_registry_index()`** after copying the stub — see folder-replication Step 4b.
+Every study needs **`maintainer:`** (name + email) and **`collections:`** in root
+`replication.yml`. Set **`collections: [APSR]` only when the deposit metadata cites
+*American Political Science Review*** (journal block or `publicationCitation`); otherwise
+use the appropriate tag (`PED`, `World Bank`, `IPI`, …) or omit until known. Sync to
+registry `index.csv` with **`build_registry_index()`** after copying the stub — see
+folder-replication Step 4b.
 
 ```
-- [ ] 1. Read README.txt + Codebook.pdf; list main-text tables/figures
+- [ ] 1. **Read author README** (download from Dataverse if no local zip) + Codebook; list main-text tables/figures
 - [ ] 2. **Reconstruct step DAG** from README order + script file I/O (folder-replication Step 1b)
 - [ ] 3. Inventory engines (Stata / R / Python) and pipeline order
 - [ ] 4. Create study repo layout (see Target layout)
-- [ ] 5. Stage data in data/raw/; commit data ≤50MB, gitignore only >50MB (list by name)
-- [ ] 6. **Search all code for dependencies** — folder-replication Step 4a + APSR patterns below
+- [ ] 5. **Data:** commit `data/raw/` (≤50MB) **or** wire `access_data` from Dataverse (preferred when deposit is public)
+- [ ] 6. **Search all code for dependencies** — folder-replication Step 4a + Dataverse delivery patterns below
 - [ ] 7. Add dependency automation (Stata install script, R CRAN, Python pip)
 - [ ] 8. Extract pipeline → code/steps/ + transform steps in replication.yml
 - [ ] 9. Split monolithic .do → code/tables/tab_N.do + mk_tab_N.do
@@ -53,15 +61,16 @@ Every study needs **`maintainer:`** (name + email) and should list **`collection
 - [ ] 11. **Write replication.yml** — `steps:` DAG + deps (folder-replication Step 4b)
 - [ ] 12. Registry stub + run **`build_registry_index()`**
 - [ ] 13. testthat smoke tests
-- [ ] 14. Build outputs/ + manifest.json (`build_study_artifacts(..., install_deps = TRUE)`)
+- [ ] 14. Build outputs/ + manifest.json (`build_study_outputs(..., install_deps = TRUE)`)
 - [ ] 15. Validate engines + Shiny (Display + Run + Check system compatibility)
+- [ ] 16. Push standalone study repo to `github.com/replicate-anything/rep-<doi-slug>` (no `data.dta` when using Pattern A)
 ```
 
 ## Step 1 — Read the delivery
 
 | File | Use |
 |------|-----|
-| `README.txt` | **Author pipeline order** (numbered steps 0–n) |
+| `ReadMe.txt`, `README.txt`, or `readme.rtf` | **Author pipeline order** (numbered steps 0–n); always present in well-formed deposits |
 | `Codebook.pdf` | Variables, units, sample restrictions |
 | `DO*.do` | Stata — often one file for many tables |
 | `(RCODE)_*.R` | R figures / post-processing |
@@ -70,6 +79,12 @@ Every study needs **`maintainer:`** (name + email) and should list **`collection
 | `*.csv` | Exported results / conjoint / RF outputs |
 
 **Main text first.** Keep the raw author delivery in a monorepo source folder (e.g. `10.1017-S0003055426101749/`) — **not** inside the study repo.
+
+**Scope the delivery.** Dataverse archives often bundle folders you do **not** need for table/figure replication: `ethics/`, `instruments/`, `secondary_si/`, map assets (`maps.qgz`, screenshots). Use only replication code + analysis data (or Dataverse tab/CSV/RDS) unless a figure step needs more.
+
+**Find the data.** A partial zip may contain only `analysis/do/`; check `analysis/data/` for `data.dta` or `data-1.dta` before downloading from Dataverse. Harvard Dataverse may ship `data-1.tab` instead of `.dta` (same content).
+
+**RTF readme.** Newer deliveries use `readme.rtf` instead of `README.txt` — extract the numbered pipeline list from RTF (or open in Word) and convert contributor notes to `README.md`.
 
 Mark **artifact-only** outputs (schematics, morphs) with `artifact:` + `note:` and no `code:`.
 
@@ -102,24 +117,157 @@ rep-<doi-hyphenated>/
 
 ## Step 2b — Map author README to a step DAG
 
-APSR deliveries almost always document pipeline order in **README.txt**. That
-numbered list is the primary source for `steps:` — not a guess from table ids alone.
+Dataverse deposits almost always document pipeline order in the **author readme**
+(`ReadMe.txt`, `README.txt`, or `readme.rtf`). That numbered list is the primary
+source for `steps:` — not a guess from table ids alone.
 
 | README pattern | Step yaml |
 |----------------|-----------|
+| Dataverse / external deposit | `access_data` transform (`parents: []`, `outputs: outputs/data.dta`) |
 | Step 0: merge / construct dataset | `type: transform`, `parents: []`, raw `inputs:` from `data/raw/` |
-| Step 1: main tables | One `type: table` per table, `parents: [construct_…]` |
+| Step 1: main tables | One `type: table` per table, `parents: [access_data]` or `[construct_…]` |
 | Later: figures / ML / conjoint | `type: figure` or extra transforms as needed |
 | Shared `.dta` used by many scripts | **One** transform step; tables point to `outputs/<step_id>/…` |
 
 Trace **`use` / `merge` / `save`** in monolithic `.do` files to confirm edges. See
 **folder-replication Step 1b** for the full agent workflow and Fearon/Jiang examples.
 
+## Step 1b — Discover deposit from Dataverse (no local zip required)
+
+Start from the **Dataverse dataset DOI** (`doi:10.7910/DVN/…`) or resolve it from
+the paper DOI / Cambridge supplementary link. Use the R `dataverse` package — a full
+zip download is **not** required to begin onboarding.
+
+```r
+library(dataverse)
+Sys.setenv("DATAVERSE_SERVER" = "dataverse.harvard.edu")
+ds <- get_dataset("doi:10.7910/DVN/OXSQMU")   # example: Blair et al.
+# ds <- get_dataset("doi:10.7910/DVN/BZOCDJ")  # example: Velez et al. (R / Rmd driver)
+```
+
+### Always download the author README first
+
+Well-formed replication deposits **include an author readme** — `ReadMe.txt`,
+`README.txt`, or `readme.rtf`. When starting from the API (no local zip), treat this
+as the mandatory first download:
+
+1. `get_dataset()` — citation metadata (paper DOI, title, authors, journal) + file inventory
+2. Find readme in `ds$files$filename` (case-insensitive `readme.(txt|rtf)`)
+3. **Download readme** to a scratch folder (e.g. `original_studies/<paper-doi>/`) before writing yaml
+4. Read numbered pipeline steps from the readme — same workflow as Step 1
+5. Download the main driver next (`Replication.Rmd`, `analysis.do`, monolithic `.do`, …) as needed
+
+```r
+files <- ds$files
+readme_row <- files[grepl("^readme\\.(txt|rtf)$", files$filename, ignore.case = TRUE), ]
+stopifnot(nrow(readme_row) >= 1L)   # readme should always be present
+
+# Download by file id (dataverse API) into scratch — then open locally
+# dataverse::get_dataframe_by_name() works for .tab; for plain text use file download API
+```
+
+If readme is missing, stop and inspect the deposit — it may be incomplete or mislabeled.
+
+Use `ds$files` (or the Dataverse web UI) to inventory:
+
+| Keep for replication | Usually skip |
+|---------------------|--------------|
+| Author readme (`ReadMe.txt` / `README.txt` / `readme.rtf`) | — (always download first) |
+| `analysis/do/*.do`, helper `.do`, `Replication.Rmd`, `*.R` | `ethics/`, `instruments/`, `secondary_si/` |
+| `data-1.tab` / `*.tab` / `data.dta` (via fetch step) | IRB PDFs, survey instruments, map assets |
+
+`get_dataset()` returns enough to name the study repo (`paper.doi` from citation
+metadata), infer **`collections:`** (APSR only when journal metadata cites *American
+Political Science Review*), and plan `access_data` fetches — without committing
+large binaries to git.
+
+Map paper DOI ↔ Dataverse DOI via readme, Cambridge SI link, or
+[Harvard Dataverse search](https://dataverse.harvard.edu/). Harvard deposits use
+`10.7910/DVN/…` persistent ids.
+
 ## Step 3 — Data staging
+
+Two patterns — pick one per study.
+
+### Pattern A — Dataverse fetch (preferred for public deposits)
+
+**Do not commit** the analysis `.dta`. Add a root R transform:
+
+| yaml | Value |
+|------|-------|
+| `id` | `access_data` |
+| `label` | Access data from Dataverse |
+| `type` | `transform` |
+| `parents` | `[]` |
+| `engine` | `r` |
+| `code` | `code/steps/access_data.R` |
+| `outputs` | `outputs/data.dta` |
+
+Study-level `dataverse:` block in `replication.yml`:
+
+```yaml
+dataverse:
+  server: dataverse.harvard.edu
+  dataset: "10.7910/DVN/OXSQMU"
+  file: data-1.tab
+
+paper:
+  dependencies:
+    - dataverse
+    - haven
+    - yaml
+```
+
+`code/steps/access_data.R` — `make_access_data()`:
+
+```r
+make_access_data <- function() {
+  dat <- dataverse::get_dataframe_by_name(
+    filename = "data-1.tab",
+    dataset = "10.7910/DVN/OXSQMU",
+    original = TRUE,
+    .f = haven::read_dta,
+    server = "dataverse.harvard.edu"
+  )
+  root <- Sys.getenv("REPLICATE_STUDY_ROOT", ".")
+  out <- file.path(root, "outputs", "data.dta")
+  dir.create(dirname(out), recursive = TRUE, showWarnings = FALSE)
+  haven::write_dta(dat, out)
+  dat
+}
+```
+
+Downstream Stata tables: `parents: [access_data]`, `data: outputs/data.dta`, and
+`use "${processed}/data.dta"` in `mk_tab_N.do` (`processed` → `outputs/`).
+
+`.gitignore`:
+
+```gitignore
+outputs/data.dta
+```
+
+`data/raw/README.md` documents the Dataverse DOI and filename — **no binary in git**.
+
+**Run semantics:**
+
+| Call | Fetches when `outputs/data.dta` missing? |
+|------|------------------------------------------|
+| `build_study_outputs()` | Yes (`ensure_study_ancestor_steps`) |
+| `run_replication(doi, "tab_1", given = "nothing")` | Yes |
+| `run_replication(doi, "tab_1")` default `given = "parents"` | No — expects file already there |
+
+On a fresh clone use `given = "nothing"` or run `access_data` first. Display
+artifacts (`outputs/tab_1.html`) stay committed; intermediate `.dta` is local cache.
+
+**Publish:** init git in the study folder, `.gitignore` `outputs/data.dta`, commit
+code + yaml + display artifacts, push to `replicate-anything/rep-<doi-slug>` on
+GitHub. Registry stub sync stays in the monorepo via `sync_study_to_registry()`.
+
+### Pattern B — Commit data in `data/raw/` (legacy / offline / private data)
 
 Live replication (Shiny **Run**, and any fresh clone) runs from a **clone of the
 study repo**. Uncommitted inputs are missing from the clone and steps fail with
-"file not found". So **commit data by default**; only exclude files too large for git.
+"file not found". So **commit data by default** when not using Pattern A; only exclude files too large for git.
 
 1. Copy `.dta` from delivery → `data/raw/`.
 2. Copy shipped `.csv` → `data/raw/`.
@@ -153,7 +301,7 @@ too when ≤ 50 MB so tables run without re-running heavy prep.
 
 ## Step 3a — Search for all dependencies (before yaml)
 
-**Follow folder-replication Step 4a** for the generic workflow. APSR deliveries need extra passes because dependencies are scattered across monolithic `.do` files, `(RCODE)_*.R`, and `(Python)_*.ipynb`.
+**Follow folder-replication Step 4a** for the generic workflow. Dataverse deliveries often need extra passes because dependencies are scattered across monolithic `.do` / `.Rmd` files, `(RCODE)_*.R`, and `(Python)_*.ipynb`.
 
 **Search the source delivery folder and refactored `code/`:**
 
@@ -182,7 +330,7 @@ Goal: a fresh machine or Shiny server should run prep + tables + figures **witho
 | Engine | Where to declare | How it installs |
 |--------|------------------|-----------------|
 | **Stata** | `stata_packages:` (SSC ado names) | Maintainers: `install_study_dependencies(doi)` — package auto-installs from SSC and probes before live Run |
-| **R** | `paper.dependencies:` (CRAN only) | `install_study_dependencies(doi)` or `build_study_artifacts(install_deps=TRUE)` |
+| **R** | `paper.dependencies:` (CRAN only) | `install_study_dependencies(doi)` or `build_study_outputs(install_deps=TRUE)` |
 | **Python** | `python_dependencies:` (study-wide) **or** entry-level `dependencies:` on `engine: python` rows | Same maintainer install API → `pip install` |
 
 **Do not** put Stata SSC package names (`reghdfe`, `estout`, `ftools`) in R `dependencies` — replicateEverything only installs CRAN packages for `engine: r` entries and paper-level R deps.
@@ -265,10 +413,10 @@ options(
   replicateEverything.registry_root = "<monorepo>/registry",
   replicateEverything.study_folders_root = "<monorepo>"
 )
-build_study_artifacts("rep-10.1017-s0003055426101749", install_deps = TRUE)
+build_study_outputs("rep-10.1017-s0003055426101749", install_deps = TRUE)
 ```
 
-`install_deps = TRUE` is the default for `build_study_artifacts()`. It runs prep steps first, then tables/figures, installing Stata SSC + CRAN + pip as needed.
+`install_deps = TRUE` is the default for `build_study_outputs()`. It runs prep steps first, then tables/figures, installing Stata SSC + CRAN + pip as needed.
 
 **Prerequisites on the machine:** Stata (batch), R 4.x, Python 3.10+ on PATH (or `Sys.setenv(PYTHON=...)`). Internet on first run for SSC/CRAN/pip.
 
@@ -403,7 +551,7 @@ out = Path(os.environ.get("REPLICATE_PYTHON_OUTPUT", root / "artifacts" / "fig_2
 
 ## Step 8 — replication.yml (main text)
 
-**Construct from Step 4a dependency inventory and Step 2b DAG** using folder-replication Step 4b. Minimum APSR main-text block:
+**Construct from Step 4a dependency inventory and Step 2b DAG** using folder-replication Step 4b. Minimum main-text block:
 
 ```yaml
 languages:
@@ -415,6 +563,9 @@ paper:
   doi: https://doi.org/10.1017/S0003055426101749
   title: "..."
   # ...
+
+collections:
+  - APSR   # only when deposit metadata cites American Political Science Review
 
 stata_packages:
   - ftools
@@ -503,10 +654,10 @@ devtools::load_all("<monorepo>/replicateEverything")
 
 ## Step 11 — Build outputs
 
-Use `build_study_artifacts()` with `install_deps = TRUE` (default) so transforms, Stata SSC, CRAN, and pip all install on a fresh machine:
+Use `build_study_outputs()` with `install_deps = TRUE` (default) so transforms, Stata SSC, CRAN, and pip all install on a fresh machine:
 
 ```r
-build_study_artifacts("rep-10.1017-s0003055426101749", install_deps = TRUE)
+build_study_outputs("rep-10.1017-s0003055426101749", install_deps = TRUE)
 ```
 
 This runs upstream steps, then every table/figure, writes `outputs/*` and `outputs/manifest.json`.
@@ -579,11 +730,14 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 | Shiny "not available for language r" on `fig_2` | Resolve engine-specific id (`fig_2` + `python`) before Run/Display |
 | Fig 2 Display fails but PNG on GitHub | Deploy latest `replicateEverything`; `infer_folder_study_stub()` for draft stubs |
 | Table Display shows full Stata log (setup, reghdfe, SSC install) | Add `esttab ... using "${result}/tab_N_table.html", html replace` to `mk_tab_N.do` (from author's `using *_out_*.txt`); point `format_stata.R` at esttab HTML, not raw log |
+| `esttab` r(198) on HTML export | Do not combine `booktabs` / `br` (LaTeX options) with `html` — use `html replace` with `label b() se()` only |
+| Substantive check gets formatted HTML not Stata envelope | Export `${result}/tab_N_benchmarks.csv` from Stata; substantive script parses HTML or reads CSV from `outputs/staging/` |
 | Missing Python packages on server | List PyPI names under entry `dependencies:`; run with `install_deps=TRUE` |
 | Notebook prep fails | Add `jupyter`, `nbconvert` to prep step `dependencies` |
-| Live Run "file not found" for a `.dta` | Input was gitignored, so the clone lacks it. Commit inputs ≤50MB; don't blanket-ignore `data/*/*.dta` |
+| Live Run "file not found" for a `.dta` | Input was gitignored without a Dataverse `access_data` step, or `given = "parents"` on fresh clone — use `given = "nothing"` or run `access_data` first |
+| `outputs/data.dta` missing after clone | Expected with Pattern A — run `build_study_outputs()` or `run_replication(..., given = "nothing")` |
 | `.dta` >50MB not in git | Expected — stage under `registry/data/<folder>/`, deploy to server, document in `data/raw/README.md` |
-| Server missing processed data | `build_study_artifacts()` runs prep first; or ship `data/processed/` |
+| Server missing processed data | `build_study_outputs()` runs prep first; or ship `data/processed/` |
 | Dropbox spaces in paths | replicateEverything uses `Sys.setenv()` + `shQuote()` for Python/Stata — test batch runs early |
 | `reghdfe` split across lines with blank line | Stata treats blank line as command end — use one line or `///` without blank lines |
 
@@ -601,5 +755,5 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 - Generic folder workflow + DAG rules: skill `folder-replication` (Step 1b)
 - Package design notes: `inst/docs/step-dag-design.md`, `inst/docs/step-inheritance.md`
 - Stata table template: `rep-10.1017-S0003055403000534` (Fearon)
-- Multi-engine APSR example: `rep-10.1017-s0003055426101749`
+- Multi-engine Dataverse example: `rep-10.1017-s0003055426101749` (Jiang & Yang)
 - replicateEverything Shiny: `inst/shiny/app.R`

@@ -477,7 +477,7 @@ resolve_study_meta_input <- function(meta, repo = NULL, folder = NULL) {
 #' @param folder Optional registry folder when `meta` is a DOI or handle.
 #' @return A list of components; each component is a list of paths; each path is a
 #'   list of step display records.
-#' @export
+#' @keywords internal
 study_dag_display <- function(meta, repo = NULL, folder = NULL) {
   meta <- resolve_study_meta_input(meta, repo = repo, folder = folder)
   steps <- normalize_study_steps(meta)
@@ -509,7 +509,7 @@ path_sink_step <- function(path) {
 #' Faceted pipeline groups for Shiny (split multi-branch components)
 #' @inheritParams study_dag_display
 #' @return List of facets, each with \code{title} and \code{paths}.
-#' @export
+#' @keywords internal
 study_dag_facets <- function(meta, repo = NULL, folder = NULL) {
   components <- study_dag_display(meta, repo = repo, folder = folder)
   facets <- list()
@@ -630,7 +630,7 @@ study_step_labels <- function(meta) {
 #' Migrate legacy prep/replications yaml to a unified steps block (character yaml)
 #' @param meta Parsed replication metadata or path to replication.yml.
 #' @return Character scalar containing a \code{steps:} yaml block.
-#' @export
+#' @keywords internal
 migrate_legacy_steps_yaml <- function(meta) {
   if (is.character(meta) && length(meta) == 1L && file.exists(meta)) {
     meta <- yaml::read_yaml(meta)

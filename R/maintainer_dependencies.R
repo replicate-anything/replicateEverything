@@ -100,7 +100,7 @@ install_study_stata_packages <- function(study_root, meta) {
 #'
 #' Loads or installs the study package, then installs declared R, Python, and
 #' Stata dependencies from its \code{replication.yml}. Does not build
-#' \code{inst/report/artifacts/} — use [build_package_artifacts()] for that.
+#' \code{inst/report/outputs/} — use [build_study_outputs()] for that.
 #'
 #' @param meta Parsed replication metadata with \code{paper.package}.
 #' @param ctx Paper context.
@@ -129,8 +129,7 @@ install_package_dependencies <- function(meta, ctx) {
 #' Maintainer setup only. Installs declared R CRAN packages, Python pip
 #' packages, and runs study Stata install scripts (\code{install_stata_deps.do})
 #' once. Works for **folder-backed** and **package-backed** registry studies.
-#' Does **not** build display artifacts — use [build_study_artifacts()] or
-#' [build_package_artifacts()] for that.
+#' Does **not** build display outputs — use [build_study_outputs()] for that.
 #'
 #' Live Run and Shiny probe dependencies only; call this function (or
 #' [install_registry_dependencies()]) when onboarding a machine.
@@ -139,8 +138,8 @@ install_package_dependencies <- function(meta, ctx) {
 #' @param registry_root Optional registry checkout for monorepo dev.
 #' @param repo,folder Optional registry row hints.
 #' @return Invisibly \code{TRUE} on success.
-#' @seealso [check_study_compatibility()], [build_study_artifacts()],
-#'   [build_package_artifacts()], [install_registry_dependencies()]
+#' @seealso [check_study_compatibility()], [build_study_outputs()],
+#'   [install_registry_dependencies()]
 #'
 #' @examples
 #' \dontrun{
@@ -197,7 +196,7 @@ install_study_dependencies <- function(
     if (!identical(kind, "folder")) {
       stop(
         "Study ", doi, " is registry-embedded (not folder- or package-backed). ",
-        "Install dependencies manually or use build_study_artifacts() from ",
+        "Install dependencies manually or use build_study_outputs() from ",
         "the registry checkout.",
         call. = FALSE
       )

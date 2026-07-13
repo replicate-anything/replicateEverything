@@ -3,7 +3,7 @@
 \name{study_output_dir}
 \alias{study_output_dir}
 \alias{study_artifact_dir}
-\title{Display output directory for a study (legacy name: \code{\link[=study_artifact_dir]{study_artifact_dir()}})}
+\title{Display output directory for a study}
 \usage{
 study_output_dir(meta, ctx = NULL, installed = TRUE, package = NULL)
 

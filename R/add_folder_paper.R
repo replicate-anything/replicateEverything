@@ -1,6 +1,6 @@
 #' Add a folder-backed study to the replication registry (maintainer)
 #'
-#' Validates a folder-backed study with [check_folder_replication()], ensures
+#' Validates a folder-backed study with [check_replication()], ensures
 #' registry handoff files exist (via [write_study_registry_stub()] when missing),
 #' then installs the stub in a registry checkout via [sync_study_to_registry()].
 #'
@@ -13,10 +13,10 @@
 #' @param registry_root Path to the registry repository root. Defaults to
 #'   `getOption("replicateEverything.registry_root")`.
 #' @param dry_run If `TRUE`, run checks only; do not write registry files.
-#' @param build_artifacts If `TRUE`, run [build_study_artifacts()] before checks.
-#' @param install_deps Passed to [build_study_artifacts()].
+#' @param build_artifacts If `TRUE`, run [build_study_outputs()] before checks.
+#' @param install_deps Passed to [build_study_outputs()].
 #' @param audit If `TRUE`, run [audit_everything()] for this study after sync.
-#' @return Invisibly, the result of [check_folder_replication()], with
+#' @return Invisibly, the result of [check_replication()], with
 #'   `stub_path` and `index_updated` when registration succeeds.
 #' @keywords internal
 add_folder_paper <- function(
@@ -29,14 +29,14 @@ add_folder_paper <- function(
   audit = FALSE
 ) {
   if (isTRUE(build_artifacts)) {
-    build_study_artifacts(
+    build_study_outputs(
       location = location,
       install_deps = install_deps,
       registry_root = registry_root
     )
   }
 
-  result <- check_folder_replication(
+  result <- check_replication(
     location,
     full_replication = full_replication,
     registry_root = registry_root

@@ -10,7 +10,7 @@ who clones or installs replicateEverything gets the current guidance.
 | File | Skill name | Use for |
 |------|------------|---------|
 | `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 1b DAG from original repo**; Step 4a dependency search + Step 4b `steps:` yaml |
-| `APSR_to_replicateEverything.md` | `apsr-to-replicate-everything` | Flat APSR / Cambridge Dataverse deliveries → folder-backed study repo |
+| `dataverse_to_replicateEverything.md` | `dataverse-to-replicate-everything` | Harvard Dataverse deposits → folder-backed study repo |
 | `include_study_in_registry.md` | `include-study-in-registry` | Contributor prepare + maintainer sync into central registry |
 
 Each file is a self-contained Cursor Agent Skill (YAML frontmatter with

@@ -2,7 +2,6 @@
 % Please edit documentation in R/prepare_folder_paper.R
 \name{sync_study_to_registry}
 \alias{sync_study_to_registry}
-\alias{sync_folder_paper}
 \title{Sync a prepared study into the registry repository (maintainer)}
 \usage{
 sync_study_to_registry(
@@ -13,8 +12,6 @@ sync_study_to_registry(
   install_deps = FALSE,
   verbose = TRUE
 )
-
-sync_folder_paper(location = ".", registry_root = NULL)
 }
 \arguments{
 \item{location}{Study repo path or GitHub address. Defaults to \code{"."}.}
@@ -44,11 +41,6 @@ This is a \strong{maintainer} function. Contributors should run
 \code{\link[=prepare_study_for_registry]{prepare_study_for_registry()}} and open a pull request; maintainers run this
 (or \code{\link[=refresh_registry]{refresh_registry()}}) from a local registry checkout.
 }
-\section{Functions}{
-\itemize{
-\item \code{sync_folder_paper()}: Deprecated alias.
-
-}}
 \examples{
 \dontrun{
 options(replicateEverything.registry_root = "../registry")

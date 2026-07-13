@@ -39,7 +39,7 @@ ai_skills <- function(package = "replicateEverything") {
 #'
 #' @examples
 #' \dontrun{
-#' ai_skill_path("APSR_to_replicateEverything")
+#' ai_skill_path("dataverse_to_replicateEverything")
 #' }
 ai_skill_path <- function(skill, package = "replicateEverything") {
   skill <- as.character(skill[[1]])
@@ -70,7 +70,7 @@ ai_skill_path <- function(skill, package = "replicateEverything") {
 #'
 #' @examples
 #' \dontrun{
-#' cat(ai_skill("APSR_to_replicateEverything"))
+#' cat(ai_skill("dataverse_to_replicateEverything"))
 #' }
 ai_skill <- function(skill, package = "replicateEverything") {
   paste(

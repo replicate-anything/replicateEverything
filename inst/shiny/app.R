@@ -912,9 +912,9 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
       tags$p(
         class = "small mb-0",
         "Folder-backed studies: run ",
-        tags$code("build_study_artifacts()"),
+        tags$code("build_study_outputs()"),
         "Folder-backed studies: run ",
-        tags$code("build_study_artifacts()"),
+        tags$code("build_study_outputs()"),
         " in the study repository (writes ",
         tags$code("outputs/"),
         " paths declared in ",
@@ -958,20 +958,42 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
 }
 
 load_registry_index <- function() {
+  ensure_handles <- function(df) {
+    if (is.null(df) || !is.data.frame(df)) {
+      return(df)
+    }
+    if (requireNamespace("replicateEverything", quietly = TRUE)) {
+      return(get("ensure_index_handles", envir = asNamespace("replicateEverything"))(df))
+    }
+    df
+  }
+
   registry_root <- getOption("replicateEverything.registry_root", NULL)
   if (!is.null(registry_root) && dir.exists(registry_root)) {
     local_csv <- file.path(registry_root, "index.csv")
     if (file.exists(local_csv)) {
       df <- tryCatch({
-        idx <- utils::read.csv(local_csv, stringsAsFactors = FALSE)
-        options(replicateEverything.index = idx)
+        old_root <- getOption("replicateEverything.registry_root", NULL)
+        old_index <- getOption("replicateEverything.index", NULL)
+        on.exit({
+          if (is.null(old_root)) {
+            options(replicateEverything.registry_root = NULL)
+          } else {
+            options(replicateEverything.registry_root = old_root)
+          }
+          options(replicateEverything.index = old_index)
+        }, add = TRUE)
+        options(
+          replicateEverything.registry_root = registry_root,
+          replicateEverything.index = NULL
+        )
         idx <- replicateEverything::load_index()
         idx$doi <- replicate_fn("normalize_doi", idx$doi)
         if (!"repo" %in% names(idx)) idx$repo <- DEFAULT_REGISTRY_REPO
         idx
       }, error = function(e) NULL)
       if (!is.null(df)) {
-        return(df)
+        return(ensure_handles(df))
       }
     }
   }
@@ -983,16 +1005,13 @@ load_registry_index <- function() {
     idx
   }, error = function(e) NULL)
 
-  if (!is.null(df) && "folder" %in% names(df)) return(df)
+  if (!is.null(df) && "folder" %in% names(df)) return(ensure_handles(df))
 
   tryCatch({
     df <- utils::read.csv(REGISTRY_INDEX_URL, stringsAsFactors = FALSE)
     df$doi <- replicate_fn("normalize_doi", df$doi)
     df$repo <- DEFAULT_REGISTRY_REPO
-    if (requireNamespace("replicateEverything", quietly = TRUE)) {
-      df <- get("ensure_index_handles", envir = asNamespace("replicateEverything"))(df)
-    }
-    df
+    ensure_handles(df)
   }, error = function(e) NULL)
 }
 
@@ -1710,10 +1729,18 @@ study_dag_facet_ui <- function(facet) {
 
 study_dag_legend_ui <- function() {
   tags$div(
-    class = "study-dag-legend small text-muted mt-3 pt-2",
+    class = "study-dag-legend small text-muted",
     tags$span(class = "me-1", "Key:"),
     tags$span(class = "study-dag-node is-data study-dag-legend-swatch me-1", "raw data"),
     tags$span(class = "study-dag-node is-step study-dag-legend-swatch", "analysis step")
+  )
+}
+
+study_dag_graph_shell_ui <- function(graph_ui) {
+  tags$div(
+    class = "study-dag-graph-wrap",
+    tags$div(class = "study-dag-graph-box", graph_ui),
+    study_dag_legend_ui()
   )
 }
 
@@ -1726,11 +1753,12 @@ study_dag_panel_body_ui <- function(facets, heading = TRUE) {
     if (heading) {
       tags$div(class = "study-dag-heading small text-muted mb-2", "Steps pipeline")
     },
-    tags$div(
-      class = "study-dag-facets",
-      lapply(facets, study_dag_facet_ui)
-    ),
-    study_dag_legend_ui()
+    study_dag_graph_shell_ui(
+      tags$div(
+        class = "study-dag-facets",
+        lapply(facets, study_dag_facet_ui)
+      )
+    )
   )
 }
 
@@ -2048,14 +2076,55 @@ registry_row_for <- function(doi, index_df = registry_index) {
   if (is.null(index_df) || !"folder" %in% names(index_df)) {
     return(list(folder = NULL, repo = DEFAULT_REGISTRY_REPO))
   }
-  row <- index_df[index_df$doi == doi, , drop = FALSE]
-  if (nrow(row) == 0L && "handle" %in% names(index_df)) {
-    row <- index_df[tolower(as.character(index_df$handle)) == tolower(doi), , drop = FALSE]
-  }
+  row <- registry_index_row_for(doi, index_df)
   list(
     folder = if (nrow(row) > 0 && "folder" %in% names(row)) row$folder[[1]] else NULL,
     repo = if (nrow(row) > 0 && "repo" %in% names(row)) row$repo[[1]] else DEFAULT_REGISTRY_REPO
   )
+}
+
+study_index_key_for_row <- function(row) {
+  doi_val <- trimws(as.character(row$doi[[1]] %||% ""))
+  if (nzchar(doi_val)) {
+    return(tryCatch(
+      replicate_fn("normalize_doi", doi_val),
+      error = function(e) doi_val
+    ))
+  }
+  trimws(as.character(row$handle[[1]] %||% row$folder[[1]] %||% ""))
+}
+
+registry_index_row_for <- function(key, index_df = registry_index) {
+  empty <- if (is.data.frame(index_df)) {
+    index_df[0, , drop = FALSE]
+  } else {
+    data.frame()
+  }
+  if (is.null(index_df) || nrow(index_df) == 0L) {
+    return(empty)
+  }
+  key <- trimws(as.character(key %||% ""))
+  if (!nzchar(key)) {
+    return(empty)
+  }
+  norm <- tryCatch(replicate_fn("normalize_doi", key), error = function(e) key)
+  row <- index_df[nzchar(as.character(index_df$doi %||% "")) & index_df$doi == norm, , drop = FALSE]
+  if (nrow(row) > 0L) {
+    return(row)
+  }
+  if ("handle" %in% names(index_df)) {
+    row <- index_df[tolower(as.character(index_df$handle)) == tolower(key), , drop = FALSE]
+    if (nrow(row) > 0L) {
+      return(row)
+    }
+  }
+  if ("folder" %in% names(index_df)) {
+    row <- index_df[tolower(as.character(index_df$folder)) == tolower(key), , drop = FALSE]
+    if (nrow(row) > 0L) {
+      return(row)
+    }
+  }
+  empty
 }
 
 raw_to_github_browse <- function(url) {
@@ -3108,7 +3177,7 @@ contribute_tab_ui <- function() {
     "  replicateEverything.use_sibling_packages = TRUE\n",
     ")\n",
     "\n",
-    "build_study_artifacts(\".\", install_deps = TRUE)\n",
+    "build_study_outputs(\".\", install_deps = TRUE)\n",
     "testthat::test_dir(\"tests/testthat\")\n",
     "prepare_study_for_registry(\".\", build_artifacts = FALSE)"
   )
@@ -3123,14 +3192,14 @@ contribute_tab_ui <- function() {
     "configure_local_monorepo()  # or set registry_root manually\n",
     "configure_study_folder(\"10.1257/aer.91.5.1369\", \".\")\n",
     "\n",
-    "check_folder_replication(\".\", full_replication = FALSE)\n",
+    "check_replication(\".\", full_replication = FALSE)\n",
     "run_replication(\"local\", \"tab_1\", format = TRUE)\n",
     "run_shiny_app()  # Explore tab: enter a path or leave blank for cwd"
   )
 
   example_folder_check <- paste0(
     "library(replicateEverything)\n",
-    "check_folder_replication(\".\", full_replication = FALSE)\n",
+    "check_replication(\".\", full_replication = FALSE)\n",
     "run_replication(\"local\", \"tab_1\", format = TRUE)"
   )
 
@@ -3146,14 +3215,14 @@ contribute_tab_ui <- function() {
   example_package_check <- paste0(
     "build_report()\n",
     "testthat::test_dir(\"tests/testthat\")\n",
-    "check_package_replication(\".\", full_replication = FALSE)"
+    "check_replication(\".\", full_replication = FALSE)"
   )
 
   example_package_registry <- paste0(
     "library(replicateEverything)\n",
     "options(replicateEverything.registry_root = \"../registry\")\n",
     "\n",
-    "check_package_replication(\"../rep-package\", full_replication = FALSE)\n",
+    "check_replication(\"../rep-package\", full_replication = FALSE)\n",
     "add_paper(\"../rep-package\")"
   )
 
@@ -3243,7 +3312,7 @@ contribute_tab_ui <- function() {
       contribute_prose(
         tags$strong("Artifacts must be baked. "),
         "Run ",
-        contribute_hint(code("build_study_artifacts()"), example_folder_build),
+        contribute_hint(code("build_study_outputs()"), example_folder_build),
         " so ",
         code("outputs/"),
         " contains precomputed HTML tables, figures, and ",
@@ -3257,7 +3326,7 @@ contribute_tab_ui <- function() {
       ),
       tags$ul(
         tags$li(
-          contribute_hint(code("check_folder_replication()"), example_folder_check, "Folder validation"),
+          contribute_hint(code("check_replication()"), example_folder_check, "Folder validation"),
           " — structure, artifacts, and optional live runs."
         ),
         tags$li(
@@ -3374,7 +3443,7 @@ contribute_tab_ui <- function() {
           " with replication smoke tests."
         ),
         tags$li(
-          contribute_hint(code("check_package_replication()"), example_package_check, "Package validation"),
+          contribute_hint(code("check_replication()"), example_package_check, "Package validation"),
           " — structure, artifacts, and optional live ",
           code("run_replication()"),
           " calls."
@@ -3879,18 +3948,43 @@ ui <- tagList(
       border-top: 1px solid #dee2e6;
       padding-top: 0.65rem;
     }
+    .study-dag-graph-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.85rem;
+      width: 100%;
+    }
+    .study-dag-graph-box {
+      border: 1px solid #ced4da;
+      border-radius: 14px;
+      background: #fafbfc;
+      padding: 1rem 1.2rem;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+      max-width: 100%;
+      width: fit-content;
+      margin: 0 auto;
+    }
+    .study-dag-graph-chains {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.45rem;
+    }
     .study-dag-facets {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       gap: 0.65rem;
-      align-items: start;
     }
     .study-dag-facet {
       border: 1px solid #dee2e6;
       border-radius: 8px;
       padding: 0.55rem 0.65rem;
-      background: #fafbfc;
+      background: #fff;
       min-width: 0;
+      width: fit-content;
+      max-width: 100%;
     }
     .study-dag-facet-title {
       font-size: 0.78rem;
@@ -3910,6 +4004,7 @@ ui <- tagList(
       display: flex;
       flex-wrap: wrap;
       align-items: center;
+      justify-content: center;
       gap: 0.15rem 0.25rem;
       margin-bottom: 0.35rem;
       font-size: 0.82rem;
@@ -3936,7 +4031,7 @@ ui <- tagList(
       background: #f1f3f5;
     }
     .study-dag-legend {
-      border-top: 1px solid #dee2e6;
+      text-align: center;
     }
     .study-dag-legend-swatch {
       cursor: default;
@@ -4719,7 +4814,7 @@ server <- function(input, output, session) {
         tags$div(
           class = "study-link-col",
           share_link_ui(
-            shiny_deep_link_query_list(row$doi[[1]]),
+            shiny_deep_link_query_list(study_index_key_for_row(row)),
             title = "Link to this study on the public server"
           )
         ),
@@ -4731,7 +4826,7 @@ server <- function(input, output, session) {
             class = "btn-primary btn-sm study-go-btn",
             onclick = sprintf(
               "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
-              row$doi[[1]]
+              study_index_key_for_row(row)
             )
           )
         )
@@ -4755,7 +4850,7 @@ server <- function(input, output, session) {
 
   output$study_details <- renderUI({
     req(state$doi)
-    row <- registry_index[registry_index$doi == state$doi, , drop = FALSE]
+    row <- registry_index_row_for(state$doi)
     paper <- if (nrow(row) > 0) {
       list(
         title = row$title[[1]],
@@ -4781,9 +4876,19 @@ server <- function(input, output, session) {
       tags$em("Working paper")
     }
     doi_value <- if (nrow(row) > 0) {
-      row$doi[[1]]
+      doi_raw <- trimws(as.character(row$doi[[1]] %||% ""))
+      if (nzchar(doi_raw)) {
+        doi_raw
+      } else {
+        study_index_key_for_row(row)
+      }
     } else {
       paper$doi %||% state$doi
+    }
+    doi_label <- if (nrow(row) > 0 && !nzchar(trimws(as.character(row$doi[[1]] %||% "")))) {
+      "Handle: "
+    } else {
+      "DOI: "
     }
     tagList(
       card(
@@ -4798,7 +4903,7 @@ server <- function(input, output, session) {
           tags$summary(
             class = "study-details-summary",
             tags$span(class = "study-details-chevron", HTML("&#9660;")),
-            tags$span(class = "ms-1", strong("DOI: "), doi_link_ui(doi_value, paper = paper))
+            tags$span(class = "ms-1", strong(doi_label), doi_link_ui(doi_value, paper = paper))
           ),
           tags$div(
             class = "study-details-body pt-2",
@@ -5570,11 +5675,12 @@ server <- function(input, output, session) {
       return(helpText("No pipeline graph available for this item."))
     }
     tagList(
-      tags$div(
-        class = "study-dag-panel",
-        lapply(paths, study_dag_chain_ui)
-      ),
-      study_dag_legend_ui()
+      study_dag_graph_shell_ui(
+        tags$div(
+          class = "study-dag-graph-chains",
+          lapply(paths, study_dag_chain_ui)
+        )
+      )
     )
   })
 

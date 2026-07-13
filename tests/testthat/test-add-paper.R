@@ -1,4 +1,4 @@
-test_that("check_package_replication validates vaccine package structure", {
+test_that("check_replication validates vaccine package structure", {
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),
     winslash = "/",
@@ -17,7 +17,7 @@ test_that("check_package_replication validates vaccine package structure", {
     "run build_report() in study package first"
   )
 
-  result <- check_package_replication(pkg_dir, full_replication = FALSE)
+  result <- check_replication(pkg_dir, full_replication = FALSE)
   expect_s3_class(result, "package_replication_check")
   failed <- result$checks[!result$checks$passed, , drop = FALSE]
   if (nrow(failed) > 0) {

@@ -22,9 +22,8 @@ is_prep_entry <- function(rep) {
 #'
 #' @inheritParams list_replications
 #' @return A list of prep step entries.
-#' @export
+#' @keywords internal
 list_prep_steps <- function(doi, repo = NULL, folder = NULL) {
-  .Deprecated("list_replications(..., include = \"pipeline\")")
   list_replications(doi, repo = repo, folder = folder, include = "pipeline")
 }
 
@@ -117,7 +116,7 @@ preview_data_file <- function(path, n = 6L) {
 #' @inheritParams run_replication
 #' @param what Prep step id (e.g. \code{"construct_analysis_dataset"}).
 #' @return A data preview, file path character vector, or replication result.
-#' @export
+#' @keywords internal
 run_prep_step <- function(
   doi,
   what,

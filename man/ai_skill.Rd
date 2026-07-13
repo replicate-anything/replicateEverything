@@ -19,6 +19,6 @@ Read a bundled AI skill
 }
 \examples{
 \dontrun{
-cat(ai_skill("APSR_to_replicateEverything"))
+cat(ai_skill("dataverse_to_replicateEverything"))
 }
 }

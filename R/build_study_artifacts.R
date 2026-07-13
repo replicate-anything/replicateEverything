@@ -1,4 +1,6 @@
-#' Build display artifacts for a folder-backed study
+#' Build display outputs for a folder-backed study
+#'
+#' @describeIn build_study_outputs Folder-backed implementation.
 #'
 #' Runs pipeline prep steps from `replication.yml` when present, then every
 #' registered table and figure, saves formatted outputs under `outputs/`, and
@@ -16,13 +18,7 @@
 #' @param registry_root Optional registry checkout path for monorepo dev.
 #' @param force_prep Logical. Re-run prep steps even when outputs already exist.
 #' @return Invisibly, a list with `artifact_dir`, `manifest`, and per-id status.
-#'
-#' @examples
-#' \dontrun{
-#' build_study_artifacts(".", install_deps = TRUE)
-#' }
-#'
-#' @export
+#' @keywords internal
 build_study_artifacts <- function(
   location = ".",
   install_deps = TRUE,

@@ -35,3 +35,4 @@ A data preview, file path character vector, or replication result.
 Executes a pipeline step (Stata, R, or Python), writes \code{output} when
 configured, and returns a preview object (typically the head of a data frame).
 }
+\keyword{internal}

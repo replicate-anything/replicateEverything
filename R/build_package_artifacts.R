@@ -1,4 +1,6 @@
-#' Build display artifacts for a package-backed study
+#' Build display outputs for a package-backed study
+#'
+#' @describeIn build_study_outputs Package-backed implementation.
 #'
 #' Runs pipeline prep steps from the package `replication.yml`, then builds
 #' every registered table and figure into `inst/report/artifacts/` (or
@@ -11,13 +13,7 @@
 #'   `inst/report/artifacts/` under the package source tree.
 #' @param force_prep Logical. Re-run prep steps even when outputs already exist.
 #' @return Invisibly, a list with `artifact_dir`, `manifest`, and `manifest_path`.
-#'
-#' @examples
-#' \dontrun{
-#' build_package_artifacts("rep1371journalpone0278337", install_deps = TRUE)
-#' }
-#'
-#' @export
+#' @keywords internal
 build_package_artifacts <- function(
   package,
   install_deps = TRUE,

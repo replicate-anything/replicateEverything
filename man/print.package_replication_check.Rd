@@ -13,12 +13,10 @@
 \method{print}{replication_check}(x, ...)
 }
 \arguments{
-\item{x}{Result from \code{\link[=check_package_replication]{check_package_replication()}}, \code{\link[=check_folder_replication]{check_folder_replication()}},
-\code{\link[=add_paper]{add_paper()}}, or \code{\link[=add_folder_paper]{add_folder_paper()}}.}
+\item{x}{Result from \code{\link[=check_replication]{check_replication()}}, \code{\link[=add_paper]{add_paper()}}, or \code{\link[=add_folder_paper]{add_folder_paper()}}.}
 
 \item{...}{Ignored.}
 }
 \description{
 Print a replication checklist result
 }
-\keyword{internal}

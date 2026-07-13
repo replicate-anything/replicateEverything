@@ -401,7 +401,7 @@ Both study types use the **same maintainer functions** for dependency setup:
 | Layout | `replication_kind(meta)` → `"folder"` or `"package"` |
 | Artifact root | `study_output_dir(meta, ctx)` — **`outputs/`** for folder studies |
 
-**Build** still uses kind-specific builders: `build_study_artifacts()` (folder) vs `build_package_artifacts()` (package). Declare the same yaml fields (`languages:`, `paper.dependencies`, `python_dependencies:`, `stata_*`) in both layouts.
+**Build** uses [build_study_outputs()] for folder- and package-backed studies. Declare the same yaml fields (`languages:`, `paper.dependencies`, `python_dependencies:`, `stata_*`) in both layouts.
 
 ### Stata studies — declare packages in yaml (default)
 
@@ -515,7 +515,7 @@ Build from monorepo:
 
 ```r
 configure_local_monorepo("path/to/replicate_everything")
-build_study_artifacts("<doi-or-handle>", install_deps = TRUE)
+build_study_outputs("<doi-or-handle>", install_deps = TRUE)
 # Or per step:
 run_replication("<doi>", "tab_1", given = "nothing", format = TRUE, install_deps = TRUE)
 ```
@@ -525,7 +525,7 @@ Commit under `outputs/`:
 - Figures → `outputs/fig_N.png`
 - Formatted tables → `outputs/tab_N.html`
 - Intermediates → `outputs/<step_id>/…`
-- `outputs/manifest.json` — from `build_study_artifacts()` or hand-written
+- `outputs/manifest.json` — from `build_study_outputs()` or hand-written
 
 `registry/scripts/build_artifacts.R` **skips** folder-backed papers.
 

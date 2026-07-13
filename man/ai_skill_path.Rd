@@ -19,6 +19,6 @@ Get the path to a bundled AI skill
 }
 \examples{
 \dontrun{
-ai_skill_path("APSR_to_replicateEverything")
+ai_skill_path("dataverse_to_replicateEverything")
 }
 }

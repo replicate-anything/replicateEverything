@@ -1,6 +1,6 @@
 #' Add a package-backed study to the replication registry (maintainer)
 #'
-#' Validates a study replication package with [check_package_replication()],
+#' Validates a study replication package with [check_replication()],
 #' ensures registry handoff files exist (via [write_study_registry_stub()] when
 #' missing), then installs the stub in a registry checkout via
 #' [sync_study_to_registry()].
@@ -19,7 +19,7 @@
 #'   `getOption("replicateEverything.registry_root")`.
 #' @param dry_run If `TRUE`, run checks only; do not write registry files.
 #' @param audit If `TRUE`, run [audit_everything()] for this study after sync.
-#' @return Invisibly, the result of [check_package_replication()], with
+#' @return Invisibly, the result of [check_replication()], with
 #'   `stub_path` and `index_updated` when registration succeeds.
 #' @keywords internal
 add_paper <- function(
@@ -29,7 +29,7 @@ add_paper <- function(
   dry_run = FALSE,
   audit = FALSE
 ) {
-  result <- check_package_replication(location, full_replication = full_replication)
+  result <- check_replication(location, full_replication = full_replication)
 
   if (!isTRUE(result$ok)) {
     message("Package validation failed:")
@@ -73,10 +73,8 @@ add_paper <- function(
 
 #' Print a replication checklist result
 #'
-#' @param x Result from [check_package_replication()], [check_folder_replication()],
-#'   [add_paper()], or [add_folder_paper()].
+#' @param x Result from [check_replication()], [add_paper()], or [add_folder_paper()].
 #' @param ... Ignored.
-#' @keywords internal
 #' @export
 print.package_replication_check <- function(x, ...) {
   print_replication_check(x, label = "package")
@@ -84,7 +82,6 @@ print.package_replication_check <- function(x, ...) {
 }
 
 #' @rdname print.package_replication_check
-#' @keywords internal
 #' @export
 print.folder_replication_check <- function(x, ...) {
   print_replication_check(x, label = "folder")
@@ -92,7 +89,6 @@ print.folder_replication_check <- function(x, ...) {
 }
 
 #' @rdname print.package_replication_check
-#' @keywords internal
 #' @export
 print.replication_check <- function(x, ...) {
   label <- if (inherits(x, "folder_replication_check")) "folder" else "package"

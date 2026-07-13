@@ -60,7 +60,7 @@ if (!nzchar(fig_snapshot) || !file.exists(fig_snapshot)) {
 <p class="tldr-label">TL;DR — just do this</p>
 
 ```{r tldr-code, eval=FALSE}
-# Figure 2 from Jiang and Yang (2026)
+# Figure 4 from Jiang and Yang (2026)
 replicateEverything::run_replication(
   doi = "10.1017/s0003055426101749",
   what = "fig_4"
@@ -195,16 +195,16 @@ The fastest path from a messy delivery to a registry-ready study is often an age
 ```{r ai-skills, eval=FALSE}
 ai_skills()
 # folder-replication       — generic folder-backed study repo
-# apsr-to-replicate-everything — APSR / Cambridge Dataverse flat deliveries
+# dataverse-to-replicate-everything — Harvard Dataverse replication deposits
 ```
 
-Point Cursor (or another agent) at the skill, give it your replication folder, and ask it to produce `replication.yml` with a `steps:` DAG, `outputs/` paths, tests, and a registry stub. The skills spell out layout, dependency probing, substantive tests, and `check_folder_replication()`.
+Point Cursor (or another agent) at the skill, give it your replication folder, and ask it to produce `replication.yml` with a `steps:` DAG, `outputs/` paths, tests, and a registry stub. The skills spell out layout, dependency probing, substantive tests, and `check_replication()`.
 
 Practical tips without an agent:
 
 1. **Start from the published code**, not a rewrite — discover the true pipeline (what reads what) before you yaml it.
 2. **One script per step**; declare inputs, outputs, and parents in `steps:`.
-3. **Run** `check_folder_replication()` and `prepare_study_for_registry()` before opening a registry PR.
+3. **Run** `check_replication()` and `prepare_study_for_registry()` before opening a registry PR.
 4. **Add substantive tests** under `tests/substantive/` when you have published benchmarks (see Fearon & Laitin `tab_1`).
 
 Skill files live at `system.file("ai/skills", package = "replicateEverything")` after install.
@@ -216,7 +216,7 @@ Skill files live at `system.file("ai/skills", package = "replicateEverything")` 
 | Tour every main function | `vignette("meet-the-functions")` |
 | Run examples from code | `vignette("replication-example")` |
 | Build or migrate a folder-backed study | `vignette("folder-replication-checklist")` |
-| Onboard an APSR / Dataverse delivery | skill `apsr-to-replicate-everything` |
+| Onboard a Harvard Dataverse deposit | skill `dataverse-to-replicate-everything` |
 | Add a reanalysis repo | `vignette("reanalysis-studies")` |
 | Use Stata (or bilingual R/Stata) | `vignette("stata-replications")` |
 | Browse and run in the browser | `vignette("shiny-app")` |

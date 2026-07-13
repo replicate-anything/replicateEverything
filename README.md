@@ -294,15 +294,15 @@ This package ships AI-readable workflow guides under `inst/ai/skills/`. Use them
 
 ```r
 ai_skills()
-# [1] "APSR_to_replicateEverything"
+# [1] "dataverse_to_replicateEverything"
 
-cat(ai_skill("APSR_to_replicateEverything"))
+cat(ai_skill("dataverse_to_replicateEverything"))
 ```
 
 Installed path:
 
 ```r
-system.file("ai", "skills", "APSR_to_replicateEverything.md", package = "replicateEverything")
+system.file("ai", "skills", "dataverse_to_replicateEverything.md", package = "replicateEverything")
 ```
 
 ### Local registry development

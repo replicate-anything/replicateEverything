@@ -10,7 +10,7 @@ study_build_function(kind)
 \item{kind}{Output of \code{\link[=replication_kind]{replication_kind()}}.}
 }
 \value{
-\code{"build_study_artifacts"} or \code{"build_package_artifacts"}.
+\code{"build_study_outputs"}.
 }
 \description{
 Maintainer build function name for a study kind

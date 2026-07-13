@@ -3,7 +3,7 @@
 #' @param meta Parsed replication metadata (registry stub or full yaml).
 #' @param ctx Optional paper context from [paper_context()].
 #' @return \code{"package"}, \code{"folder"}, or \code{"registry"}.
-#' @export
+#' @keywords internal
 replication_kind <- function(meta, ctx = NULL) {
   if (is.null(meta)) {
     return("registry")
@@ -57,7 +57,7 @@ materialize_study <- function(meta, ctx) {
   list(kind = kind, root = NULL, meta = meta, package = NULL)
 }
 
-#' Display output directory for a study (legacy name: [study_artifact_dir()])
+#' Display output directory for a study
 #'
 #' Folder-backed studies use \code{outputs/}. Package-backed studies use
 #' \code{inst/report/outputs/}.
@@ -67,7 +67,7 @@ materialize_study <- function(meta, ctx) {
 #' @param installed When \code{TRUE}, prefer the installed package path.
 #' @param package Optional package name (package-backed studies).
 #' @return Normalized directory path or \code{NULL}.
-#' @export
+#' @keywords internal
 study_output_dir <- function(
   meta,
   ctx = NULL,
@@ -161,11 +161,8 @@ study_manifest_path <- function(meta, ctx = NULL, installed = TRUE, package = NU
 #' Maintainer build function name for a study kind
 #'
 #' @param kind Output of [replication_kind()].
-#' @return \code{"build_study_artifacts"} or \code{"build_package_artifacts"}.
+#' @return \code{"build_study_outputs"}.
 #' @keywords internal
 study_build_function <- function(kind) {
-  if (identical(kind, "package")) {
-    return("build_package_artifacts")
-  }
-  "build_study_artifacts"
+  "build_study_outputs"
 }

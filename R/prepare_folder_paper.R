@@ -12,8 +12,7 @@
 #' with [sync_study_to_registry()] and refreshes the central index with
 #' [refresh_registry()].
 #'
-#' Runs [build_study_artifacts()] or [build_package_artifacts()] (optional),
-#' then [check_folder_replication()] or [check_package_replication()], and on
+#' Runs [build_study_outputs()] (optional), then [check_replication()], and on
 #' success writes and validates the registry stub via [write_study_registry_stub()].
 #'
 #' @param location Study repo path or GitHub address. Defaults to `"."`.
@@ -41,32 +40,18 @@ prepare_study_for_registry <- function(
   kind <- detect_study_kind_from_root(study_root)
 
   if (isTRUE(build_artifacts)) {
-    if (identical(kind, "package")) {
-      build_package_artifacts(
-        package = package_name_from_root(study_root),
-        install_deps = install_deps
-      )
-    } else {
-      build_study_artifacts(
-        location = study_root,
-        install_deps = install_deps,
-        registry_root = registry_root
-      )
-    }
-  }
-
-  result <- if (identical(kind, "package")) {
-    check_package_replication(
-      study_root,
-      full_replication = full_replication
-    )
-  } else {
-    check_folder_replication(
-      study_root,
-      full_replication = full_replication,
+    build_study_outputs(
+      location = study_root,
+      install_deps = install_deps,
       registry_root = registry_root
     )
   }
+
+  result <- check_replication(
+    study_root,
+    full_replication = full_replication,
+    registry_root = registry_root
+  )
 
   if (!isTRUE(result$ok)) {
     message("Study validation failed:")
@@ -106,25 +91,6 @@ prepare_study_for_registry <- function(
     c("folder_replication_check", "replication_check", "list")
   }
   invisible(structure(result, class = cls))
-}
-
-#' @describeIn prepare_study_for_registry Deprecated alias for folder studies.
-#' @export
-prepare_folder_paper <- function(
-  location = ".",
-  build_artifacts = TRUE,
-  install_deps = TRUE,
-  full_replication = FALSE,
-  registry_root = NULL
-) {
-  .Deprecated("prepare_study_for_registry")
-  prepare_study_for_registry(
-    location = location,
-    build_artifacts = build_artifacts,
-    install_deps = install_deps,
-    full_replication = full_replication,
-    registry_root = registry_root
-  )
 }
 
 #' Sync a prepared study into the registry repository (maintainer)
@@ -240,13 +206,6 @@ sync_study_to_registry <- function(
     kind = kind,
     audit = audit_out
   ))
-}
-
-#' @describeIn sync_study_to_registry Deprecated alias.
-#' @export
-sync_folder_paper <- function(location = ".", registry_root = NULL) {
-  .Deprecated("sync_study_to_registry")
-  sync_study_to_registry(location = location, registry_root = registry_root)
 }
 
 #' Refresh the registry index and optionally rerun the full audit (maintainer)

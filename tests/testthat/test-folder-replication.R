@@ -1,4 +1,4 @@
-test_that("check_folder_replication validates Bounding Causes study", {
+test_that("check_replication validates Bounding Causes study", {
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),
     winslash = "/",
@@ -8,7 +8,7 @@ test_that("check_folder_replication validates Bounding Causes study", {
   testthat::skip_if_not(dir.exists(study_dir), "Bounding Causes study repo missing")
 
   registry_root <- file.path(monorepo_root, "registry")
-  result <- check_folder_replication(
+  result <- check_replication(
     study_dir,
     full_replication = FALSE,
     registry_root = registry_root

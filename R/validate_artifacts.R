@@ -102,7 +102,7 @@ validate_artifact <- function(doi, what, repo = NULL, folder = NULL, language = 
   if (!is.null(local_path) && !file.exists(local_path)) {
     ctx <- tryCatch(paper_context(doi, repo = repo, folder = folder), error = function(e) NULL)
     hint <- if (!is.null(ctx) && isTRUE(ctx$is_folder_study)) {
-      ". Run build_study_artifacts() in the study repository."
+      ". Run build_study_outputs() in the study repository."
     } else {
       ". Run scripts/build_artifacts.R in the registry."
     }

@@ -102,6 +102,7 @@ as_replication_list <- function(x, doi = NULL, title = NULL) {
 #' @param x A \code{replication_list} object.
 #' @param n Maximum rows to display.
 #' @param ... Ignored.
+#' @keywords internal
 #' @export
 print.replication_list <- function(x, n = 20, ...) {
   title <- attr(x, "title", exact = TRUE)
@@ -187,20 +188,4 @@ list_replication_groups_impl <- function(
   lapply(groups, function(g) {
     find_replication_entry(meta, g, language = language)
   })
-}
-
-#' @rdname list_replications
-#' @description
-#' Deprecated alias for [list_replications()] with `grouped = TRUE`.
-#' @export
-list_replication_groups <- function(doi, repo = NULL, folder = NULL, language = NULL) {
-  .Deprecated("list_replications(..., grouped = TRUE)")
-  list_replications(
-    doi,
-    repo = repo,
-    folder = folder,
-    grouped = TRUE,
-    language = language,
-    include = "display"
-  )
 }

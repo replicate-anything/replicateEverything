@@ -1,5 +1,7 @@
 #' Validate a folder-backed replication study
 #'
+#' @describeIn check_replication Folder-backed implementation.
+#'
 #' Runs a transparent checklist: study layout, `replication.yml`, code and data
 #' paths, baked display outputs under `outputs/`, optional `tests/testthat/`,
 #' substantive (published-value) checks under `tests/substantive/`, and
@@ -14,14 +16,7 @@
 #'   study repo in a monorepo). Defaults to
 #'   `getOption("replicateEverything.registry_root")`.
 #' @return A list with `ok` (logical), `checks` (data frame), and `study_path`.
-#'
-#' @examples
-#' \dontrun{
-#' check_folder_replication(".")
-#' check_folder_replication(".", full_replication = TRUE)
-#' }
-#'
-#' @export
+#' @keywords internal
 check_folder_replication <- function(
   location = ".",
   full_replication = FALSE,
@@ -210,7 +205,7 @@ check_folder_replication <- function(
       check_result(
         "artifact_directory",
         FALSE,
-        "Missing outputs/ (run build_study_artifacts())"
+        "Missing outputs/ (run build_study_outputs())"
       )
     )
   } else {
@@ -231,7 +226,7 @@ check_folder_replication <- function(
         check_result(
           paste0("artifact_", rid),
           FALSE,
-          paste0("Missing ", rel, " (run build_study_artifacts())")
+          paste0("Missing ", rel, " (run build_study_outputs())")
         )
       )
       next

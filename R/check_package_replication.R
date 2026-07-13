@@ -1,5 +1,7 @@
 #' Validate a package-backed replication study
 #'
+#' @describeIn check_replication Package-backed implementation.
+#'
 #' Runs a transparent checklist: package layout, `replication.yml`, exported API,
 #' baked artifacts, substantive (published-value) checks under
 #' `tests/substantive/`, and (optionally) live execution of every table and figure.
@@ -8,14 +10,7 @@
 #' @param full_replication If `TRUE`, also run every table and figure via
 #'   `run_replication()` and require success.
 #' @return A list with `ok` (logical), `checks` (data frame), and `package_path`.
-#'
-#' @examples
-#' \dontrun{
-#' check_package_replication("../rep-10.1371_journal.pone.0278337")
-#' check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
-#' }
-#'
-#' @export
+#' @keywords internal
 check_package_replication <- function(location, full_replication = FALSE) {
   checks <- bind_check_results()
   pkg_root <- tryCatch(

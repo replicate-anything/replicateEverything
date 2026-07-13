@@ -24,8 +24,8 @@ A typical workflow using the package is:
 \item View replication code with \code{get_code()}.
 \item Launch the bundled Shiny demo with \code{run_shiny_app()}, or deploy it
 with \code{save_local_shiny()}.
-\item Contribute a folder-backed study with \code{build_study_artifacts()},
-\code{check_folder_replication()}, \code{prepare_study_for_registry()}, and
+\item Contribute a study with \code{build_study_outputs()},
+\code{check_replication()}, \code{prepare_study_for_registry()}, and
 \code{sync_study_to_registry()} (maintainer).
 \item Audit the full registry with \code{audit_everything()}.
 }

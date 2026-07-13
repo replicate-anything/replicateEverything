@@ -100,14 +100,14 @@ test_that("run_replication everything runs all fixture replications", {
   })
 })
 
-test_that("check_folder_replication validates fixture study", {
+test_that("check_replication validates fixture study", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
       "rep-10.9999_example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
-    result <- check_folder_replication(
+    result <- check_replication(
       study_dir,
       full_replication = FALSE,
       registry_root = getOption("replicateEverything.registry_root")
@@ -117,7 +117,7 @@ test_that("check_folder_replication validates fixture study", {
   })
 })
 
-test_that("build_study_artifacts writes manifest for fixture study", {
+test_that("build_study_outputs writes manifest for fixture study", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
@@ -130,7 +130,7 @@ test_that("build_study_artifacts writes manifest for fixture study", {
     file.copy(study_dir, tmp, recursive = TRUE)
     copy_root <- file.path(tmp, basename(study_dir))
 
-    invisible(build_study_artifacts(
+    invisible(build_study_outputs(
       copy_root,
       install_deps = FALSE,
       registry_root = getOption("replicateEverything.registry_root")
@@ -167,25 +167,6 @@ test_that("prepare_study_for_registry writes registry stub when checks pass", {
     if (isTRUE(result$ok)) {
       expect_true(file.exists(stub))
     }
-  })
-})
-
-test_that("prepare_folder_paper is deprecated alias", {
-  with_fixture_opts({
-    study_dir <- file.path(
-      getOption("replicateEverything.study_folders_root"),
-      "rep-10.9999_example"
-    )
-    skip_if_not(dir.exists(study_dir), "fixture study repo missing")
-
-    tmp <- withr::local_tempdir()
-    file.copy(study_dir, tmp, recursive = TRUE)
-    copy_root <- file.path(tmp, basename(study_dir))
-
-    expect_warning(
-      suppressMessages(prepare_folder_paper(copy_root, build_artifacts = FALSE)),
-      "prepare_study_for_registry"
-    )
   })
 })
 

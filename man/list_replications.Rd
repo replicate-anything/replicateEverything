@@ -2,7 +2,6 @@
 % Please edit documentation in R/list_replications.R
 \name{list_replications}
 \alias{list_replications}
-\alias{list_replication_groups}
 \title{List available replications for a paper}
 \usage{
 list_replications(
@@ -13,8 +12,6 @@ list_replications(
   language = NULL,
   include = c("display", "pipeline", "all")
 )
-
-list_replication_groups(doi, repo = NULL, folder = NULL, language = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI, registry handle, or local study path.}
@@ -41,8 +38,6 @@ A \code{replication_list} object (a list with a compact
 Returns step entries from \code{replication.yml}: tables, figures, and (when
 requested) pipeline transforms. Use \code{grouped = TRUE} for one entry per
 logical product (e.g. a single \code{tab_1} when both R and Stata exist).
-
-Deprecated alias for \code{\link[=list_replications]{list_replications()}} with \code{grouped = TRUE}.
 }
 \examples{
 \dontrun{

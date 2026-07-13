@@ -2,18 +2,9 @@
 % Please edit documentation in R/prepare_folder_paper.R
 \name{prepare_study_for_registry}
 \alias{prepare_study_for_registry}
-\alias{prepare_folder_paper}
 \title{Prepare a study repository for registry handoff (contributor)}
 \usage{
 prepare_study_for_registry(
-  location = ".",
-  build_artifacts = TRUE,
-  install_deps = TRUE,
-  full_replication = FALSE,
-  registry_root = NULL
-)
-
-prepare_folder_paper(
   location = ".",
   build_artifacts = TRUE,
   install_deps = TRUE,
@@ -50,15 +41,9 @@ This is the \strong{contributor} step. A registry maintainer installs those file
 with \code{\link[=sync_study_to_registry]{sync_study_to_registry()}} and refreshes the central index with
 \code{\link[=refresh_registry]{refresh_registry()}}.
 
-Runs \code{\link[=build_study_artifacts]{build_study_artifacts()}} or \code{\link[=build_package_artifacts]{build_package_artifacts()}} (optional),
-then \code{\link[=check_folder_replication]{check_folder_replication()}} or \code{\link[=check_package_replication]{check_package_replication()}}, and on
+Runs \code{\link[=build_study_outputs]{build_study_outputs()}} (optional), then \code{\link[=check_replication]{check_replication()}}, and on
 success writes and validates the registry stub via \code{\link[=write_study_registry_stub]{write_study_registry_stub()}}.
 }
-\section{Functions}{
-\itemize{
-\item \code{prepare_folder_paper()}: Deprecated alias for folder studies.
-
-}}
 \examples{
 \dontrun{
 prepare_study_for_registry(".")

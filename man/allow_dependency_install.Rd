@@ -15,6 +15,6 @@ Logical scalar.
 \description{
 Live Run and Shiny verify only. Maintainer builds set
 \code{options(replicateEverything.install_dependencies = TRUE)} (as
-\code{build_study_artifacts(install_deps = TRUE)} does).
+\code{build_study_outputs(install_deps = TRUE)} does).
 }
 \keyword{internal}

@@ -55,14 +55,14 @@ test_that("run_substantive_check loads study check script", {
   expect_false(bad$ok)
 })
 
-test_that("check_folder_replication reports substantive check coverage", {
+test_that("check_replication reports substantive check coverage", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
       "rep-10.9999_example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
-    result <- check_folder_replication(
+    result <- check_replication(
       study_dir,
       full_replication = FALSE,
       registry_root = getOption("replicateEverything.registry_root")
