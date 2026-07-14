@@ -103,13 +103,12 @@ The `<folder>` name comes from the registry `index.csv` (for example `10.1177_00
 
 ```yaml
 paper:
-  title: Market Design and Moral Behavior
+  title: My wonderful paper
   authors:
-    - Bartling, Björn
-    - Fehr, Ernst
+    - replicateEverything, Team
   year: 2024
-  doi: 10.1257/aer.20221688
-  journal: American Economic Review
+  doi: 1.2.3.4
+  journal: Sample journal
 
 replications:
   - id: fig_1

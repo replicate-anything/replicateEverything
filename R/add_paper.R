@@ -75,6 +75,7 @@ add_paper <- function(
 #'
 #' @param x Result from [check_replication()], [add_paper()], or [add_folder_paper()].
 #' @param ... Ignored.
+#' @keywords internal
 #' @export
 print.package_replication_check <- function(x, ...) {
   print_replication_check(x, label = "package")

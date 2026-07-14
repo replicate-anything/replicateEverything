@@ -3,7 +3,7 @@
 Live Run and Shiny probe dependencies only. Set
 `options(replicateEverything.install_stata_deps = TRUE)` to allow
 `install_stata_deps.do` (e.g.
-`build_study_artifacts(install_deps = TRUE)`).
+`build_study_outputs(install_deps = TRUE)`).
 
 ## Usage
 

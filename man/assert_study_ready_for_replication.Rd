@@ -9,7 +9,8 @@ assert_study_ready_for_replication(
   meta = NULL,
   repo = NULL,
   folder = NULL,
-  install_deps = FALSE
+  install_deps = FALSE,
+  engines = NULL
 )
 }
 \arguments{

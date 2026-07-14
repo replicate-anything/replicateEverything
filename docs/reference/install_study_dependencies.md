@@ -3,10 +3,8 @@
 Maintainer setup only. Installs declared R CRAN packages, Python pip
 packages, and runs study Stata install scripts (`install_stata_deps.do`)
 once. Works for **folder-backed** and **package-backed** registry
-studies. Does **not** build display artifacts — use
-[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
-or
-[`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_package_artifacts.md)
+studies. Does **not** build display outputs — use
+[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
 for that.
 
 ## Usage
@@ -47,8 +45,7 @@ when onboarding a machine.
 ## See also
 
 [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md),
-[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md),
-[`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_package_artifacts.md),
+[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md),
 [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)
 
 ## Examples

@@ -12,7 +12,14 @@ and omitted for Stata.
 ## Usage
 
 ``` r
-get_code(doi, what, language = NULL, repo = NULL, folder = NULL)
+get_code(
+  doi,
+  what,
+  language = NULL,
+  style = c("inline", "source"),
+  repo = NULL,
+  folder = NULL
+)
 ```
 
 ## Arguments
@@ -28,6 +35,12 @@ get_code(doi, what, language = NULL, repo = NULL, folder = NULL)
 - language:
 
   Optional `"R"` or `"stata"`.
+
+- style:
+
+  Display style: `"inline"` (default, inlines Stata sources for
+  copy-paste) or `"source"` (raw runner only, for linked inspection in
+  Shiny).
 
 - repo:
 

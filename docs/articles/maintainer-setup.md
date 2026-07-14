@@ -45,13 +45,12 @@ design):
 
 ``` r
 
-build_study_artifacts("path/to/folder-study", install_deps = TRUE)
-build_package_artifacts("rep1371journalpone0278337", install_deps = TRUE)
+build_study_outputs("path/to/folder-study", install_deps = TRUE)
+build_study_outputs("rep1371journalpone0278337", install_deps = TRUE)
 ```
 
-Use \[replication_kind()\] to inspect layout (`"folder"`, `"package"`,
-or `"registry"`) and \[study_output_dir()\] for the display output root
-(`outputs/` vs `inst/report/artifacts/`).
+Folder-backed studies write under `outputs/`; package-backed studies use
+`inst/report/outputs/` (or legacy `inst/report/artifacts/`).
 
 ## Install dependencies for every registry study
 
@@ -178,10 +177,8 @@ for package studies.
 | Probe this machine | `check_study_compatibility(doi)` |
 | Install one study (all kinds, all languages) | `install_study_dependencies(doi)` |
 | Install entire registry | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
-| Study layout | `replication_kind(meta)` → `"folder"` / `"package"` |
-| Display output directory | `study_output_dir(meta, ctx)` |
-| Build folder artifacts | `build_study_artifacts(path, install_deps = TRUE)` |
-| Build package artifacts | `build_package_artifacts(pkg, install_deps = TRUE)` |
+| Build study outputs | `build_study_outputs(location, install_deps = TRUE)` |
+| Validate study | `check_replication(location)` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
 | **Contributor:** prepare handoff in study repo | `prepare_study_for_registry(path)` |
 | **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |

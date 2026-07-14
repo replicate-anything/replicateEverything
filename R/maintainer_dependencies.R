@@ -343,7 +343,8 @@ assert_study_ready_for_replication <- function(
   meta = NULL,
   repo = NULL,
   folder = NULL,
-  install_deps = FALSE
+  install_deps = FALSE,
+  engines = NULL
 ) {
   if (allow_dependency_install(install_deps)) {
     return(invisible(TRUE))
@@ -359,7 +360,8 @@ assert_study_ready_for_replication <- function(
   eval <- evaluate_study_compatibility(
     meta,
     ctx,
-    do_materialize = TRUE
+    do_materialize = TRUE,
+    engines = engines
   )
   if (isTRUE(eval$ready)) {
     return(invisible(TRUE))

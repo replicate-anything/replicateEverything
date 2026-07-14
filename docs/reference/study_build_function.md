@@ -17,4 +17,4 @@ study_build_function(kind)
 
 ## Value
 
-`"build_study_artifacts"` or `"build_package_artifacts"`.
+`"build_study_outputs"`.

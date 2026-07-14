@@ -64,9 +64,33 @@ This writes:
 - `app.R`
 - `www/` (logo and favicons)
 - `local.R.example` (template only)
+- `deploy-options.R` (display-only vs live run; always overwritten on
+  deploy)
+- `BUNDLE_SHA` (package build stamp)
 
 **`local.R` is never overwritten**, so server-specific settings survive
 updates.
+
+### Display-only vs Live Run
+
+By default, deployed apps allow **Live Run** (same as local
+[`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)).
+For a public demo that should only show precomputed artifacts, deploy in
+display-only mode:
+
+``` r
+
+save_local_shiny("/srv/shiny/replicate", live_run = FALSE)
+```
+
+This writes `deploy-options.R` with
+`options(replicate_shiny.live_run = FALSE)`. The app hides Run buttons
+and shows a subtle banner. Use `live_run = TRUE` (the default) when the
+server should execute replications on demand.
+
+For local development, set `options(replicate_shiny.live_run = TRUE)` in
+`local.R` if you copied a display-only deploy bundle but want Live Run
+while developing (see `local.R.example`).
 
 ### Server update workflow
 
@@ -94,6 +118,33 @@ options(
 
 If you rely on the public GitHub registry, you do not need a local
 `registry/` checkout; omit `replicateEverything.registry_root`.
+
+## Code tab: inspect sourced files
+
+On the **Code** tab, Stata runners are shown as authored (not inlined).
+Lines such as `do "${maindir}/code/tables/mk_tab_1.do"` are clickable
+when the target file exists under the study root. Breadcrumb navigation
+and **Back** let you walk nested `do` /
+[`source()`](https://rdrr.io/r/base/source.html) calls without stacking
+modals.
+
+**Path globals:** folder-backed Stata studies set `global maindir` in
+`code/helpers/init_study_paths.do` to the directory containing
+`replication.yml` (walked up from the working directory at run time).
+The Shiny viewer uses the same mapping via
+`default_stata_globals(study_root)` (`maindir`, `rawdir`, `processed`,
+`result`). Live runs may override `result` with
+`REPLICATE_STATA_RESULT`.
+
+Implementation lives in `R/code_links.R`
+([`build_code_file_graph()`](https://replicate-anything.github.io/replicateEverything/reference/build_code_file_graph.md),
+[`render_code_html_with_links()`](https://replicate-anything.github.io/replicateEverything/reference/render_code_html_with_links.md)).
+A future `code_manifest:` block in `replication.yml` may point at
+Dataverse-hosted scripts (similar to the data manifest pattern).
+
+**Not yet parsed:** unquoted `do` paths with embedded spaces,
+`` `local' `` / compound double quotes, `source(file.path(...))`, and
+Python `exec`/`runpy`.
 
 ## Former standalone repository
 

@@ -109,7 +109,7 @@ Validate before opening a PR:
 
 ``` r
 
-check_folder_replication("rep-10.1017-S0003055403000534--alt-1")
+check_replication("rep-10.1017-S0003055403000534--alt-1")
 ```
 
 ## Further reading

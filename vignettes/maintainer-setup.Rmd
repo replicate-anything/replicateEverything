@@ -163,3 +163,5 @@ Rscript scripts/build_pkgdown.R
 ```
 
 Commit the **entire** `docs/` tree (`deps/`, `articles/`, `reference/`, …). Pushing only `index.html` breaks Bootstrap styling on GitHub.
+
+**Windows + Dropbox:** if the repo lives under Dropbox, pkgdown may fail while writing `docs/articles/*.html` (e.g. `audit.html`) with `Invalid argument [1515]` / `Error closing file`. Pause Dropbox, exclude `docs/` from selective sync, or clone and build outside Dropbox. `scripts/build_pkgdown.R` deletes cached article HTML first when it detects a Dropbox path.

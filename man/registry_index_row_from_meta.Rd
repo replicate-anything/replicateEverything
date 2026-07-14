@@ -4,7 +4,7 @@
 \alias{registry_index_row_from_meta}
 \title{Build a registry index row from study or registry stub metadata}
 \usage{
-registry_index_row_from_meta(meta, study_root = NULL)
+registry_index_row_from_meta(meta, study_root = NULL, folder = NULL)
 }
 \description{
 Build a registry index row from study or registry stub metadata

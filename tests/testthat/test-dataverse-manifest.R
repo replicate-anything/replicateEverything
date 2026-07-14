@@ -33,6 +33,29 @@ test_that("verify_deposit_paths catches missing files", {
   )
 })
 
+test_that("prune_deposit_paths keeps manifest files only", {
+  deposit <- file.path(tempdir(), "deposit_prune_test")
+  unlink(deposit, recursive = TRUE, force = TRUE)
+  dir.create(file.path(deposit, "data", "classification_tags"), recursive = TRUE)
+  dir.create(file.path(deposit, "scripts"), recursive = TRUE)
+  writeLines("keep", file.path(deposit, "data", "study1.csv"))
+  writeLines("drop", file.path(deposit, "data", "study3.csv"))
+  writeLines("drop", file.path(deposit, "data", "classification_tags", "tags_climate.txt"))
+  writeLines("keep", file.path(deposit, "scripts", "recodes_s1.R"))
+  writeLines("drop", file.path(deposit, "Replication.html"))
+  writeLines("cache", file.path(deposit, ".dataset_original.zip"))
+
+  keep <- c("data/study1.csv", "scripts/recodes_s1.R")
+  prune_deposit_paths(keep, deposit)
+
+  expect_true(file.exists(file.path(deposit, "data", "study1.csv")))
+  expect_true(file.exists(file.path(deposit, "scripts", "recodes_s1.R")))
+  expect_true(file.exists(file.path(deposit, ".dataset_original.zip")))
+  expect_false(file.exists(file.path(deposit, "data", "study3.csv")))
+  expect_false(file.exists(file.path(deposit, "Replication.html")))
+  expect_false(dir.exists(file.path(deposit, "data", "classification_tags")))
+})
+
 test_that("manifest_row_use_original detects true values", {
   row <- data.frame(original = TRUE, stringsAsFactors = FALSE)
   expect_true(manifest_row_use_original(row))

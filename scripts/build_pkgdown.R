@@ -13,6 +13,27 @@
 # REPLICATE_AUDIT_LIVE=true.
 Sys.setenv(REPLICATE_AUDIT_LIVE = "false")
 
+# Dropbox (and similar sync) on Windows can lock docs/articles/*.html while
+# pkgdown overwrites them, causing:
+#   Warning: Invalid argument [1515]
+#   Error: Error closing file
+# Best fix: exclude docs/ from selective sync, or clone/build outside Dropbox.
+# Workaround below removes cached article HTML before the build starts.
+if (grepl("dropbox", normalizePath(getwd(), winslash = "/"), ignore.case = TRUE)) {
+  message(
+    "Note: building inside Dropbox can fail with 'Error closing file'. ",
+    "Pause sync, exclude docs/ from selective sync, or build outside Dropbox."
+  )
+  articles_dir <- file.path("docs", "articles")
+  if (dir.exists(articles_dir)) {
+    html <- list.files(articles_dir, pattern = "\\.html$", full.names = TRUE)
+    if (length(html)) {
+      message("Removing ", length(html), " cached article HTML file(s) before rebuild.")
+      unlink(html, force = TRUE)
+    }
+  }
+}
+
 if (requireNamespace("devtools", quietly = TRUE)) {
   devtools::document(quiet = TRUE)
 }

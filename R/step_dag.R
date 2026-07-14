@@ -204,9 +204,21 @@ plan_study_run <- function(target_id, given, format, graph) {
     )
   }
   if (!target_id %in% graph$ids) {
+    available <- graph$ids[!graph$types %in% c("format")]
+    figures <- available[graph$types[available] == "figure"]
+    hint <- if (length(figures) > 0L) {
+      paste0(
+        "\nFigure step ids for this study: ",
+        paste(figures, collapse = ", "),
+        "."
+      )
+    } else {
+      ""
+    }
     stop(
       "Step '", target_id, "' not found in study DAG. ",
-      "Available: ", paste(graph$ids, collapse = ", "),
+      "Available: ", paste(available, collapse = ", "),
+      hint,
       call. = FALSE
     )
   }
@@ -462,6 +474,37 @@ format_dag_component_paths <- function(comp, graph, steps = graph$steps) {
     labels <- vapply(nodes, function(n) as.character(n$label), character(1))
     paste(labels, collapse = " \u2192 ")
   }, character(1))
+}
+
+#' Engines required to execute a planned study run (excludes format-only steps)
+#' @param meta Parsed replication metadata.
+#' @param plan Output of [plan_study_run()].
+#' @return Character vector subset of \code{r}, \code{stata}, \code{python}.
+#' @keywords internal
+study_engines_for_plan <- function(meta, plan) {
+  steps <- normalize_study_steps(meta)
+  step_ids <- unique(c(
+    plan$step_ids,
+    plan$target_id,
+    plan$format_step_id
+  ))
+  step_ids <- step_ids[nzchar(step_ids)]
+  if (length(steps) == 0L || length(step_ids) == 0L) {
+    return(character(0))
+  }
+  step_by_id <- setNames(steps, vapply(steps, function(x) as.character(x$id), character(1)))
+  engines <- character(0)
+  for (step_id in step_ids) {
+    step <- step_by_id[[step_id]]
+    if (is.null(step)) {
+      next
+    }
+    if (identical(as.character(step$type), "format")) {
+      next
+    }
+    engines <- c(engines, replication_engine(step, meta$paper))
+  }
+  unique(engines[nzchar(engines)])
 }
 
 resolve_study_meta_input <- function(meta, repo = NULL, folder = NULL) {

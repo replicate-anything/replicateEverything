@@ -37,8 +37,8 @@ demo](https://shiny2.wzb.eu/ipi/replicate/).
 - **Contributor tooling** — validate and register folder- or
   package-backed studies
   ([`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md),
-  [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
-  [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md))
+  [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
+  [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md))
 - **Bundled AI skills** — markdown workflow guides for assistants
   ([`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md),
   [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md))
@@ -133,13 +133,12 @@ The `<folder>` name comes from the registry `index.csv` (for example
 
 ``` yaml
 paper:
-  title: Market Design and Moral Behavior
+  title: My wonderful paper
   authors:
-    - Bartling, Björn
-    - Fehr, Ernst
+    - replicateEverything, Team
   year: 2024
-  doi: 10.1257/aer.20221688
-  journal: American Economic Review
+  doi: 1.2.3.4
+  journal: Sample journal
 
 replications:
   - id: fig_1
@@ -234,7 +233,7 @@ repo: replicate-anything/rep-10.1177-00491241211036161
 
 The full `steps:` pipeline lives in the study repo’s `replication.yml`.
 Display outputs live in `outputs/` (from
-[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)).
+[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)).
 
 **From the study repository root:**
 
@@ -336,11 +335,11 @@ Linked study packages should export:
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Replicate full paper | `run_replication(doi, "everything")` |
-| Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
+| Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
 | Prepare folder study | [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
 | Sync folder study to registry | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
-| Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
-| Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
+| Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
+| Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
 | List bundled AI skills | [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md), [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md) |
 | Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |
 | Shiny demo | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
@@ -356,16 +355,16 @@ Use them with ChatGPT, Claude, Cursor, Copilot, or other assistants.
 ``` r
 
 ai_skills()
-# [1] "APSR_to_replicateEverything"
+# [1] "dataverse_to_replicateEverything"
 
-cat(ai_skill("APSR_to_replicateEverything"))
+cat(ai_skill("dataverse_to_replicateEverything"))
 ```
 
 Installed path:
 
 ``` r
 
-system.file("ai", "skills", "APSR_to_replicateEverything.md", package = "replicateEverything")
+system.file("ai", "skills", "dataverse_to_replicateEverything.md", package = "replicateEverything")
 ```
 
 ### Local registry development
@@ -407,7 +406,7 @@ on the registry checkout).
 For **package-backed** studies, use
 [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
 after
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md)
+[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
 passes instead of copying code and data into the registry.
 
 ``` bash

@@ -173,6 +173,23 @@ configure_registry_source <- function() {
 
 configure_registry_source()
 
+shiny_startup_deploy_dir <- function() {
+  app_env <- Sys.getenv("SHINY_APP_DIR", unset = "")
+  if (length(app_env) == 1L && nzchar(app_env) && dir.exists(app_env)) {
+    return(normalizePath(app_env, winslash = "/", mustWork = FALSE))
+  }
+  normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+}
+
+deploy_options_path <- file.path(shiny_startup_deploy_dir(), "deploy-options.R")
+if (file.exists(deploy_options_path)) {
+  source(deploy_options_path, local = FALSE)
+}
+
+shiny_live_run_enabled <- function() {
+  isTRUE(getOption("replicate_shiny.live_run", TRUE))
+}
+
 using_local_replicate_everything <- function() {
   isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))
 }
@@ -413,6 +430,17 @@ shiny_app_stale_banner_ui <- function() {
     ". Run ",
     tags$code("replicateEverything::save_local_shiny('<deploy-dir>')"),
     " after updating the package, then restart Shiny Server / Connect."
+  )
+}
+
+shiny_display_only_banner_ui <- function() {
+  if (shiny_live_run_enabled()) {
+    return(NULL)
+  }
+  tags$div(
+    class = "alert alert-secondary py-2 px-3 mb-0 rounded-0 border-0 border-bottom",
+    tags$strong("Display-only deployment — "),
+    "Live Run disabled."
   )
 }
 
@@ -4386,6 +4414,7 @@ ui <- tagList(
     }
   "))),
   shiny_app_stale_banner_ui(),
+  shiny_display_only_banner_ui(),
   registry_health_bar_ui(registry_audit_summary),
   navbarPage(
   id = "main_nav",
@@ -4930,6 +4959,9 @@ server <- function(input, output, session) {
 
   output$check_system_compat_ui <- renderUI({
     req(state$doi)
+    if (!shiny_live_run_enabled()) {
+      return(NULL)
+    }
     tags$div(
       class = "compat-toolbar d-flex justify-content-end mb-1",
       actionButton(
@@ -5184,15 +5216,17 @@ server <- function(input, output, session) {
             group
           )
         ),
-        actionButton(
-          paste0("replicate_", safe_group),
-          "Run",
-          class = "btn-primary btn-sm",
-          onclick = sprintf(
-            "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
-            group
+        if (shiny_live_run_enabled()) {
+          actionButton(
+            paste0("replicate_", safe_group),
+            "Run",
+            class = "btn-primary btn-sm",
+            onclick = sprintf(
+              "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
+              group
+            )
           )
-        )
+        }
       )
     )
   }
@@ -5276,15 +5310,17 @@ server <- function(input, output, session) {
                     step_id
                   )
                 ),
-                actionButton(
-                  paste0("data_run_", safe_id),
-                  "Run",
-                  class = "btn-outline-primary btn-sm",
-                  onclick = sprintf(
-                    "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
-                    step_id
+                if (shiny_live_run_enabled()) {
+                  actionButton(
+                    paste0("data_run_", safe_id),
+                    "Run",
+                    class = "btn-outline-primary btn-sm",
+                    onclick = sprintf(
+                      "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
+                      step_id
+                    )
                   )
-                )
+                }
               )
             )
           })
@@ -5348,6 +5384,10 @@ server <- function(input, output, session) {
     req(length(parts) == 2)
     action <- parts[[1]]
     group_or_id <- parts[[2]]
+
+    if (identical(action, "replicate") && !shiny_live_run_enabled()) {
+      return(invisible(NULL))
+    }
 
     if (!is.null(state$prep_df) && nrow(state$prep_df) > 0 &&
         group_or_id %in% state$prep_df$id) {
@@ -5456,6 +5496,12 @@ server <- function(input, output, session) {
   })
 
   run_live_replication <- function(doi, what, language = "r") {
+    if (!shiny_live_run_enabled()) {
+      state$selected_result <- simpleError("Live Run is disabled in this deployment.")
+      state$selected_source <- "live"
+      state$progress <- NULL
+      return(invisible(NULL))
+    }
     audit <- tryCatch(
       check_study_compat(
         doi,
@@ -5556,7 +5602,13 @@ server <- function(input, output, session) {
         ))
       }
       if (is.null(state$selected_result)) {
-        return(helpText("Click Run to execute this pipeline step."))
+        return(helpText(
+          if (shiny_live_run_enabled()) {
+            "Click Run to execute this pipeline step."
+          } else {
+            "No precomputed result available for this pipeline step."
+          }
+        ))
       }
       raw <- state$selected_result
       status <- NULL

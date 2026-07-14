@@ -6,10 +6,20 @@
 #' @param path Path to an R script.
 #' @param env Environment in which to define functions.
 #' @param install_deps Logical. Passed to dependency retry helper.
+#' @param visited Optional environment memoizing normalized paths already sourced.
 #' @keywords internal
-source_replication_functions <- function(path, env, install_deps = FALSE) {
+source_replication_functions <- function(path, env, install_deps = FALSE, visited = NULL) {
+  path <- normalizePath(path, winslash = "/", mustWork = TRUE)
+  if (is.null(visited)) {
+    visited <- new.env(parent = emptyenv())
+  }
+  if (exists(path, envir = visited, inherits = FALSE)) {
+    return(invisible(env))
+  }
+  assign(path, TRUE, envir = visited)
+
   exprs <- parse(path, keep.source = FALSE)
-  code_dir <- dirname(normalizePath(path, winslash = "/", mustWork = FALSE))
+  code_dir <- dirname(path)
 
   for (expr in exprs) {
     if (is.call(expr)) {
@@ -39,7 +49,12 @@ source_replication_functions <- function(path, env, install_deps = FALSE) {
             src_arg
           }
           if (file.exists(src_path)) {
-            source_replication_functions(src_path, env, install_deps = install_deps)
+            source_replication_functions(
+              src_path,
+              env,
+              install_deps = install_deps,
+              visited = visited
+            )
           }
         }
         next

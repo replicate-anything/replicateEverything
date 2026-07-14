@@ -20,8 +20,7 @@ print(x, ...)
 - x:
 
   Result from
-  [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
-  [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
+  [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
   [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md),
   or
   [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md).

@@ -7,7 +7,8 @@
 save_local_shiny(
   dest = getwd(),
   package = "replicateEverything",
-  overwrite = TRUE
+  overwrite = TRUE,
+  live_run = TRUE
 )
 }
 \arguments{
@@ -16,6 +17,9 @@ save_local_shiny(
 \item{package}{Package that ships the app; default \code{"replicateEverything"}.}
 
 \item{overwrite}{If \code{TRUE}, replace existing app files except \code{local.R}.}
+
+\item{live_run}{If \code{TRUE} (default), deployed app shows Live Run controls;
+if \code{FALSE}, writes \code{deploy-options.R} for a display-only deployment.}
 }
 \value{
 Invisibly, normalized \code{dest}.
@@ -29,5 +33,6 @@ in a fixed folder. Existing \code{local.R} in \code{dest} is never overwritten.
 \dontrun{
 # After install_github("replicate-anything/replicateEverything"):
 save_local_shiny("/srv/shiny/replicate")
+save_local_shiny("/srv/shiny/replicate", live_run = FALSE) # display-only
 }
 }

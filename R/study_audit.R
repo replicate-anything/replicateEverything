@@ -307,8 +307,13 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
 #' @return List with \code{languages}, \code{dependencies}, \code{ready},
 #'   \code{install_needed}.
 #' @keywords internal
-probe_study_engine_dependencies <- function(meta, study_root = NULL) {
+probe_study_engine_dependencies <- function(meta, study_root = NULL, engines = NULL) {
   languages <- study_declared_languages(meta)
+  if (!is.null(engines) && length(engines) > 0L) {
+    engines <- unique(tolower(as.character(engines)))
+    engines <- engines[engines %in% languages]
+    languages <- engines
+  }
   dependencies <- list()
   ready <- TRUE
   install_needed <- FALSE
@@ -359,7 +364,8 @@ probe_study_engine_dependencies <- function(meta, study_root = NULL) {
 evaluate_study_compatibility <- function(
   meta,
   ctx,
-  do_materialize = TRUE
+  do_materialize = TRUE,
+  engines = NULL
 ) {
   kind <- replication_kind(meta, ctx)
 
@@ -399,15 +405,21 @@ evaluate_study_compatibility <- function(
       install_needed <- TRUE
     }
   } else if (identical(kind, "folder")) {
-    languages <- study_declared_languages(meta)
+    declared <- study_declared_languages(meta)
+    active_langs <- declared
+    if (!is.null(engines) && length(engines) > 0L) {
+      engines_norm <- unique(tolower(as.character(engines)))
+      active_langs <- engines_norm[engines_norm %in% declared]
+    }
+    languages <- declared
     study_root <- resolve_study_folder_path(meta, ctx)
 
-    needs_stata_folder <- "stata" %in% languages &&
+    needs_stata_folder <- "stata" %in% active_langs &&
       length(stata_deps_probe_scripts(study_root %||% ".", meta = meta)) > 0L
 
     if (
       isTRUE(do_materialize) &&
-      needs_stata_folder &&
+      (needs_stata_folder || length(active_langs) > 0L) &&
       (is.null(study_root) || !dir.exists(study_root))
     ) {
       study_root <- tryCatch(
@@ -422,7 +434,7 @@ evaluate_study_compatibility <- function(
     }
   }
 
-  engine_probe <- probe_study_engine_dependencies(meta, study_root = study_root)
+  engine_probe <- probe_study_engine_dependencies(meta, study_root = study_root, engines = engines)
   languages <- unique(c(languages, engine_probe$languages))
   dependencies <- c(dependencies, engine_probe$dependencies)
   if (!isTRUE(engine_probe$ready)) {

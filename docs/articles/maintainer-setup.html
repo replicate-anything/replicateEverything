@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Maintainer setup">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -97,12 +97,11 @@ package-backed registry studies (R CRAN, Python pip, Stata
 dependencies. After setup, build artifacts with the kind-specific
 builder (paths differ by design):</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/build_study_artifacts.html">build_study_artifacts</a></span><span class="op">(</span><span class="st">"path/to/folder-study"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/build_package_artifacts.html">build_package_artifacts</a></span><span class="op">(</span><span class="st">"rep1371journalpone0278337"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>Use [replication_kind()] to inspect layout (<code>"folder"</code>,
-<code>"package"</code>, or <code>"registry"</code>) and
-[study_output_dir()] for the display output root (<code>outputs/</code>
-vs <code>inst/report/artifacts/</code>).</p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/build_study_outputs.html">build_study_outputs</a></span><span class="op">(</span><span class="st">"path/to/folder-study"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/build_study_outputs.html">build_study_outputs</a></span><span class="op">(</span><span class="st">"rep1371journalpone0278337"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Folder-backed studies write under <code>outputs/</code>;
+package-backed studies use <code>inst/report/outputs/</code> (or legacy
+<code>inst/report/artifacts/</code>).</p>
 </div>
 <div class="section level2">
 <h2 id="install-dependencies-for-every-registry-study">Install dependencies for every registry study<a class="anchor" aria-label="anchor" href="#install-dependencies-for-every-registry-study"></a>
@@ -271,23 +270,12 @@ recompile <code>index.csv</code> from all stubs and rerun
 <td><code><a href="../reference/install_registry_dependencies.html">install_registry_dependencies()</a></code></td>
 </tr>
 <tr class="even">
-<td>Study layout</td>
-<td>
-<code>replication_kind(meta)</code> → <code>"folder"</code> /
-<code>"package"</code>
-</td>
+<td>Build study outputs</td>
+<td><code>build_study_outputs(location, install_deps = TRUE)</code></td>
 </tr>
 <tr class="odd">
-<td>Display output directory</td>
-<td><code>study_output_dir(meta, ctx)</code></td>
-</tr>
-<tr class="even">
-<td>Build folder artifacts</td>
-<td><code>build_study_artifacts(path, install_deps = TRUE)</code></td>
-</tr>
-<tr class="odd">
-<td>Build package artifacts</td>
-<td><code>build_package_artifacts(pkg, install_deps = TRUE)</code></td>
+<td>Validate study</td>
+<td><code>check_replication(location)</code></td>
 </tr>
 <tr class="even">
 <td>Hint text for errors / UI</td>

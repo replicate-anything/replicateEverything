@@ -13,8 +13,8 @@ first_author_surname(name)
 Character scalar.
 }
 \description{
-Handles middle initials (e.g. \dquote{Robert A. Blair} \eqn{\rightarrow} Blair)
-and compound surnames (e.g. \dquote{Andrés Vargas Castillo} \eqn{\rightarrow}
+Handles middle initials (e.g. \dQuote{Robert A. Blair} \eqn{\rightarrow} Blair)
+and compound surnames (e.g. \dQuote{Andrés Vargas Castillo} \eqn{\rightarrow}
 Vargas Castillo).
 }
 \keyword{internal}

@@ -6,7 +6,7 @@ not run when the package sources the file.
 ## Usage
 
 ``` r
-source_replication_functions(path, env, install_deps = FALSE)
+source_replication_functions(path, env, install_deps = FALSE, visited = NULL)
 ```
 
 ## Arguments
@@ -22,3 +22,7 @@ source_replication_functions(path, env, install_deps = FALSE)
 - install_deps:
 
   Logical. Passed to dependency retry helper.
+
+- visited:
+
+  Optional environment memoizing normalized paths already sourced.

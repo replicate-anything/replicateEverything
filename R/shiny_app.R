@@ -62,6 +62,35 @@ shiny_path_has_suffix <- function(path, suffix) {
   endsWith(path, suffix)
 }
 
+#' Whether the Shiny app allows live replication runs
+#'
+#' Reads \code{options(replicate_shiny.live_run)}; default \code{TRUE}.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+shiny_live_run_enabled <- function() {
+  isTRUE(getOption("replicate_shiny.live_run", TRUE))
+}
+
+#' Write deploy-options.R for a Shiny deploy directory
+#'
+#' Sets \code{options(replicate_shiny.live_run = ...)} when the deployed
+#' \code{app.R} starts (always overwritten on deploy, like \code{BUNDLE_SHA}).
+#'
+#' @param dest Deploy directory.
+#' @param live_run If \code{TRUE}, enable Live Run; if \code{FALSE}, display-only.
+#' @return Invisibly, \code{live_run}.
+#' @keywords internal
+write_shiny_deploy_options <- function(dest, live_run = TRUE) {
+  dest <- resolve_shiny_deploy_dest(dest)
+  line <- sprintf(
+    "options(replicate_shiny.live_run = %s)",
+    if (isTRUE(live_run)) "TRUE" else "FALSE"
+  )
+  writeLines(line, file.path(dest, "deploy-options.R"), useBytes = TRUE)
+  invisible(isTRUE(live_run))
+}
+
 #' Copy the bundled Shiny app into a deploy directory
 #'
 #' Materializes `inst/shiny` from an installed `replicateEverything` build into
@@ -71,17 +100,21 @@ shiny_path_has_suffix <- function(path, suffix) {
 #' @param dest Target directory. Defaults to the current working directory.
 #' @param package Package that ships the app; default `"replicateEverything"`.
 #' @param overwrite If `TRUE`, replace existing app files except `local.R`.
+#' @param live_run If `TRUE` (default), deployed app shows Live Run controls;
+#'   if `FALSE`, writes `deploy-options.R` for a display-only deployment.
 #' @return Invisibly, normalized `dest`.
 #' @export
 #' @examples
 #' \dontrun{
 #' # After install_github("replicate-anything/replicateEverything"):
 #' save_local_shiny("/srv/shiny/replicate")
+#' save_local_shiny("/srv/shiny/replicate", live_run = FALSE) # display-only
 #' }
 save_local_shiny <- function(
   dest = getwd(),
   package = "replicateEverything",
-  overwrite = TRUE
+  overwrite = TRUE,
+  live_run = TRUE
 ) {
   src <- shiny_app_dir(package)
   if (!nzchar(src) || !dir.exists(src)) {
@@ -134,9 +167,12 @@ save_local_shiny <- function(
   }
 
   bundle_sha <- write_shiny_bundle_sha(dest, package = package)
+  write_shiny_deploy_options(dest, live_run = live_run)
+  mode_label <- if (isTRUE(live_run)) "live run" else "display-only"
   message(
     "Shiny app written to ", dest,
-    " (BUNDLE_SHA=", bundle_sha, "). Restart Shiny workers after deploy."
+    " (BUNDLE_SHA=", bundle_sha, ", ", mode_label, "). ",
+    "Restart Shiny workers after deploy."
   )
   invisible(dest)
 }

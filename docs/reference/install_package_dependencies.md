@@ -2,8 +2,8 @@
 
 Loads or installs the study package, then installs declared R, Python,
 and Stata dependencies from its `replication.yml`. Does not build
-`inst/report/artifacts/` — use
-[`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_package_artifacts.md)
+`inst/report/outputs/` — use
+[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
 for that.
 
 ## Usage

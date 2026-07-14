@@ -155,12 +155,12 @@ refresh_registry("../registry", audit = TRUE)
 
 ``` r
 
-check_package_replication(
+check_replication(
   "../rep-10.1371_journal.pone.0278337",
   full_replication = FALSE
 )
 
-check_package_replication(
+check_replication(
   "../rep-10.1371_journal.pone.0278337",
   full_replication = TRUE
 )
@@ -171,7 +171,7 @@ check_package_replication(
 Package-backed studies use the same `tests/substantive/<step_id>.R`
 convention as folder-backed repos. Define
 `substantive_check_<step_id>(object)` and call it from
-`tests/testthat/`. \[check_package_replication()\] reports coverage;
+`tests/testthat/`. \[check_replication()\] reports coverage;
 `full_replication = TRUE` runs defined checks. \[audit_everything()\]
 includes them in the registry audit (`substantive = TRUE`, default).
 

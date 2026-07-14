@@ -11,6 +11,35 @@ test_that("save_local_shiny copies app and www", {
   expect_true(file.exists(file.path(dest, "app.R")))
   expect_true(file.exists(file.path(dest, "www", "logo-hex.png")))
   expect_true(file.exists(file.path(dest, "local.R.example")))
+  expect_true(file.exists(file.path(dest, "deploy-options.R")))
+  expect_equal(readLines(file.path(dest, "deploy-options.R")), "options(replicate_shiny.live_run = TRUE)")
+})
+
+test_that("save_local_shiny with live_run=FALSE writes display-only deploy-options", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  dest <- tempfile("shiny-deploy-")
+  dir.create(dest)
+  on.exit(unlink(dest, recursive = TRUE), add = TRUE)
+
+  save_local_shiny(dest, live_run = FALSE)
+
+  opts_path <- file.path(dest, "deploy-options.R")
+  expect_true(file.exists(opts_path))
+  expect_equal(readLines(opts_path), "options(replicate_shiny.live_run = FALSE)")
+})
+
+test_that("shiny_live_run_enabled reads replicate_shiny.live_run option", {
+  withr::with_options(list(replicate_shiny.live_run = NULL), {
+    expect_true(shiny_live_run_enabled())
+  })
+  withr::with_options(list(replicate_shiny.live_run = FALSE), {
+    expect_false(shiny_live_run_enabled())
+  })
+  withr::with_options(list(replicate_shiny.live_run = TRUE), {
+    expect_true(shiny_live_run_enabled())
+  })
 })
 
 test_that("save_local_shiny does not overwrite local.R", {

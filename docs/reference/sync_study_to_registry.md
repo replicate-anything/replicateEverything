@@ -16,8 +16,6 @@ sync_study_to_registry(
   install_deps = FALSE,
   verbose = TRUE
 )
-
-sync_folder_paper(location = ".", registry_root = NULL)
 ```
 
 ## Arguments
@@ -65,10 +63,6 @@ This is a **maintainer** function. Contributors should run
 and open a pull request; maintainers run this (or
 [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md))
 from a local registry checkout.
-
-## Functions
-
-- `sync_folder_paper()`: Deprecated alias.
 
 ## Examples
 

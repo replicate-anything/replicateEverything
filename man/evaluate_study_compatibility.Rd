@@ -4,7 +4,7 @@
 \alias{evaluate_study_compatibility}
 \title{Evaluate yaml-declared compatibility from parsed metadata}
 \usage{
-evaluate_study_compatibility(meta, ctx, do_materialize = TRUE)
+evaluate_study_compatibility(meta, ctx, do_materialize = TRUE, engines = NULL)
 }
 \arguments{
 \item{meta}{Parsed replication metadata.}

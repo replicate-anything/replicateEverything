@@ -4,7 +4,7 @@
 \alias{probe_study_engine_dependencies}
 \title{Probe declared R / Python / Stata dependencies from yaml}
 \usage{
-probe_study_engine_dependencies(meta, study_root = NULL)
+probe_study_engine_dependencies(meta, study_root = NULL, engines = NULL)
 }
 \arguments{
 \item{meta}{Parsed replication metadata.}

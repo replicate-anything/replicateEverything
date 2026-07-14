@@ -29,6 +29,7 @@ execute_study_plan <- function(
   step_by_id <- setNames(steps, vapply(steps, function(x) as.character(x$id), character(1)))
   results <- list()
   executed <- character(0)
+  run_engines <- study_engines_for_plan(meta, plan)
 
   for (step_id in plan$step_ids) {
     if (step_id %in% executed) {
@@ -60,7 +61,8 @@ execute_study_plan <- function(
       repo = repo,
       folder = folder,
       skip_prep = TRUE,
-      force = force
+      force = force,
+      engines = run_engines
     )
     results[[step_id]] <- result
     executed <- c(executed, step_id)
@@ -78,7 +80,8 @@ execute_study_plan <- function(
       repo = repo,
       folder = folder,
       skip_prep = TRUE,
-      force = force
+      force = force,
+      engines = run_engines
     )
     results[[target_id]] <- result
   } else {
@@ -94,7 +97,8 @@ execute_study_plan <- function(
         repo = repo,
         folder = folder,
         skip_prep = TRUE,
-        force = FALSE
+        force = FALSE,
+        engines = run_engines
       )
     } else {
       result <- cached
@@ -120,7 +124,8 @@ render_replication_step <- function(
   repo = NULL,
   folder = NULL,
   skip_prep = FALSE,
-  force = FALSE
+  force = FALSE,
+  engines = NULL
 ) {
   if (is.null(meta)) {
     meta <- get_replication_meta(doi, repo = repo, folder = folder)
@@ -138,7 +143,8 @@ render_replication_step <- function(
     skip_prep = skip_prep,
     force = force,
     meta = meta,
-    ctx = ctx
+    ctx = ctx,
+    engines = engines
   )
 }
 

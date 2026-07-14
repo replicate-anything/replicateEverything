@@ -316,7 +316,7 @@ substitute_stata_globals <- function(path, globals) {
       unresolved <- c(unresolved, name)
       break
     }
-    out <- sub("\\$[A-Za-z_][A-Za-z0-9_]*", val, out, count = 1L, perl = TRUE)
+    out <- sub("\\$[A-Za-z_][A-Za-z0-9_]*", val, out, perl = TRUE)
   }
   list(path = out, unresolved = unique(unresolved))
 }

@@ -4,7 +4,7 @@
 \alias{source_replication_functions}
 \title{Load only function definitions from a replication script}
 \usage{
-source_replication_functions(path, env, install_deps = FALSE)
+source_replication_functions(path, env, install_deps = FALSE, visited = NULL)
 }
 \arguments{
 \item{path}{Path to an R script.}
@@ -12,6 +12,8 @@ source_replication_functions(path, env, install_deps = FALSE)
 \item{env}{Environment in which to define functions.}
 
 \item{install_deps}{Logical. Passed to dependency retry helper.}
+
+\item{visited}{Optional environment memoizing normalized paths already sourced.}
 }
 \description{
 Skips the self-run footer so top-level execution (data load + pipe) does not

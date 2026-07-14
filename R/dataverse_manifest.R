@@ -162,6 +162,66 @@ verify_deposit_paths <- function(paths, deposit_root) {
   invisible(paths)
 }
 
+#' Remove deposit files not listed in a manifest keep set
+#'
+#' After a full Dataverse archive extract, drops PDFs, HTML, extra scripts,
+#' and other paths outside \code{keep_paths}. Preserves the cached archive zip
+#' and other dotfiles named in \code{preserve}.
+#'
+#' @param keep_paths Character vector of relative paths to retain.
+#' @param deposit_root Deposit directory (e.g. \code{outputs/deposit}).
+#' @param preserve Basenames (or relative paths) always kept under \code{deposit_root}.
+#' @keywords internal
+prune_deposit_paths <- function(
+  keep_paths,
+  deposit_root,
+  preserve = c(".dataset_original.zip", ".manifest_applied")
+) {
+  keep_paths <- as.character(keep_paths)
+  keep_paths <- keep_paths[nzchar(keep_paths)]
+  deposit_root <- normalizePath(deposit_root, winslash = "/", mustWork = FALSE)
+  keep_abs <- normalizePath(
+    file.path(deposit_root, keep_paths),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  preserve_abs <- normalizePath(
+    file.path(deposit_root, preserve),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  keep_abs <- unique(c(keep_abs, preserve_abs))
+
+  all_files <- list.files(
+    deposit_root,
+    recursive = TRUE,
+    full.names = TRUE,
+    all.files = TRUE,
+    no.. = TRUE
+  )
+  for (path in all_files) {
+    path_abs <- normalizePath(path, winslash = "/", mustWork = FALSE)
+    if (path_abs %in% keep_abs) {
+      next
+    }
+    unlink(path, force = TRUE)
+  }
+
+  all_dirs <- list.dirs(deposit_root, recursive = TRUE, full.names = TRUE)
+  all_dirs <- all_dirs[order(nchar(all_dirs), decreasing = TRUE)]
+  for (dir_path in all_dirs) {
+    if (identical(normalizePath(dir_path, winslash = "/"), deposit_root)) {
+      next
+    }
+    entries <- list.files(dir_path, all.files = TRUE, no.. = TRUE)
+    if (!length(entries)) {
+      unlink(dir_path, recursive = TRUE, force = TRUE)
+    }
+  }
+
+  invisible(keep_paths)
+}
+
 #' Download a single file listed in a Dataverse manifest row
 #'
 #' Manifest columns:

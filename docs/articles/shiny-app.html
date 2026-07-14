@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Shiny demo app">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -112,13 +112,35 @@ package, materialize the bundled app:</p>
 <code>www/</code> (logo and favicons)</li>
 <li>
 <code>local.R.example</code> (template only)</li>
+<li>
+<code>deploy-options.R</code> (display-only vs live run; always
+overwritten on deploy)</li>
+<li>
+<code>BUNDLE_SHA</code> (package build stamp)</li>
 </ul>
 <p><strong><code>local.R</code> is never overwritten</strong>, so
 server-specific settings survive updates.</p>
 <div class="section level3">
+<h3 id="display-only-vs-live-run">Display-only vs Live Run<a class="anchor" aria-label="anchor" href="#display-only-vs-live-run"></a>
+</h3>
+<p>By default, deployed apps allow <strong>Live Run</strong> (same as
+local <code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code>). For a public demo that should only
+show precomputed artifacts, deploy in display-only mode:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span>, live_run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p>This writes <code>deploy-options.R</code> with
+<code>options(replicate_shiny.live_run = FALSE)</code>. The app hides
+Run buttons and shows a subtle banner. Use <code>live_run = TRUE</code>
+(the default) when the server should execute replications on demand.</p>
+<p>For local development, set
+<code>options(replicate_shiny.live_run = TRUE)</code> in
+<code>local.R</code> if you copied a display-only deploy bundle but want
+Live Run while developing (see <code>local.R.example</code>).</p>
+</div>
+<div class="section level3">
 <h3 id="server-update-workflow">Server update workflow<a class="anchor" aria-label="anchor" href="#server-update-workflow"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"replicate-anything/replicateEverything"</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
@@ -129,7 +151,7 @@ server-specific settings survive updates.</p>
 </h3>
 <p>On a shared server, create <code>local.R</code> once (from
 <code>local.R.example</code>):</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/registry"</span>,</span>
 <span>  replicate_shiny.auto_update_replicate_everything <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -139,6 +161,35 @@ server-specific settings survive updates.</p>
 <code>registry/</code> checkout; omit
 <code>replicateEverything.registry_root</code>.</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="code-tab-inspect-sourced-files">Code tab: inspect sourced files<a class="anchor" aria-label="anchor" href="#code-tab-inspect-sourced-files"></a>
+</h2>
+<p>On the <strong>Code</strong> tab, Stata runners are shown as authored
+(not inlined). Lines such as
+<code>do "${maindir}/code/tables/mk_tab_1.do"</code> are clickable when
+the target file exists under the study root. Breadcrumb navigation and
+<strong>Back</strong> let you walk nested <code>do</code> /
+<code><a href="https://rdrr.io/r/base/source.html" class="external-link">source()</a></code> calls without stacking modals.</p>
+<p><strong>Path globals:</strong> folder-backed Stata studies set
+<code>global maindir</code> in
+<code>code/helpers/init_study_paths.do</code> to the directory
+containing <code>replication.yml</code> (walked up from the working
+directory at run time). The Shiny viewer uses the same mapping via
+<code>default_stata_globals(study_root)</code> (<code>maindir</code>,
+<code>rawdir</code>, <code>processed</code>, <code>result</code>). Live
+runs may override <code>result</code> with
+<code>REPLICATE_STATA_RESULT</code>.</p>
+<p>Implementation lives in <code>R/code_links.R</code>
+(<code><a href="../reference/build_code_file_graph.html">build_code_file_graph()</a></code>,
+<code><a href="../reference/render_code_html_with_links.html">render_code_html_with_links()</a></code>). A future
+<code>code_manifest:</code> block in <code>replication.yml</code> may
+point at Dataverse-hosted scripts (similar to the data manifest
+pattern).</p>
+<p><strong>Not yet parsed:</strong> unquoted <code>do</code> paths with
+embedded spaces, <code>`local'</code> / compound double quotes,
+<code>source(file.path(...))</code>, and Python
+<code>exec</code>/<code>runpy</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="former-standalone-repository">Former standalone repository<a class="anchor" aria-label="anchor" href="#former-standalone-repository"></a>

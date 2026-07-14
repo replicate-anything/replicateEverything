@@ -5,7 +5,7 @@ Evaluate yaml-declared compatibility from parsed metadata
 ## Usage
 
 ``` r
-evaluate_study_compatibility(meta, ctx, do_materialize = TRUE)
+evaluate_study_compatibility(meta, ctx, do_materialize = TRUE, engines = NULL)
 ```
 
 ## Arguments

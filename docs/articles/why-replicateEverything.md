@@ -14,7 +14,7 @@ TL;DR — just do this
 
 ``` r
 
-# Figure 2 from Jiang and Yang (2026)
+# Figure 4 from Jiang and Yang (2026)
 replicateEverything::run_replication(
   doi = "10.1017/s0003055426101749",
   what = "fig_4"
@@ -33,14 +33,16 @@ no guarantees: Nobody runs a standing check that the archive still runs
 today.
 
 `replicateEverything` contributes by proposing a format that makes code
-quickly accessible and runnable. Are we fighting the last battle?
+quickly accessible and runnable.
 
-You might wonder (we certainly wonder): if an AI can rewrite the
-analysis from a paper on the fly, why keep an authoritative codebase?
-Our answer: Because the code is a *record* of analytic choices. When
-results disagree, you need a shared object to inspect, not a fresh
-vibe-coded reimplementation. That case gets stronger, we think, as
-models get better at improvising.
+Are we fighting the last battle? You might wonder (we certainly wonder):
+if an AI can rewrite the analysis from a paper on the fly, why keep an
+authoritative codebase? Our answer: Because the code is a *record* of
+analytic choices. When results disagree, you need a shared object to
+inspect, not a fresh vibe-coded reimplementation. That case gets
+stronger, we think, as models get better at improvising.
+
+So this is an attempt to keep humans in the loop.
 
 Here’s a walk through of the main elements plus the bells and whistles.
 
@@ -53,15 +55,15 @@ repos. The index is still small — but you can browse what is there:
 ``` r
 
 library(replicateEverything)
-head(load_index()[, c("doi", "title", "year", "collections")])
+head(load_index()[, c("doi", "title", "year")])
 ```
 
 Example output:
 
-    #>                              doi                                    title year collections
-    #> 1 10.1177/00491241211036161   Bounding Causes of Effects ...          2022 PED
-    #> 2 10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War    2003 APSR
-    #> 3 10.1017/s0003055426101749   ...                                     2026 APSR
+    #>                              doi                                    title year
+    #> 1 10.1177/00491241211036161   Bounding Causes of Effects ...          2022
+    #> 2 10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War    2003 
+    #> 3 10.1017/s0003055426101749   ...                                     2026 
 
 Each study in the registry has a designated maintainer; right now that
 is us, but we hope that others will start adding and commit to
@@ -177,14 +179,14 @@ in `inst/ai/skills/`:
 
 ai_skills()
 # folder-replication       — generic folder-backed study repo
-# apsr-to-replicate-everything — APSR / Cambridge Dataverse flat deliveries
+# dataverse-to-replicate-everything — Harvard Dataverse replication deposits
 ```
 
 Point Cursor (or another agent) at the skill, give it your replication
 folder, and ask it to produce `replication.yml` with a `steps:` DAG,
 `outputs/` paths, tests, and a registry stub. The skills spell out
 layout, dependency probing, substantive tests, and
-[`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md).
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md).
 
 Practical tips without an agent:
 
@@ -193,7 +195,7 @@ Practical tips without an agent:
 2.  **One script per step**; declare inputs, outputs, and parents in
     `steps:`.
 3.  **Run**
-    [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
+    [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
     and
     [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
     before opening a registry PR.
@@ -211,7 +213,7 @@ install.
 | Tour every main function | [`vignette("meet-the-functions")`](https://replicate-anything.github.io/replicateEverything/articles/meet-the-functions.md) |
 | Run examples from code | [`vignette("replication-example")`](https://replicate-anything.github.io/replicateEverything/articles/replication-example.md) |
 | Build or migrate a folder-backed study | [`vignette("folder-replication-checklist")`](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md) |
-| Onboard an APSR / Dataverse delivery | skill `apsr-to-replicate-everything` |
+| Onboard a Harvard Dataverse deposit | skill `dataverse-to-replicate-everything` |
 | Add a reanalysis repo | [`vignette("reanalysis-studies")`](https://replicate-anything.github.io/replicateEverything/articles/reanalysis-studies.md) |
 | Use Stata (or bilingual R/Stata) | [`vignette("stata-replications")`](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md) |
 | Browse and run in the browser | [`vignette("shiny-app")`](https://replicate-anything.github.io/replicateEverything/articles/shiny-app.md) |

@@ -1,4 +1,4 @@
-# Display output directory for a study (legacy name: `study_artifact_dir()`)
+# Display output directory for a study
 
 Folder-backed studies use `outputs/`. Package-backed studies use
 `inst/report/outputs/`.

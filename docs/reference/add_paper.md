@@ -1,7 +1,7 @@
 # Add a package-backed study to the replication registry (maintainer)
 
 Validates a study replication package with
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
 ensures registry handoff files exist (via
 [`write_study_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_study_registry_stub.md)
 when missing), then installs the stub in a registry checkout via
@@ -48,7 +48,7 @@ add_paper(
 ## Value
 
 Invisibly, the result of
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
 with `stub_path` and `index_updated` when registration succeeds.
 
 ## Details

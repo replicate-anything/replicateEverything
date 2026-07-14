@@ -5,7 +5,7 @@ Probe declared R / Python / Stata dependencies from yaml
 ## Usage
 
 ``` r
-probe_study_engine_dependencies(meta, study_root = NULL)
+probe_study_engine_dependencies(meta, study_root = NULL, engines = NULL)
 ```
 
 ## Arguments

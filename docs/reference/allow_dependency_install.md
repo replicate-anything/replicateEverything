@@ -2,7 +2,7 @@
 
 Live Run and Shiny verify only. Maintainer builds set
 `options(replicateEverything.install_dependencies = TRUE)` (as
-`build_study_artifacts(install_deps = TRUE)` does).
+`build_study_outputs(install_deps = TRUE)` does).
 
 ## Usage
 

@@ -26,6 +26,6 @@ A character string containing the skill text.
 
 ``` r
 if (FALSE) { # \dontrun{
-cat(ai_skill("APSR_to_replicateEverything"))
+cat(ai_skill("dataverse_to_replicateEverything"))
 } # }
 ```

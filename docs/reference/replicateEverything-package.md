@@ -30,9 +30,9 @@ A typical workflow using the package is:
     or deploy it with
     [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md).
 
-7.  Contribute a folder-backed study with
-    [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md),
-    [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
+7.  Contribute a study with
+    [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md),
+    [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
     [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md),
     and
     [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)

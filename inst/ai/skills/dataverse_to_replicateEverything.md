@@ -215,6 +215,7 @@ Package helpers (`replicateEverything/R/dataverse_manifest.R`):
 - `extract_dataverse_deposit_archive()`
 - `access_dataverse_deposit_archive()`
 - `verify_deposit_paths()` — checks a manifest inventory after unzip
+- `prune_deposit_paths()` — after verify, removes files not in the manifest keep set (PDFs, HTML, extra data)
 
 Study yaml:
 
@@ -235,7 +236,7 @@ ReadMe.txt,meta
 
 Onboarding flow: download archive → unzip to scratch or `outputs/deposit/` → read
 `ReadMe.txt` → commit manifest paths → wire `prep_studies` to `source()` author
-scripts unchanged.
+scripts unchanged → **prune** deposit to manifest paths only.
 
 ### Check native format before converting (single-file fallback)
 

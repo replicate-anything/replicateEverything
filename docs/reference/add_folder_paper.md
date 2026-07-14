@@ -1,7 +1,7 @@
 # Add a folder-backed study to the replication registry (maintainer)
 
 Validates a folder-backed study with
-[`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
 ensures registry handoff files exist (via
 [`write_study_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_study_registry_stub.md)
 when missing), then installs the stub in a registry checkout via
@@ -43,13 +43,13 @@ add_folder_paper(
 - build_artifacts:
 
   If `TRUE`, run
-  [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
+  [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
   before checks.
 
 - install_deps:
 
   Passed to
-  [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md).
+  [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md).
 
 - audit:
 
@@ -60,7 +60,7 @@ add_folder_paper(
 ## Value
 
 Invisibly, the result of
-[`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md),
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
 with `stub_path` and `index_updated` when registration succeeds.
 
 ## Details

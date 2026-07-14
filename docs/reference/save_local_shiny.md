@@ -11,7 +11,8 @@ overwritten.
 save_local_shiny(
   dest = getwd(),
   package = "replicateEverything",
-  overwrite = TRUE
+  overwrite = TRUE,
+  live_run = TRUE
 )
 ```
 
@@ -29,6 +30,11 @@ save_local_shiny(
 
   If `TRUE`, replace existing app files except `local.R`.
 
+- live_run:
+
+  If `TRUE` (default), deployed app shows Live Run controls; if `FALSE`,
+  writes `deploy-options.R` for a display-only deployment.
+
 ## Value
 
 Invisibly, normalized `dest`.
@@ -39,5 +45,6 @@ Invisibly, normalized `dest`.
 if (FALSE) { # \dontrun{
 # After install_github("replicate-anything/replicateEverything"):
 save_local_shiny("/srv/shiny/replicate")
+save_local_shiny("/srv/shiny/replicate", live_run = FALSE) # display-only
 } # }
 ```

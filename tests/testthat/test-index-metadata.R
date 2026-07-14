@@ -59,6 +59,50 @@ test_that("load_index refreshes stale index from registry stubs", {
   expect_equal(idx$maintainer_name[[1]], "Macartan Humphreys")
 })
 
+test_that("load_index stub refresh does not recurse via resolve_paper_path", {
+  tmp <- tempfile("registry-")
+  dir.create(tmp)
+  studies <- file.path(tmp, "studies")
+  dir.create(studies)
+  stub <- c(
+    "paper:",
+    "  doi: https://doi.org/10.1177/00491241211036161",
+    "  title: Bounding Causes",
+    "  journal: SMR",
+    "  year: 2022",
+    "  authors: Macartan Humphreys",
+    "repo: replicate-anything/rep-test",
+    "maintainer:",
+    "  name: Macartan Humphreys",
+    "  email: macartan.humphreys@wzb.eu",
+    "collections:",
+    "  - IPI",
+    "languages:",
+    "  - r"
+  )
+  writeLines(stub, file.path(studies, "10.1177_00491241211036161.yml"))
+  stale <- data.frame(
+    folder = "10.1177_00491241211036161",
+    doi = "https://doi.org/10.1177/00491241211036161",
+    title = "Bounding Causes",
+    journal = "SMR",
+    year = 2022L,
+    authors = "Macartan Humphreys",
+    repo = "replicate-anything/rep-test",
+    stringsAsFactors = FALSE
+  )
+  utils::write.csv(stale, file.path(tmp, "index.csv"), row.names = FALSE)
+
+  withr::local_options(list(
+    replicateEverything.index = NULL,
+    replicateEverything.registry_root = tmp,
+    replicateEverything.stub_refresh_active = FALSE
+  ))
+  expect_error(load_index(), NA)
+  idx <- load_index()
+  expect_equal(idx$collections[[1]], "IPI")
+})
+
 test_that("folder_registry_index_row exports maintainer collections languages", {
   meta <- list(
     paper = list(

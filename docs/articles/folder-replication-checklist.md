@@ -70,7 +70,7 @@ languages:
 **Steps (preferred)**
 
 Declare a single **`steps:`** DAG. Legacy `prep:` / `replications:`
-blocks still compile automatically via \[migrate_legacy_steps_yaml()\].
+blocks still compile automatically when the study is loaded.
 
 ``` yaml
 steps:
@@ -120,7 +120,7 @@ options(
   replicateEverything.use_sibling_packages = TRUE
 )
 
-build_study_artifacts(
+build_study_outputs(
   location = ".",
   install_deps = TRUE
 )
@@ -156,8 +156,8 @@ prepare_study_for_registry(
 )
 ```
 
-This runs \[check_folder_replication()\] and writes handoff files **in
-the study repo**:
+This runs \[check_replication()\] and writes handoff files **in the
+study repo**:
 
 - `registry/replication.yml` — short yaml derived from full
   `replication.yml` (includes `maintainer`, `collections`, `languages`)
@@ -242,9 +242,9 @@ Call the same function from `tests/testthat/test-<step_id>.R` so
 [`testthat::test_dir()`](https://testthat.r-lib.org/reference/test_dir.html)
 exercises it locally.
 
-**Maintainers:** \[check_folder_replication()\] reports substantive
-coverage (`substantive_<step_id>` rows). Use `full_replication = TRUE`
-to run defined checks. \[audit_everything()\] runs them registry-wide by
+**Maintainers:** \[check_replication()\] reports substantive coverage
+(`substantive_<step_id>` rows). Use `full_replication = TRUE` to run
+defined checks. \[audit_everything()\] runs them registry-wide by
 default (`substantive = TRUE`); failures appear as `[substantive]` in
 the audit summary.
 
@@ -268,4 +268,4 @@ sync_study_to_registry("../rep-10.1177-00491241211036161", audit = TRUE)
 For studies maintained as R packages, see
 [`vignette("package-replication-checklist", package = "replicateEverything")`](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md)
 and
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md).
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md).

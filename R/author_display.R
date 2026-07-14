@@ -6,8 +6,8 @@ is_author_middle_initial <- function(part) {
 
 #' Extract the surname from a single author name
 #'
-#' Handles middle initials (e.g. \dquote{Robert A. Blair} \eqn{\rightarrow} Blair)
-#' and compound surnames (e.g. \dquote{Andrés Vargas Castillo} \eqn{\rightarrow}
+#' Handles middle initials (e.g. \dQuote{Robert A. Blair} \eqn{\rightarrow} Blair)
+#' and compound surnames (e.g. \dQuote{Andrés Vargas Castillo} \eqn{\rightarrow}
 #' Vargas Castillo).
 #' @param name Character scalar.
 #' @return Character scalar.

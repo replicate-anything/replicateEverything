@@ -26,7 +26,12 @@ load_index <- function() {
       index <- ensure_index_handles(
         utils::read.csv(local_csv, stringsAsFactors = FALSE)
       )
-      if (index_needs_stub_refresh(index)) {
+      if (
+        index_needs_stub_refresh(index) &&
+          !isTRUE(getOption("replicateEverything.stub_refresh_active", FALSE))
+      ) {
+        options(replicateEverything.stub_refresh_active = TRUE)
+        on.exit(options(replicateEverything.stub_refresh_active = FALSE), add = TRUE)
         refreshed <- compile_registry_index_from_stubs(registry_root)
         if (
           !is.null(refreshed) &&
@@ -78,7 +83,8 @@ compile_registry_index_from_stubs <- function(registry_root) {
   }
   rows <- lapply(yml_files, function(path) {
     meta <- yaml::read_yaml(path)
-    registry_index_row_from_meta(meta, study_root = NULL)
+    stub_folder <- sub("\\.yml$", "", basename(path), ignore.case = TRUE)
+    registry_index_row_from_meta(meta, study_root = NULL, folder = stub_folder)
   })
   index <- do.call(rbind, rows)
   ensure_index_handles(index)

@@ -26,6 +26,6 @@ Path to the bundled skill file.
 
 ``` r
 if (FALSE) { # \dontrun{
-ai_skill_path("APSR_to_replicateEverything")
+ai_skill_path("dataverse_to_replicateEverything")
 } # }
 ```

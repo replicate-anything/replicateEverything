@@ -1,6 +1,11 @@
 # Copy to local.R (gitignored) for local development or server overrides.
 # save_local_shiny() never overwrites an existing local.R.
 
+# --- Display-only vs Live Run ---
+# save_local_shiny(dest, live_run = FALSE) writes deploy-options.R (display-only prod).
+# For local dev, override here (only when not using deploy-options from save_local_shiny):
+# options(replicate_shiny.live_run = TRUE)
+
 # --- Monorepo development (sibling registry/ and rep-* study folders) ---
 # Option A: paths relative to the shiny app directory (monorepo layout)
 registry_root <- normalizePath("../registry", winslash = "/", mustWork = FALSE)

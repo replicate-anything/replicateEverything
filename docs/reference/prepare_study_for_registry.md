@@ -13,14 +13,6 @@ prepare_study_for_registry(
   full_replication = FALSE,
   registry_root = NULL
 )
-
-prepare_folder_paper(
-  location = ".",
-  build_artifacts = TRUE,
-  install_deps = TRUE,
-  full_replication = FALSE,
-  registry_root = NULL
-)
 ```
 
 ## Arguments
@@ -64,19 +56,11 @@ and refreshes the central index with
 [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md).
 
 Runs
-[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
-or
-[`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_package_artifacts.md)
+[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
 (optional), then
-[`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
-or
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
 and on success writes and validates the registry stub via
 [`write_study_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_study_registry_stub.md).
-
-## Functions
-
-- `prepare_folder_paper()`: Deprecated alias for folder studies.
 
 ## Examples
 

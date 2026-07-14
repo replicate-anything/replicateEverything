@@ -366,7 +366,8 @@ render_replication <- function(
   skip_prep = FALSE,
   force = FALSE,
   meta = NULL,
-  ctx = NULL
+  ctx = NULL,
+  engines = NULL
 ) {
   doi <- prepare_doi_for_replication(doi)
   if (is.null(meta)) {
@@ -377,7 +378,8 @@ render_replication <- function(
     meta = meta,
     repo = repo,
     folder = folder,
-    install_deps = install_deps
+    install_deps = install_deps,
+    engines = engines
   )
   if (is.null(ctx)) {
     ctx <- paper_context(doi, repo = repo, folder = folder)

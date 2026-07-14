@@ -26,7 +26,7 @@ registry_folder_from_paper <- function(paper) {
 
 #' Build a registry index row from study or registry stub metadata
 #' @keywords internal
-registry_index_row_from_meta <- function(meta, study_root = NULL) {
+registry_index_row_from_meta <- function(meta, study_root = NULL, folder = NULL) {
   paper <- meta$paper
   authors <- paper$authors %||% ""
   if (length(authors) > 1) {
@@ -34,7 +34,11 @@ registry_index_row_from_meta <- function(meta, study_root = NULL) {
   } else {
     authors <- as.character(authors[[1]] %||% "")
   }
-  folder <- registry_folder_from_paper(paper)
+  if (is.null(folder) || !nzchar(as.character(folder[[1]] %||% folder))) {
+    folder <- registry_folder_from_paper(paper)
+  } else {
+    folder <- as.character(folder[[1]] %||% folder)
+  }
   handle <- as.character(paper$handle %||% paper$study_handle %||% folder)
   handle <- trimws(handle[[1]] %||% handle)
   if (!nzchar(handle)) {

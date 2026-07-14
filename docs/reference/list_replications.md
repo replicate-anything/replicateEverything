@@ -4,8 +4,6 @@ Returns step entries from `replication.yml`: tables, figures, and (when
 requested) pipeline transforms. Use `grouped = TRUE` for one entry per
 logical product (e.g. a single `tab_1` when both R and Stata exist).
 
-Deprecated alias for `list_replications()` with `grouped = TRUE`.
-
 ## Usage
 
 ``` r
@@ -17,8 +15,6 @@ list_replications(
   language = NULL,
   include = c("display", "pipeline", "all")
 )
-
-list_replication_groups(doi, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments

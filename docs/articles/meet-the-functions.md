@@ -192,13 +192,7 @@ install_study_dependencies("10.1017/S0003055426101749")  # folder or package DOI
 install_registry_dependencies()
 ```
 
-Build display artifacts separately:
-[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
-(folder) or
-[`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_package_artifacts.md)
-(package). Inspect layout with
-[`replication_kind()`](https://replicate-anything.github.io/replicateEverything/reference/replication_kind.md).
-Full details:
+Build display outputs with \[build_study_outputs()\]. Full details:
 [`vignette("maintainer-setup")`](https://replicate-anything.github.io/replicateEverything/articles/maintainer-setup.md).
 
 ### Folder-backed studies (contributor)
@@ -207,22 +201,20 @@ Study repos hold `replication.yml`, `code/`, `data/`, and `outputs/`.
 See
 [`vignette("folder-replication-checklist")`](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md).
 
-[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
-runs every replication and writes display files under `outputs/` plus
-`outputs/manifest.json`.
+\[build_study_outputs()\] runs every replication and writes display
+files under `outputs/` plus `outputs/manifest.json`.
 
 ``` r
 
-build_study_artifacts(".", install_deps = TRUE)
+build_study_outputs(".", install_deps = TRUE)
 ```
 
-[`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
-runs a transparent checklist: layout, yaml, artifacts, tests, and
-optional live runs.
+\[check_replication()\] runs a transparent checklist: layout, yaml,
+outputs, tests, and optional live runs.
 
 ``` r
 
-check_folder_replication(".", full_replication = FALSE)
+check_replication(".", full_replication = FALSE)
 ```
 
 [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
@@ -255,15 +247,14 @@ Package-backed studies export
 [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md),
 [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md),
 and related helpers from the study package itself. Validate with
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md),
-then
+\[check_replication()\], then
 [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
 for handoff files under `inst/registry/`.
 
 ``` r
 
-check_package_replication("../rep-10.1371_journal.pone.0278337")
-check_package_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
+check_replication("../rep-10.1371_journal.pone.0278337")
+check_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
 ```
 
 See
@@ -307,10 +298,9 @@ for the latest snapshot table shipped with the package.
 | Check machine vs study yaml | [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md) |
 | Install deps (one study) | [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md) |
 | Install deps (all studies) | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
-| Build folder artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md) |
-| Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md) |
+| Build study outputs | [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
+| Validate study | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
 | Prepare registry handoff | [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
-| Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_package_replication.md) |
 | **Maintainer** |  |
 | Sync study into registry | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
 | Rebuild index + audit all | [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md) |

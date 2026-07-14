@@ -66,8 +66,28 @@ This writes:
 - `app.R`
 - `www/` (logo and favicons)
 - `local.R.example` (template only)
+- `deploy-options.R` (display-only vs live run; always overwritten on deploy)
+- `BUNDLE_SHA` (package build stamp)
 
 **`local.R` is never overwritten**, so server-specific settings survive updates.
+
+### Display-only vs Live Run
+
+By default, deployed apps allow **Live Run** (same as local `run_shiny_app()`).
+For a public demo that should only show precomputed artifacts, deploy in
+display-only mode:
+
+```{r}
+save_local_shiny("/srv/shiny/replicate", live_run = FALSE)
+```
+
+This writes `deploy-options.R` with `options(replicate_shiny.live_run = FALSE)`.
+The app hides Run buttons and shows a subtle banner. Use `live_run = TRUE`
+(the default) when the server should execute replications on demand.
+
+For local development, set `options(replicate_shiny.live_run = TRUE)` in
+`local.R` if you copied a display-only deploy bundle but want Live Run while
+developing (see `local.R.example`).
 
 ### Server update workflow
 

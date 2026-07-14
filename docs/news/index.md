@@ -2,6 +2,23 @@
 
 ## replicateEverything 0.6.0
 
+### Public API cleanup
+
+- **Unified contribute API:** \[build_study_outputs()\] replaces
+  \[build_study_artifacts()\] and \[build_package_artifacts()\];
+  \[check_replication()\] replaces \[check_folder_replication()\] and
+  \[check_package_replication()\]. The kind-specific functions remain
+  internal.
+- Removed deprecated exports: `list_replication_groups()`,
+  [`list_prep_steps()`](https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.md),
+  `prepare_folder_paper()`, and `sync_folder_paper()`.
+- Internal (no longer in Reference): `print(<replication_list>)`,
+  \[study_dag_display()\], \[study_dag_facets()\],
+  \[study_output_dir()\], \[migrate_legacy_steps_yaml()\],
+  \[run_prep_step()\], and \[replication_kind()\].
+- \[refresh_registry()\] moved to the **Registry audit** reference
+  section.
+
 ### Step DAG and conditional replication
 
 - Unified **`steps:`** block in `replication.yml` replaces separate
@@ -53,9 +70,8 @@
   `what = "everything"`.
 - \[audit_everything()\] runs published-value checks from
   `tests/substantive/<step_id>.R` when present (`substantive = TRUE` by
-  default). \[check_folder_replication()\] and
-  \[check_package_replication()\] report substantive coverage and run
-  defined checks when `full_replication = TRUE`. New helper:
+  default). \[check_replication()\] reports substantive coverage and
+  runs defined checks when `full_replication = TRUE`. New helper:
   \[check_glm_table_benchmark()\] for logit tables. Filter audits with
   **`collections =`** (e.g. `"APSR"`) or `dois =`.
 - Package website: serve from **`docs/` on `main`**; run
@@ -75,11 +91,8 @@
   validates a folder- or package-backed study and writes short yaml to
   `registry/` or `inst/registry/`. \[sync_study_to_registry()\] and
   \[refresh_registry()\] (maintainer) install stubs, rebuild
-  `index.csv`, and optionally rerun \[audit_everything()\].
-  [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-  and
-  [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
-  are deprecated aliases. New skill: `include_study_in_registry.md`.
+  `index.csv`, and optionally rerun \[audit_everything()\]. New skill:
+  `include_study_in_registry.md`.
 
 ## replicateEverything 0.5.1
 
@@ -197,9 +210,11 @@
   prefers the Windows `py -0p` launcher installs over Store stubs, and
   skips `WindowsApps` aliases on PATH. Compatibility UI shows the full
   Python path probed.
-- [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md)
-  no longer lists `README.md` as a skill; `inst/ai/skills/` now bundles
-  both `folder_replication` and `APSR_to_replicateEverything`.
+- Renamed bundled skill `APSR_to_replicateEverything` →
+  `dataverse_to_replicateEverything` (Harvard Dataverse deposits
+  generally; `collections: APSR` only when metadata cites *American
+  Political Science Review*). Step 1b now requires downloading the
+  author README from the deposit before scaffolding.
 
 ### Breaking changes
 
@@ -242,17 +257,16 @@
 
 ### Folder-backed study workflow
 
-- [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_artifacts.md)
+- [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
   — run replications and write `outputs/` + `manifest.json` from a study
   repo.
-- [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_folder_replication.md)
+- [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   — pre-merge checklist (layout, yaml, code/data paths, artifacts,
   tests).
-- [`prepare_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-  — build artifacts, validate, write `registry/replication.yml` +
-  `registry/index.csv` in study repo.
-- [`sync_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
-  — copy prepared stub files into a registry checkout.
+- `prepare_folder_paper()` — build artifacts, validate, write
+  `registry/replication.yml` + `registry/index.csv` in study repo.
+- `sync_folder_paper()` — copy prepared stub files into a registry
+  checkout.
 - [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
   — validate and register a folder-backed study stub in the registry.
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
