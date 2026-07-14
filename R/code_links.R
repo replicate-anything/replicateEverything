@@ -53,17 +53,70 @@ normalize_stata_globals <- function(study_root, globals = NULL) {
   out <- defaults
   for (nm in names(globals)) {
     val <- globals[[nm]]
-    if (nzchar(nm) && !is.null(val) && nzchar(val)) {
+    if (nzchar(nm) && !is.null(val) && nzchar(val) && is_resolved_stata_global_value(val)) {
       out[[nm]] <- normalize_path_slashes(as.character(val))
     }
   }
-  out
+  clamp_stata_path_globals_to_study(out, study_root)
+}
+
+#' Keep Stata path globals rooted in the study directory
+#'
+#' Code linking resolves \code{do} paths against \code{study_root}. If
+#' \code{maindir} (or paths derived from it) point outside that root — e.g. a
+#' materialized cache directory — links are marked \code{outside_root} and
+#' rendered with strikethrough in Shiny.
+#' @keywords internal
+clamp_stata_path_globals_to_study <- function(globals, study_root) {
+  if (!length(globals) || !is_study_root_usable(study_root)) {
+    return(globals)
+  }
+  study_norm <- normalize_path_slashes(normalizePath(study_root, winslash = "/", mustWork = FALSE))
+  maindir <- globals[["maindir"]]
+  if (is.null(maindir) || !nzchar(maindir)) {
+    return(globals)
+  }
+  maindir_norm <- normalize_path_slashes(normalizePath(maindir, winslash = "/", mustWork = FALSE))
+  if (path_within_root(maindir_norm, study_norm)) {
+    return(globals)
+  }
+  result_dir <- globals[["result"]]
+  clamped <- default_stata_globals(study_root, result_dir = result_dir)
+  for (nm in c("maindir", "rawdir", "processed")) {
+    globals[[nm]] <- clamped[[nm]]
+  }
+  globals
 }
 
 #' Normalize path separators to forward slashes
 #' @keywords internal
 normalize_path_slashes <- function(path) {
   gsub("\\\\", "/", path)
+}
+
+#' Whether a parsed Stata global value is a usable literal path
+#'
+#' Skips locals/macros such as \code{"`root'"} or \code{"\${maindir}/data/raw"}
+#' that \code{init_study_paths.do} assigns at runtime.
+#' @keywords internal
+is_resolved_stata_global_value <- function(val) {
+  if (is.null(val) || length(val) != 1L) {
+    return(FALSE)
+  }
+  val <- as.character(val)
+  if (!nzchar(val)) {
+    return(FALSE)
+  }
+  if (grepl("`", val, fixed = TRUE)) {
+    return(FALSE)
+  }
+  if (grepl("\\$\\{", val, perl = TRUE)) {
+    return(FALSE)
+  }
+  if (grepl("\\$[A-Za-z_]", val, perl = TRUE)) {
+    return(FALSE)
+  }
+  TRUE
 }
 
 #' Parse \code{global} assignments from Stata lines
@@ -80,7 +133,7 @@ parse_stata_globals <- function(lines, existing = character()) {
       perl = TRUE
     )
     hit <- regmatches(line, m)[[1]]
-    if (length(hit) >= 3L) {
+    if (length(hit) >= 3L && is_resolved_stata_global_value(hit[[3]])) {
       globals[[hit[[2]]]] <- hit[[3]]
     }
   }
@@ -350,6 +403,7 @@ resolve_code_path <- function(
   globals <- normalize_stata_globals(study_root, globals)
   study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
   allowed_root <- normalizePath(allowed_root, winslash = "/", mustWork = FALSE)
+  allowed_norm <- normalize_path_slashes(allowed_root)
   raw <- path
   subbed <- if (length(globals)) {
     substitute_stata_globals(path, globals)
@@ -374,13 +428,15 @@ resolve_code_path <- function(
     base <- study_root
     maindir <- globals[["maindir"]]
     if (!is.null(maindir) && nzchar(maindir)) {
-      base <- normalize_path_slashes(maindir)
+      maindir_norm <- normalize_path_slashes(normalizePath(maindir, winslash = "/", mustWork = FALSE))
+      if (path_within_root(maindir_norm, allowed_norm)) {
+        base <- maindir_norm
+      }
     }
     candidate <- normalize_path_slashes(file.path(base, candidate))
   }
   candidate <- normalizePath(candidate, winslash = "/", mustWork = FALSE)
   candidate <- normalize_path_slashes(candidate)
-  allowed_norm <- normalize_path_slashes(normalizePath(allowed_root, winslash = "/", mustWork = FALSE))
   if (!path_within_root(candidate, allowed_norm)) {
     return(list(
       status = "outside_root",

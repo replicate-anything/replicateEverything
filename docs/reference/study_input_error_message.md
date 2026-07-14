@@ -6,7 +6,7 @@ User-facing hint when a DOI or study-path lookup fails
 
 ``` r
 study_input_error_message(
-  kind = c("path", "cwd", "empty", "doi", "generic"),
+  kind = c("path", "cwd", "empty", "doi", "registry_bulk", "generic"),
   path = NULL,
   input = NULL
 )
@@ -16,7 +16,8 @@ study_input_error_message(
 
 - kind:
 
-  Failure kind: `path`, `cwd`, `empty`, `doi`, or `generic`.
+  Failure kind: `path`, `cwd`, `empty`, `doi`, `registry_bulk`, or
+  `generic`.
 
 - path:
 

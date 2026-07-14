@@ -82,6 +82,8 @@ Probe and install study dependencies; sync studies into the registry.
   : Sync a prepared study into the registry repository (maintainer)
 - [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
   : Compile registry index.csv from study stub yaml files
+- [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md)
+  : Build precomputed outputs
 - [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md)
   : Validate precomputed outputs
 

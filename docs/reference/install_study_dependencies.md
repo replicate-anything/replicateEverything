@@ -14,7 +14,8 @@ install_study_dependencies(
   location,
   registry_root = NULL,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  from_registry_index = FALSE
 )
 ```
 
@@ -31,6 +32,13 @@ install_study_dependencies(
 - repo, folder:
 
   Optional registry row hints.
+
+- from_registry_index:
+
+  Logical. When `TRUE` (set by
+  [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)),
+  never treat blank input or a sibling folder name in
+  [`getwd()`](https://rdrr.io/r/base/getwd.html) as the local study.
 
 ## Value
 

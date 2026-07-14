@@ -63,6 +63,24 @@ test_that("normalize_stata_globals restores defaults for empty or unnamed global
   expect_equal(merged[["result"]], "C:/tmp/staging")
 })
 
+test_that("normalize_stata_globals clamps maindir outside study root", {
+  testthat::skip_if_not(dir.exists(study_root), "Blair study repo missing")
+  defaults <- default_stata_globals(study_root)
+  cache_root <- file.path(tempdir(), "outside-maindir-test")
+  bad <- defaults
+  bad[["maindir"]] <- cache_root
+  bad[["rawdir"]] <- file.path(cache_root, "data/raw")
+  clamped <- normalize_stata_globals(study_root, bad)
+  expect_equal(clamped[["maindir"]], defaults[["maindir"]])
+  expect_equal(clamped[["rawdir"]], defaults[["rawdir"]])
+  resolved <- resolve_stata_path(
+    "${maindir}/code/tables/mk_tab_1.do",
+    study_root,
+    globals = bad
+  )
+  expect_equal(resolved$status, "ok")
+})
+
 test_that("render_code_html_with_links resolves Blair paths with empty globals", {
   study_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", "..", "rep-10.1017-s0003055422000284"),
@@ -136,6 +154,43 @@ test_that("extract_r_source_calls finds source paths", {
   calls <- extract_r_source_calls(lines)
   expect_equal(nrow(calls), 1L)
   expect_equal(calls$path[[1]], "code/helpers/format_table.R")
+})
+
+test_that("parse_stata_globals ignores runtime macro/local assignments", {
+  lines <- c(
+    'global maindir "`root\'"',
+    'global rawdir "${maindir}/data/raw"',
+    'global result "${REPLICATE_STATA_RESULT}"',
+    'global literal "C:/study/data"'
+  )
+  parsed <- parse_stata_globals(lines, character())
+  expect_equal(parsed, c(literal = "C:/study/data"))
+})
+
+test_that("prepare_code_viewer_state links Blair tab_1 do files", {
+  testthat::skip_if_not(dir.exists(study_root), "Blair study repo missing")
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  withr::local_options(list(
+    replicateEverything.registry_root = file.path(monorepo_root, "registry"),
+    replicateEverything.study_folders_root = monorepo_root,
+    replicateEverything.use_sibling_packages = TRUE
+  ))
+  viewer <- prepare_code_viewer_state(
+    "10.1017/S0003055422000284",
+    "tab_1",
+    language = "stata"
+  )
+  statuses <- vapply(viewer$rendered$links, function(x) x$status, character(1))
+  expect_true(length(statuses) >= 2L)
+  expect_true(all(statuses == "ok"))
+  expect_true(any(grepl("init_study_paths", vapply(viewer$rendered$links, function(x) x$display, character(1)))))
+  expect_true(any(grepl("mk_tab_1", vapply(viewer$rendered$links, function(x) x$display, character(1)))))
+  expect_false(any(grepl("code-file-link--outside_root", viewer$rendered$html, fixed = TRUE)))
+  expect_false(any(grepl("code-file-link--missing", viewer$rendered$html, fixed = TRUE)))
 })
 
 test_that("get_code style source returns raw runner for Blair", {

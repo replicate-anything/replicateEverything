@@ -9,7 +9,7 @@ registers it via
 ## Usage
 
 ``` r
-resolve_doi_input(doi = NULL, location = getwd())
+resolve_doi_input(doi = NULL, location = getwd(), allow_local = TRUE)
 ```
 
 ## Arguments
@@ -22,6 +22,12 @@ resolve_doi_input(doi = NULL, location = getwd())
 
   Directory to search for a local study (default
   [`getwd()`](https://rdrr.io/r/base/getwd.html)).
+
+- allow_local:
+
+  When `FALSE`, never treat blank/`local`/`.` as a working-directory
+  study (used by
+  [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)).
 
 ## Value
 

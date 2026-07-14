@@ -14,7 +14,8 @@ build_package_artifacts(
   install_deps = TRUE,
   ids = NULL,
   output_dir = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 )
 
 build_study_artifacts(
@@ -22,7 +23,8 @@ build_study_artifacts(
   install_deps = TRUE,
   ids = NULL,
   registry_root = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 )
 
 build_study_outputs(
@@ -31,7 +33,8 @@ build_study_outputs(
   ids = NULL,
   registry_root = NULL,
   output_dir = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 )
 ```
 
@@ -59,6 +62,12 @@ build_study_outputs(
 - force_prep:
 
   Logical. Re-run prep steps even when outputs already exist.
+
+- only_missing:
+
+  Logical. When `TRUE`, skip replications whose artifacts already exist
+  (see
+  [`artifact_available()`](https://replicate-anything.github.io/replicateEverything/reference/artifact_available.md)).
 
 - location:
 
@@ -98,11 +107,17 @@ Invisibly, a list with `output_dir`, `manifest`, and per-id status.
   Registry papers use `registry/scripts/build_artifacts.R` instead;
   folder-backed studies keep materials in their own repository.
 
+## See also
+
+[`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md)
+for registry-wide or DOI-scoped builds.
+
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 build_study_outputs(".", install_deps = TRUE)
 build_study_outputs("rep1371journalpone0278337", install_deps = TRUE)
+build_study_outputs(".", only_missing = TRUE)
 } # }
 ```

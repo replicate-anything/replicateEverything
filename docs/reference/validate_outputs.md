@@ -66,6 +66,7 @@ Invisibly `TRUE` on success.
 ## See also
 
 [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
+[`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md),
 [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
 
 ## Examples
