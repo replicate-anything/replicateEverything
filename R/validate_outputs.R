@@ -189,12 +189,12 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
     }
 
     meta <- yaml::read_yaml(yml_path)
-    doi <- normalize_doi(meta$paper$doi)
+    lookup <- study_lookup_from_paper(meta$paper, folder = folder)
 
     if (is_package_replication(meta)) {
       message("Checking ", folder, " (package-backed) ...")
     } else {
-      ctx <- paper_context(doi, folder = folder)
+      ctx <- paper_context(lookup, folder = folder)
       if (isTRUE(ctx$is_folder_study)) {
         message(
           "Checking ", folder, " (folder-backed; study repo ",
@@ -206,7 +206,7 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
     }
 
     tryCatch(
-      validate_paper_outputs(doi, folder = folder),
+      validate_paper_outputs(lookup, folder = folder),
       error = function(e) {
         failures <<- c(failures, paste0(folder, ": ", conditionMessage(e)))
       }
@@ -246,7 +246,7 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
 #' @param folder Optional registry folder name (for a single \code{doi}).
 #' @param language Optional engine language for multi-engine replications.
 #' @return Invisibly \code{TRUE} on success.
-#' @seealso [check_replication()], [build_study_outputs()]
+#' @seealso [check_replication()], [build_outputs()], [build_study_outputs()]
 #' @export
 #'
 #' @examples
@@ -285,12 +285,12 @@ validate_outputs <- function(
       stop("Missing replication.yml in ", study_root, call. = FALSE)
     }
     paper <- meta$paper
-    study_doi <- if (!is.null(paper$doi) && nzchar(as.character(paper$doi[[1]]))) {
-      normalize_doi(paper$doi)
+    study_doi <- study_lookup_from_paper(paper)
+    study_folder <- if (!is.null(paper$doi) && nzchar(as.character(paper$doi[[1]] %||% ""))) {
+      doi_to_registry_folder(study_doi)
     } else {
-      as.character(paper$study_handle[[1]])
+      registry_folder_from_paper(paper)
     }
-    study_folder <- doi_to_registry_folder(study_doi)
     if (is.null(registry_root) || !nzchar(registry_root)) {
       registry_root <- getOption("replicateEverything.registry_root", NULL)
     }

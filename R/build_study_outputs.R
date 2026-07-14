@@ -17,12 +17,17 @@
 #' @param output_dir Optional output directory (package studies only). Defaults to
 #'   the package report outputs directory.
 #' @param force_prep Logical. Re-run prep steps even when outputs already exist.
+#' @param only_missing Logical. When `TRUE`, skip replications whose artifacts
+#'   already exist (see [artifact_available()]).
 #' @return Invisibly, a list with `output_dir`, `manifest`, and per-id status.
+#'
+#' @seealso [build_outputs()] for registry-wide or DOI-scoped builds.
 #'
 #' @examples
 #' \dontrun{
 #' build_study_outputs(".", install_deps = TRUE)
 #' build_study_outputs("rep1371journalpone0278337", install_deps = TRUE)
+#' build_study_outputs(".", only_missing = TRUE)
 #' }
 #'
 #' @export
@@ -32,8 +37,10 @@ build_study_outputs <- function(
   ids = NULL,
   registry_root = NULL,
   output_dir = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 ) {
+  loc <- trimws(as.character(location[[1]] %||% location))
   root <- tryCatch(
     resolve_study_root(location),
     error = function(e) NULL
@@ -46,7 +53,8 @@ build_study_outputs <- function(
         install_deps = install_deps,
         ids = ids,
         output_dir = output_dir,
-        force_prep = force_prep
+        force_prep = force_prep,
+        only_missing = only_missing
       ))
     }
     return(build_study_artifacts(
@@ -54,14 +62,24 @@ build_study_outputs <- function(
       install_deps = install_deps,
       ids = ids,
       registry_root = registry_root,
-      force_prep = force_prep
+      force_prep = force_prep,
+      only_missing = only_missing
     ))
   }
+  if (looks_like_study_alias(loc)) {
+    stop(
+      "Could not resolve study location: ", loc, ". ",
+      "Pass the study repo path (e.g. \"rep-10.5555_cahw\"), call ",
+      "configure_local_monorepo(), or set options(replicateEverything.registry_root = ...).",
+      call. = FALSE
+    )
+  }
   build_package_artifacts(
-    package = as.character(location[[1]]),
+    package = loc,
     install_deps = install_deps,
     ids = ids,
     output_dir = output_dir,
-    force_prep = force_prep
+    force_prep = force_prep,
+    only_missing = only_missing
   )
 }

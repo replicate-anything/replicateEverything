@@ -5,14 +5,14 @@
 \title{User-facing hint when a DOI or study-path lookup fails}
 \usage{
 study_input_error_message(
-  kind = c("path", "cwd", "empty", "doi", "generic"),
+  kind = c("path", "cwd", "empty", "doi", "registry_bulk", "generic"),
   path = NULL,
   input = NULL
 )
 }
 \arguments{
 \item{kind}{Failure kind: \code{path}, \code{cwd}, \code{empty}, \code{doi},
-or \code{generic}.}
+\code{registry_bulk}, or \code{generic}.}
 
 \item{path}{Optional path string entered by the user.}
 

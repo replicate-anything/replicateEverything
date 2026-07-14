@@ -12,7 +12,8 @@ build_package_artifacts(
   install_deps = TRUE,
   ids = NULL,
   output_dir = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 )
 
 build_study_artifacts(
@@ -20,7 +21,8 @@ build_study_artifacts(
   install_deps = TRUE,
   ids = NULL,
   registry_root = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 )
 
 build_study_outputs(
@@ -29,7 +31,8 @@ build_study_outputs(
   ids = NULL,
   registry_root = NULL,
   output_dir = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 )
 }
 \arguments{
@@ -45,6 +48,9 @@ when \code{TRUE}.}
 the package report outputs directory.}
 
 \item{force_prep}{Logical. Re-run prep steps even when outputs already exist.}
+
+\item{only_missing}{Logical. When \code{TRUE}, skip replications whose artifacts
+already exist (see \code{\link[=artifact_available]{artifact_available()}}).}
 
 \item{location}{Local study path, GitHub address, or installed package
 name. Defaults to \code{"."} when the working directory contains
@@ -89,7 +95,11 @@ studies keep materials in their own repository.
 \dontrun{
 build_study_outputs(".", install_deps = TRUE)
 build_study_outputs("rep1371journalpone0278337", install_deps = TRUE)
+build_study_outputs(".", only_missing = TRUE)
 }
 
+}
+\seealso{
+\code{\link[=build_outputs]{build_outputs()}} for registry-wide or DOI-scoped builds.
 }
 \keyword{internal}

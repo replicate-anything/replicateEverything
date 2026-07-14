@@ -137,6 +137,9 @@ install_package_dependencies <- function(meta, ctx) {
 #' @param location Study DOI, registry handle, local path, or GitHub slug.
 #' @param registry_root Optional registry checkout for monorepo dev.
 #' @param repo,folder Optional registry row hints.
+#' @param from_registry_index Logical. When \code{TRUE} (set by
+#'   [install_registry_dependencies()]), never treat blank input or a sibling
+#'   folder name in \code{getwd()} as the local study.
 #' @return Invisibly \code{TRUE} on success.
 #' @seealso [check_study_compatibility()], [build_study_outputs()],
 #'   [install_registry_dependencies()]
@@ -152,7 +155,8 @@ install_study_dependencies <- function(
   location,
   registry_root = NULL,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  from_registry_index = FALSE
 ) {
   old_root <- getOption("replicateEverything.registry_root", NULL)
   if (!is.null(registry_root) && nzchar(registry_root)) {
@@ -164,7 +168,23 @@ install_study_dependencies <- function(
   }
 
   loc <- trimws(as.character(location[[1]] %||% location))
-  is_local <- dir.exists(loc) &&
+  if (
+    isTRUE(from_registry_index) &&
+      (!nzchar(loc) || is_local_doi_query(loc))
+  ) {
+    folder_hint <- trimws(as.character(folder[[1]] %||% folder %||% ""))
+    if (nzchar(folder_hint)) {
+      loc <- folder_hint
+    } else {
+      stop(
+        "Registry index row has no resolvable study location (doi, handle, or folder).",
+        call. = FALSE
+      )
+    }
+  }
+
+  is_local <- !isTRUE(from_registry_index) &&
+    dir.exists(loc) &&
     file.exists(file.path(loc, "replication.yml"))
 
   if (is_local) {
@@ -177,7 +197,10 @@ install_study_dependencies <- function(
     ctx <- paper_context(doi, repo = repo, folder = folder)
     kind <- "folder"
   } else {
-    doi <- prepare_doi_for_replication(loc)
+    doi <- prepare_doi_for_replication(
+      loc,
+      allow_local = !isTRUE(from_registry_index)
+    )
     meta <- get_replication_meta(
       doi,
       repo = repo,
@@ -228,25 +251,48 @@ install_study_dependencies <- function(
 #' @return Character DOI, handle, or folder slug.
 #' @keywords internal
 resolve_index_study_location <- function(row) {
-  doi <- trimws(as.character(row$doi[[1]] %||% ""))
-  if (!is.na(doi) && nzchar(doi)) {
+  doi <- index_row_field(row, "doi")
+  if (nzchar(doi)) {
     return(doi)
   }
-  if ("handle" %in% names(row)) {
-    handle <- trimws(as.character(row$handle[[1]] %||% ""))
-    if (!is.na(handle) && nzchar(handle)) {
-      return(handle)
-    }
+  handle <- index_row_field(row, "handle")
+  if (nzchar(handle)) {
+    return(handle)
   }
-  if ("folder" %in% names(row)) {
-    folder <- trimws(as.character(row$folder[[1]] %||% ""))
-    if (!is.na(folder) && nzchar(folder)) {
-      return(folder)
-    }
+  folder <- index_row_field(row, "folder")
+  if (nzchar(folder)) {
+    return(folder)
   }
   stop(
     "Registry index row is missing doi, handle, and folder.",
     call. = FALSE
+  )
+}
+
+#' Format a registry bulk-install failure with row context
+#' @keywords internal
+registry_install_error_message <- function(
+  error,
+  row,
+  i,
+  n,
+  location,
+  repo = NULL,
+  folder = NULL
+) {
+  paste(
+    conditionMessage(error),
+    "",
+    paste0("Registry row ", i, "/", n, ":"),
+    paste0("  location: ", location),
+    paste0("  folder: ", index_row_field(row, "folder")),
+    paste0("  handle: ", index_row_field(row, "handle")),
+    paste0("  doi: ", index_row_field(row, "doi")),
+    paste0("  repo: ", index_row_field(row, "repo", repo %||% "")),
+    "",
+    "Resolution path: index row -> registry stub -> study GitHub repo ",
+    "(install_registry_dependencies never uses getwd() as the study).",
+    sep = "\n"
   )
 }
 
@@ -290,10 +336,12 @@ install_registry_dependencies <- function(
   for (i in seq_len(nrow(idx))) {
     row <- idx[i, , drop = FALSE]
     location <- resolve_index_study_location(row)
-    doi <- trimws(as.character(row$doi[[1]] %||% ""))
+    doi <- index_row_field(row, "doi")
     result_key <- if (nzchar(doi)) doi else location
-    repo <- if ("repo" %in% names(row)) row$repo[[1]] else NULL
-    folder <- if ("folder" %in% names(row)) row$folder[[1]] else NULL
+    repo <- index_row_field(row, "repo", default = NA_character_)
+    repo <- if (nzchar(repo)) repo else NULL
+    folder <- index_row_field(row, "folder", default = NA_character_)
+    folder <- if (nzchar(folder)) folder else NULL
     if (verbose) {
       label <- if (nzchar(doi)) doi else paste0(location, " (no DOI)")
       message("[", i, "/", nrow(idx), "] ", label)
@@ -304,15 +352,25 @@ install_registry_dependencies <- function(
           location,
           registry_root = registry_root,
           repo = repo,
-          folder = folder
+          folder = folder,
+          from_registry_index = TRUE
         )
         list(ok = TRUE)
       },
       error = function(e) {
+        msg <- registry_install_error_message(
+          e,
+          row = row,
+          i = i,
+          n = nrow(idx),
+          location = location,
+          repo = repo,
+          folder = folder
+        )
         if (verbose) {
-          message("  failed: ", conditionMessage(e))
+          message("  failed: ", msg)
         }
-        list(ok = FALSE, error = conditionMessage(e))
+        list(ok = FALSE, error = msg)
       }
     )
   }

@@ -4,12 +4,15 @@
 \alias{resolve_doi_input}
 \title{Resolve a DOI or local study query into a canonical DOI}
 \usage{
-resolve_doi_input(doi = NULL, location = getwd())
+resolve_doi_input(doi = NULL, location = getwd(), allow_local = TRUE)
 }
 \arguments{
 \item{doi}{Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.}
 
 \item{location}{Directory to search for a local study (default \code{getwd()}).}
+
+\item{allow_local}{When \code{FALSE}, never treat blank/\code{local}/\code{.}
+as a working-directory study (used by \code{\link[=install_registry_dependencies]{install_registry_dependencies()}}).}
 }
 \value{
 A list with \code{doi}, \code{local_root}, and \code{is_local}.

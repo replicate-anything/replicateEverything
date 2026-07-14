@@ -49,6 +49,31 @@ load_index <- function() {
   ensure_index_handles(utils::read.csv(index_url, stringsAsFactors = FALSE))
 }
 
+#' Read one field from a single-row registry index slice
+#'
+#' Safe for one-row \code{data.frame} and \code{tibble} subsets (always uses
+#' \code{[[col]][1L]} instead of \code{$col[[1]]}).
+#'
+#' @param row One-row index data frame.
+#' @param col Column name.
+#' @param default Value when missing or blank.
+#' @return Character scalar.
+#' @keywords internal
+index_row_field <- function(row, col, default = "") {
+  if (!is.data.frame(row) || !col %in% names(row)) {
+    return(default)
+  }
+  val <- row[[col]]
+  if (is.null(val) || length(val) == 0L) {
+    return(default)
+  }
+  out <- trimws(as.character(val[1L]))
+  if (length(out) != 1L || is.na(out)) {
+    return(default)
+  }
+  out
+}
+
 #' Ensure index rows expose a handle column
 #' @keywords internal
 ensure_index_handles <- function(index) {

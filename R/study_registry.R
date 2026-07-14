@@ -4,6 +4,33 @@ folder_registry_index_row <- function(meta, study_root) {
   registry_index_row_from_meta(meta, study_root = study_root)
 }
 
+#' Canonical lookup key (DOI or study handle) from paper metadata
+#'
+#' Used when a study has no DOI (reanalysis / extension repos) or when validating
+#' registry stubs that only declare \code{study_handle}.
+#'
+#' @param paper \code{paper} list from replication metadata.
+#' @param folder Optional registry folder name fallback.
+#' @return Character lookup key.
+#' @keywords internal
+study_lookup_from_paper <- function(paper, folder = NULL) {
+  paper <- paper %||% list()
+  doi_val <- paper$doi %||% NULL
+  if (!is.null(doi_val) && nzchar(trimws(as.character(doi_val[[1]] %||% doi_val)))) {
+    return(normalize_doi(doi_val))
+  }
+  handle <- paper$study_handle %||% paper$handle %||% NULL
+  if (!is.null(handle) && nzchar(trimws(as.character(handle[[1]] %||% handle)))) {
+    return(as.character(handle[[1]] %||% handle))
+  }
+  folder_chr <- as.character(folder[[1]] %||% folder %||% "")
+  folder_chr <- trimws(folder_chr)
+  if (nzchar(folder_chr)) {
+    return(folder_chr)
+  }
+  stop("paper needs doi or study_handle for lookup", call. = FALSE)
+}
+
 #' Registry folder / handle from paper metadata
 #' @keywords internal
 registry_folder_from_paper <- function(paper) {

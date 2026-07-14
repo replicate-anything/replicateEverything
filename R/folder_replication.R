@@ -254,13 +254,13 @@ expand_study_path_input <- function(path) {
 #' User-facing hint when a DOI or study-path lookup fails
 #'
 #' @param kind Failure kind: \code{path}, \code{cwd}, \code{empty}, \code{doi},
-#'   or \code{generic}.
+#'   \code{registry_bulk}, or \code{generic}.
 #' @param path Optional path string entered by the user.
 #' @param input Optional raw input string.
 #' @return Multi-line character message.
 #' @keywords internal
 study_input_error_message <- function(
-  kind = c("path", "cwd", "empty", "doi", "generic"),
+  kind = c("path", "cwd", "empty", "doi", "registry_bulk", "generic"),
   path = NULL,
   input = NULL
 ) {
@@ -307,6 +307,20 @@ study_input_error_message <- function(
       doi_hint,
       "\n",
       path_hint
+    ),
+    registry_bulk = paste0(
+      "Registry bulk install could not resolve this index row",
+      if (!is.null(input) && nzchar(input)) {
+        paste0(" (", input, ")")
+      } else {
+        ""
+      },
+      ".\n",
+      "Blank or \"local\" input means \"study in getwd()\" and is not used for ",
+      "install_registry_dependencies().\n",
+      "Expected a DOI, handle, or registry folder slug from index.csv; ",
+      "metadata is loaded from the registry stub and study GitHub repo.\n\n",
+      doi_hint
     ),
     generic = paste0(doi_hint, "\n", path_hint)
   )
@@ -403,6 +417,79 @@ study_location_clone_failure_message <- function(slug, loc = slug) {
   )
 }
 
+#' Resolve a local study root from a registry folder name
+#'
+#' Reads the registry stub (or index row) for \code{loc} and resolves
+#' \code{paper.study_folder} / repo slug siblings under the monorepo.
+#'
+#' @param loc Registry folder name such as \code{10.5555_cahw}.
+#' @return Normalized study path or \code{NULL}.
+#' @keywords internal
+try_resolve_study_from_registry_folder <- function(loc) {
+  loc <- trimws(as.character(loc %||% ""))
+  if (!nzchar(loc)) {
+    return(NULL)
+  }
+
+  registry_root <- getOption("replicateEverything.registry_root", NULL)
+  if (is.null(registry_root) || !dir.exists(registry_root)) {
+    registry_root <- auto_detect_registry_root()
+  }
+
+  study_names <- character(0)
+  stub <- if (!is.null(registry_root)) {
+    read_registry_stub_yaml(loc, registry_root = registry_root)
+  } else {
+    NULL
+  }
+  if (!is.null(stub)) {
+    study_names <- c(study_names, study_folder_candidates(stub, list(folder = loc)))
+  }
+
+  idx <- tryCatch(load_index(), error = function(e) NULL)
+  if (!is.null(idx) && "folder" %in% names(idx)) {
+    row <- idx[idx$folder == loc, , drop = FALSE]
+    if (nrow(row) > 0L && "repo" %in% names(row)) {
+      repo_slug <- as.character(row$repo[[1]] %||% "")
+      if (nzchar(repo_slug)) {
+        study_names <- c(study_names, basename(repo_slug))
+      }
+    }
+  }
+
+  study_names <- unique(study_names[nzchar(study_names)])
+  for (name in study_names) {
+    if (dir.exists(name) && file.exists(file.path(name, "replication.yml"))) {
+      return(normalizePath(name, winslash = "/", mustWork = FALSE))
+    }
+    local <- resolve_local_study_folder(name)
+    if (!is.null(local)) {
+      return(local)
+    }
+  }
+
+  NULL
+}
+
+#' Whether a location string looks like a study alias, not an R package name
+#'
+#' @param x Character scalar.
+#' @return Logical scalar.
+#' @keywords internal
+looks_like_study_alias <- function(x) {
+  if (is.null(x) || length(x) != 1L) {
+    return(FALSE)
+  }
+  x <- trimws(as.character(x))
+  if (!nzchar(x)) {
+    return(FALSE)
+  }
+  grepl("^10\\.", x, perl = TRUE) ||
+    grepl("^rep[-_]", x) ||
+    grepl("_", x, fixed = TRUE) ||
+    grepl("--", x, fixed = TRUE)
+}
+
 #' Resolve a study root from common alias strings (DOI, registry folder, rep- slug)
 #'
 #' @param loc Trimmed location string.
@@ -436,7 +523,7 @@ try_resolve_study_by_common_alias <- function(loc) {
       return(local)
     }
   }
-  NULL
+  try_resolve_study_from_registry_folder(loc)
 }
 
 register_local_study_from_root <- function(local_root) {
@@ -506,12 +593,21 @@ find_local_study_root <- function(location = getwd()) {
 #'
 #' @param doi Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.
 #' @param location Directory to search for a local study (default \code{getwd()}).
+#' @param allow_local When \code{FALSE}, never treat blank/\code{local}/\code{.}
+#'   as a working-directory study (used by [install_registry_dependencies()]).
 #' @return A list with \code{doi}, \code{local_root}, and \code{is_local}.
 #' @keywords internal
-resolve_doi_input <- function(doi = NULL, location = getwd()) {
+resolve_doi_input <- function(
+  doi = NULL,
+  location = getwd(),
+  allow_local = TRUE
+) {
   raw <- trimws(as.character(doi %||% ""))
 
   if (is_study_path_query(raw)) {
+    if (!isTRUE(allow_local)) {
+      stop(study_input_error_message("registry_bulk", input = raw), call. = FALSE)
+    }
     path_root <- expand_study_path_input(raw)
     local_root <- if (!is.null(path_root)) {
       find_local_study_root(path_root)
@@ -524,17 +620,35 @@ resolve_doi_input <- function(doi = NULL, location = getwd()) {
     return(register_local_study_from_root(local_root))
   }
 
-  local_root <- find_local_study_root(location)
+  local_root <- if (isTRUE(allow_local)) {
+    find_local_study_root(location)
+  } else {
+    NULL
+  }
 
   if (is_local_doi_query(raw)) {
-    if (is.null(local_root)) {
-      stop(study_input_error_message("cwd"), call. = FALSE)
+    if (!isTRUE(allow_local) || is.null(local_root)) {
+      stop(
+        if (isTRUE(allow_local)) {
+          study_input_error_message("cwd")
+        } else {
+          study_input_error_message("registry_bulk", input = raw)
+        },
+        call. = FALSE
+      )
     }
     return(register_local_study_from_root(local_root))
   }
 
   if (!nzchar(raw)) {
-    stop(study_input_error_message("empty"), call. = FALSE)
+    stop(
+      if (isTRUE(allow_local)) {
+        study_input_error_message("empty")
+      } else {
+        study_input_error_message("registry_bulk")
+      },
+      call. = FALSE
+    )
   }
 
   handle_doi <- resolve_registry_handle(raw)
@@ -543,17 +657,19 @@ resolve_doi_input <- function(doi = NULL, location = getwd()) {
   }
 
   doi_out <- normalize_doi(raw)
-  local_sibling <- resolve_local_study_folder(doi_out)
-  if (!is.null(local_sibling)) {
-    return(register_local_study_from_root(local_sibling))
-  }
-  if (!is.null(local_root)) {
-    meta <- read_study_replication_yaml(local_root)
-    if (!is.null(meta) && !is.null(meta$paper$doi)) {
-      local_doi <- normalize_doi(meta$paper$doi)
-      if (identical(local_doi, doi_out)) {
-        configure_study_folder(doi_out, local_root)
-        return(list(doi = doi_out, local_root = local_root, is_local = FALSE))
+  if (isTRUE(allow_local)) {
+    local_sibling <- resolve_local_study_folder(doi_out)
+    if (!is.null(local_sibling)) {
+      return(register_local_study_from_root(local_sibling))
+    }
+    if (!is.null(local_root)) {
+      meta <- read_study_replication_yaml(local_root)
+      if (!is.null(meta) && !is.null(meta$paper$doi)) {
+        local_doi <- normalize_doi(meta$paper$doi)
+        if (identical(local_doi, doi_out)) {
+          configure_study_folder(doi_out, local_root)
+          return(list(doi = doi_out, local_root = local_root, is_local = FALSE))
+        }
       }
     }
   }
@@ -568,8 +684,12 @@ resolve_doi_input <- function(doi = NULL, location = getwd()) {
 #' @inheritParams resolve_doi_input
 #' @return Character DOI.
 #' @keywords internal
-prepare_doi_for_replication <- function(doi, location = getwd()) {
-  resolve_doi_input(doi, location = location)$doi
+prepare_doi_for_replication <- function(
+  doi,
+  location = getwd(),
+  allow_local = TRUE
+) {
+  resolve_doi_input(doi, location = location, allow_local = allow_local)$doi
 }
 
 #' Configure options for a local replicate-anything monorepo

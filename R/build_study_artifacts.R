@@ -17,6 +17,8 @@
 #'   `NULL`, builds every figure and table in `replication.yml`.
 #' @param registry_root Optional registry checkout path for monorepo dev.
 #' @param force_prep Logical. Re-run prep steps even when outputs already exist.
+#' @param only_missing Logical. When `TRUE`, skip replications whose artifacts
+#'   already exist (see [artifact_available()]).
 #' @return Invisibly, a list with `artifact_dir`, `manifest`, and per-id status.
 #' @keywords internal
 build_study_artifacts <- function(
@@ -24,7 +26,8 @@ build_study_artifacts <- function(
   install_deps = TRUE,
   ids = NULL,
   registry_root = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 ) {
   if (isTRUE(install_deps)) {
     old_opts <- options(
@@ -92,12 +95,28 @@ build_study_artifacts <- function(
     }
   }
 
-  if (length(display_reps) == 0) {
-    stop("No figure/table replications to build.", call. = FALSE)
-  }
+  display_reps <- filter_replications_only_missing(
+    display_reps,
+    doi,
+    folder = folder,
+    only_missing = only_missing,
+    study_root = study_root
+  )
 
   artifact_dir <- file.path(study_root, "outputs")
   dir.create(artifact_dir, recursive = TRUE, showWarnings = FALSE)
+
+  if (length(display_reps) == 0) {
+    if (isTRUE(only_missing)) {
+      message("All artifacts present; skipping build.")
+      return(invisible(list(
+        artifact_dir = artifact_dir,
+        manifest = list(replications = list()),
+        manifest_path = file.path(artifact_dir, "manifest.json")
+      )))
+    }
+    stop("No figure/table replications to build.", call. = FALSE)
+  }
 
   run_opts <- folder_study_run_options(study_root, meta, registry_root = registry_root)
   old_opts <- options(run_opts)

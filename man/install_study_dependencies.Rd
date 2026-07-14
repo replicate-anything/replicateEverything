@@ -8,7 +8,8 @@ install_study_dependencies(
   location,
   registry_root = NULL,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  from_registry_index = FALSE
 )
 }
 \arguments{
@@ -17,6 +18,10 @@ install_study_dependencies(
 \item{registry_root}{Optional registry checkout for monorepo dev.}
 
 \item{repo, folder}{Optional registry row hints.}
+
+\item{from_registry_index}{Logical. When \code{TRUE} (set by
+\code{\link[=install_registry_dependencies]{install_registry_dependencies()}}), never treat blank input or a sibling
+folder name in \code{getwd()} as the local study.}
 }
 \value{
 Invisibly \code{TRUE} on success.

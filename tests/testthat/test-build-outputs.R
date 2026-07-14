@@ -1,50 +1,74 @@
-test_that("default artifact path uses png for figures", {
-  rep <- list(type = "figure")
-  expect_equal(default_artifact_path(rep, "fig_1"), "outputs/fig_1.png")
-})
-
-test_that("default artifact path uses html when format is specified", {
-  rep <- list(type = "table", format = "format_tab_1")
-  expect_equal(default_artifact_path(rep, "tab_1"), "outputs/tab_1.html")
-})
-
-test_that("default artifact path uses html for legacy tables", {
-  rep <- list(type = "table")
-  expect_equal(default_artifact_path(rep, "tab_1"), "outputs/tab_1.html")
-})
-
-test_that("study_artifact_rel_path uses replication.yml artifact when set", {
-  rep <- list(
-    id = "tab_2",
-    type = "table",
-    artifact = "outputs/tab_2.html"
+test_that("filter_replications_only_missing keeps entries without artifacts", {
+  local_root <- withr::local_tempdir()
+  study_dir <- file.path(local_root, "rep-10.5555_test")
+  dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/test",
+      "steps:",
+      "  - id: fig_1",
+      "    type: figure",
+      "    code: code/fig_1.R",
+      "    outputs:",
+      "      - outputs/fig_1.png",
+      "  - id: tab_1",
+      "    type: table",
+      "    code: code/tab_1.R",
+      "    artifact: outputs/tab_1.html"
+    ),
+    file.path(study_dir, "replication.yml")
   )
-  expect_equal(study_artifact_rel_path(rep), "outputs/tab_2.html")
+  dir.create(file.path(local_root, "studies"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/test",
+      "  materials: folder",
+      "  study_repo: replicate-anything/rep-10.5555_test",
+      "  study_folder: rep-10.5555_test",
+      "repo: replicate-anything/rep-10.5555_test"
+    ),
+    file.path(local_root, "studies", "10.5555_test.yml")
+  )
+  writeBin(as.raw(0), file.path(study_dir, "outputs", "fig_1.png"))
+
+  local_index <- data.frame(
+    folder = "10.5555_test",
+    doi = "10.5555/test",
+    title = "Test",
+    journal = "",
+    year = 2026,
+    authors = "A",
+    repo = "replicate-anything/rep-10.5555_test",
+    stringsAsFactors = FALSE
+  )
+
+  withr::with_options(
+    list(
+      replicateEverything.registry_root = local_root,
+      replicateEverything.study_folders_root = local_root,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.index = local_index
+    ),
+    {
+      reps <- list(
+        list(id = "fig_1", type = "figure"),
+        list(id = "tab_1", type = "table")
+      )
+      filtered <- filter_replications_only_missing(
+        reps,
+        "10.5555/test",
+        folder = "10.5555_test",
+        only_missing = TRUE
+      )
+      expect_length(filtered, 1L)
+      expect_equal(filtered[[1]]$id, "tab_1")
+    }
+  )
 })
 
-test_that("study_artifact_rel_path falls back to the type-based default", {
-  expect_equal(
-    study_artifact_rel_path(list(id = "fig_1", type = "figure")),
-    "outputs/fig_1.png"
-  )
-  expect_equal(
-    study_artifact_rel_path(list(id = "tab_1", type = "table")),
-    "outputs/tab_1.html"
-  )
-})
-
-test_that("study_artifact_rel_candidates uses outputs paths only", {
-  rep <- list(
-    id = "tab_1",
-    type = "table",
-    artifact = "outputs/tab_1.html"
-  )
-  cands <- study_artifact_rel_candidates(rep)
-  expect_true("outputs/tab_1.html" %in% cands)
-  expect_false(any(grepl("^artifacts/", cands)))
-})
-
-test_that("get_artifact_path resolves figure png under local folder-backed study", {
+test_that("build_study_outputs only_missing skips when all artifacts exist", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555_test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
@@ -73,8 +97,7 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
     ),
     file.path(local_root, "studies", "10.5555_test.yml")
   )
-  png_path <- file.path(study_dir, "outputs", "fig_1.png")
-  writeBin(as.raw(0), png_path)
+  writeBin(as.raw(0), file.path(study_dir, "outputs", "fig_1.png"))
 
   local_index <- data.frame(
     folder = "10.5555_test",
@@ -95,76 +118,35 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
       replicateEverything.index = local_index
     ),
     {
-      path <- get_artifact_path("10.5555/test", "fig_1")
-      expect_equal(
-        normalizePath(path, winslash = "/", mustWork = FALSE),
-        normalizePath(png_path, winslash = "/", mustWork = FALSE)
+      expect_message(
+        result <- build_study_outputs(
+          study_dir,
+          install_deps = FALSE,
+          only_missing = TRUE,
+          registry_root = local_root
+        ),
+        "All artifacts present; skipping build"
       )
-      expect_true(artifact_available("10.5555/test", "fig_1"))
-      expect_silent(validate_outputs("10.5555/test", "fig_1"))
+      expect_length(result$manifest$replications, 0L)
     }
   )
 })
 
-test_that("validate_outputs fails when file is missing", {
-  local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_missing")
-  dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
-  writeLines(
-    c(
-      "paper:",
-      "  doi: 10.5555/missing",
-      "steps:",
-      "  - id: fig_1",
-      "    type: figure",
-      "    code: code/fig_1.R",
-      "    outputs:",
-      "      - outputs/fig_1.png"
-    ),
-    file.path(study_dir, "replication.yml")
-  )
-  dir.create(file.path(local_root, "studies"), recursive = TRUE)
-  writeLines(
-    c(
-      "paper:",
-      "  doi: 10.5555/missing",
-      "  materials: folder",
-      "study_repo: replicate-anything/rep-10.5555_missing",
-      "  study_folder: rep-10.5555_missing",
-      "repo: replicate-anything/rep-10.5555_missing"
-    ),
-    file.path(local_root, "studies", "10.5555_missing.yml")
-  )
-
-  local_index <- data.frame(
-    folder = "10.5555_missing",
-    doi = "10.5555/missing",
-    title = "Test",
-    journal = "",
-    year = 2026,
-    authors = "A",
-    repo = "replicate-anything/rep-10.5555_missing",
-    stringsAsFactors = FALSE
-  )
-
-  withr::with_options(
-    list(
-      replicateEverything.registry_root = local_root,
-      replicateEverything.study_folders_root = local_root,
-      replicateEverything.use_sibling_packages = TRUE,
-      replicateEverything.index = local_index
-    ),
-    {
-      expect_false(artifact_available("10.5555/missing", "fig_1"))
-      expect_error(
-        validate_outputs("10.5555/missing", "fig_1"),
-        "Artifact not available"
-      )
-    }
+test_that("build_outputs dispatch errors when doi is everywhere with single what", {
+  expect_error(
+    build_outputs(doi = "everywhere", what = "fig_1"),
+    'When doi = "everywhere", what must be "everything" or NULL'
   )
 })
 
-test_that("validate_outputs passes for registry and study location", {
+test_that("build_outputs requires doi, location, or everywhere", {
+  expect_error(
+    build_outputs(),
+    'Provide doi, location, or doi = "everywhere"'
+  )
+})
+
+test_that("build_single_output only_missing skips existing artifact", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555_test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
@@ -196,8 +178,7 @@ test_that("validate_outputs passes for registry and study location", {
     ),
     file.path(local_root, "studies", "10.5555_test.yml")
   )
-  png_path <- file.path(study_dir, "outputs", "fig_1.png")
-  writeBin(as.raw(0), png_path)
+  writeBin(as.raw(0), file.path(study_dir, "outputs", "fig_1.png"))
 
   local_index <- data.frame(
     folder = "10.5555_test",
@@ -218,56 +199,73 @@ test_that("validate_outputs passes for registry and study location", {
       replicateEverything.index = local_index
     ),
     {
-      expect_silent(suppressMessages(
-        validate_outputs(doi = "everywhere", what = "everything", registry_root = local_root)
-      ))
-      expect_silent(validate_outputs(location = study_dir, registry_root = local_root))
-      expect_silent(validate_outputs(doi = "10.5555/test", what = "everything"))
+      expect_message(
+        build_outputs(
+          doi = "10.5555/test",
+          what = "fig_1",
+          only_missing = TRUE
+        ),
+        "Artifact already present for fig_1; skipping build"
+      )
     }
   )
 })
 
-test_that("validate_outputs everywhere accepts handle-only registry studies", {
+test_that("build_outputs location dispatch skips with only_missing", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_alt")
+  study_dir <- file.path(local_root, "rep-10.5555_test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
-      "  study_handle: rep-10.5555_alt",
-      "  title: Alt study",
+      "  doi: 10.5555/test",
       "steps:",
-      "  - id: tab_1",
-      "    type: table",
-      "    code: code/tab_1.R",
-      "    artifact: outputs/tab_1.html"
+      "  - id: fig_1",
+      "    type: figure",
+      "    code: code/fig_1.R",
+      "    outputs:",
+      "      - outputs/fig_1.png"
     ),
     file.path(study_dir, "replication.yml")
   )
+  writeBin(as.raw(0), file.path(study_dir, "outputs", "fig_1.png"))
+
+  expect_message(
+    build_outputs(
+      location = study_dir,
+      only_missing = TRUE,
+      install_deps = FALSE
+    ),
+    "All artifacts present; skipping build"
+  )
+})
+
+test_that("build_registry_outputs skips folder study without local repo", {
+  local_root <- withr::local_tempdir()
   dir.create(file.path(local_root, "studies"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
-      "  study_handle: rep-10.5555_alt",
-      "  title: Alt study",
+      "  doi: 10.5555/remote",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_alt",
-      "  study_folder: rep-10.5555_alt",
-      "repo: replicate-anything/rep-10.5555_alt"
+      "  study_repo: replicate-anything/rep-10.5555_remote",
+      "  study_folder: rep-10.5555_remote",
+      "repo: replicate-anything/rep-10.5555_remote",
+      "replications:",
+      "  - id: fig_1",
+      "    type: figure"
     ),
-    file.path(local_root, "studies", "rep-10.5555_alt.yml")
+    file.path(local_root, "studies", "10.5555_remote.yml")
   )
-  writeLines("<table></table>", file.path(study_dir, "outputs", "tab_1.html"))
 
   local_index <- data.frame(
-    folder = "rep-10.5555_alt",
-    handle = "rep-10.5555_alt",
-    doi = "",
-    title = "Alt study",
+    folder = "10.5555_remote",
+    doi = "10.5555/remote",
+    title = "Test",
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_alt",
+    repo = "replicate-anything/rep-10.5555_remote",
     stringsAsFactors = FALSE
   )
 
@@ -279,14 +277,14 @@ test_that("validate_outputs everywhere accepts handle-only registry studies", {
       replicateEverything.index = local_index
     ),
     {
-      expect_silent(suppressMessages(
-        validate_outputs(
-          doi = "everywhere",
-          what = "everything",
+      expect_message(
+        build_registry_outputs(
           registry_root = local_root,
-          folders = "rep-10.5555_alt"
-        )
-      ))
+          folders = "10.5555_remote",
+          install_deps = FALSE
+        ),
+        "Skipping 10.5555_remote \\(folder-backed; no local study repo\\)"
+      )
     }
   )
 })

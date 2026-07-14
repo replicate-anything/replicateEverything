@@ -4,12 +4,15 @@
 \alias{prepare_doi_for_replication}
 \title{Prepare a DOI for replication API calls}
 \usage{
-prepare_doi_for_replication(doi, location = getwd())
+prepare_doi_for_replication(doi, location = getwd(), allow_local = TRUE)
 }
 \arguments{
 \item{doi}{Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.}
 
 \item{location}{Directory to search for a local study (default \code{getwd()}).}
+
+\item{allow_local}{When \code{FALSE}, never treat blank/\code{local}/\code{.}
+as a working-directory study (used by \code{\link[=install_registry_dependencies]{install_registry_dependencies()}}).}
 }
 \value{
 Character DOI.

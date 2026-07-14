@@ -1,3 +1,53 @@
+#' Filter replication entries to those without precomputed artifacts
+#'
+#' @param display_reps List of replication entries.
+#' @param doi Paper DOI or lookup key.
+#' @param folder Optional registry folder name.
+#' @param repo Optional repository slug.
+#' @param only_missing When \code{TRUE}, keep only entries where
+#'   \code{\link{artifact_available}()} is \code{FALSE}.
+#' @param study_root Optional local study root for direct file checks.
+#' @keywords internal
+replication_artifact_exists <- function(
+  rep,
+  doi,
+  folder = NULL,
+  repo = NULL,
+  study_root = NULL
+) {
+  if (!is.null(study_root) && nzchar(study_root)) {
+    for (rel in study_artifact_rel_candidates(rep)) {
+      if (file.exists(file.path(study_root, rel))) {
+        return(TRUE)
+      }
+    }
+  }
+  artifact_available(doi, rep$id, repo = repo, folder = folder)
+}
+
+#' @rdname filter_replications_only_missing
+filter_replications_only_missing <- function(
+  display_reps,
+  doi,
+  folder = NULL,
+  repo = NULL,
+  only_missing = FALSE,
+  study_root = NULL
+) {
+  if (!isTRUE(only_missing)) {
+    return(display_reps)
+  }
+  display_reps[vapply(display_reps, function(rep) {
+    !replication_artifact_exists(
+      rep,
+      doi,
+      folder = folder,
+      repo = repo,
+      study_root = study_root
+    )
+  }, logical(1))]
+}
+
 #' Build table and figure artifacts into a directory
 #'
 #' @param display_reps List of replication entries.

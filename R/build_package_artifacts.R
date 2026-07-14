@@ -12,6 +12,8 @@
 #' @param output_dir Optional output directory. Defaults to
 #'   `inst/report/artifacts/` under the package source tree.
 #' @param force_prep Logical. Re-run prep steps even when outputs already exist.
+#' @param only_missing Logical. When `TRUE`, skip replications whose artifacts
+#'   already exist (see [artifact_available()]).
 #' @return Invisibly, a list with `artifact_dir`, `manifest`, and `manifest_path`.
 #' @keywords internal
 build_package_artifacts <- function(
@@ -19,7 +21,8 @@ build_package_artifacts <- function(
   install_deps = TRUE,
   ids = NULL,
   output_dir = NULL,
-  force_prep = FALSE
+  force_prep = FALSE,
+  only_missing = FALSE
 ) {
   package <- as.character(package[[1]])
   ensure_replication_package(package)
@@ -60,7 +63,23 @@ build_package_artifacts <- function(
     }
   }
 
+  display_reps <- filter_replications_only_missing(
+    display_reps,
+    doi,
+    folder = folder,
+    only_missing = only_missing,
+    study_root = pkg_root
+  )
+
   if (length(display_reps) == 0) {
+    if (isTRUE(only_missing)) {
+      message("All artifacts present; skipping build.")
+      return(invisible(list(
+        artifact_dir = output_dir,
+        manifest = list(replications = list()),
+        manifest_path = study_manifest_path(meta, ctx, installed = FALSE, package = package)
+      )))
+    }
     stop("No figure/table replications to build.", call. = FALSE)
   }
 

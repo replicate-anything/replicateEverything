@@ -288,6 +288,51 @@ test_that("try_resolve_study_by_common_alias finds sibling study folder", {
   )
 })
 
+test_that("try_resolve_study_from_registry_folder maps registry folder to study repo", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_dir <- file.path(monorepo_root, "rep-10.5555_cahw")
+  testthat::skip_if_not(dir.exists(study_dir), "cahw study repo missing")
+
+  old <- options(
+    replicateEverything.study_folders_root = monorepo_root,
+    replicateEverything.registry_root = file.path(monorepo_root, "registry")
+  )
+  on.exit(options(old), add = TRUE)
+
+  resolved <- replicateEverything:::try_resolve_study_from_registry_folder("10.5555_cahw")
+  expect_equal(
+    normalizePath(resolved, winslash = "/"),
+    normalizePath(study_dir, winslash = "/")
+  )
+})
+
+test_that("looks_like_study_alias identifies registry folder handles", {
+  expect_true(replicateEverything:::looks_like_study_alias("10.5555_cahw"))
+  expect_true(replicateEverything:::looks_like_study_alias("rep-10.5555_cahw"))
+  expect_false(replicateEverything:::looks_like_study_alias("rep1371journalpone0278337"))
+})
+
+test_that("build_study_outputs rejects registry folder when study cannot be resolved", {
+  old <- options(
+    replicateEverything.registry_root = NULL,
+    replicateEverything.study_folders_root = "C:/nonexistent/monorepo",
+    replicateEverything.use_sibling_packages = FALSE
+  )
+  on.exit(options(old), add = TRUE)
+
+  err <- tryCatch(
+    build_study_outputs("10.9999_not_a_real_study", install_deps = FALSE),
+    error = function(e) e
+  )
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "Could not resolve study location: 10.9999_not_a_real_study")
+  expect_no_match(conditionMessage(err), "there is no package called")
+})
+
 test_that("resolve_study_location rejects bare DOI without local sibling", {
   expect_error(
     resolve_study_location("10.9999/nonexistent-study"),

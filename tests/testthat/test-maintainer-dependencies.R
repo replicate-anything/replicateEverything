@@ -11,6 +11,21 @@ test_that("resolve_index_study_location falls back when doi is blank", {
   )
 })
 
+test_that("resolve_index_study_location works for one-row tibble slices", {
+  skip_if_not_installed("tibble")
+  idx <- tibble::tibble(
+    folder = "10.1017S0003055403000534",
+    handle = "10.1017S0003055403000534",
+    doi = "10.1017/s0003055403000534",
+    repo = "replicate-anything/rep-10.1017-S0003055403000534"
+  )
+  row <- idx[1, , drop = FALSE]
+  expect_equal(
+    replicateEverything:::resolve_index_study_location(row),
+    "10.1017/s0003055403000534"
+  )
+})
+
 test_that("install_registry_dependencies does not treat blank index doi as local cwd", {
   row <- data.frame(
     folder = "rep-10.1017-S0003055403000534--alt-1",
@@ -31,12 +46,19 @@ test_that("install_registry_dependencies does not treat blank index doi as local
   )
   install_calls <- list()
   stub_load_index <- function() idx
-  stub_install_study <- function(location, registry_root = NULL, repo = NULL, folder = NULL) {
+  stub_install_study <- function(
+    location,
+    registry_root = NULL,
+    repo = NULL,
+    folder = NULL,
+    from_registry_index = FALSE
+  ) {
     install_calls[[length(install_calls) + 1L]] <<- list(
       location = location,
       registry_root = registry_root,
       repo = repo,
-      folder = folder
+      folder = folder,
+      from_registry_index = from_registry_index
     )
     invisible(TRUE)
   }
@@ -47,8 +69,49 @@ test_that("install_registry_dependencies does not treat blank index doi as local
   )
   out <- install_registry_dependencies(verbose = FALSE)
   expect_length(install_calls, 2L)
+  expect_equal(install_calls[[1L]]$location, "10.1017/s0003055403000534")
+  expect_true(install_calls[[1L]]$from_registry_index)
   expect_equal(install_calls[[2L]]$location, "rep-10.1017-S0003055403000534--alt-1")
+  expect_true(install_calls[[2L]]$from_registry_index)
   expect_true(out[["rep-10.1017-S0003055403000534--alt-1"]]$ok)
+})
+
+test_that("install_registry_dependencies reports row context on failure", {
+  idx <- data.frame(
+    folder = "10.1017S0003055403000534",
+    handle = "10.1017S0003055403000534",
+    doi = "10.1017/s0003055403000534",
+    repo = "replicate-anything/rep-10.1017-S0003055403000534",
+    stringsAsFactors = FALSE
+  )
+  local_mocked_bindings(
+    load_index = function() idx,
+    install_study_dependencies = function(...) {
+      stop("stub failure", call. = FALSE)
+    },
+    .package = "replicateEverything"
+  )
+  expect_warning(
+    out <- install_registry_dependencies(verbose = FALSE),
+    "Dependency install failed"
+  )
+  expect_false(out[["10.1017/s0003055403000534"]]$ok)
+  expect_match(
+    out[["10.1017/s0003055403000534"]]$error,
+    "Registry row 1/1"
+  )
+  expect_match(
+    out[["10.1017/s0003055403000534"]]$error,
+    "location: 10.1017/s0003055403000534"
+  )
+})
+
+test_that("from_registry_index rejects blank location without cwd lookup", {
+  withr::local_tempdir()
+  expect_error(
+    replicateEverything:::prepare_doi_for_replication("", allow_local = FALSE),
+    "Registry bulk install"
+  )
 })
 
 test_that("maintainer_dependency_hint mentions install functions", {
