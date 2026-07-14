@@ -66,6 +66,7 @@ prepare_study_for_registry("../rep-10.1371_journal.pone.0278337")
 - [ ] 2. Re-validate if needed: `check_replication()`
 - [ ] 3. Sync stub: `sync_study_to_registry(study_path, registry_root = "../registry")`
 - [ ] 4. Full refresh: `refresh_registry("../registry", audit = TRUE)`
+- [ ] 4b. Check display outputs: `validate_outputs(doi = "everywhere", what = "everything")` or `Rscript scripts/validate_outputs.R`
 - [ ] 5. Commit registry: `studies/<folder>.yml`, `index.csv`, audit outputs
 - [ ] 6. Deploy Shiny / clear study cache if needed
 ```
@@ -109,3 +110,11 @@ No `steps:` block in the registry stub.
 
 | Old | New |
 |-----|-----|
+| `build_study_artifacts()` | `build_study_outputs()` |
+| `build_package_artifacts()` | `build_study_outputs()` |
+| `check_folder_replication()` | `check_replication()` |
+| `check_package_replication()` | `check_replication()` |
+| `validate_artifact()` | `validate_outputs(doi, what)` |
+| `validate_paper_artifacts()` | `validate_outputs(doi, what = "everything")` |
+| `validate_registry_artifacts()` | `validate_outputs(doi = "everywhere", what = "everything")` |
+| `scripts/validate_artifacts.R` | `scripts/validate_outputs.R` |

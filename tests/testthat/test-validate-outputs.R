@@ -101,12 +101,12 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
         normalizePath(png_path, winslash = "/", mustWork = FALSE)
       )
       expect_true(artifact_available("10.5555/test", "fig_1"))
-      expect_silent(validate_artifact("10.5555/test", "fig_1"))
+      expect_silent(validate_outputs("10.5555/test", "fig_1"))
     }
   )
 })
 
-test_that("validate_artifact fails when file is missing", {
+test_that("validate_outputs fails when file is missing", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555_missing")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
@@ -157,9 +157,72 @@ test_that("validate_artifact fails when file is missing", {
     {
       expect_false(artifact_available("10.5555/missing", "fig_1"))
       expect_error(
-        validate_artifact("10.5555/missing", "fig_1"),
+        validate_outputs("10.5555/missing", "fig_1"),
         "Artifact not available"
       )
+    }
+  )
+})
+
+test_that("validate_outputs passes for registry and study location", {
+  local_root <- withr::local_tempdir()
+  study_dir <- file.path(local_root, "rep-10.5555_test")
+  dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/test",
+      "steps:",
+      "  - id: fig_1",
+      "    type: figure",
+      "    code: code/fig_1.R",
+      "    outputs:",
+      "      - outputs/fig_1.png"
+    ),
+    file.path(study_dir, "replication.yml")
+  )
+  dir.create(file.path(local_root, "studies"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/test",
+      "  materials: folder",
+      "  study_repo: replicate-anything/rep-10.5555_test",
+      "  study_folder: rep-10.5555_test",
+      "repo: replicate-anything/rep-10.5555_test",
+      "replications:",
+      "  - id: fig_1",
+      "    type: figure"
+    ),
+    file.path(local_root, "studies", "10.5555_test.yml")
+  )
+  png_path <- file.path(study_dir, "outputs", "fig_1.png")
+  writeBin(as.raw(0), png_path)
+
+  local_index <- data.frame(
+    folder = "10.5555_test",
+    doi = "10.5555/test",
+    title = "Test",
+    journal = "",
+    year = 2026,
+    authors = "A",
+    repo = "replicate-anything/rep-10.5555_test",
+    stringsAsFactors = FALSE
+  )
+
+  withr::with_options(
+    list(
+      replicateEverything.registry_root = local_root,
+      replicateEverything.study_folders_root = local_root,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.index = local_index
+    ),
+    {
+      expect_silent(suppressMessages(
+        validate_outputs(doi = "everywhere", what = "everything", registry_root = local_root)
+      ))
+      expect_silent(validate_outputs(location = study_dir, registry_root = local_root))
+      expect_silent(validate_outputs(doi = "10.5555/test", what = "everything"))
     }
   )
 })

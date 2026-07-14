@@ -99,6 +99,10 @@ save_local_shiny("/srv/shiny/replicate")
 
 Restart the app on your host if required.
 
+### Display artifacts
+
+Shiny **Display** mode serves precomputed files from each study's `outputs/` (folder-backed) or the study package's report outputs. Maintainers can verify those files exist with [validate_outputs()] — per study (`location =` or `doi` + `what = "everything"`) or registry-wide (`doi = "everywhere"`, `what = "everything"`). See `vignette("maintainer-setup")`.
+
 ### Server configuration
 
 On a shared server, create `local.R` once (from `local.R.example`):

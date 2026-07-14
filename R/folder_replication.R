@@ -21,6 +21,24 @@ study_folder_from_doi <- function(doi) {
   paste0("rep-", gsub("/", "-", normalize_doi(doi), fixed = TRUE))
 }
 
+#' Whether a location string looks like a DOI (not a GitHub org/repo slug)
+#'
+#' DOIs such as \code{10.1017/S0003055426101622} match \code{org/repo} patterns
+#' but must not be sent to GitHub clone helpers.
+#'
+#' @param x Character scalar.
+#' @return Logical scalar.
+#' @keywords internal
+looks_like_doi_location <- function(x) {
+  if (is.null(x) || length(x) != 1L) {
+    return(FALSE)
+  }
+  x <- trimws(as.character(x))
+  grepl("^10\\.\\d", x, perl = TRUE) ||
+    grepl("^https?://doi\\.org/10\\.", x, ignore.case = TRUE) ||
+    grepl("^doi:10\\.", x, ignore.case = TRUE)
+}
+
 #' Walk up directory tree until a relative path exists
 #'
 #' @param start Starting directory.
@@ -294,6 +312,133 @@ study_input_error_message <- function(
   )
 }
 
+#' Hints when \code{check_replication()} cannot resolve a study location string
+#'
+#' Detects common DOI / registry-folder / repo-folder mashups (slashes, dashes,
+#' underscores, missing \code{rep-} prefix) and lists accepted input forms.
+#'
+#' @param loc Raw location string from the user.
+#' @return Character scalar (may be empty).
+#' @keywords internal
+study_location_input_hints <- function(loc) {
+  loc <- trimws(as.character(loc %||% ""))
+  if (!nzchar(loc)) {
+    return("")
+  }
+  lines <- character(0)
+  if (grepl("^10\\.", loc) && !grepl("/", loc, fixed = TRUE)) {
+    if (grepl("-", loc, fixed = TRUE) && !grepl("^rep[-_]", loc)) {
+      doi_guess <- sub("-", "/", loc, fixed = TRUE)
+      repo_folder <- study_folder_from_doi(doi_guess)
+      lines <- c(
+        lines,
+        paste0(
+          "Looks like a repo-folder or DOI fragment (dash, no slash): \"", loc, "\"."
+        ),
+        paste0("  DOI (for run_replication): ", doi_guess),
+        paste0("  Registry folder: ", gsub("/", "_", doi_guess, fixed = TRUE)),
+        paste0("  Study repo folder: ", repo_folder),
+        paste0("  GitHub slug: replicate-anything/", repo_folder)
+      )
+    } else if (grepl("_", loc, fixed = TRUE)) {
+      doi_guess <- gsub("_", "/", loc, fixed = TRUE)
+      repo_folder <- study_folder_from_doi(doi_guess)
+      lines <- c(
+        lines,
+        paste0("Looks like a registry folder (underscore): \"", loc, "\"."),
+        paste0("  check_replication() needs a path or GitHub slug, not the registry folder."),
+        paste0("  Try path: ", repo_folder, "  (from monorepo root)"),
+        paste0("  Or GitHub: replicate-anything/", repo_folder)
+      )
+    }
+  } else if (grepl("^rep[-_]", loc) && !dir.exists(loc)) {
+    lines <- c(
+      lines,
+      paste0("Looks like a study-repo folder name: \"", loc, "\"."),
+      "Pass the full or monorepo-relative path to that folder, or org/repo on GitHub.",
+      paste0("  Example: replicate-anything/", loc)
+    )
+  } else if (grepl("^10\\..*/", loc)) {
+    repo_folder <- study_folder_from_doi(loc)
+    lines <- c(
+      lines,
+      paste0("For validation, pass the study path or GitHub slug (", repo_folder, "),"),
+      paste0("or call configure_local_monorepo() and pass the DOI: ", normalize_doi(loc), "."),
+      paste0("For execution, use run_replication(\"", normalize_doi(loc), "\", ...).")
+    )
+  }
+  if (length(lines) == 0L) {
+    lines <- c(
+      "Accepted forms:",
+      "  - Path to folder containing replication.yml",
+      "  - GitHub URL or org/repo slug (e.g. replicate-anything/rep-10.1017-s...)",
+      "  - DOI works with run_replication(), not check_replication()"
+    )
+  } else {
+    lines <- c(lines, "Call configure_local_monorepo() once per session for sibling discovery.")
+  }
+  paste0("\n", paste(lines, collapse = "\n"))
+}
+
+#' Message when GitHub clone fails but a local sibling may exist
+#'
+#' @param slug GitHub \code{org/repo} slug that was cloned.
+#' @param loc Original location string from the user.
+#' @return Character scalar error message.
+#' @keywords internal
+study_location_clone_failure_message <- function(slug, loc = slug) {
+  base <- paste0("Failed to clone study repository: ", slug)
+  local <- try_resolve_study_by_common_alias(loc)
+  if (is.null(local) && looks_like_doi_location(loc)) {
+    local <- resolve_local_study_folder(normalize_doi(loc))
+  }
+  if (is.null(local)) {
+    return(base)
+  }
+  paste0(
+    base,
+    ".\nLocal sibling study found at: ", local,
+    "\nPass that path to check_replication(), or call configure_local_monorepo() ",
+    "so DOI lookup uses local folders instead of GitHub."
+  )
+}
+
+#' Resolve a study root from common alias strings (DOI, registry folder, rep- slug)
+#'
+#' @param loc Trimmed location string.
+#' @return Normalized study path or \code{NULL}.
+#' @keywords internal
+try_resolve_study_by_common_alias <- function(loc) {
+  loc <- trimws(as.character(loc %||% ""))
+  if (!nzchar(loc)) {
+    return(NULL)
+  }
+  candidates <- character(0)
+  if (grepl("^rep[-_]", loc)) {
+    candidates <- c(candidates, loc)
+  }
+  if (grepl("^10\\.", loc)) {
+    if (grepl("/", loc, fixed = TRUE)) {
+      candidates <- c(candidates, study_folder_from_doi(loc))
+    } else if (grepl("_", loc, fixed = TRUE)) {
+      candidates <- c(candidates, study_folder_from_doi(gsub("_", "/", loc, fixed = TRUE)))
+    } else if (grepl("-", loc, fixed = TRUE)) {
+      candidates <- c(candidates, paste0("rep-", loc))
+    }
+  }
+  candidates <- unique(candidates[nzchar(candidates)])
+  for (name in candidates) {
+    if (dir.exists(name) && file.exists(file.path(name, "replication.yml"))) {
+      return(normalizePath(name, winslash = "/", mustWork = FALSE))
+    }
+    local <- resolve_local_study_folder(name)
+    if (!is.null(local)) {
+      return(local)
+    }
+  }
+  NULL
+}
+
 register_local_study_from_root <- function(local_root) {
   meta <- read_study_replication_yaml(local_root)
   if (is.null(meta)) {
@@ -398,6 +543,10 @@ resolve_doi_input <- function(doi = NULL, location = getwd()) {
   }
 
   doi_out <- normalize_doi(raw)
+  local_sibling <- resolve_local_study_folder(doi_out)
+  if (!is.null(local_sibling)) {
+    return(register_local_study_from_root(local_sibling))
+  }
   if (!is.null(local_root)) {
     meta <- read_study_replication_yaml(local_root)
     if (!is.null(meta) && !is.null(meta$paper$doi)) {

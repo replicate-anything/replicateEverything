@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Shiny demo app">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -145,6 +145,17 @@ Live Run while developing (see <code>local.R.example</code>).</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
 <p>Restart the app on your host if required.</p>
+</div>
+<div class="section level3">
+<h3 id="display-artifacts">Display artifacts<a class="anchor" aria-label="anchor" href="#display-artifacts"></a>
+</h3>
+<p>Shiny <strong>Display</strong> mode serves precomputed files from
+each study’s <code>outputs/</code> (folder-backed) or the study
+package’s report outputs. Maintainers can verify those files exist with
+[validate_outputs()] — per study (<code>location =</code> or
+<code>doi</code> + <code>what = "everything"</code>) or registry-wide
+(<code>doi = "everywhere"</code>, <code>what = "everything"</code>). See
+<code><a href="../articles/maintainer-setup.html">vignette("maintainer-setup")</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="server-configuration">Server configuration<a class="anchor" aria-label="anchor" href="#server-configuration"></a>

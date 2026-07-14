@@ -1,11 +1,11 @@
-# Validate that a precomputed artifact exists
+# Validate that a single precomputed output exists
 
-Validate that a precomputed artifact exists
+Validate that a single precomputed output exists
 
 ## Usage
 
 ``` r
-validate_artifact(doi, what, repo = NULL, folder = NULL, language = NULL)
+validate_single_output(doi, what, repo = NULL, folder = NULL, language = NULL)
 ```
 
 ## Arguments
@@ -33,11 +33,3 @@ validate_artifact(doi, what, repo = NULL, folder = NULL, language = NULL)
 ## Value
 
 Invisibly `TRUE` on success.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-validate_artifact("10.1177/00491241211036161", "fig_1")
-} # }
-```

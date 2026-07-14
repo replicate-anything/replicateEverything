@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Maintainer setup">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -245,6 +245,22 @@ recompile <code>index.csv</code> from all stubs and rerun
 <code><a href="../reference/add_paper.html">add_paper()</a></code> for package studies.</p>
 </div>
 <div class="section level2">
+<h2 id="check-precomputed-outputs">Check precomputed outputs<a class="anchor" aria-label="anchor" href="#check-precomputed-outputs"></a>
+</h2>
+<p>After building display files, confirm every declared table and figure
+exists on disk (Shiny <strong>Display</strong> mode). This does
+<strong>not</strong> run live replications.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>location <span class="op">=</span> <span class="st">"../rep-10.1177-00491241211036161"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, what <span class="op">=</span> <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
+<p>Registry-wide check from a monorepo checkout:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>doi <span class="op">=</span> <span class="st">"everywhere"</span>, what <span class="op">=</span> <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
+<p>Or from the registry repo:
+<code>Rscript scripts/validate_outputs.R</code>.</p>
+</div>
+<div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <table class="table">
@@ -278,6 +294,17 @@ recompile <code>index.csv</code> from all stubs and rerun
 <td><code>check_replication(location)</code></td>
 </tr>
 <tr class="even">
+<td>Check precomputed outputs</td>
+<td>
+<code>validate_outputs(location)</code> or
+<code>validate_outputs(doi, what = "everything")</code>
+</td>
+</tr>
+<tr class="odd">
+<td>Registry-wide output check</td>
+<td><code>validate_outputs(doi = "everywhere", what = "everything")</code></td>
+</tr>
+<tr class="even">
 <td>Hint text for errors / UI</td>
 <td><code>maintainer_dependency_hint(doi)</code></td>
 </tr>
@@ -309,13 +336,20 @@ recompile <code>index.csv</code> from all stubs and rerun
 <p>The site is served from <strong><code>docs/</code> on
 <code>main</code></strong> (GitHub Pages → <code>/docs</code>). CI does
 <strong>not</strong> build or deploy it.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># from replicateEverything/</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>Rscript scripts<span class="sc">/</span>build_pkgdown.R</span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co"># then: git add docs/ &amp;&amp; git commit &amp;&amp; git push</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># from replicateEverything/</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>Rscript scripts<span class="sc">/</span>build_pkgdown.R</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co"># then: git add docs/ &amp;&amp; git commit &amp;&amp; git push</span></span></code></pre></div>
 <p>Commit the <strong>entire</strong> <code>docs/</code> tree
 (<code>deps/</code>, <code>articles/</code>, <code>reference/</code>,
 …). Pushing only <code>index.html</code> breaks Bootstrap styling on
 GitHub.</p>
+<p><strong>Windows + Dropbox:</strong> if the repo lives under Dropbox,
+pkgdown may fail while writing <code>docs/articles/*.html</code>
+(e.g. <code>audit.html</code>) with <code>Invalid argument [1515]</code>
+/ <code>Error closing file</code>. Pause Dropbox, exclude
+<code>docs/</code> from selective sync, or clone and build outside
+Dropbox. <code>scripts/build_pkgdown.R</code> deletes cached article
+HTML first when it detects a Dropbox path.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

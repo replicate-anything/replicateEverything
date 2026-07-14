@@ -128,6 +128,12 @@ build_study_outputs(
 
 This runs every table and figure, saves display files under `outputs/`, and writes `outputs/manifest.json`.
 
+Confirm outputs exist before handoff:
+
+```{r, eval = FALSE}
+validate_outputs(location = ".")
+```
+
 ### 2. Add tests
 
 Each `tests/testthat/test-<id>.R` should:

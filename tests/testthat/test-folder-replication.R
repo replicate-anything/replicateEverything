@@ -256,3 +256,83 @@ test_that("table_artifact_file_ok accepts html tables and stata pre output", {
   saveRDS(data.frame(x = 1), rds_path)
   expect_true(table_artifact_file_ok(rds_path))
 })
+
+test_that("study_location_input_hints detects dash mashup", {
+  msg <- replicateEverything:::study_location_input_hints("10.1017-s0003055426101622")
+  expect_match(msg, "repo-folder or DOI fragment")
+  expect_match(msg, "10.1017/s0003055426101622")
+  expect_match(msg, "rep-10.1017-s0003055426101622")
+})
+
+test_that("try_resolve_study_by_common_alias finds sibling study folder", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_dir <- file.path(monorepo_root, "rep-10.1017-s0003055426101622")
+  testthat::skip_if_not(dir.exists(study_dir), "Velez study repo missing")
+
+  old <- options(
+    replicateEverything.study_folders_root = monorepo_root,
+    replicateEverything.registry_root = file.path(monorepo_root, "registry")
+  )
+  on.exit(options(old), add = TRUE)
+
+  resolved <- replicateEverything:::try_resolve_study_by_common_alias(
+    "10.1017-s0003055426101622"
+  )
+  expect_equal(
+    normalizePath(resolved, winslash = "/"),
+    normalizePath(study_dir, winslash = "/")
+  )
+})
+
+test_that("resolve_study_location rejects bare DOI without local sibling", {
+  expect_error(
+    resolve_study_location("10.9999/nonexistent-study"),
+    "Could not find a local study folder for DOI"
+  )
+  expect_error(
+    resolve_study_location("10.9999/nonexistent-study"),
+    "rep-10.9999-nonexistent-study"
+  )
+})
+
+test_that("check_replication resolves DOI via configured monorepo sibling", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_dir <- file.path(monorepo_root, "rep-10.1017-s0003055426101622")
+  testthat::skip_if_not(dir.exists(study_dir), "Velez study repo missing")
+
+  configure_local_monorepo(monorepo_root)
+  res <- check_replication("10.1017/S0003055426101622")
+  expect_true(res$checks$passed[res$checks$check == "resolve_location"])
+  expect_equal(
+    normalizePath(res$study_path, winslash = "/"),
+    normalizePath(study_dir, winslash = "/")
+  )
+})
+
+test_that("resolve_doi_input finds sibling study via monorepo option", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_dir <- file.path(monorepo_root, "rep-10.1017-s0003055426101622")
+  testthat::skip_if_not(dir.exists(study_dir), "Velez study repo missing")
+
+  old <- options(replicateEverything.study_folders_root = monorepo_root)
+  on.exit(options(old), add = TRUE)
+
+  out <- resolve_doi_input("10.1017/S0003055426101622")
+  expect_equal(
+    normalizePath(out$local_root, winslash = "/"),
+    normalizePath(study_dir, winslash = "/")
+  )
+  expect_true(out$is_local)
+})

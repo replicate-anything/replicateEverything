@@ -177,8 +177,8 @@ includes them in the registry audit (`substantive = TRUE`, default).
 
 See Fearon & Laitin Table 1 in
 [rep-10.1017-S0003055403000534](https://github.com/replicate-anything/rep-10.1017-S0003055403000534)
-and
-[`?check_glm_table_benchmark`](https://replicate-anything.github.io/replicateEverything/reference/check_glm_table_benchmark.md).
+for a reference substantive check (study-specific benchmarks live in the
+study repo).
 
 ## Reference implementation
 

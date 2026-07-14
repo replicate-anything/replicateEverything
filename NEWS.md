@@ -2,7 +2,7 @@
 
 ## Public API cleanup
 
-* **Unified contribute API:** [build_study_outputs()] replaces [build_study_artifacts()] and [build_package_artifacts()]; [check_replication()] replaces [check_folder_replication()] and [check_package_replication()]. The kind-specific functions remain internal.
+* **Unified contribute API:** [build_study_outputs()] replaces [build_study_artifacts()] and [build_package_artifacts()]; [check_replication()] replaces [check_folder_replication()] and [check_package_replication()]; [validate_outputs()] replaces `validate_artifact()`, `validate_paper_artifacts()`, `validate_study_artifacts()`, and `validate_registry_artifacts()`. Use `doi = "everywhere"` and `what = "everything"` for registry-wide checks. The kind-specific functions remain internal.
 * Removed deprecated exports: `list_replication_groups()`, `list_prep_steps()`, `prepare_folder_paper()`, and `sync_folder_paper()`.
 * Internal (no longer in Reference): `print(<replication_list>)`, [study_dag_display()], [study_dag_facets()], [study_output_dir()], [migrate_legacy_steps_yaml()], [run_prep_step()], and [replication_kind()].
 * [refresh_registry()] moved to the **Registry audit** reference section.
@@ -112,7 +112,7 @@
 
 * Connect to the public [replication registry](https://github.com/replicate-anything/registry) to discover and run computational replications by DOI.
 * Run a single figure or table with `run_replication()` / `render_replication()`, or reproduce an entire paper with `replicate_paper()`.
-* Load, validate, and save precomputed artifacts (`load_artifact()`, `save_artifact()`, `validate_artifact()`).
+* Load, validate, and save precomputed artifacts (`load_artifact()`, `save_artifact()`, `validate_outputs()`).
 * Optional display pipeline via registered `format_*` functions (`format_for_display()`, `render_for_display()`).
 * Package-backed replications: install and call standalone study packages from the registry or a local monorepo.
 * Contributor tooling: `create_replication_template()` scaffolds a new replication folder with `replication.yml`, data, and code stubs.

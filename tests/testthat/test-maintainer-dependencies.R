@@ -1,3 +1,56 @@
+test_that("resolve_index_study_location falls back when doi is blank", {
+  row <- data.frame(
+    folder = "rep-10.1017-S0003055403000534--alt-1",
+    handle = "rep-10.1017-S0003055403000534--alt-1",
+    doi = "",
+    stringsAsFactors = FALSE
+  )
+  expect_equal(
+    replicateEverything:::resolve_index_study_location(row),
+    "rep-10.1017-S0003055403000534--alt-1"
+  )
+})
+
+test_that("install_registry_dependencies does not treat blank index doi as local cwd", {
+  row <- data.frame(
+    folder = "rep-10.1017-S0003055403000534--alt-1",
+    handle = "rep-10.1017-S0003055403000534--alt-1",
+    doi = "",
+    repo = "replicate-anything/rep-10.1017-S0003055403000534--alt-1",
+    stringsAsFactors = FALSE
+  )
+  idx <- rbind(
+    data.frame(
+      folder = "10.1017S0003055403000534",
+      handle = "10.1017S0003055403000534",
+      doi = "10.1017/s0003055403000534",
+      repo = "replicate-anything/rep-10.1017-S0003055403000534",
+      stringsAsFactors = FALSE
+    ),
+    row
+  )
+  install_calls <- list()
+  stub_load_index <- function() idx
+  stub_install_study <- function(location, registry_root = NULL, repo = NULL, folder = NULL) {
+    install_calls[[length(install_calls) + 1L]] <<- list(
+      location = location,
+      registry_root = registry_root,
+      repo = repo,
+      folder = folder
+    )
+    invisible(TRUE)
+  }
+  local_mocked_bindings(
+    load_index = stub_load_index,
+    install_study_dependencies = stub_install_study,
+    .package = "replicateEverything"
+  )
+  out <- install_registry_dependencies(verbose = FALSE)
+  expect_length(install_calls, 2L)
+  expect_equal(install_calls[[2L]]$location, "rep-10.1017-S0003055403000534--alt-1")
+  expect_true(out[["rep-10.1017-S0003055403000534--alt-1"]]$ok)
+})
+
 test_that("maintainer_dependency_hint mentions install functions", {
   hint <- maintainer_dependency_hint("10.1017/S0003055426101749")
   expect_type(hint, "character")

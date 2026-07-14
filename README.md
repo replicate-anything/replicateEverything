@@ -19,7 +19,7 @@
 - **Artifacts** — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display
 - **Display pipeline** — optional `format_*` steps turn analysis objects into HTML tables and ggplot figures
 - **Shiny demo** — [live app](https://shiny2.wzb.eu/ipi/replicate/); `run_shiny_app()` locally; `save_local_shiny()` to deploy on Shiny Server
-- **Contributor tooling** — validate and register folder- or package-backed studies (`prepare_study_for_registry()`, `check_folder_replication()`, `check_package_replication()`)
+- **Contributor tooling** — validate and register folder- or package-backed studies (`prepare_study_for_registry()`, `check_replication()`, `validate_outputs()`)
 - **Bundled AI skills** — markdown workflow guides for assistants (`ai_skills()`, `ai_skill()`)
 
 ## Project status
@@ -189,7 +189,7 @@ paper:
 repo: replicate-anything/rep-10.1177-00491241211036161
 ```
 
-The full `steps:` pipeline lives in the study repo's `replication.yml`. Display outputs live in `outputs/` (from `build_study_artifacts()`).
+The full `steps:` pipeline lives in the study repo's `replication.yml`. Display outputs live in `outputs/` (from `build_study_outputs()`).
 
 **From the study repository root:**
 
@@ -202,7 +202,7 @@ options(
 )
 
 # 1. Build outputs/manifest.json
-build_study_artifacts(location = ".", install_deps = TRUE)
+build_study_outputs(location = ".", install_deps = TRUE)
 
 # 2. Run tests
 testthat::test_dir("tests/testthat")
@@ -243,7 +243,7 @@ Validate and register a package-backed study:
 ```r
 options(replicateEverything.registry_root = "/path/to/registry")
 
-check_package_replication("/path/to/rep_package")
+check_replication("/path/to/rep_package")
 add_paper("/path/to/rep_package", full_replication = FALSE)
 ```
 
@@ -276,11 +276,12 @@ and `build_report()`.
 | View source code | `get_code()` |
 | Run one replication | `run_replication()` |
 | Replicate full paper | `run_replication(doi, "everything")` |
-| Build folder study artifacts | `build_study_artifacts()` |
+| Build folder study outputs | `build_study_outputs()` |
 | Prepare folder study | `prepare_study_for_registry()` |
 | Sync folder study to registry | `sync_study_to_registry()` |
-| Validate folder study | `check_folder_replication()` |
-| Validate package study | `check_package_replication()` |
+| Validate study layout + tests | `check_replication()` |
+| Check precomputed outputs exist | `validate_outputs()` |
+| Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | List bundled AI skills | `ai_skills()`, `ai_skill()` |
 | Registry health check | `audit_everything()` |
 | Shiny demo | `run_shiny_app()`, `save_local_shiny()` |
@@ -323,7 +324,7 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 
 For **folder-backed** studies, run `prepare_study_for_registry()` to build outputs, validate, and write `registry/replication.yml` + `registry/index.csv` in the study repo; then `sync_study_to_registry()` (or `refresh_registry()` on the registry checkout).
 
-For **package-backed** studies, use `add_paper()` after `check_package_replication()` passes instead of copying code and data into the registry.
+For **package-backed** studies, use `add_paper()` after `check_replication()` passes instead of copying code and data into the registry.
 
 ```bash
 git clone https://github.com/replicate-anything/registry

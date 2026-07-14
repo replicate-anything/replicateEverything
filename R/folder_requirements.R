@@ -11,11 +11,26 @@ resolve_study_location <- function(location) {
   if (dir.exists(loc) && file.exists(file.path(loc, "replication.yml"))) {
     return(normalizePath(loc, winslash = "/", mustWork = FALSE))
   }
+  alias_root <- try_resolve_study_by_common_alias(loc)
+  if (!is.null(alias_root)) {
+    return(alias_root)
+  }
+  if (looks_like_doi_location(loc)) {
+    folder <- study_folder_from_doi(loc)
+    stop(
+      "Could not find a local study folder for DOI ", loc, ".\n",
+      "Expected sibling folder ", folder, " under the monorepo root.\n",
+      "Call configure_local_monorepo(\"path/to/replicate_everything\") once per session,\n",
+      "or pass the study path: check_replication(\".../", folder, "\")",
+      call. = FALSE
+    )
+  }
   slug <- parse_github_slug(loc)
   if (is.null(slug)) {
     stop(
       "Could not resolve study location: ", loc,
-      ". Provide a directory containing replication.yml or a GitHub URL/slug.",
+      ". Provide a directory containing replication.yml or a GitHub URL/slug (org/repo).",
+      study_location_input_hints(loc),
       call. = FALSE
     )
   }
@@ -41,7 +56,7 @@ resolve_study_location <- function(location) {
     stderr = FALSE
   )
   if (!identical(status, 0L) || !file.exists(file.path(tmp, "replication.yml"))) {
-    stop("Failed to clone study repository: ", slug, call. = FALSE)
+    stop(study_location_clone_failure_message(slug, loc), call. = FALSE)
   }
   normalizePath(tmp, winslash = "/", mustWork = FALSE)
 }

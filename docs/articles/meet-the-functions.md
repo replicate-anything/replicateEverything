@@ -241,6 +241,19 @@ See
 [`vignette("maintainer-setup")`](https://replicate-anything.github.io/replicateEverything/articles/maintainer-setup.md)
 for the full maintainer workflow.
 
+### Check precomputed outputs
+
+\[validate_outputs()\] checks that declared table and figure files exist
+on disk (for Shiny **Display**). It does not run live replications.
+
+``` r
+
+validate_outputs(location = "../rep-10.1177-00491241211036161")
+validate_outputs("10.1177/00491241211036161", what = "everything")
+options(replicateEverything.registry_root = "../registry")
+validate_outputs(doi = "everywhere", what = "everything")
+```
+
 ### Package-backed studies (contributor)
 
 Package-backed studies export
@@ -300,9 +313,11 @@ for the latest snapshot table shipped with the package.
 | Install deps (all studies) | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
 | Build study outputs | [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
 | Validate study | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
+| Check precomputed outputs | [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md) |
 | Prepare registry handoff | [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
 | **Maintainer** |  |
 | Sync study into registry | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
 | Rebuild index + audit all | [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md) |
 | Rebuild index only | [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md) |
+| Registry output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |

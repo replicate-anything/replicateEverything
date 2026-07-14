@@ -137,6 +137,24 @@ refresh_registry("../registry", audit = TRUE, patience = 20)
 
 Internal shortcuts (check + sync in one call): `add_folder_paper()` for folder studies, `add_paper()` for package studies.
 
+## Check precomputed outputs
+
+After building display files, confirm every declared table and figure exists on disk (Shiny **Display** mode). This does **not** run live replications.
+
+```{r}
+validate_outputs(location = "../rep-10.1177-00491241211036161")
+validate_outputs("10.1177/00491241211036161", what = "everything")
+```
+
+Registry-wide check from a monorepo checkout:
+
+```{r}
+options(replicateEverything.registry_root = "../registry")
+validate_outputs(doi = "everywhere", what = "everything")
+```
+
+Or from the registry repo: `Rscript scripts/validate_outputs.R`.
+
 ## Summary
 
 | Task | Function |
@@ -146,6 +164,8 @@ Internal shortcuts (check + sync in one call): `add_folder_paper()` for folder s
 | Install entire registry | `install_registry_dependencies()` |
 | Build study outputs | `build_study_outputs(location, install_deps = TRUE)` |
 | Validate study | `check_replication(location)` |
+| Check precomputed outputs | `validate_outputs(location)` or `validate_outputs(doi, what = "everything")` |
+| Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
 | **Contributor:** prepare handoff in study repo | `prepare_study_for_registry(path)` |
 | **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |

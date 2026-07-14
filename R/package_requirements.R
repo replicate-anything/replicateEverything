@@ -49,6 +49,9 @@ parse_github_slug <- function(location) {
   if (m > 0) {
     return(substr(x, attr(m, "capture.start"), attr(m, "capture.start") + attr(m, "capture.length") - 1))
   }
+  if (looks_like_doi_location(x)) {
+    return(NULL)
+  }
   if (grepl("^[^/\\s]+/[^/\\s]+$", x)) {
     return(x)
   }

@@ -116,6 +116,10 @@ resolve_study_root <- function(location) {
       return(normalizePath(loc, winslash = "/", mustWork = FALSE))
     }
   }
+  alias_root <- try_resolve_study_by_common_alias(loc)
+  if (!is.null(alias_root)) {
+    return(alias_root)
+  }
   folder_err <- NULL
   pkg_err <- NULL
   root <- tryCatch(
@@ -141,7 +145,8 @@ resolve_study_root <- function(location) {
   stop(
     "Could not resolve study location: ", loc,
     ". Provide a folder with replication.yml, an R package with DESCRIPTION, ",
-    "or a GitHub URL/slug.",
+    "or a GitHub URL/slug (org/repo).",
+    study_location_input_hints(loc),
     call. = FALSE
   )
 }

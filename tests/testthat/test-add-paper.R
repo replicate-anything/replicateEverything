@@ -39,6 +39,11 @@ test_that("parse_github_slug accepts common forms", {
   expect_equal(parse_github_slug("org/my-pkg"), "org/my-pkg")
 })
 
+test_that("parse_github_slug rejects DOI-shaped strings", {
+  expect_null(parse_github_slug("10.1017/S0003055426101622"))
+  expect_null(parse_github_slug("https://doi.org/10.1017/S0003055426101622"))
+})
+
 test_that("registry_stub_from_package_meta omits replications", {
   meta <- list(
     paper = list(

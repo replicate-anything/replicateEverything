@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Meet the functions">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -235,6 +235,18 @@ checkout:</p>
 workflow.</p>
 </div>
 <div class="section level3">
+<h3 id="check-precomputed-outputs">Check precomputed outputs<a class="anchor" aria-label="anchor" href="#check-precomputed-outputs"></a>
+</h3>
+<p>[validate_outputs()] checks that declared table and figure files
+exist on disk (for Shiny <strong>Display</strong>). It does not run live
+replications.</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>location <span class="op">=</span> <span class="st">"../rep-10.1177-00491241211036161"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, what <span class="op">=</span> <span class="st">"everything"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>doi <span class="op">=</span> <span class="st">"everywhere"</span>, what <span class="op">=</span> <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="package-backed-studies-contributor">Package-backed studies (contributor)<a class="anchor" aria-label="anchor" href="#package-backed-studies-contributor"></a>
 </h3>
 <p>Package-backed studies export <code><a href="../reference/run_replication.html">run_replication()</a></code>,
@@ -242,7 +254,7 @@ workflow.</p>
 itself. Validate with [check_replication()], then
 <code><a href="../reference/prepare_study_for_registry.html">prepare_study_for_registry()</a></code> for handoff files under
 <code>inst/registry/</code>.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_replication.html">check_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371_journal.pone.0278337"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/check_replication.html">check_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371_journal.pone.0278337"</span>, full_replication <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>See <code><a href="../articles/package-replication-checklist.html">vignette("package-replication-checklist")</a></code> for layout
@@ -255,7 +267,7 @@ and API requirements.</p>
 the registry (all engines), with a per-object time limit. Use it to
 check registry health after changes. Restrict with <code>dois =</code>
 or <code>collections =</code> (e.g. <code>"APSR"</code>).</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, dois <span class="op">=</span> <span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span>
 <span><span class="co"># audit &lt;- audit_everything(patience = 20, collections = "APSR")</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit</span><span class="op">)</span></span></code></pre></div>
@@ -338,24 +350,32 @@ shipped with the package.</p>
 <td><code><a href="../reference/check_replication.html">check_replication()</a></code></td>
 </tr>
 <tr class="even">
+<td>Check precomputed outputs</td>
+<td><code><a href="../reference/validate_outputs.html">validate_outputs()</a></code></td>
+</tr>
+<tr class="odd">
 <td>Prepare registry handoff</td>
 <td><code><a href="../reference/prepare_study_for_registry.html">prepare_study_for_registry()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><strong>Maintainer</strong></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Sync study into registry</td>
 <td><code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Rebuild index + audit all</td>
 <td><code><a href="../reference/refresh_registry.html">refresh_registry()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Rebuild index only</td>
 <td><code><a href="../reference/build_registry_index.html">build_registry_index()</a></code></td>
+</tr>
+<tr class="even">
+<td>Registry output check</td>
+<td><code>validate_outputs(doi = "everywhere", what = "everything")</code></td>
 </tr>
 <tr class="odd">
 <td>Registry health check</td>

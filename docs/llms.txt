@@ -37,8 +37,8 @@ demo](https://shiny2.wzb.eu/ipi/replicate/).
 - **Contributor tooling** — validate and register folder- or
   package-backed studies
   ([`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md),
-  [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
-  [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md))
+  [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
+  [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md))
 - **Bundled AI skills** — markdown workflow guides for assistants
   ([`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md),
   [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md))
@@ -233,7 +233,7 @@ repo: replicate-anything/rep-10.1177-00491241211036161
 
 The full `steps:` pipeline lives in the study repo’s `replication.yml`.
 Display outputs live in `outputs/` (from
-[`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)).
+[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)).
 
 **From the study repository root:**
 
@@ -247,7 +247,7 @@ options(
 )
 
 # 1. Build outputs/manifest.json
-build_study_artifacts(location = ".", install_deps = TRUE)
+build_study_outputs(location = ".", install_deps = TRUE)
 
 # 2. Run tests
 testthat::test_dir("tests/testthat")
@@ -294,7 +294,7 @@ Validate and register a package-backed study:
 
 options(replicateEverything.registry_root = "/path/to/registry")
 
-check_package_replication("/path/to/rep_package")
+check_replication("/path/to/rep_package")
 add_paper("/path/to/rep_package", full_replication = FALSE)
 ```
 
@@ -335,11 +335,12 @@ Linked study packages should export:
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Replicate full paper | `run_replication(doi, "everything")` |
-| Build folder study artifacts | [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
+| Build folder study outputs | [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
 | Prepare folder study | [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
 | Sync folder study to registry | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
-| Validate folder study | [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
-| Validate package study | [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
+| Validate study layout + tests | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
+| Check precomputed outputs exist | [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md) |
+| Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | List bundled AI skills | [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md), [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md) |
 | Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |
 | Shiny demo | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
@@ -406,7 +407,7 @@ on the registry checkout).
 For **package-backed** studies, use
 [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
 after
-[`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
 passes instead of copying code and data into the registry.
 
 ``` bash
@@ -553,6 +554,8 @@ Probe and install study dependencies; sync studies into the registry.
   : Sync a prepared study into the registry repository (maintainer)
 - [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
   : Compile registry index.csv from study stub yaml files
+- [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md)
+  : Validate precomputed outputs
 
 ## Registry audit
 
@@ -563,8 +566,6 @@ Run all registry replications and inspect results.
   (maintainer)
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
   : Audit all registry replications
-- [`check_glm_table_benchmark()`](https://replicate-anything.github.io/replicateEverything/reference/check_glm_table_benchmark.md)
-  : Compare replicated GLM tables to published benchmarks
 
 # Articles
 

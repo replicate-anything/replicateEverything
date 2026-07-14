@@ -599,7 +599,11 @@ Run in order; stop on failure.
 | build_artifacts skip | folder paper skipped in registry script |
 
 ```r
-replicateEverything::validate_artifact(doi, "fig_1", folder = "<registry-folder>")
+replicateEverything::validate_outputs(doi, "fig_1", folder = "<registry-folder>")
+replicateEverything::validate_outputs(doi, what = "everything")
+replicateEverything::validate_outputs(location = ".")
+options(replicateEverything.registry_root = "../registry")
+replicateEverything::validate_outputs(doi = "everywhere", what = "everything")
 replicateEverything::render_for_display(doi, "fig_1", folder = "<registry-folder>")
 ```
 

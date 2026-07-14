@@ -7,8 +7,11 @@
 - **Unified contribute API:** \[build_study_outputs()\] replaces
   \[build_study_artifacts()\] and \[build_package_artifacts()\];
   \[check_replication()\] replaces \[check_folder_replication()\] and
-  \[check_package_replication()\]. The kind-specific functions remain
-  internal.
+  \[check_package_replication()\]; \[validate_outputs()\] replaces
+  `validate_artifact()`, `validate_paper_artifacts()`,
+  `validate_study_artifacts()`, and `validate_registry_artifacts()`. Use
+  `doi = "everywhere"` and `what = "everything"` for registry-wide
+  checks. The kind-specific functions remain internal.
 - Removed deprecated exports: `list_replication_groups()`,
   [`list_prep_steps()`](https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.md),
   `prepare_folder_paper()`, and `sync_folder_paper()`.
@@ -293,7 +296,7 @@
 - Load, validate, and save precomputed artifacts
   ([`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md),
   [`save_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/save_artifact.md),
-  [`validate_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/validate_artifact.md)).
+  [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md)).
 - Optional display pipeline via registered `format_*` functions
   ([`format_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/format_for_display.md),
   [`render_for_display()`](https://replicate-anything.github.io/replicateEverything/reference/render_for_display.md)).

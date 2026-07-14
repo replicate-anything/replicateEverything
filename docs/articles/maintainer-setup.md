@@ -170,6 +170,28 @@ for folder studies,
 [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
 for package studies.
 
+## Check precomputed outputs
+
+After building display files, confirm every declared table and figure
+exists on disk (Shiny **Display** mode). This does **not** run live
+replications.
+
+``` r
+
+validate_outputs(location = "../rep-10.1177-00491241211036161")
+validate_outputs("10.1177/00491241211036161", what = "everything")
+```
+
+Registry-wide check from a monorepo checkout:
+
+``` r
+
+options(replicateEverything.registry_root = "../registry")
+validate_outputs(doi = "everywhere", what = "everything")
+```
+
+Or from the registry repo: `Rscript scripts/validate_outputs.R`.
+
 ## Summary
 
 | Task | Function |
@@ -179,6 +201,8 @@ for package studies.
 | Install entire registry | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
 | Build study outputs | `build_study_outputs(location, install_deps = TRUE)` |
 | Validate study | `check_replication(location)` |
+| Check precomputed outputs | `validate_outputs(location)` or `validate_outputs(doi, what = "everything")` |
+| Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
 | **Contributor:** prepare handoff in study repo | `prepare_study_for_registry(path)` |
 | **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |
@@ -198,3 +222,10 @@ Rscript scripts/build_pkgdown.R
 
 Commit the **entire** `docs/` tree (`deps/`, `articles/`, `reference/`,
 …). Pushing only `index.html` breaks Bootstrap styling on GitHub.
+
+**Windows + Dropbox:** if the repo lives under Dropbox, pkgdown may fail
+while writing `docs/articles/*.html` (e.g. `audit.html`) with
+`Invalid argument [1515]` / `Error closing file`. Pause Dropbox, exclude
+`docs/` from selective sync, or clone and build outside Dropbox.
+`scripts/build_pkgdown.R` deletes cached article HTML first when it
+detects a Dropbox path.

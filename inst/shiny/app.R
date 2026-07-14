@@ -949,8 +949,6 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
         class = "small mb-0",
         "Folder-backed studies: run ",
         tags$code("build_study_outputs()"),
-        "Folder-backed studies: run ",
-        tags$code("build_study_outputs()"),
         " in the study repository (writes ",
         tags$code("outputs/"),
         " paths declared in ",
@@ -3146,7 +3144,7 @@ contribute_tab_ui <- function() {
     "# one paper only:\n",
     "Rscript scripts/build_artifacts.R studies/10.1017S0003055403000534\n",
     "\n",
-    "Rscript scripts/validate_artifacts.R"
+    "Rscript scripts/validate_outputs.R"
   )
 
   example_package_stub <- paste0(

@@ -191,6 +191,17 @@ refresh_registry("../registry", audit = TRUE)
 
 See `vignette("maintainer-setup")` for the full maintainer workflow.
 
+### Check precomputed outputs
+
+[validate_outputs()] checks that declared table and figure files exist on disk (for Shiny **Display**). It does not run live replications.
+
+```{r}
+validate_outputs(location = "../rep-10.1177-00491241211036161")
+validate_outputs("10.1177/00491241211036161", what = "everything")
+options(replicateEverything.registry_root = "../registry")
+validate_outputs(doi = "everywhere", what = "everything")
+```
+
 ### Package-backed studies (contributor)
 
 Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package itself. Validate with [check_replication()], then `prepare_study_for_registry()` for handoff files under `inst/registry/`.
@@ -237,9 +248,11 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | Install deps (all studies) | `install_registry_dependencies()` |
 | Build study outputs | `build_study_outputs()` |
 | Validate study | `check_replication()` |
+| Check precomputed outputs | `validate_outputs()` |
 | Prepare registry handoff | `prepare_study_for_registry()` |
 | **Maintainer** | |
 | Sync study into registry | `sync_study_to_registry()` |
 | Rebuild index + audit all | `refresh_registry()` |
 | Rebuild index only | `build_registry_index()` |
+| Registry output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Registry health check | `audit_everything()` |

@@ -129,6 +129,13 @@ build_study_outputs(
 This runs every table and figure, saves display files under `outputs/`,
 and writes `outputs/manifest.json`.
 
+Confirm outputs exist before handoff:
+
+``` r
+
+validate_outputs(location = ".")
+```
+
 ### 2. Add tests
 
 Each `tests/testthat/test-<id>.R` should:
@@ -227,16 +234,16 @@ implementation: [Fearon & Laitin
 
 ``` r
 
-# tests/substantive/tab_1.R — Fearon & Laitin Table 1
+# tests/substantive/tab_1.R — see Fearon & Laitin reference implementation
 substantive_check_tab_1 <- function(object) {
-  replicateEverything::check_glm_table_benchmark(object, list(
-    terms = c("warl", "warl", "warl", "empwarl", "cowwarl"),
-    coef = c(-0.954, -0.849, -0.916, -0.688, -0.551),
-    se = c(0.314, 0.388, 0.312, 0.264, 0.374),
-    nobs = c(6327, 5186, 6327, 6360, 5378)
-  ))
+  check_glm_table_benchmark(object, tab_1_prior_war_benchmark())
 }
 ```
+
+[`check_glm_table_benchmark()`](https://replicate-anything.github.io/replicateEverything/reference/check_glm_table_benchmark.md)
+is injected when the package loads substantive check scripts (via
+\[audit_everything()\] or \[check_replication()\]). Study-specific
+benchmark values belong in the study repo, not the package.
 
 Call the same function from `tests/testthat/test-<step_id>.R` so
 [`testthat::test_dir()`](https://testthat.r-lib.org/reference/test_dir.html)

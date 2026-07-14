@@ -58,6 +58,7 @@ reference:
   - maintainer_dependency_hint
   - sync_study_to_registry
   - build_registry_index
+  - validate_outputs
 - title: Registry audit
   desc: Run all registry replications and inspect results.
   contents:

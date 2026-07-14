@@ -218,6 +218,38 @@ install_study_dependencies <- function(
   invisible(TRUE)
 }
 
+#' Resolve a registry index row to a study location for maintainer APIs
+#'
+#' Rows without a DOI (handle-only stubs) must not pass an empty string to
+#' [install_study_dependencies()], because blank input means "local study in
+#' getwd()".
+#'
+#' @param row One row from [load_index()].
+#' @return Character DOI, handle, or folder slug.
+#' @keywords internal
+resolve_index_study_location <- function(row) {
+  doi <- trimws(as.character(row$doi[[1]] %||% ""))
+  if (!is.na(doi) && nzchar(doi)) {
+    return(doi)
+  }
+  if ("handle" %in% names(row)) {
+    handle <- trimws(as.character(row$handle[[1]] %||% ""))
+    if (!is.na(handle) && nzchar(handle)) {
+      return(handle)
+    }
+  }
+  if ("folder" %in% names(row)) {
+    folder <- trimws(as.character(row$folder[[1]] %||% ""))
+    if (!is.na(folder) && nzchar(folder)) {
+      return(folder)
+    }
+  }
+  stop(
+    "Registry index row is missing doi, handle, and folder.",
+    call. = FALSE
+  )
+}
+
 #' Install dependencies for every study in the registry index
 #'
 #' Maintainer setup for a shared server or audit machine. Calls
@@ -253,21 +285,23 @@ install_registry_dependencies <- function(
     stop("Registry index is empty.", call. = FALSE)
   }
 
-  results <- vector("list", nrow(idx))
-  names(results) <- idx$doi
+  results <- list()
 
   for (i in seq_len(nrow(idx))) {
     row <- idx[i, , drop = FALSE]
-    doi <- as.character(row$doi[[1]])
+    location <- resolve_index_study_location(row)
+    doi <- trimws(as.character(row$doi[[1]] %||% ""))
+    result_key <- if (nzchar(doi)) doi else location
     repo <- if ("repo" %in% names(row)) row$repo[[1]] else NULL
     folder <- if ("folder" %in% names(row)) row$folder[[1]] else NULL
     if (verbose) {
-      message("[", i, "/", nrow(idx), "] ", doi)
+      label <- if (nzchar(doi)) doi else paste0(location, " (no DOI)")
+      message("[", i, "/", nrow(idx), "] ", label)
     }
-    results[[doi]] <- tryCatch(
+    results[[result_key]] <- tryCatch(
       {
         install_study_dependencies(
-          doi,
+          location,
           registry_root = registry_root,
           repo = repo,
           folder = folder

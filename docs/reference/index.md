@@ -82,6 +82,8 @@ Probe and install study dependencies; sync studies into the registry.
   : Sync a prepared study into the registry repository (maintainer)
 - [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
   : Compile registry index.csv from study stub yaml files
+- [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md)
+  : Validate precomputed outputs
 
 ## Registry audit
 
@@ -92,5 +94,3 @@ Run all registry replications and inspect results.
   (maintainer)
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
   : Audit all registry replications
-- [`check_glm_table_benchmark()`](https://replicate-anything.github.io/replicateEverything/reference/check_glm_table_benchmark.md)
-  : Compare replicated GLM tables to published benchmarks
