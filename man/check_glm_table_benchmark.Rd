@@ -20,17 +20,8 @@ Invisibly \code{TRUE} on success.
 }
 \description{
 Checks coefficient estimates, standard errors, and sample sizes for a
-vector of models against values taken from the published table. Intended
-for study repos under \code{tests/substantive/<step_id>.R}.
+vector of models against values taken from the published table. Available
+as \code{check_glm_table_benchmark()} when substantive check scripts are
+sourced via \code{\link[=load_substantive_check_fn]{load_substantive_check_fn()}}.
 }
-\examples{
-\dontrun{
-models <- run_replication("10.1017/S0003055403000534", "tab_1")
-check_glm_table_benchmark(models, list(
-  terms = c("warl", "warl", "warl", "empwarl", "cowwarl"),
-  coef = c(-0.954, -0.849, -0.916, -0.688, -0.551),
-  se = c(0.314, 0.388, 0.312, 0.264, 0.374),
-  nobs = c(6327, 5186, 6327, 6360, 5378)
-))
-}
-}
+\keyword{internal}

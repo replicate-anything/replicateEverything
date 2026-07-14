@@ -1,8 +1,9 @@
 #' Compare replicated GLM tables to published benchmarks
 #'
 #' Checks coefficient estimates, standard errors, and sample sizes for a
-#' vector of models against values taken from the published table. Intended
-#' for study repos under \code{tests/substantive/<step_id>.R}.
+#' vector of models against values taken from the published table. Available
+#' as \code{check_glm_table_benchmark()} when substantive check scripts are
+#' sourced via [load_substantive_check_fn()].
 #'
 #' @param models A list of fitted \code{glm} objects (one per table column).
 #' @param spec Benchmark specification with character vector \code{terms} and
@@ -10,18 +11,7 @@
 #' @param tolerance Maximum absolute difference allowed for coefficients and
 #'   standard errors (default \code{0.001}, matching three decimal places).
 #' @return Invisibly \code{TRUE} on success.
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' models <- run_replication("10.1017/S0003055403000534", "tab_1")
-#' check_glm_table_benchmark(models, list(
-#'   terms = c("warl", "warl", "warl", "empwarl", "cowwarl"),
-#'   coef = c(-0.954, -0.849, -0.916, -0.688, -0.551),
-#'   se = c(0.314, 0.388, 0.312, 0.264, 0.374),
-#'   nobs = c(6327, 5186, 6327, 6360, 5378)
-#' ))
-#' }
+#' @keywords internal
 check_glm_table_benchmark <- function(models, spec, tolerance = 0.001) {
   if (!is.list(models) || length(models) == 0L) {
     stop("models must be a non-empty list of glm objects.", call. = FALSE)
@@ -136,6 +126,7 @@ load_substantive_check_fn <- function(study_root, what) {
   }
 
   env <- new.env(parent = globalenv())
+  env$check_glm_table_benchmark <- check_glm_table_benchmark
   tryCatch(
     sys.source(path, envir = env, keep.source = FALSE),
     error = function(e) {
