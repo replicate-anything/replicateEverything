@@ -2,7 +2,7 @@
 % Please edit documentation in R/build_artifact_helpers.R
 \name{replication_artifact_exists}
 \alias{replication_artifact_exists}
-\title{Filter replication entries to those without precomputed artifacts}
+\title{Check whether a replication artifact exists}
 \usage{
 replication_artifact_exists(
   rep,
@@ -13,6 +13,8 @@ replication_artifact_exists(
 )
 }
 \arguments{
+\item{rep}{Replication entry list.}
+
 \item{doi}{Paper DOI or lookup key.}
 
 \item{folder}{Optional registry folder name.}
@@ -20,13 +22,8 @@ replication_artifact_exists(
 \item{repo}{Optional repository slug.}
 
 \item{study_root}{Optional local study root for direct file checks.}
-
-\item{display_reps}{List of replication entries.}
-
-\item{only_missing}{When \code{TRUE}, keep only entries where
-\code{\link{artifact_available}()} is \code{FALSE}.}
 }
 \description{
-Filter replication entries to those without precomputed artifacts
+Check whether a replication artifact exists
 }
 \keyword{internal}

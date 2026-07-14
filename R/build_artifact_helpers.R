@@ -1,11 +1,9 @@
-#' Filter replication entries to those without precomputed artifacts
+#' Check whether a replication artifact exists
 #'
-#' @param display_reps List of replication entries.
+#' @param rep Replication entry list.
 #' @param doi Paper DOI or lookup key.
 #' @param folder Optional registry folder name.
 #' @param repo Optional repository slug.
-#' @param only_missing When \code{TRUE}, keep only entries where
-#'   \code{\link{artifact_available}()} is \code{FALSE}.
 #' @param study_root Optional local study root for direct file checks.
 #' @keywords internal
 replication_artifact_exists <- function(
@@ -25,7 +23,16 @@ replication_artifact_exists <- function(
   artifact_available(doi, rep$id, repo = repo, folder = folder)
 }
 
-#' @rdname filter_replications_only_missing
+#' Filter replication entries to those without precomputed artifacts
+#'
+#' @param display_reps List of replication entries.
+#' @param doi Paper DOI or lookup key.
+#' @param folder Optional registry folder name.
+#' @param repo Optional repository slug.
+#' @param only_missing When \code{TRUE}, keep only entries where
+#'   \code{\link{replication_artifact_exists}()} is \code{FALSE}.
+#' @param study_root Optional local study root for direct file checks.
+#' @keywords internal
 filter_replications_only_missing <- function(
   display_reps,
   doi,
