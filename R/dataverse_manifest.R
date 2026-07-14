@@ -341,3 +341,182 @@ build_dataverse_manifest_from_dataset <- function(
     stringsAsFactors = FALSE
   )
 }
+
+#' Read Dataverse config from study metadata or local replication.yml
+#' @keywords internal
+study_dataverse_config <- function(meta, ctx) {
+  dv <- meta$dataverse %||% list()
+  if (length(dv)) {
+    return(dv)
+  }
+  if (is.null(ctx$local_root)) {
+    return(list())
+  }
+  local_yml <- file.path(ctx$local_root, "replication.yml")
+  if (!file.exists(local_yml)) {
+    return(list())
+  }
+  full <- tryCatch(yaml::read_yaml(local_yml), error = function(e) NULL)
+  full$dataverse %||% list()
+}
+
+#' Summarize a Dataverse deposit for display-only prep steps
+#'
+#' Works from the study manifest and optional on-disk deposit marker even when
+#' the full archive has not been downloaded in the current environment.
+#' @keywords internal
+summarize_dataverse_deposit <- function(meta, ctx, prep = NULL) {
+  dv <- study_dataverse_config(meta, ctx)
+  dataset <- as.character(dv$dataset %||% dv$doi %||% "")
+  server <- as.character(dv$server %||% "dataverse.harvard.edu")
+  deposit_rel <- as.character(dv$deposit_root %||% "outputs/deposit")
+  if (!is.null(prep) && !is.null(prep$outputs) && length(prep$outputs)) {
+    outs <- vapply(prep$outputs, function(x) as.character(x), character(1))
+    deposit_rel <- dirname(outs[[1]])
+  }
+  deposit_root <- resolve_registry_file(deposit_rel, ctx, meta = meta, local_only = TRUE)
+  if (is.null(deposit_root) || !nzchar(deposit_root)) {
+    deposit_root <- if (!is.null(ctx$local_root)) {
+      file.path(ctx$local_root, deposit_rel)
+    } else {
+      deposit_rel
+    }
+  }
+
+  manifest_rel <- as.character(dv$manifest %||% "")
+  manifest_paths <- character(0)
+  if (nzchar(manifest_rel)) {
+    manifest_file <- if (!is.null(ctx$local_root)) {
+      local_manifest <- file.path(ctx$local_root, manifest_rel)
+      if (file.exists(local_manifest)) local_manifest else NULL
+    } else {
+      NULL
+    }
+    if (is.null(manifest_file)) {
+      manifest_file <- resolve_registry_file(manifest_rel, ctx, meta = meta, local_only = TRUE)
+    }
+    if (!is.null(manifest_file) && file.exists(manifest_file)) {
+      manifest_df <- tryCatch(
+        utils::read.csv(manifest_file, stringsAsFactors = FALSE),
+        error = function(e) NULL
+      )
+      if (!is.null(manifest_df) && "path" %in% names(manifest_df)) {
+        phase <- "mvp"
+        if ("phase" %in% names(manifest_df)) {
+          manifest_df <- manifest_df[
+            is.na(manifest_df$phase) | manifest_df$phase == "" | manifest_df$phase == phase,
+            ,
+            drop = FALSE
+          ]
+        }
+        manifest_paths <- as.character(manifest_df$path)
+        manifest_paths <- manifest_paths[nzchar(manifest_paths)]
+      }
+    }
+  }
+
+  marker_path <- file.path(deposit_root, ".manifest_applied")
+  marker_lines <- character(0)
+  if (file.exists(marker_path)) {
+    marker_lines <- readLines(marker_path, warn = FALSE, encoding = "UTF-8")
+  }
+  present <- if (length(manifest_paths)) {
+    manifest_paths[file.exists(file.path(deposit_root, manifest_paths))]
+  } else {
+    character(0)
+  }
+
+  structure(
+    list(
+      step_type = "dataverse_access",
+      dataset = dataset,
+      server = server,
+      deposit_root = normalize_path_slashes(deposit_root),
+      deposit_rel = deposit_rel,
+      fetch = as.character(dv$fetch %||% "archive_original"),
+      n_expected = length(manifest_paths),
+      n_present = length(present),
+      expected_paths = manifest_paths,
+      present_paths = present,
+      marker_path = if (file.exists(marker_path)) normalize_path_slashes(marker_path) else NA_character_,
+      marker_lines = marker_lines,
+      ready = length(manifest_paths) > 0L && length(present) == length(manifest_paths)
+    ),
+    class = c("dataverse_deposit_summary", "prep_output_preview")
+  )
+}
+
+#' @keywords internal
+format.dataverse_deposit_summary <- function(x, ...) {
+  lines <- c(
+    "Dataverse deposit access",
+    if (nzchar(x$dataset %||% "")) paste0("Dataset: ", x$dataset),
+    if (nzchar(x$server %||% "")) paste0("Server: ", x$server),
+    paste0("Deposit root: ", x$deposit_root),
+    paste0("Fetch mode: ", x$fetch),
+    paste0("Expected files: ", x$n_expected),
+    paste0("Present on disk: ", x$n_present)
+  )
+  if (length(x$marker_lines)) {
+    lines <- c(lines, "Marker:", paste0("  ", x$marker_lines))
+  }
+  if (length(x$expected_paths)) {
+    preview_n <- min(8L, length(x$expected_paths))
+    lines <- c(
+      lines,
+      "Manifest paths:",
+      paste0("  ", head(x$expected_paths, preview_n))
+    )
+    if (length(x$expected_paths) > preview_n) {
+      lines <- c(lines, paste0("  ... and ", length(x$expected_paths) - preview_n, " more"))
+    }
+  }
+  paste(lines, collapse = "\n")
+}
+
+#' @keywords internal
+print.dataverse_deposit_summary <- function(x, ...) {
+  cat(format(x, ...), "\n")
+  invisible(x)
+}
+
+#' Whether a prep step should use the Dataverse deposit summary display
+#' @keywords internal
+is_dataverse_access_prep_step <- function(prep, meta) {
+  if (is.null(prep) || !is.list(prep)) {
+    return(FALSE)
+  }
+  id <- tolower(as.character(prep$id %||% ""))
+  if (grepl("dataverse|deposit|access", id)) {
+    return(TRUE)
+  }
+  code <- tolower(as.character(prep$code %||% ""))
+  if (grepl("dataverse|access_deposit|access_deposit", code)) {
+    return(TRUE)
+  }
+  !is.null(study_dataverse_config(meta, ctx)) && length(study_dataverse_config(meta, ctx)) > 0L &&
+    grepl("deposit", tolower(paste(unlist(prep$outputs %||% list()), collapse = " ")))
+}
+
+#' Build a display object for a prep step when no HTML artifact exists
+#' @keywords internal
+load_prep_step_display <- function(meta, ctx, prep) {
+  if (is_dataverse_access_prep_step(prep, meta)) {
+    return(summarize_dataverse_deposit(meta, ctx, prep = prep))
+  }
+  path <- prep_output_path(prep, ctx, meta = meta)
+  if (is.null(path) || !file.exists(path)) {
+    return(NULL)
+  }
+  ext <- tolower(tools::file_ext(path))
+  if (ext %in% c("html", "png", "svg", "rds")) {
+    return(load_artifact_file_path(path))
+  }
+  structure(
+    list(
+      path = path,
+      note = paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+    ),
+    class = "prep_output_preview"
+  )
+}

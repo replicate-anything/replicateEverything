@@ -504,6 +504,71 @@ escape_html <- function(x) {
   x
 }
 
+#' Diagnostic context for a code link resolution attempt
+#' @keywords internal
+code_link_diagnostics <- function(
+  resolved,
+  study_root,
+  globals = character(),
+  allowed_root = study_root
+) {
+  study_root_norm <- if (is_study_root_usable(study_root)) {
+    normalize_path_slashes(normalizePath(study_root, winslash = "/", mustWork = FALSE))
+  } else {
+    NA_character_
+  }
+  allowed_root_norm <- if (!is.null(allowed_root) && nzchar(allowed_root)) {
+    normalize_path_slashes(normalizePath(allowed_root, winslash = "/", mustWork = FALSE))
+  } else {
+    study_root_norm
+  }
+  maindir <- globals[["maindir"]] %||% NA_character_
+  if (!is.na(maindir) && nzchar(maindir)) {
+    maindir <- normalize_path_slashes(normalizePath(maindir, winslash = "/", mustWork = FALSE))
+  }
+  list(
+    status = resolved$status %||% "unknown",
+    resolved_path = resolved$resolved %||% NA_character_,
+    study_root = study_root_norm,
+    allowed_root = allowed_root_norm,
+    maindir = maindir,
+    unresolved = resolved$unresolved %||% character(0)
+  )
+}
+
+#' Human-readable tooltip for a failed code link
+#' @keywords internal
+format_code_link_diagnostic_title <- function(diag) {
+  status_label <- switch(
+    diag$status,
+    missing = "File not found",
+    unresolved = "Unresolved Stata macro",
+    outside_root = "Path outside allowed root",
+    unreadable = "File not readable",
+    paste0("Status: ", diag$status)
+  )
+  lines <- c(
+    status_label,
+    if (!is.na(diag$resolved_path) && nzchar(diag$resolved_path)) {
+      paste0("Resolved path: ", diag$resolved_path)
+    },
+    if (!is.na(diag$study_root) && nzchar(diag$study_root)) {
+      paste0("study_root: ", diag$study_root)
+    },
+    if (!is.na(diag$allowed_root) && nzchar(diag$allowed_root)) {
+      paste0("allowed_root: ", diag$allowed_root)
+    },
+    if (!is.na(diag$maindir) && nzchar(diag$maindir)) {
+      paste0("maindir: ", diag$maindir)
+    },
+    if (length(diag$unresolved)) {
+      paste0("Unresolved macros: ", paste(diag$unresolved, collapse = ", "))
+    }
+  )
+  lines <- lines[nzchar(lines)]
+  paste(lines, collapse = "\n")
+}
+
 #' Render code lines with clickable file links for Shiny
 #'
 #' @param lines Character vector of code lines.
@@ -529,6 +594,7 @@ render_code_html_with_links <- function(
     ))
   }
   globals <- normalize_stata_globals(study_root, globals)
+  allowed_root <- study_root
   calls <- if (identical(language, "stata")) {
     extract_stata_file_calls(lines)
   } else {
@@ -564,6 +630,12 @@ render_code_html_with_links <- function(
         from_file = from_file
       )
       link_id <- paste0("L", i, "_", j)
+      diag <- code_link_diagnostics(
+        resolved,
+        study_root = study_root,
+        globals = globals,
+        allowed_root = allowed_root
+      )
       link_meta[[link_id]] <<- c(
         list(
           id = link_id,
@@ -572,36 +644,41 @@ render_code_html_with_links <- function(
           resolved = resolved$resolved %||% NA_character_,
           display = resolved$display,
           status = resolved$status,
-          unresolved = resolved$unresolved
+          unresolved = resolved$unresolved,
+          diagnostics = diag
         )
       )
       cls <- paste0("code-file-link code-file-link--", resolved$status)
-      title <- switch(
-        resolved$status,
-        ok = resolved$display,
-        missing = paste0("Not found: ", resolved$resolved),
-        unresolved = paste0("Unresolved macro: ", paste(resolved$unresolved, collapse = ", ")),
-        outside_root = "Path outside study root",
-        unreadable = "File not readable",
+      title <- if (identical(resolved$status, "ok")) {
         resolved$display
-      )
+      } else {
+        format_code_link_diagnostic_title(diag)
+      }
       path_html <- escape_html(chunk)
       data_rel <- if (identical(resolved$status, "ok")) {
         sprintf(" data-rel-path=\"%s\"", escape_html(resolved$display))
       } else {
         ""
       }
-      pieces <- c(
-        pieces,
-        sprintf(
-          "<a href=\"#\" class=\"%s\" data-link-id=\"%s\"%s title=\"%s\">%s</a>",
-          cls,
-          link_id,
-          data_rel,
-          escape_html(title),
-          path_html
-        )
+      link_anchor <- sprintf(
+        "<a href=\"#\" class=\"%s\" data-link-id=\"%s\"%s title=\"%s\">%s</a>",
+        cls,
+        link_id,
+        data_rel,
+        escape_html(title),
+        path_html
       )
+      if (!identical(resolved$status, "ok")) {
+        link_anchor <- paste0(
+          link_anchor,
+          sprintf(
+            "<span class=\"code-link-diagnostic\" title=\"%s\" aria-label=\"%s\"> [!]</span>",
+            escape_html(title),
+            escape_html(format_code_link_diagnostic_title(diag))
+          )
+        )
+      }
+      pieces <- c(pieces, link_anchor)
       cursor <- end + 1L
     }
     if (cursor <= nchar(line)) {

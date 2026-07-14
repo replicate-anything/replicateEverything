@@ -125,6 +125,25 @@ test_that("resolve_stata_path reports missing files", {
   expect_equal(resolved$status, "missing")
 })
 
+test_that("failed code links include diagnostic markers", {
+  testthat::skip_if_not(dir.exists(study_root), "Blair study repo missing")
+  lines <- c('do "${maindir}/code/tables/not_here.do"')
+  rendered <- render_code_html_with_links(
+    lines,
+    language = "stata",
+    study_root = study_root,
+    source_path = "code/tables/tab_1.do",
+    globals = default_stata_globals(study_root)
+  )
+  expect_true(grepl("code-file-link--missing", rendered$html, fixed = TRUE))
+  expect_true(grepl("code-link-diagnostic", rendered$html, fixed = TRUE))
+  expect_true(nzchar(rendered$links[[1]]$diagnostics$study_root))
+  title <- format_code_link_diagnostic_title(rendered$links[[1]]$diagnostics)
+  expect_match(title, "File not found")
+  expect_match(title, "study_root:")
+  expect_match(title, "maindir:")
+})
+
 test_that("resolve_stata_path blocks paths outside study root", {
   testthat::skip_if_not(dir.exists(study_root), "Blair study repo missing")
   globals <- default_stata_globals(study_root)

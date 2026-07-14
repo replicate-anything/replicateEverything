@@ -3864,6 +3864,15 @@ ui <- tagList(
       text-decoration: line-through;
       cursor: not-allowed;
     }
+    .code-link-diagnostic {
+      color: #9a6700;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: help;
+      text-decoration: none;
+      margin-left: 0.15rem;
+      user-select: none;
+    }
     .code-breadcrumb {
       display: flex;
       flex-wrap: wrap;
@@ -5636,6 +5645,23 @@ server <- function(input, output, session) {
             } else {
               tableOutput("selected_prep_table")
             }
+          )
+        } else if (inherits(obj, "dataverse_deposit_summary")) {
+          tagList(
+            tags$div(
+              class = "alert alert-info mb-2",
+              tags$strong("Dataverse deposit summary"),
+              if (isTRUE(obj$ready)) {
+                tags$span(class = "badge bg-success ms-2", "Ready")
+              } else {
+                tags$span(class = "badge bg-secondary ms-2", "Not downloaded here")
+              }
+            ),
+            tags$pre(
+              class = "mb-0",
+              style = "white-space: pre-wrap;",
+              format(obj)
+            )
           )
         } else if (is.list(obj) && !is.null(obj$note)) {
           tags$p(class = "mb-0", obj$note)

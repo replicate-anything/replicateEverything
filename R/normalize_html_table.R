@@ -35,6 +35,9 @@ normalize_html_table <- function(html) {
     html <- sanitize_esttab_html(html)
   }
 
+  html <- gsub("\\$\\\\checkmark\\$", "\u2713", html, perl = TRUE)
+  html <- gsub("\\\\checkmark", "\u2713", html, perl = TRUE)
+
   html
 }
 

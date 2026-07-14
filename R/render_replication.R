@@ -707,6 +707,12 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL
       return(loaded)
     }
   }
+  if (!is.null(rep) && is_prep_entry(rep)) {
+    prep_display <- load_prep_step_display(meta, ctx, rep)
+    if (!artifact_content_missing(prep_display)) {
+      return(prep_display)
+    }
+  }
   if (!is.null(rep)) {
     for (rel in study_artifact_rel_candidates(rep)) {
       candidate <- NULL
