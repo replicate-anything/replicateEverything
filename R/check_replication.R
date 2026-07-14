@@ -1,7 +1,8 @@
 #' Validate a folder- or package-backed replication study
 #'
 #' Runs a transparent checklist: study layout, `replication.yml`, code and data
-#' paths, baked display outputs, optional `tests/testthat/`, substantive
+#' paths, resolvable code file links (`source()` / Stata `do`), baked display
+#' outputs, optional `tests/testthat/`, substantive
 #' (published-value) checks under `tests/substantive/`, and (optionally) live
 #' execution of every table and figure.
 #'

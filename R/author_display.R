@@ -50,7 +50,7 @@ author_name_has_comma_form <- function(name) {
   nzchar(before) && nzchar(after)
 }
 
-#' Format one author as "Last, First [Middle ...]"
+#' Format one author as \code{Last, First [Middle ...]}
 #' @keywords internal
 format_author_name <- function(name) {
   name <- trimws(as.character(name %||% ""))

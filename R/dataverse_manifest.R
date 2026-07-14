@@ -447,6 +447,7 @@ summarize_dataverse_deposit <- function(meta, ctx, prep = NULL) {
 }
 
 #' @keywords internal
+#' @exportS3Method format dataverse_deposit_summary
 format.dataverse_deposit_summary <- function(x, ...) {
   lines <- c(
     "Dataverse deposit access",
@@ -475,6 +476,7 @@ format.dataverse_deposit_summary <- function(x, ...) {
 }
 
 #' @keywords internal
+#' @exportS3Method print dataverse_deposit_summary
 print.dataverse_deposit_summary <- function(x, ...) {
   cat(format(x, ...), "\n")
   invisible(x)

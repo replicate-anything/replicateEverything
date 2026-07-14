@@ -175,6 +175,125 @@ test_that("extract_r_source_calls finds source paths", {
   expect_equal(calls$path[[1]], "code/helpers/format_table.R")
 })
 
+test_that("extract_r_source_calls finds sys.source paths", {
+  lines <- c('sys.source("code/helpers/init.R")', 'source("../helpers/util.R")')
+  calls <- extract_r_source_calls(lines)
+  expect_equal(nrow(calls), 2L)
+  expect_equal(calls$command, c("sys.source", "source"))
+  expect_equal(calls$path[[1]], "code/helpers/init.R")
+  expect_equal(calls$path[[2]], "../helpers/util.R")
+})
+
+code_links_fixture_root <- function(valid = TRUE) {
+  tmp <- file.path(tempdir(), paste0("code-links-fixture-", if (valid) "ok" else "bad"))
+  unlink(tmp, recursive = TRUE)
+  dir.create(file.path(tmp, "code", "tables"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(tmp, "code", "helpers"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(tmp, "outputs"), recursive = TRUE, showWarnings = FALSE)
+
+  helper_path <- file.path(tmp, "code", "helpers", "shared.R")
+  writeLines("shared_flag <- TRUE", helper_path)
+  if (!valid) {
+    unlink(helper_path)
+  }
+
+  writeLines(
+    c(
+      'source("../helpers/shared.R")',
+      "make_tab_1 <- function(data) data"
+    ),
+    file.path(tmp, "code", "tables", "tab_1.R")
+  )
+
+  meta <- list(
+    paper = list(
+      doi = "https://doi.org/10.9999/code-links",
+      title = "Code links fixture",
+      study_repo = "replicate-anything/rep-code-links"
+    ),
+    steps = list(
+      list(
+        id = "tab_1",
+        type = "table",
+        code = "code/tables/tab_1.R",
+        outputs = list("outputs/tab_1.html")
+      )
+    )
+  )
+  yaml::write_yaml(meta, file.path(tmp, "replication.yml"))
+  normalizePath(tmp, winslash = "/", mustWork = FALSE)
+}
+
+test_that("resolve_code_path resolves caller-relative R paths in generic fixture", {
+  root <- code_links_fixture_root(valid = TRUE)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  resolved <- resolve_code_path(
+    "../helpers/shared.R",
+    study_root = root,
+    from_file = file.path(root, "code/tables/tab_1.R")
+  )
+  expect_equal(resolved$status, "ok")
+  expect_equal(resolved$display, "code/helpers/shared.R")
+})
+
+test_that("collect_code_link_issues passes on valid generic fixture", {
+  root <- code_links_fixture_root(valid = TRUE)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  meta <- yaml::read_yaml(file.path(root, "replication.yml"))
+  issues <- collect_code_link_issues(root, meta)
+  expect_equal(nrow(issues), 0L)
+})
+
+test_that("collect_code_link_issues fails on broken link in generic fixture", {
+  root <- code_links_fixture_root(valid = FALSE)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  meta <- yaml::read_yaml(file.path(root, "replication.yml"))
+  issues <- collect_code_link_issues(root, meta)
+  expect_equal(nrow(issues), 1L)
+  expect_match(issues$message[[1]], "In code/tables/tab_1.R line 1")
+  expect_match(issues$message[[1]], "source\\('../helpers/shared.R'\\)")
+  expect_match(issues$message[[1]], "expected code/helpers/shared.R")
+})
+
+test_that("check_code_links returns checklist rows for broken fixture", {
+  root <- code_links_fixture_root(valid = FALSE)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  meta <- yaml::read_yaml(file.path(root, "replication.yml"))
+  rows <- check_code_links(root, meta)
+  expect_false(all(rows$passed))
+  expect_true("code_links" %in% rows$check)
+  code_links_row <- rows[rows$check == "code_links", , drop = FALSE]
+  expect_false(code_links_row$passed[[1]])
+})
+
+test_that("check_replication includes code_links check for broken fixture", {
+  root <- code_links_fixture_root(valid = FALSE)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  result <- check_replication(root, full_replication = FALSE)
+  expect_false(result$ok)
+  expect_true("code_links" %in% result$checks$check)
+  link_rows <- result$checks[grepl("^code_link", result$checks$check), , drop = FALSE]
+  expect_gt(nrow(link_rows), 0L)
+  expect_false(all(link_rows$passed))
+})
+
+test_that("resolve_code_path resolves R parent-relative source paths from caller", {
+  velez_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", "..", "rep-10.1017-s0003055426101622"),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  testthat::skip_if_not(dir.exists(velez_root), "Velez study repo missing")
+  resolved <- resolve_code_path(
+    "../helpers/dataverse_deposit.R",
+    study_root = velez_root,
+    from_file = file.path(velez_root, "code/tables/tab_1.R")
+  )
+  expect_equal(resolved$status, "ok")
+  expect_true(file.exists(resolved$resolved))
+  expect_equal(resolved$display, "code/helpers/dataverse_deposit.R")
+})
+
 test_that("parse_stata_globals ignores runtime macro/local assignments", {
   lines <- c(
     'global maindir "`root\'"',

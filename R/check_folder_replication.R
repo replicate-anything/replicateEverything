@@ -3,7 +3,8 @@
 #' @describeIn check_replication Folder-backed implementation.
 #'
 #' Runs a transparent checklist: study layout, `replication.yml`, code and data
-#' paths, baked display outputs under `outputs/`, optional `tests/testthat/`,
+#' paths, resolvable code file links (`source()` / Stata `do`), baked display
+#' outputs under `outputs/`, optional `tests/testthat/`, substantive
 #' substantive (published-value) checks under `tests/substantive/`, and
 #' (optionally) live execution of every table and figure.
 #'
@@ -194,6 +195,8 @@ check_folder_replication <- function(
       )
     }
   }
+
+  checks <- bind_check_results(checks, check_code_links(study_root, meta))
 
   artifact_dir <- file.path(study_root, "outputs")
   if (!dir.exists(artifact_dir) && dir.exists(file.path(study_root, "artifacts"))) {

@@ -2,11 +2,11 @@
 % Please edit documentation in R/author_display.R
 \name{format_author_label}
 \alias{format_author_label}
-\title{Short author label for dropdowns (e.g. Blair et al)}
+\title{Short author label for dropdowns (e.g. Velez et al)}
 \usage{
 format_author_label(authors_str)
 }
 \description{
-Short author label for dropdowns (e.g. Blair et al)
+Short author label for dropdowns (e.g. Velez et al)
 }
 \keyword{internal}

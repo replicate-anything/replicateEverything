@@ -241,7 +241,7 @@ stata_call_pattern <- paste0(
   "(?:(\"([^\"]+)\")|(\\S+))"
 )
 
-r_source_pattern <- "^\\s*source\\s*\\(\\s*[\"']([^\"']+)[\"']\\s*\\)"
+r_source_pattern <- "^\\s*(sys\\.)?source\\s*\\(\\s*[\"']([^\"']+)[\"']\\s*\\)"
 
 #' Extract Stata file calls from code lines
 #'
@@ -308,13 +308,18 @@ extract_r_source_calls <- function(lines) {
       next
     }
     parts <- regmatches(line, list(m))[[1]]
-    path <- if (length(parts) >= 2L) parts[[2L]] else ""
+    path <- if (length(parts) >= 3L) parts[[3L]] else ""
+    command <- if (length(parts) >= 2L && identical(parts[[2L]], "sys.")) {
+      "sys.source"
+    } else {
+      "source"
+    }
     if (!nzchar(path)) {
       next
     }
     rows[[length(rows) + 1L]] <- data.frame(
       line = i,
-      command = "source",
+      command = command,
       path = path,
       match_start = m[[1L]],
       match_end = m[[1L]] + attr(m, "match.length")[[1L]] - 1L,
@@ -423,14 +428,26 @@ resolve_code_path <- function(
     candidate <- sub("^([A-Za-z]:)", "\\1/", candidate)
   }
   if (!grepl("^/", candidate) && !grepl("^[A-Za-z]:/", candidate)) {
-    # Stata/R resolve unqualified paths from the working directory (study root),
-    # not from the directory of the file containing the do/source call.
+    # Study-root paths (e.g. code/helpers/init.do) resolve from maindir/study_root.
+    # Caller-relative paths (../ or ./) resolve from the containing file's directory.
     base <- study_root
     maindir <- globals[["maindir"]]
     if (!is.null(maindir) && nzchar(maindir)) {
       maindir_norm <- normalize_path_slashes(normalizePath(maindir, winslash = "/", mustWork = FALSE))
       if (path_within_root(maindir_norm, allowed_norm)) {
         base <- maindir_norm
+      }
+    }
+    if (
+      !is.null(from_file) &&
+        nzchar(from_file) &&
+        (grepl("^\\.\\.", candidate) || grepl("^\\./", candidate))
+    ) {
+      caller_dir <- normalize_path_slashes(
+        normalizePath(dirname(from_file), winslash = "/", mustWork = FALSE)
+      )
+      if (path_within_root(caller_dir, allowed_norm)) {
+        base <- caller_dir
       }
     }
     candidate <- normalize_path_slashes(file.path(base, candidate))
@@ -493,6 +510,256 @@ path_within_root <- function(path, root) {
 #' @keywords internal
 resolve_stata_path <- function(path, study_root, globals = character(), from_file = NULL) {
   resolve_code_path(path, study_root, globals = globals, from_file = from_file)
+}
+
+#' Relative path of an absolute file within a study root
+#' @keywords internal
+study_relative_path <- function(abs_path, study_root) {
+  if (is.null(abs_path) || is.na(abs_path) || !nzchar(abs_path)) {
+    return(NA_character_)
+  }
+  study_norm <- normalize_path_slashes(
+    normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  )
+  candidate <- normalize_path_slashes(
+    normalizePath(abs_path, winslash = "/", mustWork = FALSE)
+  )
+  rel <- tryCatch(
+    normalize_path_slashes(
+      sub(
+        paste0("^", gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", study_norm)),
+        "",
+        candidate
+      )
+    ),
+    error = function(e) basename(candidate)
+  )
+  if (grepl("^/", rel)) {
+    rel <- sub("^/", "", rel)
+  }
+  if (nzchar(rel)) rel else basename(candidate)
+}
+
+#' Code script paths declared in study replication metadata
+#'
+#' Collects runner \code{code:} paths and optional \code{format:} scripts from
+#' every step in \code{replication.yml} (unified \code{steps:} or legacy blocks).
+#'
+#' @param meta Parsed replication metadata.
+#' @return Character vector of study-relative code paths.
+#' @keywords internal
+study_replication_code_files <- function(meta) {
+  steps <- normalize_study_steps(meta)
+  code_paths <- character(0)
+  for (step in steps) {
+    code_val <- step$code %||% NULL
+    if (!is.null(code_val) && nzchar(as.character(code_val[[1]]))) {
+      code_paths <- c(code_paths, as.character(code_val[[1]]))
+    }
+    if (format_specified(step) && is.character(step$format)) {
+      fmt <- as.character(step$format[[1]] %||% step$format)
+      if (nzchar(fmt)) {
+        code_paths <- c(code_paths, fmt)
+      }
+    }
+  }
+  unique(code_paths[nzchar(code_paths)])
+}
+
+#' Infer language for a study-relative code path
+#' @keywords internal
+code_path_language <- function(rel_path) {
+  ext <- tolower(tools::file_ext(rel_path))
+  if (ext %in% c("do", "ado", "mata")) {
+    "stata"
+  } else if (ext %in% c("r")) {
+    "r"
+  } else {
+    NA_character_
+  }
+}
+
+#' Format a human-readable code-link validation error
+#' @keywords internal
+format_code_link_issue_message <- function(
+  caller_rel,
+  line,
+  command,
+  raw_path,
+  resolved,
+  study_root
+) {
+  suffix <- if (identical(resolved$status, "unresolved")) {
+    paste0(
+      " → unresolved Stata macro: ",
+      paste(resolved$unresolved, collapse = ", ")
+    )
+  } else if (!is.na(resolved$resolved %||% NA_character_) && nzchar(resolved$resolved)) {
+    paste0(
+      " → expected ",
+      study_relative_path(resolved$resolved, study_root)
+    )
+  } else if (identical(resolved$status, "outside_root")) {
+    " → path outside study root"
+  } else {
+    ""
+  }
+  sprintf(
+    "In %s line %d: cannot resolve %s('%s')%s",
+    caller_rel,
+    line,
+    command,
+    raw_path,
+    suffix
+  )
+}
+
+#' Collect broken code file references in a folder-backed study
+#'
+#' Walks every replication script declared in \code{replication.yml}, parses
+#' \code{source()}, \code{sys.source()}, and Stata \code{do}/\code{run}/\code{include}
+#' calls, and follows resolvable links recursively. Uses the same path resolution
+#' rules as the Shiny code viewer (\code{\link{resolve_code_path}}).
+#'
+#' @param study_root Absolute study root directory.
+#' @param meta Parsed replication metadata.
+#' @return Data frame with columns \code{caller}, \code{line}, \code{command},
+#'   \code{path}, \code{status}, \code{message}.
+#' @keywords internal
+collect_code_link_issues <- function(study_root, meta) {
+  if (!is_study_root_usable(study_root)) {
+    return(empty_code_link_issues())
+  }
+  entry_paths <- study_replication_code_files(meta)
+  if (!length(entry_paths)) {
+    return(empty_code_link_issues())
+  }
+
+  study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  globals <- default_stata_globals(study_root)
+  issues <- list()
+  queue <- entry_paths
+  seen <- character(0)
+
+  while (length(queue) > 0L) {
+    rel <- normalize_path_slashes(queue[[1L]])
+    queue <- queue[-1L]
+    if (rel %in% seen) {
+      next
+    }
+    seen <- c(seen, rel)
+
+    language <- code_path_language(rel)
+    if (is.na(language)) {
+      next
+    }
+
+    abs_path <- file.path(study_root, rel)
+    if (!file.exists(abs_path)) {
+      next
+    }
+
+    lines <- tryCatch(
+      readLines(abs_path, warn = FALSE, encoding = "UTF-8"),
+      error = function(e) character(0)
+    )
+    if (!length(lines)) {
+      next
+    }
+
+    if (identical(language, "stata")) {
+      globals <- parse_stata_globals(lines, globals)
+      calls <- extract_stata_file_calls(lines)
+    } else {
+      calls <- extract_r_source_calls(lines)
+    }
+    if (!nrow(calls)) {
+      next
+    }
+
+    for (k in seq_len(nrow(calls))) {
+      resolved <- resolve_code_path(
+        calls$path[[k]],
+        study_root = study_root,
+        globals = globals,
+        from_file = abs_path
+      )
+      if (identical(resolved$status, "ok")) {
+        child <- normalize_path_slashes(resolved$display)
+        if (nzchar(child) && !child %in% seen) {
+          queue <- c(queue, child)
+        }
+        next
+      }
+      issues[[length(issues) + 1L]] <- data.frame(
+        caller = rel,
+        line = calls$line[[k]],
+        command = calls$command[[k]],
+        path = calls$path[[k]],
+        status = resolved$status,
+        message = format_code_link_issue_message(
+          rel,
+          calls$line[[k]],
+          calls$command[[k]],
+          calls$path[[k]],
+          resolved,
+          study_root
+        ),
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+
+  if (!length(issues)) {
+    return(empty_code_link_issues())
+  }
+  do.call(rbind, issues)
+}
+
+empty_code_link_issues <- function() {
+  data.frame(
+    caller = character(0),
+    line = integer(0),
+    command = character(0),
+    path = character(0),
+    status = character(0),
+    message = character(0),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Validate resolvable code file links in a folder-backed study
+#'
+#' Returns checklist rows suitable for \code{\link{bind_check_results}}.
+#' Called from \code{\link{check_folder_replication}} before registry submission.
+#'
+#' @param study_root Absolute study root directory.
+#' @param meta Parsed replication metadata.
+#' @return Data frame of checklist results (\code{check}, \code{passed}, \code{message}).
+#' @keywords internal
+check_code_links <- function(study_root, meta) {
+  issues <- collect_code_link_issues(study_root, meta)
+  entry_count <- length(study_replication_code_files(meta))
+  if (nrow(issues) == 0L) {
+    return(check_result(
+      "code_links",
+      TRUE,
+      if (entry_count > 0L) {
+        paste0("All code file links resolve (", entry_count, " scripts checked)")
+      } else {
+        "No replication code scripts declared"
+      }
+    ))
+  }
+  rows <- lapply(seq_len(nrow(issues)), function(i) {
+    issue <- issues[i, , drop = FALSE]
+    check_result(
+      paste0("code_link_", gsub("[^a-zA-Z0-9._-]", "_", issue$caller)),
+      FALSE,
+      issue$message
+    )
+  })
+  do.call(bind_check_results, c(list(check_result("code_links", FALSE, paste(nrow(issues), "broken link(s)"))), rows))
 }
 
 #' Escape HTML special characters

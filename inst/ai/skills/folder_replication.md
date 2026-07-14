@@ -62,6 +62,7 @@ Copy and track progress:
 - [ ] 4b. **Write `replication.yml`** — languages, deps, **steps:** DAG, **maintainer**, **collections** (Step 4b)
 - [ ] 5. Structure repo: code/, data/, outputs/; add Stata install/probe helpers if needed
 - [ ] 6. Refactor code into one script per step; make_<id>() + format_<id>() where needed
+- [ ] 6b. **Verify code file links** — relative `source()` / `do` paths resolve from the caller script (Step 6b)
 - [ ] 7. Build outputs; write outputs/manifest.json
 - [ ] 8. Add testthat tests (run_replication + output match)
 - [ ] 8b. Add substantive checks under `tests/substantive/<step_id>.R` when published benchmarks are available (see Fearon & Laitin tab_1)
@@ -581,6 +582,33 @@ options(
 
 Run: `testthat::test_dir("tests/testthat")` from study repo root.
 
+## Step 6b — Code file links
+
+Replication scripts often call other files via R `source()` / `sys.source()` or Stata
+`do` / `run` / `include`. Those references must resolve on disk before submission.
+
+**Resolution rules** (same logic as the Shiny code viewer in `R/code_links.R`):
+
+| Path form | Resolved from |
+|-----------|----------------|
+| Study-root relative (`code/helpers/init.do`) | Study root (`maindir`) |
+| Caller-relative (`../helpers/foo.R`, `./local.do`) | Directory of the file containing the call |
+| Stata globals (`${maindir}/code/tables/tab_1.do`) | Parsed `global` assignments in upstream `.do` files |
+
+When onboarding, trace every `source()` / `do` in declared runner scripts and confirm
+the target file exists at the resolved path — not only that the runner itself exists.
+
+`check_replication()` runs **`check_code_links()`** automatically and reports errors
+like:
+
+```
+In code/tables/tab_1.R line 12: cannot resolve source('../helpers/foo.R') → expected code/helpers/foo.R
+```
+
+Fix broken links before `prepare_study_for_registry()`. The code viewer / live Run
+uses the same resolution logic, so broken links fail both submission checks and Shiny
+navigation.
+
 ## Step 10 — Verification checks
 
 Run in order; stop on failure.
@@ -589,6 +617,7 @@ Run in order; stop on failure.
 |-------|------------------|
 | Yaml parses | `yaml::read_yaml("replication.yml")` |
 | Each `code:` file exists | `file.exists()` |
+| Code file links resolve | `check_replication()` (`code_links` check) |
 | Each `data:` file exists | if specified |
 | `run_replication` | `replicateEverything::run_replication(doi, id)` |
 | Formatted output | `format = TRUE` when `format:` in yaml |
@@ -657,6 +686,7 @@ When merging a study row into [registry/index.csv](https://github.com/replicate-
 
 ## Common pitfalls
 
+- **Broken code links** — `source("../helpers/foo.R")` from `code/tables/tab_1.R` must resolve to `code/helpers/foo.R`; run `check_replication()` before submit
 - **Inventing the DAG without reading the author repo** — wrong `parents:` breaks Run and inheritance; always trace README + file I/O first (Step 1b)
 - **Skipping Step 4a** — yaml missing `reghdfe`, `require`, `haven`, or `pandas` because only the main script was read
 - **`reghdfe` without `require`** — probe can pass while table code fails at runtime with `r(9)` on shared servers
