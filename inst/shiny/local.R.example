@@ -1,6 +1,9 @@
 # Copy to local.R (gitignored) for local development or server overrides.
 # save_local_shiny() never overwrites an existing local.R.
 #
+# Startup order on Shiny Server: deploy-options.R (from save_local_shiny) then
+# local.R (this file). local.R overrides deploy-options when both set the same option.
+#
 # Startup order (manual run_shiny_app() and Shiny Server are the same):
 #   1. deploy-options.R  — written by save_local_shiny() (live run + feedback defaults)
 #   2. local.R             — your overrides (this file on the server)

@@ -200,20 +200,30 @@ shiny_runtime_app_dir <- function() {
 
 if (!isTRUE(getOption("replicate_shiny.deploy_config_loaded", FALSE))) {
   shiny_deploy_config_dir <- shiny_runtime_app_dir()
-  options(replicate_shiny.app_dir = shiny_deploy_config_dir)
-
-  deploy_options_path <- file.path(shiny_deploy_config_dir, "deploy-options.R")
-  if (file.exists(deploy_options_path)) {
-    source(deploy_options_path, local = FALSE)
+  loaded <- FALSE
+  if (requireNamespace("replicateEverything", quietly = TRUE)) {
+    ns <- asNamespace("replicateEverything")
+    if (exists("source_shiny_deploy_config", envir = ns, inherits = FALSE)) {
+      get("source_shiny_deploy_config", envir = ns)(shiny_deploy_config_dir)
+      loaded <- TRUE
+    }
   }
+  if (!loaded) {
+    options(replicate_shiny.app_dir = shiny_deploy_config_dir)
 
-  local_r_path <- file.path(shiny_deploy_config_dir, "local.R")
-  if (file.exists(local_r_path)) {
-    source(local_r_path, local = FALSE)
-    options(replicate_shiny.local_r_loaded = TRUE)
+    deploy_options_path <- file.path(shiny_deploy_config_dir, "deploy-options.R")
+    if (file.exists(deploy_options_path)) {
+      source(deploy_options_path, local = FALSE)
+    }
+
+    local_r_path <- file.path(shiny_deploy_config_dir, "local.R")
+    if (file.exists(local_r_path)) {
+      source(local_r_path, local = FALSE)
+      options(replicate_shiny.local_r_loaded = TRUE)
+    }
+
+    options(replicate_shiny.deploy_config_loaded = TRUE)
   }
-
-  options(replicate_shiny.deploy_config_loaded = TRUE)
 }
 
 configure_registry_source()

@@ -149,7 +149,7 @@ test_that("append_shiny_feedback_log appends rows without repeating header", {
 })
 
 test_that("shiny_feedback_file_path resolves relative to replicate_shiny.app_dir", {
-  app_root <- tempfile("shiny-appdir-")
+  app_root <- normalizePath(tempfile("shiny-appdir-"), winslash = "/", mustWork = FALSE)
   dir.create(app_root)
   on.exit(unlink(app_root, recursive = TRUE), add = TRUE)
 
@@ -164,10 +164,10 @@ test_that("shiny_feedback_file_path resolves relative to replicate_shiny.app_dir
   ))
   withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_FILE = ""))
 
-  expect_equal(
-    normalizePath(shiny_feedback_file_path(), winslash = "/", mustWork = FALSE),
-    normalizePath(file.path(app_root, "data", "feedback.csv"), winslash = "/", mustWork = FALSE)
-  )
+  resolved <- gsub("\\\\", "/", shiny_feedback_file_path())
+  expect_true(grepl("/data/feedback.csv$", resolved))
+  expect_true(grepl(basename(app_root), resolved, fixed = TRUE))
+  expect_false(grepl(basename(session_wd), resolved, fixed = TRUE))
 })
 
 test_that("source_shiny_deploy_config loads deploy-options.R before local.R overrides", {

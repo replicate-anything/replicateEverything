@@ -81,6 +81,9 @@ shiny_live_run_enabled <- function() {
 #' @return Invisibly, \code{TRUE} when \code{dir} exists.
 #' @keywords internal
 source_shiny_deploy_config <- function(dir) {
+  if (isTRUE(getOption("replicate_shiny.deploy_config_loaded", FALSE))) {
+    return(invisible(TRUE))
+  }
   dir <- as.character(dir[[1L]] %||% dir)
   if (!length(dir) || !nzchar(dir) || !dir.exists(dir)) {
     return(invisible(FALSE))

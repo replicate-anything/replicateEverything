@@ -6,6 +6,8 @@
 * **Deploy config** — `save_local_shiny()` writes `deploy-options.R` with `replicate_shiny.live_run`, `replicate_shiny.feedback_enabled`, and `replicate_shiny.feedback_file`. Startup order is always `deploy-options.R` then `local.R` (manual `run_shiny_app()` and Shiny Server/proxy sessions).
 * **Path resolution** — feedback CSV paths resolve against `replicate_shiny.app_dir` / `SHINY_APP_DIR`, not `getwd()` when they differ.
 * **Feedback tab footer** — when logging is enabled, shows the resolved CSV path for debugging.
+* **[package_deploy_diagnostics()]** — prints installed package version, library path, `.libPaths()`, deploy `BUNDLE_SHA`, and whether key functions exist; use on the Shiny host before/after `save_local_shiny()`.
+* **Deploy stamp** — `deploy-options.R` records package version, SHA, and install path at deploy time; Shiny footer shows loaded `lib` path and warns when deploy stamp differs from runtime library.
 
 # replicateEverything 0.6.1
 
