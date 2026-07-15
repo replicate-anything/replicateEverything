@@ -2,13 +2,13 @@
 % Please edit documentation in R/shiny_feedback.R
 \name{append_shiny_feedback_log}
 \alias{append_shiny_feedback_log}
-\title{Append one sanitized feedback record to the server log}
+\title{Append one sanitized feedback record to the server CSV log}
 \usage{
 append_shiny_feedback_log(
   category,
   text,
   email = NULL,
-  dir = shiny_feedback_log_dir()
+  file = shiny_feedback_file_path()
 )
 }
 \arguments{
@@ -18,12 +18,14 @@ append_shiny_feedback_log(
 
 \item{email}{Optional sanitized email.}
 
-\item{dir}{Log directory; default from \code{\link[=shiny_feedback_log_dir]{shiny_feedback_log_dir()}}.}
+\item{file}{CSV path; default from \code{\link[=shiny_feedback_file_path]{shiny_feedback_file_path()}}.}
 }
 \value{
 Logical: \code{TRUE} when written.
 }
 \description{
-Append one sanitized feedback record to the server log
+Writes to \code{data/feedback.csv} by default (relative to the Shiny app
+deploy directory). Creates the parent \code{data/} directory when needed.
+Columns: \code{timestamp}, \code{category}, \code{email}, \code{text}.
 }
 \keyword{internal}

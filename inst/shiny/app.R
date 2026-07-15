@@ -3585,7 +3585,25 @@ contribute_tab_ui <- function() {
 }
 
 feedback_pkg_fn <- function(name) {
-  get(name, envir = asNamespace("replicateEverything"))
+  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
+    stop("replicateEverything is not installed.", call. = FALSE)
+  }
+  ns <- asNamespace("replicateEverything")
+  if (!exists(name, envir = ns, inherits = FALSE)) {
+    pkg_ver <- tryCatch(
+      as.character(utils::packageVersion("replicateEverything")),
+      error = function(e) "unknown"
+    )
+    stop(
+      "Function replicateEverything::", name,
+      " is not available (installed version ", pkg_ver, "). ",
+      "Update replicateEverything ",
+      "(remotes::install_github('replicate-anything/replicateEverything')) ",
+      "and redeploy the Shiny app from the same release.",
+      call. = FALSE
+    )
+  }
+  get(name, envir = ns, inherits = FALSE)
 }
 
 feedback_tab_ui <- function() {

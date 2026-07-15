@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny_feedback.R
 \name{shiny_feedback_log_enabled}
 \alias{shiny_feedback_log_enabled}
-\title{Whether server-side Shiny feedback logging is enabled}
+\title{Whether server-side Shiny feedback CSV logging is enabled}
 \usage{
 shiny_feedback_log_enabled()
 }
@@ -10,6 +10,8 @@ shiny_feedback_log_enabled()
 Logical scalar.
 }
 \description{
-Whether server-side Shiny feedback logging is enabled
+Disabled by default for local use. Enable on shiny2.wzb.eu via
+\code{REPLICATE_SHINY_FEEDBACK_ENABLED=1} or
+\code{options(replicate_shiny.feedback_enabled = TRUE)}.
 }
 \keyword{internal}

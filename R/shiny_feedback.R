@@ -66,32 +66,84 @@ validate_shiny_feedback_category <- function(category) {
   cat
 }
 
-#' Resolve configured Shiny feedback log directory
+#' Default relative path for server-side Shiny feedback CSV
 #'
-#' Reads \code{REPLICATE_SHINY_FEEDBACK_DIR} or
-#' \code{options(replicate_shiny.feedback_dir)}.
+#' Relative to the Shiny app working directory (deploy dir on shiny2.wzb.eu).
 #'
-#' @return Normalized directory path, or `NULL` when unset.
 #' @keywords internal
-shiny_feedback_log_dir <- function() {
-  env <- Sys.getenv("REPLICATE_SHINY_FEEDBACK_DIR", unset = "")
-  if (length(env) == 1L && nzchar(env)) {
-    return(normalizePath(env, winslash = "/", mustWork = FALSE))
-  }
-  opt <- getOption("replicate_shiny.feedback_dir", NULL)
-  if (!is.null(opt) && length(opt) == 1L && nzchar(as.character(opt))) {
-    return(normalizePath(as.character(opt), winslash = "/", mustWork = FALSE))
-  }
-  NULL
-}
+SHINY_FEEDBACK_DEFAULT_FILE <- "data/feedback.csv"
 
-#' Whether server-side Shiny feedback logging is enabled
+#' Whether server-side Shiny feedback CSV logging is enabled
+#'
+#' Disabled by default for local use. Enable on shiny2.wzb.eu via
+#' \code{REPLICATE_SHINY_FEEDBACK_ENABLED=1} or
+#' \code{options(replicate_shiny.feedback_enabled = TRUE)}.
 #'
 #' @return Logical scalar.
 #' @keywords internal
 shiny_feedback_log_enabled <- function() {
-  dir <- shiny_feedback_log_dir()
-  !is.null(dir) && nzchar(dir)
+  env <- Sys.getenv("REPLICATE_SHINY_FEEDBACK_ENABLED", unset = "")
+  if (length(env) == 1L && nzchar(env)) {
+    return(tolower(env) %in% c("1", "true", "yes", "on"))
+  }
+  isTRUE(getOption("replicate_shiny.feedback_enabled", FALSE))
+}
+
+#' Resolve configured Shiny feedback CSV path (relative or absolute)
+#'
+#' Reads \code{REPLICATE_SHINY_FEEDBACK_FILE} or
+#' \code{options(replicate_shiny.feedback_file)}; default
+#' \code{data/feedback.csv}.
+#'
+#' @return Character scalar file path.
+#' @keywords internal
+shiny_feedback_file <- function() {
+  env <- Sys.getenv("REPLICATE_SHINY_FEEDBACK_FILE", unset = "")
+  if (length(env) == 1L && nzchar(env)) {
+    return(as.character(env))
+  }
+  opt <- getOption("replicate_shiny.feedback_file", SHINY_FEEDBACK_DEFAULT_FILE)
+  as.character(opt)
+}
+
+#' Resolve Shiny feedback CSV to an absolute path
+#'
+#' Relative paths are resolved against \code{getwd()} (the Shiny app deploy
+#' directory on shiny2.wzb.eu, e.g. \code{.../ipi/replicate/data/feedback.csv}).
+#'
+#' @return Normalized absolute file path.
+#' @keywords internal
+shiny_feedback_file_path <- function() {
+  file <- shiny_feedback_file()
+  if (.is_abs_path_shiny_feedback(file)) {
+    return(normalizePath(file, winslash = "/", mustWork = FALSE))
+  }
+  normalizePath(file.path(getwd(), file), winslash = "/", mustWork = FALSE)
+}
+
+#' @keywords internal
+.is_abs_path_shiny_feedback <- function(path) {
+  path <- as.character(path)
+  grepl("^/", path) || grepl("^[A-Za-z]:[/\\\\]", path)
+}
+
+#' Escape one field for Shiny feedback CSV output
+#'
+#' Prefixes formula-injection starters with a single quote; quotes fields that
+#' contain commas, quotes, or newlines.
+#'
+#' @param x Character scalar.
+#' @return Escaped character scalar.
+#' @keywords internal
+escape_shiny_feedback_csv_field <- function(x) {
+  x <- as.character(x)
+  if (nzchar(x) && substr(x, 1L, 1L) %in% c("=", "+", "-", "@", "\t", "\r")) {
+    x <- paste0("'", x)
+  }
+  if (grepl("[,\r\n\"]", x, perl = TRUE)) {
+    x <- paste0("\"", gsub("\"", "\"\"", x, fixed = TRUE), "\"")
+  }
+  x
 }
 
 #' Label and title prefix for a feedback category
@@ -184,43 +236,58 @@ shiny_feedback_github_category_url <- function(
   paste0("https://github.com/", repo, "/issues/new?", qs)
 }
 
-#' Append one sanitized feedback record to the server log
+#' @rdname shiny_feedback_github_category_url
+#' @keywords internal
+shiny_feedback_category_url <- shiny_feedback_github_category_url
+
+#' Append one sanitized feedback record to the server CSV log
+#'
+#' Writes to \code{data/feedback.csv} by default (relative to the Shiny app
+#' deploy directory). Creates the parent \code{data/} directory when needed.
+#' Columns: \code{timestamp}, \code{category}, \code{email}, \code{text}.
 #'
 #' @param category Allowlisted category.
 #' @param text Sanitized plain-text feedback.
 #' @param email Optional sanitized email.
-#' @param dir Log directory; default from [shiny_feedback_log_dir()].
+#' @param file CSV path; default from [shiny_feedback_file_path()].
 #' @return Logical: \code{TRUE} when written.
 #' @keywords internal
 append_shiny_feedback_log <- function(
   category,
   text,
   email = NULL,
-  dir = shiny_feedback_log_dir()
+  file = shiny_feedback_file_path()
 ) {
   category <- validate_shiny_feedback_category(category)
   if (is.na(category) || !nzchar(text)) {
     return(FALSE)
   }
-  if (is.null(dir) || !length(dir) || !nzchar(dir)) {
+  if (is.null(file) || !length(file) || !nzchar(file)) {
     return(FALSE)
   }
-  if (!dir.exists(dir)) {
-    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  parent <- dirname(file)
+  if (!dir.exists(parent)) {
+    dir.create(parent, recursive = TRUE, showWarnings = FALSE)
   }
-  if (!dir.exists(dir)) {
+  if (!dir.exists(parent)) {
     return(FALSE)
   }
-  log_file <- file.path(dir, "shiny-feedback.log")
-  record <- list(
-    ts = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
-    category = category,
-    email = if (!is.null(email) && nzchar(email)) email else "",
-    text = text
+  row <- c(
+    format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+    category,
+    if (!is.null(email) && nzchar(email)) email else "",
+    text
   )
-  line <- jsonlite::toJSON(record, auto_unbox = TRUE)
-  con <- file(log_file, open = "a", encoding = "UTF-8")
+  line <- paste(
+    vapply(row, escape_shiny_feedback_csv_field, FUN.VALUE = character(1L)),
+    collapse = ","
+  )
+  new_file <- !file.exists(file)
+  con <- file(file, open = if (new_file) "w" else "a", encoding = "UTF-8")
   on.exit(close(con), add = TRUE)
+  if (new_file) {
+    writeLines("timestamp,category,email,text", con, useBytes = TRUE)
+  }
   writeLines(line, con, useBytes = TRUE)
   invisible(TRUE)
 }

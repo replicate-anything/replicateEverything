@@ -38,9 +38,15 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 # Optional: show study root on the Code tab while debugging path resolution:
 # options(replicate_shiny.debug_code_viewer = TRUE)
 #
-# Optional: server-side feedback log (Shiny Feedback tab writes JSON lines here):
-# Sys.setenv(REPLICATE_SHINY_FEEDBACK_DIR = "/var/log/replicate-shiny/feedback")
-# options(replicate_shiny.feedback_dir = "/var/log/replicate-shiny/feedback")
+# Optional: server-side feedback CSV (shiny2.wzb.eu only; off by default locally).
+# Relative path resolves against the Shiny app deploy directory (getwd()):
+#   <deploy_dir>/data/feedback.csv
+# Sys.setenv(REPLICATE_SHINY_FEEDBACK_ENABLED = "1")
+# Sys.setenv(REPLICATE_SHINY_FEEDBACK_FILE = "data/feedback.csv")
+# options(
+#   replicate_shiny.feedback_enabled = TRUE,
+#   replicate_shiny.feedback_file = "data/feedback.csv"
+# )
 
 if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
   options(

@@ -12,7 +12,7 @@ code_setup_open_engines(language, study_engines = NULL)
 \item{study_engines}{Declared study languages from \code{replication.yml}.}
 }
 \description{
-Multi-engine studies list every declared language; single-engine studies use
-the active replication language only.
+Uses the active replication language for the current table or figure; falls
+back to the sole declared study language when the active language is unknown.
 }
 \keyword{internal}

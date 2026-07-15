@@ -1,3 +1,25 @@
+test_that("all Shiny feedback helpers referenced from app.R exist in namespace", {
+  skip_if_not_installed("replicateEverything")
+  ns <- asNamespace("replicateEverything")
+  feedback_refs <- c(
+    "SHINY_FEEDBACK_COOLDOWN_SECS",
+    "validate_shiny_feedback_category",
+    "sanitize_shiny_feedback_text",
+    "sanitize_shiny_feedback_email",
+    "shiny_feedback_log_enabled",
+    "append_shiny_feedback_log",
+    "shiny_feedback_github_issue_url",
+    "shiny_feedback_github_category_url",
+    "shiny_feedback_category_url"
+  )
+  missing <- feedback_refs[!vapply(
+    feedback_refs,
+    function(nm) exists(nm, envir = ns, inherits = FALSE),
+    FUN.VALUE = logical(1L)
+  )]
+  expect_equal(missing, character(0))
+})
+
 test_that("sanitize_shiny_feedback_text strips HTML and control characters", {
   raw <- paste0(
     "<script>alert('x')</script>",
@@ -25,6 +47,22 @@ test_that("validate_shiny_feedback_category accepts allowlist only", {
   expect_true(is.na(validate_shiny_feedback_category("")))
 })
 
+test_that("shiny_feedback_github_category_url builds category-only issue links", {
+  bug_url <- shiny_feedback_github_category_url("bug")
+  expect_true(startsWith(bug_url, "https://github.com/replicate-anything/replicateEverything/issues/new?"))
+  expect_true(grepl("labels=bug", bug_url, fixed = TRUE))
+  expect_true(grepl("%5BBug%5D%20", bug_url, fixed = TRUE))
+
+  feature_url <- shiny_feedback_github_category_url("feature")
+  expect_true(grepl("labels=enhancement", feature_url, fixed = TRUE))
+
+  other_url <- shiny_feedback_github_category_url("other")
+  expect_false(grepl("labels=", other_url, fixed = TRUE))
+  expect_true(grepl("%5BFeedback%5D%20", other_url, fixed = TRUE))
+
+  expect_equal(shiny_feedback_category_url("bug"), bug_url)
+})
+
 test_that("shiny_feedback_github_issue_url encodes sanitized body", {
   url <- shiny_feedback_github_issue_url(
     "bug",
@@ -37,25 +75,75 @@ test_that("shiny_feedback_github_issue_url encodes sanitized body", {
   expect_true(grepl("user%40example.org", url, fixed = TRUE))
 })
 
-test_that("append_shiny_feedback_log writes JSON lines when dir is set", {
-  dir <- tempfile("shiny-feedback-")
-  dir.create(dir)
-  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
-
-  withr::local_options(list(replicate_shiny.feedback_dir = dir))
-  ok <- append_shiny_feedback_log("feature", "Add export button", email = "")
-  expect_true(isTRUE(ok))
-
-  log_path <- file.path(dir, "shiny-feedback.log")
-  expect_true(file.exists(log_path))
-  line <- readLines(log_path, n = 1L, warn = FALSE)
-  parsed <- jsonlite::fromJSON(line)
-  expect_equal(parsed$category, "feature")
-  expect_equal(parsed$text, "Add export button")
+test_that("shiny_feedback_log_enabled is false by default", {
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_ENABLED = ""))
+  withr::local_options(list(replicate_shiny.feedback_enabled = NULL))
+  expect_false(shiny_feedback_log_enabled())
 })
 
-test_that("shiny_feedback_log_enabled is false without configured dir", {
-  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_DIR = ""))
-  withr::local_options(list(replicate_shiny.feedback_dir = NULL))
-  expect_false(shiny_feedback_log_enabled())
+test_that("shiny_feedback_log_enabled respects env and option", {
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_ENABLED = "1"))
+  withr::local_options(list(replicate_shiny.feedback_enabled = NULL))
+  expect_true(shiny_feedback_log_enabled())
+
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_ENABLED = ""))
+  withr::local_options(list(replicate_shiny.feedback_enabled = TRUE))
+  expect_true(shiny_feedback_log_enabled())
+})
+
+test_that("shiny_feedback_file defaults to data/feedback.csv", {
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_FILE = ""))
+  withr::local_options(list(replicate_shiny.feedback_file = NULL))
+  expect_equal(shiny_feedback_file(), "data/feedback.csv")
+})
+
+test_that("escape_shiny_feedback_csv_field prefixes formula starters", {
+  expect_equal(escape_shiny_feedback_csv_field("=1+1"), "'=1+1")
+  expect_equal(escape_shiny_feedback_csv_field("+cmd"), "'+cmd")
+  expect_equal(escape_shiny_feedback_csv_field("plain"), "plain")
+})
+
+test_that("escape_shiny_feedback_csv_field quotes commas and newlines", {
+  expect_equal(escape_shiny_feedback_csv_field("a,b"), "\"a,b\"")
+  expect_equal(escape_shiny_feedback_csv_field("line\nbreak"), "\"line\nbreak\"")
+})
+
+test_that("append_shiny_feedback_log writes CSV with header when enabled path set", {
+  root <- tempfile("shiny-feedback-")
+  dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+
+  withr::local_dir(root)
+  withr::local_options(list(
+    replicate_shiny.feedback_enabled = TRUE,
+    replicate_shiny.feedback_file = "data/feedback.csv"
+  ))
+
+  ok <- append_shiny_feedback_log("feature", "Add export button", email = "user@example.org")
+  expect_true(isTRUE(ok))
+
+  csv_path <- file.path(root, "data", "feedback.csv")
+  expect_true(file.exists(csv_path))
+  lines <- readLines(csv_path, warn = FALSE)
+  expect_equal(lines[[1L]], "timestamp,category,email,text")
+  expect_true(grepl(",feature,user@example.org,Add export button$", lines[[2L]]))
+})
+
+test_that("append_shiny_feedback_log appends rows without repeating header", {
+  root <- tempfile("shiny-feedback-")
+  dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+
+  withr::local_dir(root)
+  withr::local_options(list(
+    replicate_shiny.feedback_enabled = TRUE,
+    replicate_shiny.feedback_file = "data/feedback.csv"
+  ))
+
+  append_shiny_feedback_log("bug", "First report")
+  append_shiny_feedback_log("other", "Second report")
+
+  lines <- readLines(file.path(root, "data", "feedback.csv"), warn = FALSE)
+  expect_length(lines, 3L)
+  expect_equal(lines[[1L]], "timestamp,category,email,text")
 })
