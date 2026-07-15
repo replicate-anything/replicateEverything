@@ -189,4 +189,6 @@ test_that("app.R isolates clientData reads when arming welcome from onFlushed", 
     perl = TRUE
   )
   expect_match(text, "welcome_defer_until\\s*<-\\s*reactiveVal")
+  expect_match(text, "isolate\\s*\\(\\s*welcome_defer_until\\s*\\(")
+  expect_match(text, "deep_link_flags\\s*<-\\s*new\\.env")
 })

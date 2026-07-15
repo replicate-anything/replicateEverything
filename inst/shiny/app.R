@@ -5078,11 +5078,11 @@ server <- function(input, output, session) {
     selected = ALL_STUDIES_COLLECTION
   )
 
-  # One-shot flags read from session$onFlushed; keep outside reactiveValues.
-  deep_link_flags <- list(
-    url_deep_link_parsed = FALSE,
-    welcome_shown = FALSE
-  )
+  # One-shot flags for onFlushed / observers. Environment so nested callbacks
+  # mutate shared state (plain-list `$<-` rebinds only the local frame).
+  deep_link_flags <- new.env(parent = emptyenv())
+  deep_link_flags$url_deep_link_parsed <- FALSE
+  deep_link_flags$welcome_shown <- FALSE
 
   state <- reactiveValues(
     doi = NULL,
@@ -5134,10 +5134,13 @@ server <- function(input, output, session) {
     }
     deep_link_flags$welcome_shown <- TRUE
     removeModal()
-    state$suppress_url_sync <- TRUE
-    state$pending_deep_link_doi <- doi
-    state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
-    state$pending_deep_link_language <- trimws(as.character(link$language %||% ""))
+    # isolate(): safe when called from session$onFlushed (no reactive consumer).
+    isolate({
+      state$suppress_url_sync <- TRUE
+      state$pending_deep_link_doi <- doi
+      state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
+      state$pending_deep_link_language <- trimws(as.character(link$language %||% ""))
+    })
     invisible(TRUE)
   }
 
@@ -5188,7 +5191,7 @@ server <- function(input, output, session) {
       deep_link_flags$url_deep_link_parsed <- TRUE
       return(invisible(NULL))
     }
-    welcome_defer_until(Sys.time() + 0.8)
+    isolate(welcome_defer_until(Sys.time() + 0.8))
   }, once = TRUE)
 
   observe({

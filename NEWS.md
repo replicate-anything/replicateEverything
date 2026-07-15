@@ -2,7 +2,7 @@
 
 ## Shiny welcome modal reactive-context fix
 
-* Fixed crash on session start: `session$onFlushed` deferred the welcome modal with `invalidateLater()` and read `session$clientData` outside a reactive consumer. Delay is now armed via `reactiveVal` write only; `invalidateLater` and modal display run inside `observe()`.
+* Fixed crash on session start: `session$onFlushed` called `invalidateLater()` and read `session$clientData` outside a reactive consumer. Delay is armed with `isolate(welcome_defer_until(...))`; `invalidateLater` and the modal run only inside `observe()`. Deep-link queue writes use `isolate()`; one-shot flags are a plain environment (safe from nested callbacks).
 
 # replicateEverything 0.6.4
 
