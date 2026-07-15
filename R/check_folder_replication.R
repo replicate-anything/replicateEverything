@@ -197,6 +197,10 @@ check_folder_replication <- function(
   }
 
   checks <- bind_check_results(checks, check_code_links(study_root, meta))
+  checks <- bind_check_results(
+    checks,
+    check_replication_script_entries(study_root, meta)
+  )
 
   artifact_dir <- file.path(study_root, "outputs")
   if (!dir.exists(artifact_dir) && dir.exists(file.path(study_root, "artifacts"))) {

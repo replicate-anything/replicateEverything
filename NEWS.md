@@ -5,6 +5,11 @@
 * [audit_everything()] records `runtime_category` (`short` / `medium` / `slow`) from elapsed seconds (thresholds: &lt;30s, &lt;5min, else slow).
 * Shiny **Run** uses the registry `audit_latest.rds` snapshot when available: button tooltips and the live-run progress message advise expected time.
 
+## Table/figure code display path
+
+* Shiny Code tab annotates entry scripts with upstream prep/input notes and, when missing, an expected `make_*()` → format path.
+* [check_replication()] flags R table/figure scripts that define `make_*` but never call it (scripts should show the executable replication path, not only helpers).
+
 # replicateEverything 0.6.3
 
 ## Shiny feedback — safe mode for stale workers

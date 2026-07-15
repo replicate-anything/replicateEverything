@@ -1,3 +1,58 @@
+test_that("script_has_make_call detects footer calls", {
+  lines_def_only <- c(
+    "make_tab_1 <- function(data) data",
+    "helper <- function() 1"
+  )
+  expect_false(script_has_make_call(lines_def_only, "tab_1"))
+
+  lines_with_call <- c(
+    "make_tab_1 <- function(data) data",
+    "make_tab_1(readRDS('../outputs/x.rds')) |> format_tab_1()"
+  )
+  expect_true(script_has_make_call(lines_with_call, "tab_1"))
+})
+
+test_that("annotate_replication_code_for_display adds prep notes", {
+  rep <- list(
+    id = "tab_1",
+    type = "table",
+    code = "code/tables/tab_1.R",
+    parents = list("prep_studies"),
+    data = "outputs/prep_studies/studies.rds",
+    format = "code/helpers/format_table.R"
+  )
+  lines <- c(
+    'source("../helpers/study_inputs.R")',
+    "make_tab_1 <- function(data) data",
+    "make_tab_1(readRDS('../outputs/prep_studies/studies.rds'))"
+  )
+  out <- annotate_replication_code_for_display(lines, rep)
+  expect_true(any(grepl("parents: prep_studies", out, fixed = TRUE)))
+  expect_true(any(grepl("inputs:", out)))
+  expect_true(any(grepl("format_table.R", out, fixed = TRUE)))
+})
+
+test_that("check_replication_script_entries fails when make_* is never called", {
+  tmp <- withr::local_tempdir()
+  dir.create(file.path(tmp, "code"), recursive = TRUE)
+  writeLines(
+    "make_tab_1 <- function(data) data",
+    file.path(tmp, "code", "tab_1.R")
+  )
+  meta <- list(
+    replications = list(
+      list(
+        id = "tab_1",
+        type = "table",
+        engine = "r",
+        code = "code/tab_1.R"
+      )
+    )
+  )
+  checks <- check_replication_script_entries(tmp, meta)
+  expect_false(any(checks$passed[checks$check == "script_entry_tab_1"]))
+})
+
 test_that("source_replication_functions skips circular source() chains", {
   tmp <- withr::local_tempdir()
   a <- file.path(tmp, "a.R")

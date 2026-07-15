@@ -1220,16 +1220,25 @@ prepare_code_viewer_state <- function(
     list(nodes = list(), edges = list(), globals = character(0))
   }
   lines <- tryCatch(read_fn(entry), error = function(e) character(0))
-  rendered <- if (length(lines) && is_study_root_usable(study_root)) {
+  # Annotate the entry script only: prep is upstream; show call/format path.
+  display_lines <- tryCatch(
+    annotate_replication_code_for_display(lines, rep, meta = meta),
+    error = function(e) lines
+  )
+  rendered <- if (length(display_lines) && is_study_root_usable(study_root)) {
     render_code_html_with_links(
-      lines,
+      display_lines,
       language = if (identical(code_lang, "stata")) "stata" else "r",
       study_root = study_root,
       source_path = entry,
       globals = normalize_stata_globals(study_root, graph$globals)
     )
   } else {
-    list(html = escape_html(paste(lines, collapse = "\n")), links = list(), lines = lines)
+    list(
+      html = escape_html(paste(display_lines, collapse = "\n")),
+      links = list(),
+      lines = display_lines
+    )
   }
   list(
     doi = doi,

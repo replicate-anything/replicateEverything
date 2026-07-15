@@ -496,17 +496,22 @@ inputs and breaks live replication.
 
 ## Step 6 — Code scripts (`code/<id>.R` or `.do`)
 
-Each step script must be **self-contained**:
+Each **table/figure** script must be an **executable replication path**, not only helper definitions.
 
 1. Header comment with study repo URL
-2. `library(...)` for dependencies
-3. `make_<id>(data)` — analysis; returns model, data.frame, ggplot, etc.
-4. `format_<id>(object)` — display step when yaml lists `format: format_<id>`
-5. Footer that runs locally: `make_<id>(...) |> format_<id>()` or load data from declared `inputs:`
+2. Note upstream prep parents / `inputs:` (Display and Live Run assume prep products under `outputs/` already exist or will be built via the DAG)
+3. `library(...)` / thin `source("../helpers/…")` for **analysis** helpers only — do **not** start table scripts with deposit/download machinery
+4. `make_<id>(data)` — analysis; returns model, data.frame, ggplot, etc.
+5. `format_<id>(object)` — in the same file or via yaml `format:` helper
+6. **Footer that calls** `make_<id>(…)` (and formats): e.g. `make_tab_1(readRDS("../outputs/…")) |> format_tab_1()`
+
+`source_replication_functions()` skips that footer when the package Live-Runs (it loads `make_*` then calls it with yaml `data:`). The Shiny **Code** tab should still show the call + formatting so readers see how the display object is produced. Prep/data loading lives in upstream DAG steps — show those under Data steps, not as the start of table display code.
 
 **Split rule:** if Shiny stores **display** files (HTML/PNG), analysis output should be the **object** passed to `format_*`, not the formatted HTML (unless no format step).
 
 Transform steps write to paths declared in `outputs:` (under `outputs/<step_id>/`).
+
+`check_replication()` flags R table/figure scripts that define `make_*` but never call it.
 
 Reference: `rep-10.1017-S0003055403000534/code/tab_1.R`, `rep-10.1177-00491241211036161/code/fig_1.R`.
 
