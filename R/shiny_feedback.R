@@ -1,10 +1,9 @@
 # Shiny feedback helpers
 #
-# In-app feedback form is disabled by default pending reliable Shiny worker
-# namespace reload on shiny2.wzb.eu (stale 0.6.2 workers). GitHub issue links
-# remain available via hardcoded fallbacks when package helpers are missing.
-# Re-enable the form when server admin can restart workers or namespace
-# detection is fixed. See inst/shiny/FEEDBACK_TODO.md.
+# Feedback form + CSV logging are controlled by deploy bake / deploy-options.R
+# from save_local_shiny(feedback_enabled = ...). Interactive run_shiny_app()
+# leaves feedback OFF by default. GitHub issue links keep hardcoded fallbacks
+# when package helpers are missing from a stale worker. See FEEDBACK_TODO.md.
 
 #' Allowed Shiny feedback categories
 #'
@@ -18,14 +17,19 @@ SHINY_FEEDBACK_GITHUB_REPO <- "replicate-anything/replicateEverything"
 
 #' Whether the in-app Shiny feedback form (text box + submit) is enabled
 #'
-#' Disabled by default. Enable via
-#' \code{options(replicate_shiny.feedback_in_app_enabled = TRUE)} once Shiny
-#' workers reliably load the current package namespace.
+#' Prefers \code{options(replicate_shiny.feedback_in_app_enabled)}. When that
+#' option is unset, follows \code{replicate_shiny.feedback_enabled} (set by
+#' [save_local_shiny()] / \code{deploy-options.R}). Interactive
+#' [run_shiny_app()] defaults leave both unset/FALSE so the form stays off.
 #'
 #' @return Logical scalar.
 #' @keywords internal
 shiny_feedback_in_app_enabled <- function() {
-  isTRUE(getOption("replicate_shiny.feedback_in_app_enabled", FALSE))
+  in_app <- getOption("replicate_shiny.feedback_in_app_enabled", NULL)
+  if (!is.null(in_app)) {
+    return(isTRUE(in_app))
+  }
+  isTRUE(getOption("replicate_shiny.feedback_enabled", FALSE))
 }
 
 #' Sanitize free-text Shiny feedback input

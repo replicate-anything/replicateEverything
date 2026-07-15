@@ -10,6 +10,12 @@
 * Shiny Code tab annotates entry scripts with upstream prep/input notes and, when missing, an expected `make_*()` → format path.
 * [check_replication()] flags R table/figure scripts that define `make_*` but never call it (scripts should show the executable replication path, not only helpers).
 
+## Re-enable Shiny feedback via baked deploy options
+
+* [save_local_shiny()] defaults to `feedback_enabled = TRUE` and bakes `live_run` / feedback into `deploy-options.R` **and** a marker block in the materialized `app.R` (no `local.R` required).
+* [run_shiny_app()] keeps feedback off for interactive use; Live Run remains available.
+* In-app form follows `feedback_enabled` when `feedback_in_app_enabled` is unset. See `inst/shiny/FEEDBACK_TODO.md`.
+
 # replicateEverything 0.6.3
 
 ## Shiny feedback — safe mode for stale workers

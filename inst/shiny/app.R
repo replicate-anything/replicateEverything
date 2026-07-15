@@ -198,6 +198,12 @@ shiny_runtime_app_dir <- function() {
   normalizePath(getwd(), winslash = "/", mustWork = FALSE)
 }
 
+# BAKED_DEPLOY_OPTIONS_START
+# Placeholder replaced by save_local_shiny() when materializing a deploy copy.
+# Package / run_shiny_app() leave this empty so interactive defaults apply:
+# live_run TRUE, feedback OFF (unless set in deploy-options.R).
+# BAKED_DEPLOY_OPTIONS_END
+
 if (!isTRUE(getOption("replicate_shiny.deploy_config_loaded", FALSE))) {
   shiny_deploy_config_dir <- shiny_runtime_app_dir()
   loaded <- FALSE
@@ -211,6 +217,7 @@ if (!isTRUE(getOption("replicate_shiny.deploy_config_loaded", FALSE))) {
   if (!loaded) {
     options(replicate_shiny.app_dir = shiny_deploy_config_dir)
 
+    # Prefer deploy-options.R (written by save_local_shiny); local.R is optional.
     deploy_options_path <- file.path(shiny_deploy_config_dir, "deploy-options.R")
     if (file.exists(deploy_options_path)) {
       source(deploy_options_path, local = FALSE)
@@ -3800,7 +3807,8 @@ feedback_github_category_url <- function(
 }
 
 feedback_tab_ui <- function() {
-  # TODO(replicate-shiny-feedback): re-enable in-app form when workers reliably load 0.6.2+ namespace
+  # In-app form follows deploy bake / deploy-options.R (feedback_enabled).
+  # Safe fallbacks remain for stale package namespaces. See FEEDBACK_TODO.md.
   category_url <- function(category, repo = "replicate-anything/replicateEverything") {
     feedback_github_category_url(category, repo = repo)
   }

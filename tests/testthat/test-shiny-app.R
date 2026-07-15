@@ -14,8 +14,12 @@ test_that("save_local_shiny copies app and www", {
   expect_true(file.exists(file.path(dest, "deploy-options.R")))
   opts <- readLines(file.path(dest, "deploy-options.R"))
   expect_true(any(grepl("replicate_shiny.live_run = TRUE", opts)))
-  expect_true(any(grepl("replicate_shiny.feedback_enabled = FALSE", opts)))
+  expect_true(any(grepl("replicate_shiny.feedback_enabled = TRUE", opts)))
+  expect_true(any(grepl("replicate_shiny.feedback_in_app_enabled = TRUE", opts)))
   expect_true(any(grepl("replicate_shiny.feedback_file", opts)))
+  app_lines <- readLines(file.path(dest, "app.R"), warn = FALSE)
+  expect_true(any(grepl("BAKED_DEPLOY_OPTIONS_START", app_lines, fixed = TRUE)))
+  expect_true(any(grepl("replicate_shiny.feedback_enabled = TRUE", app_lines)))
 })
 
 test_that("save_local_shiny with live_run=FALSE writes display-only deploy-options", {
@@ -32,7 +36,24 @@ test_that("save_local_shiny with live_run=FALSE writes display-only deploy-optio
   expect_true(file.exists(opts_path))
   opts <- readLines(opts_path)
   expect_true(any(grepl("replicate_shiny.live_run = FALSE", opts)))
+  # Server default: feedback stays on unless explicitly disabled
+  expect_true(any(grepl("replicate_shiny.feedback_enabled = TRUE", opts)))
+  app_lines <- readLines(file.path(dest, "app.R"), warn = FALSE)
+  expect_true(any(grepl("replicate_shiny.live_run = FALSE", app_lines)))
+})
+
+test_that("save_local_shiny can disable feedback via arg", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  dest <- tempfile("shiny-deploy-")
+  dir.create(dest)
+  on.exit(unlink(dest, recursive = TRUE), add = TRUE)
+
+  save_local_shiny(dest, feedback_enabled = FALSE)
+  opts <- readLines(file.path(dest, "deploy-options.R"))
   expect_true(any(grepl("replicate_shiny.feedback_enabled = FALSE", opts)))
+  expect_true(any(grepl("replicate_shiny.feedback_in_app_enabled = FALSE", opts)))
 })
 
 test_that("shiny_live_run_enabled reads replicate_shiny.live_run option", {

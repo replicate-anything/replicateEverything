@@ -24,7 +24,24 @@ test_that("all Shiny feedback helpers referenced from app.R exist in namespace",
 })
 
 test_that("shiny_feedback_in_app_enabled is false by default", {
-  withr::local_options(list(replicate_shiny.feedback_in_app_enabled = NULL))
+  withr::local_options(list(
+    replicate_shiny.feedback_in_app_enabled = NULL,
+    replicate_shiny.feedback_enabled = NULL
+  ))
+  expect_false(shiny_feedback_in_app_enabled())
+})
+
+test_that("shiny_feedback_in_app_enabled follows feedback_enabled when unset", {
+  withr::local_options(list(
+    replicate_shiny.feedback_in_app_enabled = NULL,
+    replicate_shiny.feedback_enabled = TRUE
+  ))
+  expect_true(shiny_feedback_in_app_enabled())
+
+  withr::local_options(list(
+    replicate_shiny.feedback_in_app_enabled = FALSE,
+    replicate_shiny.feedback_enabled = TRUE
+  ))
   expect_false(shiny_feedback_in_app_enabled())
 })
 
@@ -62,7 +79,7 @@ test_that("deployed app.R avoids hard-stop on missing feedback category URL help
   skip_if_not(nzchar(app_r) && file.exists(app_r), "bundled app.R not available")
   lines <- readLines(app_r, warn = FALSE)
   expect_true(any(grepl("feedback_github_category_url", lines, fixed = TRUE)))
-  expect_true(any(grepl("TODO\\(replicate-shiny-feedback\\)", lines)))
+  expect_true(any(grepl("BAKED_DEPLOY_OPTIONS_START", lines, fixed = TRUE)))
   expect_false(any(grepl(
     "feedback_pkg_fn\\(\"shiny_feedback_github_category_url\"\\)\\(category",
     lines
