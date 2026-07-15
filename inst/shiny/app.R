@@ -5174,17 +5174,21 @@ server <- function(input, output, session) {
     }
   })
 
+  # onFlushed is not a reactive consumer: never call invalidateLater() or
+  # read session$clientData / reactiveValues without isolate() here.
+  # Arm welcome_defer_until; the observe below owns the delay + modal.
   session$onFlushed(function() {
     if (isTRUE(deep_link_flags$url_deep_link_parsed)) {
       return(invisible(NULL))
     }
-    link <- parse_shiny_deep_link_from_search(session$clientData$url_search)
+    link <- parse_shiny_deep_link_from_search(
+      isolate(session$clientData$url_search)
+    )
     if (!is.null(link) && isTRUE(queue_shiny_deep_link(link))) {
       deep_link_flags$url_deep_link_parsed <- TRUE
       return(invisible(NULL))
     }
     welcome_defer_until(Sys.time() + 0.8)
-    invalidateLater(800, session)
   }, once = TRUE)
 
   observe({
@@ -5193,12 +5197,13 @@ server <- function(input, output, session) {
       return(invisible(NULL))
     }
     if (Sys.time() < defer_until) {
-      remaining_ms <- ceiling(
-        1000 * as.numeric(difftime(defer_until, Sys.time(), units = "secs"))
+      remaining_ms <- max(
+        1L,
+        ceiling(
+          1000 * as.numeric(difftime(defer_until, Sys.time(), units = "secs"))
+        )
       )
-      if (remaining_ms > 0L) {
-        invalidateLater(remaining_ms, session)
-      }
+      invalidateLater(remaining_ms, session)
       return(invisible(NULL))
     }
     show_welcome_modal_if_needed()

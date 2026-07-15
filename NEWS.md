@@ -1,3 +1,9 @@
+# replicateEverything 0.6.6
+
+## Shiny welcome modal reactive-context fix
+
+* Fixed crash on session start: `session$onFlushed` deferred the welcome modal with `invalidateLater()` and read `session$clientData` outside a reactive consumer. Delay is now armed via `reactiveVal` write only; `invalidateLater` and modal display run inside `observe()`.
+
 # replicateEverything 0.6.4
 
 ## Audit runtime categories and Shiny Run advice

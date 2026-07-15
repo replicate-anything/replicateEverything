@@ -151,3 +151,42 @@ test_that("coerce_shiny_deep_link accepts list and named vector payloads", {
   expect_equal(from_scalar$doi, "10.1017/s0003055426101749")
   expect_null(coerce_shiny_deep_link(list(what = "tab_1")))
 })
+
+test_that("app.R onFlushed callbacks do not call invalidateLater", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  lines <- readLines(file.path(src, "app.R"), warn = FALSE)
+  depth <- 0L
+  in_on_flushed <- FALSE
+  for (line in lines) {
+    if (!in_on_flushed && grepl("onFlushed\\s*\\(", line)) {
+      in_on_flushed <- TRUE
+      depth <- 0L
+    }
+    if (!in_on_flushed) {
+      next
+    }
+    depth <- depth + nchar(gsub("[^{]", "", line)) - nchar(gsub("[^}]", "", line))
+    expect_false(
+      grepl("invalidateLater\\s*\\(", line),
+      info = "invalidateLater requires a reactive consumer; onFlushed is not one"
+    )
+    if (depth <= 0L && grepl("\\}", line)) {
+      in_on_flushed <- FALSE
+    }
+  }
+})
+
+test_that("app.R isolates clientData reads when arming welcome from onFlushed", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  text <- paste(readLines(file.path(src, "app.R"), warn = FALSE), collapse = "\n")
+  expect_match(
+    text,
+    "isolate\\s*\\(\\s*session\\$clientData\\$url_search\\s*\\)",
+    perl = TRUE
+  )
+  expect_match(text, "welcome_defer_until\\s*<-\\s*reactiveVal")
+})
