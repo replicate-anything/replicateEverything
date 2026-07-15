@@ -9,6 +9,8 @@ PKGDOCS_URL <- "https://replicate-anything.github.io/replicateEverything/index.h
 WHY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.html"
 SHINY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/shiny-app.html"
 LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
+IPI_WZB_URL <- "https://www.wzb.eu/en/research/political-economy-of-development/institutions-and-political-inequality"
+MACARTAN_URL <- "https://macartan.github.io/"
 PKG_GITHUB <- "https://github.com/replicate-anything/replicateEverything"
 PKG_GITHUB_ISSUES <- paste0(PKG_GITHUB, "/issues")
 REGISTRY_GITHUB_ISSUES <- paste0(REGISTRY_GITHUB, "/issues")
@@ -81,7 +83,8 @@ app_welcome_intro <- function() {
             target = "_blank"
           ),
           "."
-        )
+        ),
+        p("Or use the Feedback tab to give us feedback.")
       )
     )
   )
@@ -4244,8 +4247,9 @@ ui <- tagList(
         e.preventDefault();
         Shiny.setInputValue('code_file_back', Date.now(), { priority: 'event' });
       });
-      $(document).on('shiny:connected', function() {
+      function sendUrlDeepLinkFromQuery() {
         try {
+          if (!window.Shiny || !window.Shiny.setInputValue) return;
           var search = window.location.search;
           if (!search && window.location.href.indexOf('?') >= 0) {
             search = window.location.href.substring(window.location.href.indexOf('?'));
@@ -4256,10 +4260,15 @@ ui <- tagList(
           Shiny.setInputValue('url_deep_link', {
             doi: doi,
             what: params.get('what') || '',
-            language: params.get('language') || ''
+            language: params.get('language') || '',
+            nonce: Date.now()
           }, {priority: 'event'});
         } catch (e) {}
-      });
+      }
+      $(document).on('shiny:connected', sendUrlDeepLinkFromQuery);
+      if (window.Shiny && window.Shiny.shinyapp && window.Shiny.shinyapp.isConnected()) {
+        sendUrlDeepLinkFromQuery();
+      }
     ")),
     tags$style(HTML("
     .replication-table table { display: table; width: auto; max-width: 100%; margin-bottom: 1rem; }
@@ -5017,7 +5026,11 @@ ui <- tagList(
       class = "px-3 py-2",
       p(
         class = "mb-3",
-        "This is a project of IPI WZB led by Macartan Humphreys, Cord Masche, and Vernon Washington."
+        "This is a project of ",
+        tags$a(href = IPI_WZB_URL, "IPI WZB", target = "_blank"),
+        " led by ",
+        tags$a(href = MACARTAN_URL, "Macartan Humphreys", target = "_blank"),
+        ", Cord Masche, and Vernon Washington."
       ),
       h4("replicateEverything"),
       p(
@@ -5032,30 +5045,6 @@ ui <- tagList(
         tags$li(tags$a(href = REGISTRY_GITHUB, "Replication registry", target = "_blank")),
         tags$li(tags$a(href = ORG_GITHUB, "Study repositories", target = "_blank"))
       ),
-      h4("Share links"),
-      p(
-        "Chain icons in the ",
-        tags$strong("Studies"),
-        " table and beside each replication open a URL on the public server ",
-        tags$code(paste0(shiny_share_base_url(), "?doi=...")),
-        " (optional ",
-        tags$code("what="),
-        " and ",
-        tags$code("language="),
-        " select a replication and engine). Recipients land on the same study when they open the link."
-      ),
-      p(
-        class = "text-muted small",
-        "Share links always use ",
-        tags$code("LIVE_DEMO_URL"),
-        " in ",
-        tags$code("app.R"),
-        ", or ",
-        tags$code("REPLICATE_SHINY_BASE_URL"),
-        " in ",
-        tags$code("local.R"),
-        " if the host moves — not your local session URL."
-      ),
       tags$hr(),
       p(
         class = "text-muted",
@@ -5066,11 +5055,6 @@ ui <- tagList(
         ". See the ",
         tags$a(href = SHINY_VIGNETTE_URL, "Shiny demo app", target = "_blank"),
         " vignette for details."
-      ),
-      tags$p(
-        class = "text-muted small mb-0",
-        tags$strong("This session: "),
-        replicate_everything_build_label()
       )
     )
   )
@@ -5137,7 +5121,11 @@ server <- function(input, output, session) {
   })
 
   queue_shiny_deep_link <- function(link) {
-    if (is.null(link) || !is.list(link)) {
+    link <- tryCatch(
+      replicate_fn("coerce_shiny_deep_link", link),
+      error = function(e) NULL
+    )
+    if (is.null(link)) {
       return(invisible(FALSE))
     }
     doi <- trimws(as.character(link$doi %||% ""))
@@ -5145,6 +5133,7 @@ server <- function(input, output, session) {
       return(invisible(FALSE))
     }
     deep_link_flags$welcome_shown <- TRUE
+    removeModal()
     state$suppress_url_sync <- TRUE
     state$pending_deep_link_doi <- doi
     state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
@@ -5152,15 +5141,36 @@ server <- function(input, output, session) {
     invisible(TRUE)
   }
 
+  show_welcome_modal_if_needed <- function() {
+    if (isTRUE(deep_link_flags$welcome_shown) || isTRUE(deep_link_flags$url_deep_link_parsed)) {
+      return(invisible(FALSE))
+    }
+    pending <- isolate(state$pending_deep_link_doi)
+    if (!is.null(pending) && nzchar(as.character(pending))) {
+      deep_link_flags$welcome_shown <- TRUE
+      return(invisible(FALSE))
+    }
+    deep_link_flags$welcome_shown <- TRUE
+    showModal(modalDialog(
+      title = "Welcome to our replicateEverything Prototype",
+      app_welcome_intro(),
+      size = "m",
+      easyClose = TRUE,
+      footer = modalButton("Get started")
+    ))
+    invisible(TRUE)
+  }
+
+  welcome_defer_until <- reactiveVal(as.POSIXct(0))
+
   observe({
     query_string <- session$clientData$url_search
     if (is.null(query_string) || isTRUE(deep_link_flags$url_deep_link_parsed)) {
       return(invisible(NULL))
     }
     link <- parse_shiny_deep_link_from_search(query_string)
-    if (!is.null(link)) {
+    if (!is.null(link) && isTRUE(queue_shiny_deep_link(link))) {
       deep_link_flags$url_deep_link_parsed <- TRUE
-      queue_shiny_deep_link(link)
     }
   })
 
@@ -5169,22 +5179,30 @@ server <- function(input, output, session) {
       return(invisible(NULL))
     }
     link <- parse_shiny_deep_link_from_search(session$clientData$url_search)
-    if (!is.null(link)) {
+    if (!is.null(link) && isTRUE(queue_shiny_deep_link(link))) {
       deep_link_flags$url_deep_link_parsed <- TRUE
-      queue_shiny_deep_link(link)
       return(invisible(NULL))
     }
-    if (isFALSE(deep_link_flags$welcome_shown)) {
-      deep_link_flags$welcome_shown <- TRUE
-      showModal(modalDialog(
-        title = "Welcome to our replicateEverything Prototype",
-        app_welcome_intro(),
-        size = "m",
-        easyClose = TRUE,
-        footer = modalButton("Get started")
-      ))
-    }
+    welcome_defer_until(Sys.time() + 0.8)
+    invalidateLater(800, session)
   }, once = TRUE)
+
+  observe({
+    defer_until <- welcome_defer_until()
+    if (defer_until <= as.POSIXct(0)) {
+      return(invisible(NULL))
+    }
+    if (Sys.time() < defer_until) {
+      remaining_ms <- ceiling(
+        1000 * as.numeric(difftime(defer_until, Sys.time(), units = "secs"))
+      )
+      if (remaining_ms > 0L) {
+        invalidateLater(remaining_ms, session)
+      }
+      return(invisible(NULL))
+    }
+    show_welcome_modal_if_needed()
+  })
 
   replication_has_engine <- function(reps, engine) {
     col <- switch(
@@ -5358,8 +5376,7 @@ server <- function(input, output, session) {
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
       first <- state$replications_df[1, , drop = FALSE]
-      if (!isTRUE(state$suppress_url_sync) &&
-          !is.null(state$pending_deep_link_what) &&
+      if (!is.null(state$pending_deep_link_what) &&
           nzchar(state$pending_deep_link_what)) {
         select_replication_by_group(
           state$pending_deep_link_what,
@@ -5427,9 +5444,15 @@ server <- function(input, output, session) {
 
   observeEvent(input$url_deep_link, {
     link <- input$url_deep_link
-    req(is.list(link))
+    link <- tryCatch(
+      replicate_fn("coerce_shiny_deep_link", link),
+      error = function(e) NULL
+    )
+    req(!is.null(link))
+    if (!isTRUE(queue_shiny_deep_link(link))) {
+      return(invisible(NULL))
+    }
     deep_link_flags$url_deep_link_parsed <- TRUE
-    queue_shiny_deep_link(link)
   }, ignoreInit = TRUE)
 
   observeEvent(state$pending_deep_link_doi, {
@@ -5442,11 +5465,12 @@ server <- function(input, output, session) {
     if (!is.null(state$doi) && identical(state$doi, norm_doi)) {
       state$pending_deep_link_doi <- NULL
       state$suppress_url_sync <- FALSE
+      updateNavbarPage(session, "main_nav", selected = "Replicate")
       return(invisible(NULL))
     }
     updateNavbarPage(session, "main_nav", selected = "Replicate")
     updateSelectInput(session, "study_select", selected = norm_doi)
-    load_study(doi, from_registry = TRUE)
+    load_study(norm_doi, from_registry = TRUE)
     state$pending_deep_link_doi <- NULL
     state$suppress_url_sync <- FALSE
     sync_url_to_selection()

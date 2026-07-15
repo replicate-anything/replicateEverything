@@ -127,3 +127,27 @@ test_that("parse_shiny_deep_link_from_search extracts doi without base path", {
 test_that("extract_shiny_deep_link returns NULL without doi", {
   expect_null(extract_shiny_deep_link(list(what = "tab_1")))
 })
+
+test_that("coerce_shiny_deep_link accepts list and named vector payloads", {
+  from_list <- coerce_shiny_deep_link(list(
+    doi = "10.1017/s0003055426101749",
+    what = "tab_1",
+    language = "stata"
+  ))
+  expect_equal(from_list$doi, "10.1017/s0003055426101749")
+  expect_equal(from_list$what, "tab_1")
+  expect_equal(from_list$language, "stata")
+
+  from_named <- coerce_shiny_deep_link(c(
+    doi = "10.1017/s0003055426101749",
+    what = "tab_1",
+    language = ""
+  ))
+  expect_equal(from_named$doi, "10.1017/s0003055426101749")
+  expect_equal(from_named$what, "tab_1")
+  expect_equal(from_named$language, "")
+
+  from_scalar <- coerce_shiny_deep_link("10.1017/s0003055426101749")
+  expect_equal(from_scalar$doi, "10.1017/s0003055426101749")
+  expect_null(coerce_shiny_deep_link(list(what = "tab_1")))
+})

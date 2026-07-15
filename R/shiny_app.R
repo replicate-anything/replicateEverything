@@ -291,6 +291,39 @@ parse_shiny_query_string <- function(query_string) {
   shiny::parseQueryString(qs)
 }
 
+#' Coerce a Shiny client deep-link payload to a normalized list
+#'
+#' Accepts a list or named vector from \code{Shiny.setInputValue()} and a bare
+#' DOI string.
+#'
+#' @param x Client payload for \code{url_deep_link}.
+#' @return List with \code{doi}, \code{what}, \code{language}, or \code{NULL}.
+#' @keywords internal
+coerce_shiny_deep_link <- function(x) {
+  if (is.null(x)) {
+    return(NULL)
+  }
+  if (is.character(x) && length(x) == 1L) {
+    doi <- trimws(x)
+    if (!nzchar(doi)) {
+      return(NULL)
+    }
+    return(list(doi = doi, what = "", language = ""))
+  }
+  if (is.list(x) || (is.atomic(x) && !is.null(names(x)))) {
+    doi <- trimws(as.character(x[["doi"]] %||% x$doi %||% ""))
+    if (!nzchar(doi)) {
+      return(NULL)
+    }
+    return(list(
+      doi = doi,
+      what = trimws(as.character(x[["what"]] %||% x$what %||% "")),
+      language = trimws(as.character(x[["language"]] %||% x$language %||% ""))
+    ))
+  }
+  NULL
+}
+
 #' Extract DOI deep-link fields from a parsed query list
 #'
 #' @param query_list Named list from \code{parse_shiny_query_string()}.
