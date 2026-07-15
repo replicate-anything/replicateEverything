@@ -6,6 +6,7 @@ REGISTRY_INDEX_URL <- "https://raw.githubusercontent.com/replicate-anything/regi
 REGISTRY_GITHUB <- "https://github.com/replicate-anything/registry"
 ORG_GITHUB <- "https://github.com/orgs/replicate-anything/repositories"
 PKGDOCS_URL <- "https://replicate-anything.github.io/replicateEverything/index.html"
+WHY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.html"
 SHINY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/shiny-app.html"
 LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
 # Share links (Studies table, replication sidebar) always use the public server URL above.
@@ -4507,6 +4508,7 @@ ui <- tagList(
         " R package. Browse studies, display precomputed artifacts, and run live replications."
       ),
       tags$ul(
+        tags$li(tags$a(href = WHY_VIGNETTE_URL, "Why replicateEverything?", target = "_blank")),
         tags$li(tags$a(href = LIVE_DEMO_URL, "Live demo (this app)", target = "_blank")),
         tags$li(tags$a(href = PKGDOCS_URL, "Package documentation", target = "_blank")),
         tags$li(tags$a(href = REGISTRY_GITHUB, "Replication registry", target = "_blank")),
@@ -5664,9 +5666,17 @@ server <- function(input, output, session) {
             )
           )
         } else if (is.list(obj) && !is.null(obj$note)) {
-          tags$p(class = "mb-0", obj$note)
+          tags$pre(
+            class = "mb-0",
+            style = "white-space: pre-wrap;",
+            obj$note
+          )
         } else {
-          tags$pre(class = "mb-0", utils::capture.output(print(obj)))
+          tags$pre(
+            class = "mb-0",
+            style = "white-space: pre-wrap;",
+            paste(utils::capture.output(print(obj)), collapse = "\n")
+          )
         }
       )
     }, error = function(e) {

@@ -18,6 +18,33 @@ default_stata_globals <- function(study_root, result_dir = NULL) {
   )
 }
 
+#' Normalize a caller file path for code-link resolution
+#'
+#' Accepts study-relative or absolute paths and returns an absolute path
+#' under \code{allowed_root} when possible.
+#' @keywords internal
+normalize_code_from_file <- function(from_file, study_root, allowed_root = study_root) {
+  if (is.null(from_file) || length(from_file) != 1L || is.na(from_file) || !nzchar(from_file)) {
+    return(NULL)
+  }
+  from_file <- as.character(from_file)
+  abs_from <- if (grepl("^[A-Za-z]:[/\\\\]|^/", from_file)) {
+    from_file
+  } else {
+    file.path(study_root, from_file)
+  }
+  abs_from <- normalize_path_slashes(
+    normalizePath(abs_from, winslash = "/", mustWork = FALSE)
+  )
+  allowed_norm <- normalize_path_slashes(
+    normalizePath(allowed_root, winslash = "/", mustWork = FALSE)
+  )
+  if (!path_within_root(abs_from, allowed_norm)) {
+    return(NULL)
+  }
+  abs_from
+}
+
 #' Whether a study root path is usable for on-disk code linking
 #' @keywords internal
 is_study_root_usable <- function(study_root) {
@@ -428,26 +455,19 @@ resolve_code_path <- function(
     candidate <- sub("^([A-Za-z]:)", "\\1/", candidate)
   }
   if (!grepl("^/", candidate) && !grepl("^[A-Za-z]:/", candidate)) {
-    # Study-root paths (e.g. code/helpers/init.do) resolve from maindir/study_root.
+    # Study-root paths (e.g. code/helpers/init.do) resolve from allowed_root.
     # Caller-relative paths (../ or ./) resolve from the containing file's directory.
-    base <- study_root
-    maindir <- globals[["maindir"]]
-    if (!is.null(maindir) && nzchar(maindir)) {
-      maindir_norm <- normalize_path_slashes(normalizePath(maindir, winslash = "/", mustWork = FALSE))
-      if (path_within_root(maindir_norm, allowed_norm)) {
-        base <- maindir_norm
-      }
-    }
-    if (
-      !is.null(from_file) &&
-        nzchar(from_file) &&
-        (grepl("^\\.\\.", candidate) || grepl("^\\./", candidate))
-    ) {
-      caller_dir <- normalize_path_slashes(
-        normalizePath(dirname(from_file), winslash = "/", mustWork = FALSE)
-      )
-      if (path_within_root(caller_dir, allowed_norm)) {
-        base <- caller_dir
+    base <- allowed_norm
+    caller_relative <- grepl("^\\.\\.", candidate) || grepl("^\\./", candidate)
+    if (caller_relative) {
+      abs_from <- normalize_code_from_file(from_file, study_root, allowed_root)
+      if (!is.null(abs_from)) {
+        caller_dir <- normalize_path_slashes(
+          normalizePath(dirname(abs_from), winslash = "/", mustWork = FALSE)
+        )
+        if (path_within_root(caller_dir, allowed_norm)) {
+          base <- caller_dir
+        }
       }
     }
     candidate <- normalize_path_slashes(file.path(base, candidate))
@@ -867,11 +887,7 @@ render_code_html_with_links <- function(
   } else {
     extract_r_source_calls(lines)
   }
-  from_file <- if (!is.null(source_path) && nzchar(source_path)) {
-    file.path(study_root, source_path)
-  } else {
-    NULL
-  }
+  from_file <- normalize_code_from_file(source_path, study_root, allowed_root)
 
   link_meta <- list()
   line_html <- vapply(seq_along(lines), function(i) {
@@ -894,7 +910,8 @@ render_code_html_with_links <- function(
         call$path,
         study_root = study_root,
         globals = globals,
-        from_file = from_file
+        from_file = from_file,
+        allowed_root = allowed_root
       )
       link_id <- paste0("L", i, "_", j)
       diag <- code_link_diagnostics(
@@ -1116,12 +1133,25 @@ study_code_reader <- function(ctx, meta) {
 #' @keywords internal
 resolve_study_code_root <- function(doi, repo = NULL, folder = NULL) {
   ctx <- paper_context(doi, repo = repo, folder = folder)
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  if (!is.null(meta) && is_folder_study_replication(meta, ctx)) {
+    materialized <- ensure_study_folder_local(meta, ctx)
+    if (is_study_root_usable(materialized)) {
+      return(normalizePath(materialized, winslash = "/", mustWork = FALSE))
+    }
+  }
   root <- ctx$local_root
-  if (!is.null(root) && dir.exists(root)) {
+  if (
+    is_study_root_usable(root) &&
+      file.exists(file.path(root, "replication.yml"))
+  ) {
     return(normalizePath(root, winslash = "/", mustWork = FALSE))
   }
-  meta <- get_replication_meta(doi, repo = repo, folder = folder)
-  ensure_study_folder_local(meta, ctx)
+  if (!is.null(meta)) {
+    ensure_study_folder_local(meta, ctx)
+  } else {
+    NULL
+  }
 }
 
 #' Prepare code viewer state for Shiny

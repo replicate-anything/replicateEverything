@@ -21,7 +21,7 @@ replicateEverything::run_replication(
 )
 ```
 
-![](../../../../../../Users/humphreys/AppData/Local/R/win-library/4.5/replicateEverything/vignette-data/jiang_fig_4.png)
+![](figures/jiang_fig_4.png)
 
 ## Why bother?
 

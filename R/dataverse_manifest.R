@@ -484,7 +484,7 @@ print.dataverse_deposit_summary <- function(x, ...) {
 
 #' Whether a prep step should use the Dataverse deposit summary display
 #' @keywords internal
-is_dataverse_access_prep_step <- function(prep, meta) {
+is_dataverse_access_prep_step <- function(prep, meta, ctx = NULL) {
   if (is.null(prep) || !is.list(prep)) {
     return(FALSE)
   }
@@ -496,14 +496,20 @@ is_dataverse_access_prep_step <- function(prep, meta) {
   if (grepl("dataverse|access_deposit|access_deposit", code)) {
     return(TRUE)
   }
-  !is.null(study_dataverse_config(meta, ctx)) && length(study_dataverse_config(meta, ctx)) > 0L &&
-    grepl("deposit", tolower(paste(unlist(prep$outputs %||% list()), collapse = " ")))
+  if (!is.null(ctx)) {
+    dv <- study_dataverse_config(meta, ctx)
+    if (!is.null(dv) && length(dv) > 0L &&
+        grepl("deposit", tolower(paste(unlist(prep$outputs %||% list()), collapse = " ")))) {
+      return(TRUE)
+    }
+  }
+  FALSE
 }
 
 #' Build a display object for a prep step when no HTML artifact exists
 #' @keywords internal
 load_prep_step_display <- function(meta, ctx, prep) {
-  if (is_dataverse_access_prep_step(prep, meta)) {
+  if (is_dataverse_access_prep_step(prep, meta, ctx = ctx)) {
     return(summarize_dataverse_deposit(meta, ctx, prep = prep))
   }
   path <- prep_output_path(prep, ctx, meta = meta)
@@ -511,8 +517,11 @@ load_prep_step_display <- function(meta, ctx, prep) {
     return(NULL)
   }
   ext <- tolower(tools::file_ext(path))
-  if (ext %in% c("html", "png", "svg", "rds")) {
+  if (ext %in% c("html", "png", "svg")) {
     return(load_artifact_file_path(path))
+  }
+  if (identical(ext, "rds")) {
+    return(preview_data_file(path))
   }
   structure(
     list(

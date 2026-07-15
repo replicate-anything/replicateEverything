@@ -10,6 +10,44 @@ test_that("source_replication_functions skips circular source() chains", {
   expect_true(exists("make_a", envir = env, inherits = FALSE))
 })
 
+test_that("source_replication_functions loads script constants for helpers", {
+  tmp <- withr::local_tempdir()
+  script <- file.path(tmp, "tab_3.R")
+  writeLines(
+    c(
+      "TAB_3_TREATMENT_TERMS <- c(\"treatmentcore_belief\", \"treatmentdistal_belief\")",
+      "extract_lm_robust_benchmarks <- function(models) {",
+      "  lapply(TAB_3_TREATMENT_TERMS, function(term) term)",
+      "}",
+      "make_tab_3 <- function(data) extract_lm_robust_benchmarks(list())"
+    ),
+    script
+  )
+
+  env <- new.env(parent = globalenv())
+  replicateEverything:::source_replication_functions(script, env)
+  expect_true(exists("TAB_3_TREATMENT_TERMS", envir = env, inherits = FALSE))
+  result <- get("make_tab_3", envir = env, inherits = FALSE)()
+  expect_equal(result, as.list(get("TAB_3_TREATMENT_TERMS", envir = env, inherits = FALSE)))
+})
+
+test_that("source_replication_functions skips data-loading assignments", {
+  tmp <- withr::local_tempdir()
+  script <- file.path(tmp, "bad.R")
+  writeLines(
+    c(
+      "data <- read.csv(\"study1.csv\")",
+      "make_bad <- function() nrow(data)"
+    ),
+    script
+  )
+
+  env <- new.env(parent = globalenv())
+  replicateEverything:::source_replication_functions(script, env)
+  expect_false(exists("data", envir = env, inherits = FALSE))
+  expect_true(exists("make_bad", envir = env, inherits = FALSE))
+})
+
 test_that("study_engines_for_plan scopes probes to planned steps", {
   meta <- list(
     paper = list(),

@@ -43,3 +43,26 @@ test_that("load_artifact returns dataverse summary for access_deposit display", 
   loaded <- load_artifact("10.1017/S0003055426101622", "access_deposit")
   expect_s3_class(loaded, "dataverse_deposit_summary")
 })
+
+test_that("load_artifact summarizes prep_studies RDS for display", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_dir <- file.path(monorepo_root, "rep-10.1017-s0003055426101622")
+  rds_path <- file.path(study_dir, "outputs", "prep_studies", "studies.rds")
+  testthat::skip_if_not(file.exists(rds_path), "Velez prep_studies output missing")
+
+  withr::local_options(list(
+    replicateEverything.registry_root = file.path(monorepo_root, "registry"),
+    replicateEverything.study_folders_root = monorepo_root,
+    replicateEverything.use_sibling_packages = TRUE
+  ))
+
+  loaded <- load_artifact("10.1017/S0003055426101622", "prep_studies")
+  expect_s3_class(loaded, "prep_output_preview")
+  expect_true(!is.null(loaded$note))
+  expect_match(loaded$note, "RDS output:")
+  expect_match(loaded$note, "wave1_s1")
+})

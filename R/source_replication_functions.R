@@ -1,7 +1,38 @@
+#' Whether a top-level assignment RHS is a safe script constant
+#'
+#' Constants (e.g. \code{TAB_3_TREATMENT_TERMS <- c(...)}) must be evaluated
+#' into \code{env} so helper functions defined in the same file can resolve them.
+#' Data-loading or side-effect calls are skipped.
+#' @keywords internal
+is_safe_script_constant_rhs <- function(rhs) {
+  if (is.symbol(rhs) || !is.call(rhs)) {
+    return(TRUE)
+  }
+  fn <- rhs[[1]]
+  fn_name <- if (is.name(fn)) {
+    as.character(fn)
+  } else if (is.character(fn)) {
+    fn[[1]]
+  } else {
+    ""
+  }
+  if (fn_name %in% c("function", "source", "sys.source", "<-", "=")) {
+    return(FALSE)
+  }
+  if (grepl("^(read|load|download|setwd|system|source|make_|generate_|render_|build_|write)", fn_name)) {
+    return(FALSE)
+  }
+  if (length(rhs) >= 2L) {
+    return(all(vapply(as.list(rhs)[-1L], is_safe_script_constant_rhs, logical(1L))))
+  }
+  TRUE
+}
+
 #' Load only function definitions from a replication script
 #'
 #' Skips the self-run footer so top-level execution (data load + pipe) does not
-#' run when the package sources the file.
+#' run when the package sources the file. Also evaluates safe top-level constants
+#' referenced by sourced helper functions.
 #'
 #' @param path Path to an R script.
 #' @param env Environment in which to define functions.
@@ -73,6 +104,11 @@ source_replication_functions <- function(path, env, install_deps = FALSE, visite
     is_format <- grepl("^format_", lhs)
 
     if (is_fn || (is_generate && is_alias) || (is_format && is_alias)) {
+      retry_with_missing_package(
+        eval(expr, envir = env),
+        install_missing = allow_dependency_install(install_deps)
+      )
+    } else if (is.name(expr[[2]]) && is_safe_script_constant_rhs(rhs)) {
       retry_with_missing_package(
         eval(expr, envir = env),
         install_missing = allow_dependency_install(install_deps)

@@ -1,3 +1,14 @@
+# replicateEverything 0.6.1
+
+## Maintainer helpers and Shiny polish
+
+* **[build_outputs()]** — registry-wide or single-study batch build of precomputed table/figure outputs (`doi = "everywhere"`, `location`, `only_missing`, `force_prep`). Mirrors [validate_outputs()] dispatch.
+* **[validate_outputs()]** — exported maintainer check that declared outputs exist on disk without running live replications.
+* **Code links** — `R/code_links.R` resolves `code:` file references in replication scripts; Shiny code viewer renders clickable links; [check_replication()] runs **`check_code_links()`** and reports broken links.
+* **Author display** — `R/author_display.R` parses comma-separated author lists and formats study labels (`format_author_label()`, `format_authors_summary()`) for Shiny dropdowns and details.
+* **Dataverse prep display** — prep steps that fetch a deposit show a structured summary in Shiny when no HTML artifact exists (`load_prep_step_display()`).
+* **Server path fixes** — code-link resolution tolerates materialized study caches and Shiny reactive state; paths outside the study root are flagged instead of breaking the viewer.
+
 # replicateEverything 0.6.0
 
 ## Public API cleanup

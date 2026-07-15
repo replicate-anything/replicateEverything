@@ -79,6 +79,52 @@ find_prep_entry <- function(meta, step_id) {
   matches[[1]]
 }
 
+#' Summarize an RDS prep output for display
+#'
+#' @param path Local RDS path.
+#' @param obj Object read from \code{path}.
+#' @keywords internal
+summarize_rds_prep_output <- function(path, obj) {
+  lines <- c(
+    paste0("RDS output: ", basename(path)),
+    paste0("Size: ", format(file.size(path), big.mark = ","), " bytes")
+  )
+  if (is.data.frame(obj)) {
+    lines <- c(
+      lines,
+      paste0("Data frame: ", nrow(obj), " rows x ", ncol(obj), " columns")
+    )
+  } else if (is.list(obj)) {
+    nms <- names(obj)
+    if (length(nms)) {
+      lines <- c(lines, paste0("List with ", length(nms), " named elements:"))
+      preview_n <- min(12L, length(nms))
+      for (nm in nms[seq_len(preview_n)]) {
+        el <- obj[[nm]]
+        if (is.data.frame(el)) {
+          lines <- c(lines, paste0("  ", nm, ": ", nrow(el), " rows x ", ncol(el), " columns"))
+        } else {
+          lines <- c(
+            lines,
+            paste0("  ", nm, ": ", paste(class(el), collapse = "/"))
+          )
+        }
+      }
+      if (length(nms) > preview_n) {
+        lines <- c(lines, paste0("  ... and ", length(nms) - preview_n, " more"))
+      }
+    } else {
+      lines <- c(lines, paste0("List length: ", length(obj)))
+    }
+  } else {
+    lines <- c(lines, paste0("Class: ", paste(class(obj), collapse = "/")))
+  }
+  structure(
+    list(path = path, note = paste(lines, collapse = "\n")),
+    class = "prep_output_preview"
+  )
+}
+
 #' Preview a processed data file (head rows)
 #'
 #' @param path Local file path.
@@ -100,7 +146,7 @@ preview_data_file <- function(path, n = 6L) {
     if (is.data.frame(obj)) {
       return(utils::head(obj, n))
     }
-    return(obj)
+    return(summarize_rds_prep_output(path, obj))
   }
   structure(
     list(path = path, note = "Preview not available for this file type."),

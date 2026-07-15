@@ -700,17 +700,18 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL
     return(NULL)
   }
 
+  if (!is.null(rep) && is_prep_entry(rep)) {
+    prep_display <- load_prep_step_display(meta, ctx, rep)
+    if (!artifact_content_missing(prep_display)) {
+      return(prep_display)
+    }
+  }
+
   path <- get_artifact_path(doi, what, repo = repo, folder = folder, language = language)
   if (!is.null(path)) {
     loaded <- load_artifact_file_path(path)
     if (!artifact_content_missing(loaded)) {
       return(loaded)
-    }
-  }
-  if (!is.null(rep) && is_prep_entry(rep)) {
-    prep_display <- load_prep_step_display(meta, ctx, rep)
-    if (!artifact_content_missing(prep_display)) {
-      return(prep_display)
     }
   }
   if (!is.null(rep)) {

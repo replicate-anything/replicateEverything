@@ -19,15 +19,16 @@ You can use it from `R` or your [browser](https://shiny2.wzb.eu/ipi/replicate/).
 ```{r, include = FALSE}
 library(replicateEverything)
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
-fig_snapshot <- system.file("vignette-data", "jiang_fig_4.png", package = "replicateEverything")
-if (!nzchar(fig_snapshot) || !file.exists(fig_snapshot)) {
-  candidates <- c(
-    "inst/vignette-data/jiang_fig_4.png",
-    "../inst/vignette-data/jiang_fig_4.png"
-  )
-  found <- candidates[file.exists(candidates)]
-  fig_snapshot <- if (length(found)) found[[1]] else ""
-}
+# pkgdown only copies images under vignettes/ or man/figures/. Prefer that path;
+# fall back to inst/vignette-data/ for dev installs and CRAN vignette builds.
+fig_candidates <- c(
+  "figures/jiang_fig_4.png",
+  "../inst/vignette-data/jiang_fig_4.png",
+  "inst/vignette-data/jiang_fig_4.png",
+  system.file("vignette-data", "jiang_fig_4.png", package = "replicateEverything")
+)
+fig_candidates <- fig_candidates[nzchar(fig_candidates) & file.exists(fig_candidates)]
+fig_snapshot <- if (length(fig_candidates)) fig_candidates[[1]] else ""
 ```
 
 <style>

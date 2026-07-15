@@ -348,3 +348,120 @@ test_that("get_code style source returns raw runner for Blair", {
   expect_true(grepl('do "${maindir}/code/tables/mk_tab_1.do"', text, fixed = TRUE))
   expect_false(grepl("ANALYSIS", text, fixed = TRUE))
 })
+
+cache_study_fixture_root <- function() {
+  cache_root <- file.path(tempdir(), "replicateEverything-study-cache-test")
+  repo_slug <- "replicate-anything_rep-10.1017-code-links"
+  study_root <- file.path(cache_root, repo_slug, "main")
+  unlink(cache_root, recursive = TRUE)
+  dir.create(file.path(study_root, "code", "tables"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(file.path(study_root, "code", "helpers"), recursive = TRUE, showWarnings = FALSE)
+
+  writeLines(
+    c(
+      'do "code/helpers/init_study_paths.do"',
+      'do "${maindir}/code/tables/mk_tab_1.do"'
+    ),
+    file.path(study_root, "code", "tables", "tab_1.do")
+  )
+  writeLines(
+    "* init",
+    file.path(study_root, "code", "helpers", "init_study_paths.do")
+  )
+  writeLines(
+    "* mk",
+    file.path(study_root, "code", "tables", "mk_tab_1.do")
+  )
+  writeLines(
+    c(
+      'source("../helpers/dataverse_deposit.R")',
+      "make_tab_1 <- function(data) data"
+    ),
+    file.path(study_root, "code", "tables", "tab_1.R")
+  )
+  writeLines(
+    "deposit_flag <- TRUE",
+    file.path(study_root, "code", "helpers", "dataverse_deposit.R")
+  )
+  writeLines(
+    "paper:\n  doi: https://doi.org/10.9999/cache-fixture\nsteps: []\n",
+    file.path(study_root, "replication.yml")
+  )
+  normalizePath(study_root, winslash = "/", mustWork = FALSE)
+}
+
+test_that("resolve_code_path normalizes parent-relative paths from cache study root", {
+  study_root <- cache_study_fixture_root()
+  on.exit(unlink(dirname(dirname(study_root)), recursive = TRUE), add = TRUE)
+  resolved <- resolve_code_path(
+    "../helpers/dataverse_deposit.R",
+    study_root = study_root,
+    from_file = file.path(study_root, "code/tables/tab_1.R")
+  )
+  expect_equal(resolved$status, "ok")
+  expect_equal(
+    resolved$resolved,
+    normalizePath(
+      file.path(study_root, "code/helpers/dataverse_deposit.R"),
+      winslash = "/",
+      mustWork = FALSE
+    )
+  )
+  expect_equal(resolved$display, "code/helpers/dataverse_deposit.R")
+  expect_false(grepl("/main/\\.\\./", resolved$resolved, fixed = TRUE))
+})
+
+test_that("resolve_code_path resolves Blair study-root do paths in cache layout", {
+  study_root <- cache_study_fixture_root()
+  on.exit(unlink(dirname(dirname(study_root)), recursive = TRUE), add = TRUE)
+  bad_globals <- default_stata_globals(study_root)
+  bad_globals[["maindir"]] <- dirname(study_root)
+  resolved <- resolve_code_path(
+    "code/helpers/init_study_paths.do",
+    study_root = study_root,
+    globals = bad_globals,
+    from_file = file.path(study_root, "code/tables/tab_1.do")
+  )
+  expect_equal(resolved$status, "ok")
+  expect_equal(resolved$display, "code/helpers/init_study_paths.do")
+})
+
+test_that("render_code_html_with_links passes caller file for cache R source paths", {
+  study_root <- cache_study_fixture_root()
+  on.exit(unlink(dirname(dirname(study_root)), recursive = TRUE), add = TRUE)
+  lines <- readLines(file.path(study_root, "code/tables/tab_1.R"), warn = FALSE)
+  rendered <- render_code_html_with_links(
+    lines,
+    language = "r",
+    study_root = study_root,
+    source_path = "code/tables/tab_1.R"
+  )
+  expect_equal(rendered$links[[1]]$status, "ok")
+  expect_equal(rendered$links[[1]]$display, "code/helpers/dataverse_deposit.R")
+})
+
+test_that("render_code_html_with_links resolves Blair cache tab_1 do links", {
+  study_root <- cache_study_fixture_root()
+  on.exit(unlink(dirname(dirname(study_root)), recursive = TRUE), add = TRUE)
+  lines <- readLines(file.path(study_root, "code/tables/tab_1.do"), warn = FALSE)
+  rendered <- render_code_html_with_links(
+    lines,
+    language = "stata",
+    study_root = study_root,
+    source_path = "code/tables/tab_1.do",
+    globals = default_stata_globals(study_root)
+  )
+  statuses <- vapply(rendered$links, function(x) x$status, character(1))
+  expect_true(all(statuses == "ok"))
+  expect_false(any(grepl("code-file-link--outside_root", rendered$html, fixed = TRUE)))
+})
+
+test_that("normalize_code_from_file accepts study-relative caller paths", {
+  study_root <- cache_study_fixture_root()
+  on.exit(unlink(dirname(dirname(study_root)), recursive = TRUE), add = TRUE)
+  abs_from <- normalize_code_from_file("code/tables/tab_1.R", study_root, study_root)
+  expect_equal(
+    abs_from,
+    normalizePath(file.path(study_root, "code/tables/tab_1.R"), winslash = "/", mustWork = FALSE)
+  )
+})

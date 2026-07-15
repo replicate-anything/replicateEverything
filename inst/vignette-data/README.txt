@@ -20,4 +20,10 @@ as:
 
 (relative to the replicateEverything package root).
 
+For pkgdown / GitHub Pages, keep a copy at:
+
+  vignettes/figures/jiang_fig_4.png
+
+(pkgdown only bundles images under vignettes/ or man/figures/.)
+
 The why-replicateEverything vignette displays this file via knitr::include_graphics().

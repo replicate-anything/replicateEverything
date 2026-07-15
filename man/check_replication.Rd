@@ -43,7 +43,8 @@ or \code{package_path}.
 }
 \description{
 Runs a transparent checklist: study layout, \code{replication.yml}, code and data
-paths, baked display outputs, optional \verb{tests/testthat/}, substantive
+paths, resolvable code file links (\code{source()} / Stata \code{do}), baked display
+outputs, optional \verb{tests/testthat/}, substantive
 (published-value) checks under \verb{tests/substantive/}, and (optionally) live
 execution of every table and figure.
 }
@@ -52,7 +53,8 @@ execution of every table and figure.
 \item \code{check_folder_replication()}: Folder-backed implementation.
 
 Runs a transparent checklist: study layout, \code{replication.yml}, code and data
-paths, baked display outputs under \verb{outputs/}, optional \verb{tests/testthat/},
+paths, resolvable code file links (\code{source()} / Stata \code{do}), baked display
+outputs under \verb{outputs/}, optional \verb{tests/testthat/}, substantive
 substantive (published-value) checks under \verb{tests/substantive/}, and
 (optionally) live execution of every table and figure.
 

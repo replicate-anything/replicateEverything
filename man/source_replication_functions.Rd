@@ -17,6 +17,7 @@ source_replication_functions(path, env, install_deps = FALSE, visited = NULL)
 }
 \description{
 Skips the self-run footer so top-level execution (data load + pipe) does not
-run when the package sources the file.
+run when the package sources the file. Also evaluates safe top-level constants
+referenced by sourced helper functions.
 }
 \keyword{internal}
