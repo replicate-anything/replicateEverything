@@ -13,6 +13,9 @@ test_that("audit_runtime_category buckets short/medium/slow", {
 
 test_that("audit_runtime_advice describes categories", {
   expect_match(audit_runtime_advice("short", 12), "seconds")
+  expect_match(audit_runtime_advice("short", 12), "12s")
+  expect_match(audit_runtime_advice("short", 0.3), "0\\.3s")
+  expect_false(grepl("last audit: 0s", audit_runtime_advice("short", 0.3), fixed = TRUE))
   expect_match(audit_runtime_advice("medium", 90), "minute")
   expect_match(audit_runtime_advice("slow", 400), "minutes")
   expect_equal(audit_runtime_advice(NA_character_), "")

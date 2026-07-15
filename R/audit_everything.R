@@ -144,8 +144,11 @@ audit_runtime_advice <- function(category, seconds = NULL) {
   } else {
     NA_real_
   }
+  # Sub-second audits are common; %.0f would round them to a misleading "0s".
   secs_note <- if (is.finite(secs) && secs >= 0) {
-    if (secs < 60) {
+    if (secs < 1) {
+      sprintf(" (last audit: %.1fs)", secs)
+    } else if (secs < 60) {
       sprintf(" (last audit: %.0fs)", secs)
     } else if (secs < 3600) {
       sprintf(" (last audit: ~%.0f min)", secs / 60)
