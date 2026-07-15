@@ -134,8 +134,14 @@ write_shiny_deploy_options <- function(
 
   pkg_info <- package_build_info(package)
   lib_path <- package_library_path(package)
+  bundled_sha <- pkg_info$bundled_sha %||% pkg_info$sha
   stamp <- c(
-    sprintf("# Deploy stamp: %s %s (pkg %s)", package, pkg_info$version, pkg_info$sha %||% "?"),
+    sprintf(
+      "# Deploy stamp: %s %s (bundled %s)",
+      package,
+      pkg_info$version,
+      bundled_sha %||% "?"
+    ),
     sprintf("# Installed from: %s", if (nzchar(lib_path)) lib_path else "(unknown)"),
     sprintf(
       "# Written by save_local_shiny() at %s",
@@ -165,7 +171,7 @@ write_shiny_deploy_options <- function(
     ),
     sprintf(
       "options(replicate_shiny.deploy_pkg_sha = %s)",
-      encodeString(pkg_info$sha %||% "", quote = '"')
+      encodeString(bundled_sha %||% "", quote = '"')
     ),
     sprintf(
       "options(replicate_shiny.deploy_lib = %s)",
@@ -178,7 +184,7 @@ write_shiny_deploy_options <- function(
     feedback_enabled = isTRUE(feedback_enabled),
     feedback_file = feedback_file,
     pkg_version = pkg_info$version,
-    pkg_sha = pkg_info$sha,
+    pkg_sha = bundled_sha,
     deploy_lib = lib_path
   ))
 }

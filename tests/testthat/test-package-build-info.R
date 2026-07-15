@@ -3,7 +3,10 @@ test_that("package_build_info returns version and optional sha", {
   info <- package_build_info("replicateEverything")
   expect_match(info$version, "^[0-9]+\\.[0-9]+\\.[0-9]+$")
   expect_true(is.character(info$sha))
+  expect_true(is.character(info$bundled_sha))
+  expect_true(is.character(info$remote_sha))
   expect_true(is.character(info$source))
+  expect_equal(info$sha, info$bundled_sha)
 })
 
 test_that("read_build_sha_file reads bundled shiny stamp", {
@@ -13,14 +16,18 @@ test_that("read_build_sha_file reads bundled shiny stamp", {
   expect_match(sha, "^[0-9a-f]{7}$")
 })
 
-test_that("write_shiny_bundle_sha creates BUNDLE_SHA in deploy dir", {
+test_that("write_shiny_bundle_sha writes bundled package stamp", {
+  skip_if_not_installed("replicateEverything")
+  bundled <- replicateEverything:::package_bundled_sha("replicateEverything")
+  skip_if_not(nzchar(bundled %||% ""))
   tmp <- tempfile("shiny-deploy-")
   dir.create(tmp)
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
   sha <- replicateEverything:::write_shiny_bundle_sha(tmp)
   expect_true(file.exists(file.path(tmp, "BUNDLE_SHA")))
+  expect_equal(sha, bundled)
   expect_equal(
     replicateEverything:::read_build_sha_file(file.path(tmp, "BUNDLE_SHA")),
-    sha
+    bundled
   )
 })

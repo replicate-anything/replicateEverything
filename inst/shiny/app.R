@@ -383,21 +383,26 @@ package_build_sha <- function() {
     return(NA_character_)
   }
   ns <- asNamespace("replicateEverything")
-  if (exists("package_build_info", envir = ns, inherits = FALSE)) {
+  if (exists("package_bundled_sha", envir = ns, inherits = FALSE)) {
     sha <- tryCatch(
-      get("package_build_info", envir = ns)()$sha,
+      get("package_bundled_sha", envir = ns)("replicateEverything"),
       error = function(e) NA_character_
     )
     if (nzchar(sha %||% "")) {
       return(sha)
     }
   }
-  desc <- tryCatch(
-    utils::packageDescription("replicateEverything"),
-    error = function(e) NULL
-  )
-  if (!is.null(desc) && nzchar(desc$RemoteSha %||% "")) {
-    return(short_build_sha(desc$RemoteSha))
+  if (exists("package_build_info", envir = ns, inherits = FALSE)) {
+    info <- tryCatch(
+      get("package_build_info", envir = ns)("replicateEverything"),
+      error = function(e) NULL
+    )
+    if (!is.null(info)) {
+      sha <- info$bundled_sha %||% info$sha
+      if (nzchar(sha %||% "")) {
+        return(sha)
+      }
+    }
   }
   read_build_sha_file(
     system.file("shiny", "BUNDLE_SHA", package = "replicateEverything")
@@ -423,6 +428,18 @@ replicate_everything_build_info <- function() {
   } else {
     ""
   }
+  deploy_version <- getOption("replicate_shiny.deploy_pkg_version", NULL)
+  deploy_version <- if (!is.null(deploy_version) && length(deploy_version) == 1L) {
+    as.character(deploy_version)
+  } else {
+    ""
+  }
+  namespace_stale <- isNamespaceLoaded("replicateEverything") && {
+    disk_ver <- tryCatch(as.character(utils::packageVersion("replicateEverything")), error = function(e) "")
+    ns_ver <- tryCatch(as.character(getNamespaceVersion("replicateEverything")), error = function(e) "")
+    nzchar(disk_ver) && nzchar(ns_ver) && !identical(disk_ver, ns_ver)
+  }
+  version_stale <- nzchar(deploy_version) && !identical(deploy_version, version)
   list(
     version = version,
     package_sha = package_sha,
@@ -440,10 +457,19 @@ replicate_everything_build_info <- function() {
         nzchar(library_path) &&
         !identical(normalizePath(deploy_lib, winslash = "/", mustWork = FALSE), library_path)
     ),
-    app_stale = isTRUE(
+    namespace_stale = namespace_stale,
+    version_stale = version_stale,
+    app_bundle_mismatch = isTRUE(
       nzchar(app_sha %||% "") &&
         nzchar(package_sha %||% "") &&
         !identical(app_sha, package_sha)
+    ),
+    app_stale = isTRUE(
+      version_stale ||
+        namespace_stale ||
+        (nzchar(deploy_lib) &&
+          nzchar(library_path) &&
+          !identical(normalizePath(deploy_lib, winslash = "/", mustWork = FALSE), library_path))
     )
   )
 }
@@ -478,16 +504,26 @@ shiny_app_stale_banner_ui <- function() {
   if (!isTRUE(info$app_stale)) {
     return(NULL)
   }
+  detail <- if (isTRUE(info$namespace_stale)) {
+    paste0(
+      "This Shiny worker loaded an older replicateEverything namespace. ",
+      "Restart Shiny Server / Connect after updating the package."
+    )
+  } else if (isTRUE(info$version_stale)) {
+    paste0(
+      "Deploy stamp version differs from the installed package (",
+      info$version, "). Run ",
+      "replicateEverything::save_local_shiny('<deploy-dir>') after updating."
+    )
+  } else if (isTRUE(info$deploy_lib_stale)) {
+    "Deploy library path differs from the loaded package. Re-run save_local_shiny() from the current R library."
+  } else {
+    "Deployment metadata looks stale relative to the installed package."
+  }
   tags$div(
     class = "alert alert-warning py-2 px-3 mb-0 rounded-0 border-0 border-bottom",
-    tags$strong("Shiny app bundle is older than the installed package. "),
-    "Package SHA ",
-    tags$code(info$package_sha),
-    " vs app ",
-    tags$code(info$app_sha),
-    ". Run ",
-    tags$code("replicateEverything::save_local_shiny('<deploy-dir>')"),
-    " after updating the package, then restart Shiny Server / Connect."
+    tags$strong("Shiny deployment may be stale. "),
+    detail
   )
 }
 
@@ -567,11 +603,30 @@ replicate_fn <- function(name, ..., folder = NULL, repo = NULL) {
     stop("replicateEverything is not installed.", call. = FALSE)
   }
   ns <- asNamespace("replicateEverything")
-  if (!exists(name, envir = ns, inherits = FALSE)) {
+  if (exists("get_package_namespace_fn", envir = ns, inherits = FALSE)) {
+    fn <- get("get_package_namespace_fn", envir = ns)(name)
+  } else if (exists(name, envir = ns, inherits = FALSE)) {
+    fn <- get(name, envir = ns, inherits = FALSE)
+  } else {
     pkg_ver <- tryCatch(
       as.character(utils::packageVersion("replicateEverything")),
       error = function(e) "unknown"
     )
+    if (isNamespaceLoaded("replicateEverything")) {
+      ns_ver <- tryCatch(
+        as.character(getNamespaceVersion("replicateEverything")),
+        error = function(e) ""
+      )
+      if (nzchar(ns_ver) && !identical(ns_ver, pkg_ver)) {
+        stop(
+          "Function replicateEverything::", name,
+          " is not available because this R session loaded replicateEverything ",
+          ns_ver, " but version ", pkg_ver, " is installed on disk. ",
+          "Restart all Shiny/R worker processes after updating the package.",
+          call. = FALSE
+        )
+      }
+    }
     stop(
       "Function replicateEverything::", name,
       " is not available (installed version ", pkg_ver, "). ",
@@ -581,7 +636,6 @@ replicate_fn <- function(name, ..., folder = NULL, repo = NULL) {
       call. = FALSE
     )
   }
-  fn <- get(name, envir = ns, inherits = FALSE)
   args <- list(...)
   fm <- names(formals(fn))
   if ("folder" %in% fm && !is.null(folder) && nzchar(folder)) {
@@ -3650,6 +3704,12 @@ feedback_pkg_fn <- function(name) {
     stop("replicateEverything is not installed.", call. = FALSE)
   }
   ns <- asNamespace("replicateEverything")
+  if (exists("get_package_namespace_fn", envir = ns, inherits = FALSE)) {
+    return(get("get_package_namespace_fn", envir = ns)(
+      name,
+      aliases = feedback_pkg_fn_aliases(name)
+    ))
+  }
   resolve <- function(nm) {
     if (exists(nm, envir = ns, inherits = FALSE)) {
       return(get(nm, envir = ns, inherits = FALSE))
@@ -3666,6 +3726,21 @@ feedback_pkg_fn <- function(name) {
       as.character(utils::packageVersion("replicateEverything")),
       error = function(e) "unknown"
     )
+    if (isNamespaceLoaded("replicateEverything")) {
+      ns_ver <- tryCatch(
+        as.character(getNamespaceVersion("replicateEverything")),
+        error = function(e) ""
+      )
+      if (nzchar(ns_ver) && !identical(ns_ver, pkg_ver)) {
+        stop(
+          "Function replicateEverything::", name,
+          " is not available because this R session loaded replicateEverything ",
+          ns_ver, " but version ", pkg_ver, " is installed on disk. ",
+          "Restart all Shiny/R worker processes after updating the package.",
+          call. = FALSE
+        )
+      }
+    }
     stop(
       "Function replicateEverything::", name,
       " is not available (installed version ", pkg_ver, "). ",

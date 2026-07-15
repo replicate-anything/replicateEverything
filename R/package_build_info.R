@@ -30,46 +30,146 @@ read_build_sha_file <- function(path) {
   short_build_sha(line)
 }
 
-#' Package version and build identity
+#' Bundled Shiny build stamp from an installed package
 #'
-#' Uses \code{RemoteSha} from \code{packageDescription()} when installed via
-#' \code{remotes::install_github()}, otherwise the bundled
-#' \code{inst/shiny/BUNDLE_SHA} stamp.
+#' Reads \code{inst/shiny/BUNDLE_SHA} from the installed package. This is the
+#' canonical identity for matching a deployed app bundle to a package build.
 #'
 #' @param package Package name.
-#' @return List with \code{version}, \code{sha}, and \code{source}.
+#' @return Seven-character SHA or \code{NA_character_}.
+#' @keywords internal
+package_bundled_sha <- function(package = "replicateEverything") {
+  read_build_sha_file(system.file("shiny", "BUNDLE_SHA", package = package))
+}
+
+#' GitHub install SHA from package DESCRIPTION
+#'
+#' @param package Package name.
+#' @return Seven-character SHA or \code{NA_character_}.
+#' @keywords internal
+package_remote_install_sha <- function(package = "replicateEverything") {
+  desc <- tryCatch(
+    utils::packageDescription(package),
+    error = function(e) NULL
+  )
+  if (!is.null(desc) && nzchar(desc$RemoteSha %||% "")) {
+    return(short_build_sha(desc$RemoteSha))
+  }
+  NA_character_
+}
+
+#' Package version and build identity
+#'
+#' \code{sha} / \code{bundled_sha} come from the bundled \code{inst/shiny/BUNDLE_SHA}
+#' stamp (used for deploy matching). \code{remote_sha} records \code{RemoteSha}
+#' from \code{packageDescription()} when installed via GitHub (\code{remotes}, etc.).
+#'
+#' @param package Package name.
+#' @return List with \code{version}, \code{sha}, \code{bundled_sha}, \code{remote_sha},
+#'   and \code{source}.
 #' @export
 package_build_info <- function(package = "replicateEverything") {
   version <- tryCatch(
     as.character(utils::packageVersion(package)),
     error = function(e) "unknown"
   )
-  sha <- NA_character_
+  bundled <- package_bundled_sha(package)
+  remote <- package_remote_install_sha(package)
   source <- character(0)
-
-  desc <- tryCatch(
-    utils::packageDescription(package),
-    error = function(e) NULL
-  )
-  if (!is.null(desc) && nzchar(desc$RemoteSha %||% "")) {
-    sha <- short_build_sha(desc$RemoteSha)
+  if (nzchar(bundled)) {
+    source <- c(source, "BUNDLE_SHA")
+  }
+  if (nzchar(remote)) {
     source <- c(source, "RemoteSha")
   }
-
-  if (is.na(sha) || !nzchar(sha)) {
-    bundle <- read_build_sha_file(
-      system.file("shiny", "BUNDLE_SHA", package = package)
-    )
-    if (nzchar(bundle)) {
-      sha <- bundle
-      source <- c(source, "BUNDLE_SHA")
-    }
+  sha <- bundled
+  if (!nzchar(sha)) {
+    sha <- remote
   }
 
   list(
     version = version,
     sha = sha,
+    bundled_sha = bundled,
+    remote_sha = remote,
     source = paste(unique(source), collapse = "+")
+  )
+}
+
+#' Whether a loaded package namespace is older than the on-disk install
+#'
+#' @param package Package name.
+#' @return Logical scalar.
+#' @keywords internal
+package_namespace_stale <- function(package = "replicateEverything") {
+  if (!isNamespaceLoaded(package)) {
+    return(FALSE)
+  }
+  disk_ver <- tryCatch(
+    as.character(utils::packageVersion(package)),
+    error = function(e) NULL
+  )
+  ns_ver <- tryCatch(
+    as.character(getNamespaceVersion(package)),
+    error = function(e) NULL
+  )
+  is.character(disk_ver) &&
+    is.character(ns_ver) &&
+    nzchar(disk_ver) &&
+    nzchar(ns_ver) &&
+    !identical(disk_ver, ns_ver)
+}
+
+#' Resolve a function from an installed package namespace
+#'
+#' Checks exported and internal bindings. When the namespace version differs
+#' from the on-disk package version, stops with a restart hint (typical when
+#' Shiny workers were not restarted after \code{install_github()}).
+#'
+#' @param name Function name.
+#' @param package Package name.
+#' @param aliases Optional alternate names to try.
+#' @return The resolved function.
+#' @keywords internal
+get_package_namespace_fn <- function(
+  name,
+  package = "replicateEverything",
+  aliases = character(0)
+) {
+  if (!requireNamespace(package, quietly = TRUE)) {
+    stop(package, " is not installed.", call. = FALSE)
+  }
+  ns <- asNamespace(package)
+  candidates <- unique(c(name, aliases))
+  for (nm in candidates) {
+    if (exists(nm, envir = ns, inherits = FALSE)) {
+      return(get(nm, envir = ns, inherits = FALSE))
+    }
+  }
+  pkg_ver <- tryCatch(
+    as.character(utils::packageVersion(package)),
+    error = function(e) "unknown"
+  )
+  if (package_namespace_stale(package)) {
+    ns_ver <- tryCatch(
+      as.character(getNamespaceVersion(package)),
+      error = function(e) "unknown"
+    )
+    stop(
+      "Function ", package, "::", name,
+      " is not available because this R session loaded ", package, " ",
+      ns_ver, " but version ", pkg_ver, " is installed on disk. ",
+      "Restart all Shiny/R worker processes after updating the package.",
+      call. = FALSE
+    )
+  }
+  stop(
+    "Function ", package, "::", name,
+    " is not available (installed version ", pkg_ver, "). ",
+    "Update ", package,
+    " (remotes::install_github('replicate-anything/replicateEverything')) ",
+    "and redeploy the Shiny app from the same release.",
+    call. = FALSE
   )
 }
 
@@ -150,6 +250,26 @@ package_deploy_diagnostics <- function(
   } else {
     NA_character_
   }
+  deploy_stamp <- read_deploy_stamp_options(deploy_dir)
+  bundled_sha <- pkg_info$bundled_sha %||% pkg_info$sha
+  version_stale <- isTRUE(
+    nzchar(deploy_stamp$version %||% "") &&
+      !identical(deploy_stamp$version, pkg_info$version)
+  )
+  lib_stale <- isTRUE(
+    nzchar(deploy_stamp$lib %||% "") &&
+      nzchar(lib_path) &&
+      !identical(
+        normalizePath(deploy_stamp$lib, winslash = "/", mustWork = FALSE),
+        lib_path
+      )
+  )
+  app_bundle_mismatch <- isTRUE(
+    nzchar(app_sha %||% "") &&
+      nzchar(bundled_sha %||% "") &&
+      !identical(app_sha, bundled_sha)
+  )
+  namespace_stale <- package_namespace_stale(package)
 
   fn_status <- setNames(
     vapply(PACKAGE_DEPLOY_PROBE_FUNCTIONS, function(name) {
@@ -171,17 +291,25 @@ package_deploy_diagnostics <- function(
   out <- list(
     package = package,
     version = pkg_info$version,
-    pkg_sha = pkg_info$sha,
+    pkg_sha = bundled_sha,
+    pkg_bundled_sha = bundled_sha,
+    pkg_remote_sha = pkg_info$remote_sha,
     pkg_sha_source = pkg_info$source,
     library_path = lib_path,
     lib_paths = .libPaths(),
     package_lib_index = lib_index,
     deploy_dir = deploy_dir,
+    deploy_stamp = deploy_stamp,
     app_sha = app_sha,
+    app_bundle_mismatch = app_bundle_mismatch,
+    version_stale = version_stale,
+    lib_stale = lib_stale,
+    namespace_stale = namespace_stale,
     app_stale = isTRUE(
-      nzchar(app_sha %||% "") &&
-        nzchar(pkg_info$sha %||% "") &&
-        !identical(app_sha, pkg_info$sha)
+      version_stale ||
+        lib_stale ||
+        namespace_stale ||
+        length(names(fn_status)[!fn_status]) > 0L
     ),
     getwd = getwd(),
     shiny_app_dir = Sys.getenv("SHINY_APP_DIR", unset = ""),
@@ -197,7 +325,21 @@ package_deploy_diagnostics <- function(
     cat("replicateEverything deploy diagnostics\n")
     cat("======================================\n")
     cat("Package version: ", out$version, "\n", sep = "")
-    cat("Package SHA (", out$pkg_sha_source, "): ", out$pkg_sha %||% "(none)", "\n", sep = "")
+    cat(
+      "Package bundled SHA: ", bundled_sha %||% "(none)",
+      if (nzchar(pkg_info$remote_sha %||% "")) {
+        paste0(" · GitHub install SHA: ", pkg_info$remote_sha)
+      } else {
+        ""
+      },
+      "\n",
+      sep = ""
+    )
+    if (isTRUE(namespace_stale)) {
+      cat(
+        "WARNING: loaded namespace version differs from installed package — restart Shiny workers\n"
+      )
+    }
     cat("Library path: ", if (nzchar(lib_path)) lib_path else "(not installed)", "\n", sep = "")
     cat(
       "Found in .libPaths()[", out$package_lib_index, "]: ",
@@ -211,8 +353,22 @@ package_deploy_diagnostics <- function(
     }
     cat("\nDeploy directory: ", deploy_dir, "\n", sep = "")
     cat("App BUNDLE_SHA: ", app_sha %||% "(missing)", "\n", sep = "")
-    if (isTRUE(out$app_stale)) {
-      cat("WARNING: app bundle SHA differs from installed package — re-run save_local_shiny()\n")
+    if (isTRUE(version_stale)) {
+      cat(
+        "WARNING: deploy stamp version (", deploy_stamp$version,
+        ") differs from installed package — re-run save_local_shiny()\n",
+        sep = ""
+      )
+    } else if (isTRUE(lib_stale)) {
+      cat("WARNING: deploy library path differs from installed package — re-run save_local_shiny()\n")
+    } else if (isTRUE(app_bundle_mismatch)) {
+      cat(
+        "NOTE: app BUNDLE_SHA differs from bundled package stamp (often harmless after GitHub→local reinstall); ",
+        "re-run save_local_shiny() to refresh the deploy stamp\n",
+        sep = ""
+      )
+    } else if (length(out$missing_functions)) {
+      cat("WARNING: key functions missing from installed package — update and restart workers\n")
     }
     cat("getwd(): ", out$getwd, "\n", sep = "")
     if (nzchar(out$shiny_app_dir)) {
@@ -299,11 +455,53 @@ shiny_app_bundle_sha <- function(package = "replicateEverything") {
 #' @keywords internal
 write_shiny_bundle_sha <- function(dest, package = "replicateEverything") {
   info <- package_build_info(package)
-  sha <- info$sha
-  if (is.na(sha) || !nzchar(sha)) {
+  sha <- info$bundled_sha
+  if (!nzchar(sha %||% "")) {
+    sha <- info$remote_sha
+  }
+  if (!nzchar(sha %||% "")) {
     sha <- format(Sys.time(), "%Y%m%d")
   }
   dest <- resolve_shiny_deploy_dest(dest)
   writeLines(sha, file.path(dest, "BUNDLE_SHA"), useBytes = TRUE)
   invisible(sha)
+}
+
+#' Read deploy stamp options from deploy-options.R without sourcing
+#'
+#' @param deploy_dir Deploy directory.
+#' @return Named list with optional \code{version}, \code{sha}, and \code{lib}.
+#' @keywords internal
+read_deploy_stamp_options <- function(deploy_dir) {
+  empty <- list(version = NA_character_, sha = NA_character_, lib = NA_character_)
+  if (length(deploy_dir) != 1L || is.na(deploy_dir) || !nzchar(deploy_dir)) {
+    return(empty)
+  }
+  path <- file.path(deploy_dir, "deploy-options.R")
+  if (!file.exists(path)) {
+    return(empty)
+  }
+  lines <- tryCatch(
+    readLines(path, warn = FALSE, encoding = "UTF-8"),
+    error = function(e) character(0)
+  )
+  if (!length(lines)) {
+    return(empty)
+  }
+  read_option <- function(option_name) {
+    pattern <- sprintf(
+      "^\\s*options\\(%s\\s*=\\s*\"([^\"]*)\"\\)\\s*$",
+      gsub("([.|()\\^{}+$*?\\[\\]\\\\])", "\\\\\\1", option_name, perl = TRUE)
+    )
+    hit <- grep(pattern, lines, value = TRUE, perl = TRUE)
+    if (!length(hit)) {
+      return(NA_character_)
+    }
+    sub(pattern, "\\1", hit[[1L]], perl = TRUE)
+  }
+  list(
+    version = read_option("replicate_shiny.deploy_pkg_version"),
+    sha = read_option("replicate_shiny.deploy_pkg_sha"),
+    lib = read_option("replicate_shiny.deploy_lib")
+  )
 }
