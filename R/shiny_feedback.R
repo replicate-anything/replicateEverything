@@ -108,8 +108,9 @@ shiny_feedback_file <- function() {
 
 #' Resolve Shiny feedback CSV to an absolute path
 #'
-#' Relative paths are resolved against \code{getwd()} (the Shiny app deploy
-#' directory on shiny2.wzb.eu, e.g. \code{.../ipi/replicate/data/feedback.csv}).
+#' Relative paths are resolved against [shiny_deploy_dir()] (the Shiny app
+#' deploy directory on shiny2.wzb.eu, e.g. \code{.../ipi/replicate/data/feedback.csv}),
+#' not the process working directory when they differ.
 #'
 #' @return Normalized absolute file path.
 #' @keywords internal
@@ -118,7 +119,11 @@ shiny_feedback_file_path <- function() {
   if (.is_abs_path_shiny_feedback(file)) {
     return(normalizePath(file, winslash = "/", mustWork = FALSE))
   }
-  normalizePath(file.path(getwd(), file), winslash = "/", mustWork = FALSE)
+  normalizePath(
+    file.path(shiny_deploy_dir(), file),
+    winslash = "/",
+    mustWork = FALSE
+  )
 }
 
 #' @keywords internal

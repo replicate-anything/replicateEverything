@@ -72,23 +72,112 @@ shiny_live_run_enabled <- function() {
   isTRUE(getOption("replicate_shiny.live_run", TRUE))
 }
 
+#' Source deploy-options.R and local.R from a Shiny deploy directory
+#'
+#' Order: \code{deploy-options.R} (base settings from [save_local_shiny()]),
+#' then \code{local.R} (server overrides; never overwritten on deploy).
+#'
+#' @param dir Deploy directory containing \code{app.R}.
+#' @return Invisibly, \code{TRUE} when \code{dir} exists.
+#' @keywords internal
+source_shiny_deploy_config <- function(dir) {
+  dir <- as.character(dir[[1L]] %||% dir)
+  if (!length(dir) || !nzchar(dir) || !dir.exists(dir)) {
+    return(invisible(FALSE))
+  }
+  dir <- normalizePath(dir, winslash = "/", mustWork = TRUE)
+  options(replicate_shiny.app_dir = dir)
+
+  deploy_opts <- file.path(dir, "deploy-options.R")
+  if (file.exists(deploy_opts)) {
+    source(deploy_opts, local = FALSE)
+  }
+
+  local_r <- file.path(dir, "local.R")
+  if (file.exists(local_r)) {
+    source(local_r, local = FALSE)
+    options(replicate_shiny.local_r_loaded = TRUE)
+  }
+
+  options(replicate_shiny.deploy_config_loaded = TRUE)
+  invisible(TRUE)
+}
+
 #' Write deploy-options.R for a Shiny deploy directory
 #'
-#' Sets \code{options(replicate_shiny.live_run = ...)} when the deployed
-#' \code{app.R} starts (always overwritten on deploy, like \code{BUNDLE_SHA}).
+#' Sets \code{options(replicate_shiny.live_run = ...)} and feedback logging
+#' when the deployed \code{app.R} starts (always overwritten on deploy, like
+#' \code{BUNDLE_SHA}). \code{local.R} is sourced afterward and may override.
 #'
 #' @param dest Deploy directory.
 #' @param live_run If \code{TRUE}, enable Live Run; if \code{FALSE}, display-only.
-#' @return Invisibly, \code{live_run}.
+#' @param feedback_enabled If \code{TRUE}, enable server-side feedback CSV logging.
+#' @param feedback_file Relative or absolute feedback CSV path.
+#' @return Invisibly, a list with \code{live_run}, \code{feedback_enabled}, and
+#'   \code{feedback_file}.
 #' @keywords internal
-write_shiny_deploy_options <- function(dest, live_run = TRUE) {
+write_shiny_deploy_options <- function(
+  dest,
+  live_run = TRUE,
+  feedback_enabled = TRUE,
+  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE,
+  package = "replicateEverything"
+) {
   dest <- resolve_shiny_deploy_dest(dest)
-  line <- sprintf(
-    "options(replicate_shiny.live_run = %s)",
-    if (isTRUE(live_run)) "TRUE" else "FALSE"
+  feedback_file <- as.character(feedback_file[[1L]] %||% feedback_file)
+  if (!nzchar(feedback_file)) {
+    feedback_file <- SHINY_FEEDBACK_DEFAULT_FILE
+  }
+
+  pkg_info <- package_build_info(package)
+  lib_path <- package_library_path(package)
+  stamp <- c(
+    sprintf("# Deploy stamp: %s %s (pkg %s)", package, pkg_info$version, pkg_info$sha %||% "?"),
+    sprintf("# Installed from: %s", if (nzchar(lib_path)) lib_path else "(unknown)"),
+    sprintf(
+      "# Written by save_local_shiny() at %s",
+      format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")
+    ),
+    "# deploy-options.R is sourced before local.R; local.R may override these options.",
+    ""
   )
-  writeLines(line, file.path(dest, "deploy-options.R"), useBytes = TRUE)
-  invisible(isTRUE(live_run))
+
+  lines <- c(
+    stamp,
+    sprintf(
+      "options(replicate_shiny.live_run = %s)",
+      if (isTRUE(live_run)) "TRUE" else "FALSE"
+    ),
+    sprintf(
+      "options(replicate_shiny.feedback_enabled = %s)",
+      if (isTRUE(feedback_enabled)) "TRUE" else "FALSE"
+    ),
+    sprintf(
+      "options(replicate_shiny.feedback_file = %s)",
+      encodeString(feedback_file, quote = '"')
+    ),
+    sprintf(
+      "options(replicate_shiny.deploy_pkg_version = %s)",
+      encodeString(pkg_info$version, quote = '"')
+    ),
+    sprintf(
+      "options(replicate_shiny.deploy_pkg_sha = %s)",
+      encodeString(pkg_info$sha %||% "", quote = '"')
+    ),
+    sprintf(
+      "options(replicate_shiny.deploy_lib = %s)",
+      encodeString(lib_path, quote = '"')
+    )
+  )
+  writeLines(lines, file.path(dest, "deploy-options.R"), useBytes = TRUE)
+  invisible(list(
+    live_run = isTRUE(live_run),
+    feedback_enabled = isTRUE(feedback_enabled),
+    feedback_file = feedback_file,
+    pkg_version = pkg_info$version,
+    pkg_sha = pkg_info$sha,
+    deploy_lib = lib_path
+  ))
 }
 
 #' Parse a Shiny URL query string
@@ -165,6 +254,10 @@ parse_shiny_deep_link_from_search <- function(url_search) {
 #' @param overwrite If `TRUE`, replace existing app files except `local.R`.
 #' @param live_run If `TRUE` (default), deployed app shows Live Run controls;
 #'   if `FALSE`, writes `deploy-options.R` for a display-only deployment.
+#' @param feedback_enabled If `TRUE` (default), `deploy-options.R` enables
+#'   server-side feedback CSV logging at `feedback_file`.
+#' @param feedback_file Relative or absolute path for the feedback CSV
+#'   (default `data/feedback.csv`, relative to the deploy directory).
 #' @return Invisibly, normalized `dest`.
 #' @export
 #' @examples
@@ -177,7 +270,9 @@ save_local_shiny <- function(
   dest = getwd(),
   package = "replicateEverything",
   overwrite = TRUE,
-  live_run = TRUE
+  live_run = TRUE,
+  feedback_enabled = TRUE,
+  feedback_file = "data/feedback.csv"
 ) {
   src <- shiny_app_dir(package)
   if (!nzchar(src) || !dir.exists(src)) {
@@ -230,12 +325,19 @@ save_local_shiny <- function(
   }
 
   bundle_sha <- write_shiny_bundle_sha(dest, package = package)
-  write_shiny_deploy_options(dest, live_run = live_run)
+  write_shiny_deploy_options(
+    dest,
+    live_run = live_run,
+    feedback_enabled = feedback_enabled,
+    feedback_file = feedback_file,
+    package = package
+  )
   mode_label <- if (isTRUE(live_run)) "live run" else "display-only"
   message(
     "Shiny app written to ", dest,
     " (BUNDLE_SHA=", bundle_sha, ", ", mode_label, "). ",
-    "Restart Shiny workers after deploy."
+    "Restart Shiny workers after deploy. ",
+    "Verify with package_deploy_diagnostics(\"", dest, "\")."
   )
   invisible(dest)
 }
@@ -283,6 +385,14 @@ run_shiny_app <- function(...) {
         )
       }
     )
+  }
+
+  # When launched from a saved deploy copy, load deploy-options.R then local.R
+  # before app.R starts (same order as Shiny Server sourcing app.R).
+  if (!identical(normalizePath(launch_wd, winslash = "/"), normalizePath(app_dir, winslash = "/"))) {
+    source_shiny_deploy_config(launch_wd)
+  } else {
+    source_shiny_deploy_config(app_dir)
   }
 
   options(replicate_shiny.auto_update_replicate_everything = FALSE)

@@ -1,3 +1,12 @@
+# replicateEverything 0.6.2
+
+## Shiny feedback and deploy config
+
+* **Feedback tab** — server-side CSV logging (`data/feedback.csv` by default), GitHub issue links, sanitization, and cooldown. Helpers live in `R/shiny_feedback.R`.
+* **Deploy config** — `save_local_shiny()` writes `deploy-options.R` with `replicate_shiny.live_run`, `replicate_shiny.feedback_enabled`, and `replicate_shiny.feedback_file`. Startup order is always `deploy-options.R` then `local.R` (manual `run_shiny_app()` and Shiny Server/proxy sessions).
+* **Path resolution** — feedback CSV paths resolve against `replicate_shiny.app_dir` / `SHINY_APP_DIR`, not `getwd()` when they differ.
+* **Feedback tab footer** — when logging is enabled, shows the resolved CSV path for debugging.
+
 # replicateEverything 0.6.1
 
 ## Maintainer helpers and Shiny polish

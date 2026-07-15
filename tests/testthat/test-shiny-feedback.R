@@ -147,3 +147,64 @@ test_that("append_shiny_feedback_log appends rows without repeating header", {
   expect_length(lines, 3L)
   expect_equal(lines[[1L]], "timestamp,category,email,text")
 })
+
+test_that("shiny_feedback_file_path resolves relative to replicate_shiny.app_dir", {
+  app_root <- tempfile("shiny-appdir-")
+  dir.create(app_root)
+  on.exit(unlink(app_root, recursive = TRUE), add = TRUE)
+
+  session_wd <- tempfile("shiny-session-wd-")
+  dir.create(session_wd)
+  on.exit(unlink(session_wd, recursive = TRUE), add = TRUE)
+
+  withr::local_dir(session_wd)
+  withr::local_options(list(
+    replicate_shiny.app_dir = app_root,
+    replicate_shiny.feedback_file = "data/feedback.csv"
+  ))
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_FILE = ""))
+
+  expect_equal(
+    normalizePath(shiny_feedback_file_path(), winslash = "/", mustWork = FALSE),
+    normalizePath(file.path(app_root, "data", "feedback.csv"), winslash = "/", mustWork = FALSE)
+  )
+})
+
+test_that("source_shiny_deploy_config loads deploy-options.R before local.R overrides", {
+  dest <- tempfile("shiny-deploy-config-")
+  dir.create(dest)
+  on.exit(unlink(dest, recursive = TRUE), add = TRUE)
+
+  writeLines(
+    c(
+      "options(replicate_shiny.feedback_enabled = TRUE)",
+      "options(replicate_shiny.feedback_file = \"data/feedback.csv\")"
+    ),
+    file.path(dest, "deploy-options.R"),
+    useBytes = TRUE
+  )
+  writeLines(
+    "options(replicate_shiny.feedback_enabled = FALSE)",
+    file.path(dest, "local.R"),
+    useBytes = TRUE
+  )
+
+  withr::local_options(list(
+    replicate_shiny.feedback_enabled = NULL,
+    replicate_shiny.feedback_file = NULL,
+    replicate_shiny.local_r_loaded = NULL,
+    replicate_shiny.deploy_config_loaded = NULL,
+    replicate_shiny.app_dir = NULL
+  ))
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK_ENABLED = ""))
+
+  source_shiny_deploy_config(dest)
+
+  expect_false(shiny_feedback_log_enabled())
+  expect_true(isTRUE(getOption("replicate_shiny.local_r_loaded")))
+  expect_true(isTRUE(getOption("replicate_shiny.deploy_config_loaded")))
+  expect_equal(
+    normalizePath(getOption("replicate_shiny.app_dir"), winslash = "/", mustWork = FALSE),
+    normalizePath(dest, winslash = "/", mustWork = FALSE)
+  )
+})

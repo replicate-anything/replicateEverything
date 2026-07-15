@@ -1,19 +1,17 @@
 # Copy to local.R (gitignored) for local development or server overrides.
 # save_local_shiny() never overwrites an existing local.R.
+#
+# Startup order (manual run_shiny_app() and Shiny Server are the same):
+#   1. deploy-options.R  — written by save_local_shiny() (live run + feedback defaults)
+#   2. local.R             — your overrides (this file on the server)
 
 # --- Display-only vs Live Run ---
 # save_local_shiny(dest, live_run = FALSE) writes deploy-options.R (display-only prod).
-# For local dev, override here (only when not using deploy-options from save_local_shiny):
+# Override here only when you need a different mode than deploy-options.R:
 # options(replicate_shiny.live_run = TRUE)
 
 # --- Monorepo development (sibling registry/ and rep-* study folders) ---
-# Option A: paths relative to the shiny app directory (monorepo layout)
-registry_root <- normalizePath("../registry", winslash = "/", mustWork = FALSE)
-package_root <- normalizePath("../replicateEverything", winslash = "/", mustWork = FALSE)
-packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
-
-# --- Monorepo development (sibling registry/ and rep-* study folders) ---
-# Option A: paths relative to the shiny app directory (monorepo layout)
+# Paths relative to the shiny app directory (monorepo layout):
 registry_root <- normalizePath("../registry", winslash = "/", mustWork = FALSE)
 package_root <- normalizePath("../replicateEverything", winslash = "/", mustWork = FALSE)
 packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
@@ -22,7 +20,7 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 # run_shiny_app() sets this automatically when launched from replicateEverything/.
 # Sys.setenv(REPLICATE_MONOREPO_ROOT = "c:/path/to/replicate_everything")
 
-# Study data on Shiny Server (relative to getwd() or study_data_root):
+# Study data on Shiny Server (relative to the app deploy directory):
 #   data/<study_folder>/<file>
 # <study_folder> must match replication.yml paper.study_folder, e.g.
 #   data/rep-10.1596-1813-9450-10626/ACS2017-2021_finalready.dta
@@ -38,15 +36,14 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 # Optional: show study root on the Code tab while debugging path resolution:
 # options(replicate_shiny.debug_code_viewer = TRUE)
 #
-# Optional: server-side feedback CSV (shiny2.wzb.eu only; off by default locally).
-# Relative path resolves against the Shiny app deploy directory (getwd()):
+# Server-side feedback CSV (enabled by default in deploy-options.R from save_local_shiny).
+# Relative path resolves against the app deploy directory (replicate_shiny.app_dir):
 #   <deploy_dir>/data/feedback.csv
+# Override here if needed:
+# options(replicate_shiny.feedback_enabled = TRUE)
+# options(replicate_shiny.feedback_file = "data/feedback.csv")
 # Sys.setenv(REPLICATE_SHINY_FEEDBACK_ENABLED = "1")
 # Sys.setenv(REPLICATE_SHINY_FEEDBACK_FILE = "data/feedback.csv")
-# options(
-#   replicate_shiny.feedback_enabled = TRUE,
-#   replicate_shiny.feedback_file = "data/feedback.csv"
-# )
 
 if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
   options(

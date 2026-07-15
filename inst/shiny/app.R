@@ -145,8 +145,7 @@ shiny_configure_monorepo_study_folders <- function(monorepo = NULL) {
 #' Use a sibling registry/ package when developing in the monorepo;
 #' otherwise fall back to GitHub (production default).
 configure_registry_source <- function() {
-  if (file.exists("local.R")) {
-    source("local.R", local = FALSE)
+  if (isTRUE(getOption("replicate_shiny.local_r_loaded", FALSE))) {
     return(invisible(TRUE))
   }
 
@@ -184,9 +183,14 @@ configure_registry_source <- function() {
   invisible(TRUE)
 }
 
-configure_registry_source()
-
-shiny_startup_deploy_dir <- function() {
+shiny_runtime_app_dir <- function() {
+  opt <- getOption("replicate_shiny.app_dir", NULL)
+  if (!is.null(opt) && length(opt) == 1L && !is.na(opt)) {
+    opt <- as.character(opt)
+    if (nzchar(opt) && dir.exists(opt)) {
+      return(normalizePath(opt, winslash = "/", mustWork = FALSE))
+    }
+  }
   app_env <- Sys.getenv("SHINY_APP_DIR", unset = "")
   if (length(app_env) == 1L && nzchar(app_env) && dir.exists(app_env)) {
     return(normalizePath(app_env, winslash = "/", mustWork = FALSE))
@@ -194,10 +198,25 @@ shiny_startup_deploy_dir <- function() {
   normalizePath(getwd(), winslash = "/", mustWork = FALSE)
 }
 
-deploy_options_path <- file.path(shiny_startup_deploy_dir(), "deploy-options.R")
-if (file.exists(deploy_options_path)) {
-  source(deploy_options_path, local = FALSE)
+if (!isTRUE(getOption("replicate_shiny.deploy_config_loaded", FALSE))) {
+  shiny_deploy_config_dir <- shiny_runtime_app_dir()
+  options(replicate_shiny.app_dir = shiny_deploy_config_dir)
+
+  deploy_options_path <- file.path(shiny_deploy_config_dir, "deploy-options.R")
+  if (file.exists(deploy_options_path)) {
+    source(deploy_options_path, local = FALSE)
+  }
+
+  local_r_path <- file.path(shiny_deploy_config_dir, "local.R")
+  if (file.exists(local_r_path)) {
+    source(local_r_path, local = FALSE)
+    options(replicate_shiny.local_r_loaded = TRUE)
+  }
+
+  options(replicate_shiny.deploy_config_loaded = TRUE)
 }
+
+configure_registry_source()
 
 shiny_live_run_enabled <- function() {
   isTRUE(getOption("replicate_shiny.live_run", TRUE))
@@ -333,11 +352,7 @@ read_build_sha_file <- function(path) {
 }
 
 shiny_deploy_dir <- function() {
-  app_env <- Sys.getenv("SHINY_APP_DIR", unset = "")
-  if (length(app_env) == 1L && nzchar(app_env) && dir.exists(app_env)) {
-    return(normalizePath(app_env, winslash = "/", mustWork = FALSE))
-  }
-  normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  shiny_runtime_app_dir()
 }
 
 shiny_app_bundle_sha <- function() {
@@ -388,6 +403,16 @@ replicate_everything_build_info <- function() {
   git <- git_head_info(source_root)
   package_sha <- package_build_sha()
   app_sha <- shiny_app_bundle_sha()
+  library_path <- tryCatch(
+    normalizePath(system.file(package = "replicateEverything"), winslash = "/", mustWork = FALSE),
+    error = function(e) ""
+  )
+  deploy_lib <- getOption("replicate_shiny.deploy_lib", NULL)
+  deploy_lib <- if (!is.null(deploy_lib) && length(deploy_lib) == 1L) {
+    as.character(deploy_lib)
+  } else {
+    ""
+  }
   list(
     version = version,
     package_sha = package_sha,
@@ -398,6 +423,13 @@ replicate_everything_build_info <- function() {
     local_dev = using_local_replicate_everything(),
     source_root = source_root,
     git_root = git$repo_root,
+    library_path = library_path,
+    deploy_lib = deploy_lib,
+    deploy_lib_stale = isTRUE(
+      nzchar(deploy_lib) &&
+        nzchar(library_path) &&
+        !identical(normalizePath(deploy_lib, winslash = "/", mustWork = FALSE), library_path)
+    ),
     app_stale = isTRUE(
       nzchar(app_sha %||% "") &&
         nzchar(package_sha %||% "") &&
@@ -418,6 +450,9 @@ replicate_everything_build_label <- function() {
   }
   if (nzchar(info$app_sha %||% "")) {
     parts <- c(parts, paste0("app ", info$app_sha))
+  }
+  if (nzchar(info$library_path %||% "")) {
+    parts <- c(parts, paste0("lib ", info$library_path))
   }
   if (!is.null(info$branch) && nzchar(info$branch) && !identical(info$branch, "HEAD")) {
     parts <- c(parts, info$branch)
@@ -458,11 +493,18 @@ shiny_display_only_banner_ui <- function() {
 }
 
 app_build_footer_ui <- function() {
+  info <- replicate_everything_build_info()
   tags$footer(
     class = "app-footer text-muted small px-3 py-2 border-top",
     tags$div(
       class = "d-flex flex-wrap justify-content-between gap-2",
-      tags$span(replicate_everything_build_label())
+      tags$span(replicate_everything_build_label()),
+      if (isTRUE(info$deploy_lib_stale)) {
+        tags$span(
+          class = "text-warning",
+          "deploy lib differs from loaded package"
+        )
+      }
     )
   )
 }
@@ -3584,12 +3626,32 @@ contribute_tab_ui <- function() {
   )
 }
 
+feedback_pkg_fn_aliases <- function(name) {
+  switch(
+    name,
+    shiny_feedback_github_category_url = "shiny_feedback_category_url",
+    shiny_feedback_category_url = "shiny_feedback_github_category_url",
+    character(0)
+  )
+}
+
 feedback_pkg_fn <- function(name) {
   if (!requireNamespace("replicateEverything", quietly = TRUE)) {
     stop("replicateEverything is not installed.", call. = FALSE)
   }
   ns <- asNamespace("replicateEverything")
-  if (!exists(name, envir = ns, inherits = FALSE)) {
+  resolve <- function(nm) {
+    if (exists(nm, envir = ns, inherits = FALSE)) {
+      return(get(nm, envir = ns, inherits = FALSE))
+    }
+    alias <- feedback_pkg_fn_aliases(nm)
+    if (length(alias) == 1L && nzchar(alias) && exists(alias, envir = ns, inherits = FALSE)) {
+      return(get(alias, envir = ns, inherits = FALSE))
+    }
+    NULL
+  }
+  fn <- resolve(name)
+  if (is.null(fn)) {
     pkg_ver <- tryCatch(
       as.character(utils::packageVersion("replicateEverything")),
       error = function(e) "unknown"
@@ -3603,7 +3665,7 @@ feedback_pkg_fn <- function(name) {
       call. = FALSE
     )
   }
-  get(name, envir = ns, inherits = FALSE)
+  fn
 }
 
 feedback_tab_ui <- function() {
@@ -3689,7 +3751,8 @@ feedback_tab_ui <- function() {
       placeholder = "you@example.org"
     ),
     actionButton("feedback_submit", "Submit feedback", class = "btn-primary"),
-    uiOutput("feedback_status_ui")
+    uiOutput("feedback_status_ui"),
+    uiOutput("feedback_log_hint_ui")
   )
 }
 
@@ -6489,6 +6552,29 @@ server <- function(input, output, session) {
       "alert alert-info mt-3"
     )
     tags$div(class = cls, htmltools::htmlEscape(msg))
+  })
+
+  output$feedback_log_hint_ui <- renderUI({
+    enabled <- tryCatch(
+      feedback_pkg_fn("shiny_feedback_log_enabled")(),
+      error = function(e) FALSE
+    )
+    if (!isTRUE(enabled)) {
+      return(NULL)
+    }
+    path <- tryCatch(
+      feedback_pkg_fn("shiny_feedback_file_path")(),
+      error = function(e) NULL
+    )
+    if (is.null(path) || !length(path) || !nzchar(path)) {
+      return(NULL)
+    }
+    tags$p(
+      class = "text-muted small mt-3 mb-0",
+      "Feedback is logged on this server at ",
+      tags$code(htmltools::htmlEscape(path)),
+      "."
+    )
   })
 
   observeEvent(input$feedback_submit, {
