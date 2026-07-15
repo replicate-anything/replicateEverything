@@ -1,5 +1,108 @@
 # Changelog
 
+## replicateEverything 0.6.4
+
+### Audit runtime categories and Shiny Run advice
+
+- \[audit_everything()\] records `runtime_category` (`short` / `medium`
+  / `slow`) from elapsed seconds (thresholds: \<30s, \<5min, else slow).
+- Shiny **Run** uses the registry `audit_latest.rds` snapshot when
+  available: button tooltips and the live-run progress message advise
+  expected time.
+
+### Table/figure code display path
+
+- Shiny Code tab annotates entry scripts with upstream prep/input notes
+  and, when missing, an expected `make_*()` → format path.
+- \[check_replication()\] flags R table/figure scripts that define
+  `make_*` but never call it (scripts should show the executable
+  replication path, not only helpers).
+
+### Re-enable Shiny feedback via baked deploy options
+
+- \[save_local_shiny()\] defaults to `feedback_enabled = TRUE` and bakes
+  `live_run` / feedback into `deploy-options.R` **and** a marker block
+  in the materialized `app.R` (no `local.R` required).
+- \[run_shiny_app()\] keeps feedback off for interactive use; Live Run
+  remains available.
+- In-app form follows `feedback_enabled` when `feedback_in_app_enabled`
+  is unset. See `inst/shiny/FEEDBACK_TODO.md`.
+
+## replicateEverything 0.6.3
+
+### Shiny feedback — safe mode for stale workers
+
+- **Feedback tab** no longer crashes when Shiny workers hold a stale
+  package namespace (e.g. missing `shiny_feedback_github_category_url`
+  on 0.6.2 workers). GitHub issue links use hardcoded fallbacks.
+- **In-app feedback form** (text box + submit) disabled by default;
+  enable with `options(replicate_shiny.feedback_in_app_enabled = TRUE)`
+  once workers reload reliably.
+- **Defaults** —
+  [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+  and
+  [`write_shiny_deploy_options()`](https://replicate-anything.github.io/replicateEverything/reference/write_shiny_deploy_options.md)
+  now set `feedback_enabled = FALSE`; CSV logging requires an explicit
+  opt-in.
+- See `inst/shiny/FEEDBACK_TODO.md` for re-enable steps.
+
+## replicateEverything 0.6.2
+
+### Shiny feedback and deploy config
+
+- **Feedback tab** — server-side CSV logging (`data/feedback.csv` by
+  default), GitHub issue links, sanitization, and cooldown. Helpers live
+  in `R/shiny_feedback.R`.
+- **Deploy config** —
+  [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+  writes `deploy-options.R` with `replicate_shiny.live_run`,
+  `replicate_shiny.feedback_enabled`, and
+  `replicate_shiny.feedback_file`. Startup order is always
+  `deploy-options.R` then `local.R` (manual
+  [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+  and Shiny Server/proxy sessions).
+- **Path resolution** — feedback CSV paths resolve against
+  `replicate_shiny.app_dir` / `SHINY_APP_DIR`, not
+  [`getwd()`](https://rdrr.io/r/base/getwd.html) when they differ.
+- **Feedback tab footer** — when logging is enabled, shows the resolved
+  CSV path for debugging.
+- **\[package_deploy_diagnostics()\]** — prints installed package
+  version, library path,
+  [`.libPaths()`](https://rdrr.io/r/base/libPaths.html), deploy
+  `BUNDLE_SHA`, and whether key functions exist; use on the Shiny host
+  before/after
+  [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md).
+- **Deploy stamp** — `deploy-options.R` records package version, SHA,
+  and install path at deploy time; Shiny footer shows loaded `lib` path
+  and warns when deploy stamp differs from runtime library.
+
+## replicateEverything 0.6.1
+
+### Maintainer helpers and Shiny polish
+
+- **\[build_outputs()\]** — registry-wide or single-study batch build of
+  precomputed table/figure outputs (`doi = "everywhere"`, `location`,
+  `only_missing`, `force_prep`). Mirrors \[validate_outputs()\]
+  dispatch.
+- **\[validate_outputs()\]** — exported maintainer check that declared
+  outputs exist on disk without running live replications.
+- **Code links** — `R/code_links.R` resolves `code:` file references in
+  replication scripts; Shiny code viewer renders clickable links;
+  \[check_replication()\] runs
+  **[`check_code_links()`](https://replicate-anything.github.io/replicateEverything/reference/check_code_links.md)**
+  and reports broken links.
+- **Author display** — `R/author_display.R` parses comma-separated
+  author lists and formats study labels
+  ([`format_author_label()`](https://replicate-anything.github.io/replicateEverything/reference/format_author_label.md),
+  [`format_authors_summary()`](https://replicate-anything.github.io/replicateEverything/reference/format_authors_summary.md))
+  for Shiny dropdowns and details.
+- **Dataverse prep display** — prep steps that fetch a deposit show a
+  structured summary in Shiny when no HTML artifact exists
+  ([`load_prep_step_display()`](https://replicate-anything.github.io/replicateEverything/reference/load_prep_step_display.md)).
+- **Server path fixes** — code-link resolution tolerates materialized
+  study caches and Shiny reactive state; paths outside the study root
+  are flagged instead of breaking the viewer.
+
 ## replicateEverything 0.6.0
 
 ### Public API cleanup

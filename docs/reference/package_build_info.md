@@ -1,10 +1,9 @@
 # Package version and build identity
 
-Uses `RemoteSha` from
+`sha` / `bundled_sha` come from the bundled `inst/shiny/BUNDLE_SHA`
+stamp (used for deploy matching). `remote_sha` records `RemoteSha` from
 [`packageDescription()`](https://rdrr.io/r/utils/packageDescription.html)
-when installed via
-[`remotes::install_github()`](https://remotes.r-lib.org/reference/install_github.html),
-otherwise the bundled `inst/shiny/BUNDLE_SHA` stamp.
+when installed via GitHub (`remotes`, etc.).
 
 ## Usage
 
@@ -20,4 +19,4 @@ package_build_info(package = "replicateEverything")
 
 ## Value
 
-List with `version`, `sha`, and `source`.
+List with `version`, `sha`, `bundled_sha`, `remote_sha`, and `source`.

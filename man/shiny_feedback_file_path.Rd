@@ -10,7 +10,8 @@ shiny_feedback_file_path()
 Normalized absolute file path.
 }
 \description{
-Relative paths are resolved against \code{getwd()} (the Shiny app deploy
-directory on shiny2.wzb.eu, e.g. \code{.../ipi/replicate/data/feedback.csv}).
+Relative paths are resolved against \code{\link[=shiny_deploy_dir]{shiny_deploy_dir()}} (the Shiny app
+deploy directory on shiny2.wzb.eu, e.g. \code{.../ipi/replicate/data/feedback.csv}),
+not the process working directory when they differ.
 }
 \keyword{internal}

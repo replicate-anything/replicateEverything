@@ -1,8 +1,7 @@
 # Extract the surname from a single author name
 
-Handles middle initials (e.g. “Robert A. Blair” \\\rightarrow\\ Blair)
-and compound surnames (e.g. “Andrés Vargas Castillo” \\\rightarrow\\
-Vargas Castillo).
+Handles "Last, First", middle initials (e.g. “Robert A. Blair”), and
+compound surnames (e.g. “Andrés Vargas Castillo”).
 
 ## Usage
 

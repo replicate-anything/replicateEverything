@@ -2,8 +2,10 @@
 
 Launches the demo from `inst/shiny` inside the installed package. Does
 not auto-update `replicateEverything` from GitHub (the running session
-already uses the installed package). A live instance is hosted at
-<https://shiny2.wzb.eu/ipi/replicate/>.
+already uses the installed package). Interactive defaults: Live Run
+available; feedback form off. For server deploys with feedback on, use
+[`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md).
+A live instance is hosted at <https://shiny2.wzb.eu/ipi/replicate/>.
 
 ## Usage
 

@@ -10,10 +10,11 @@ package_build_info(package = "replicateEverything")
 \item{package}{Package name.}
 }
 \value{
-List with \code{version}, \code{sha}, and \code{source}.
+List with \code{version}, \code{sha}, \code{bundled_sha}, \code{remote_sha},
+and \code{source}.
 }
 \description{
-Uses \code{RemoteSha} from \code{packageDescription()} when installed via
-\code{remotes::install_github()}, otherwise the bundled
-\code{inst/shiny/BUNDLE_SHA} stamp.
+\code{sha} / \code{bundled_sha} come from the bundled \code{inst/shiny/BUNDLE_SHA}
+stamp (used for deploy matching). \code{remote_sha} records \code{RemoteSha}
+from \code{packageDescription()} when installed via GitHub (\code{remotes}, etc.).
 }

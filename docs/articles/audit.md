@@ -105,14 +105,14 @@ results <- audit$results
 
 | Metric                        |            Value |
 |:------------------------------|-----------------:|
-| Patience (seconds per object) |               20 |
-| Studies audited               |                1 |
-| Replication runs              |                1 |
-| Successful                    |                1 |
+| Patience (seconds per object) |              120 |
+| Studies audited               |               11 |
+| Replication runs              |               79 |
+| Successful                    |               79 |
 | Failed                        |                0 |
 | Timed out                     |                0 |
-| Audit started                 | 2026-07-01 12:00 |
-| Audit finished                | 2026-07-01 12:05 |
+| Audit started                 | 2026-07-15 21:41 |
+| Audit finished                | 2026-07-15 21:45 |
 
 ``` r
 
@@ -145,11 +145,139 @@ for (study in studies) {
 }
 ```
 
-#### Example study
+#### Beyond Belief Change: The Persuasive Returns of Targeting Attitude-Relevant Beliefs
+
+| Object  | ID    | Engine | Status | Seconds | Error |
+|:--------|:------|:-------|:-------|--------:|:------|
+| Table 1 | tab_1 | r      | OK     |   18.82 |       |
+| Table 3 | tab_3 | r      | OK     |    4.91 |       |
+
+#### Bounding Causes of Effects With Mediators
 
 | Object   | ID    | Engine | Status | Seconds | Error |
 |:---------|:------|:-------|:-------|--------:|:------|
-| Figure 1 | fig_1 | r      | OK     |     1.2 |       |
+| Figure 1 | fig_1 | r      | OK     |    0.22 |       |
+
+#### COVID-19 vaccine acceptance and hesitancy in low- and middle-income countries
+
+| Object | ID | Engine | Status | Seconds | Error |
+|:---|:---|:---|:---|---:|:---|
+| Acceptance Rates (disaggregated by group) | fig_1 | r | OK | 1.03 |  |
+| Robustness check using leave-m-out approach | fig_2 | r | OK | 0.25 |  |
+| Reason not to take vaccine | fig_3 | r | OK | 0.36 |  |
+| Trust | fig_4 | r | OK | 9.13 |  |
+| Trust by acceptance | fig_5 | r | OK | 9.81 |  |
+| Trust by gender | fig_6 | r | OK | 10.07 |  |
+| Vaccine Data from WGM, WHO | tab_1 | r | OK | 0.32 |  |
+| Summary of Studies’ Sampling | tab_2 | r | OK | 0.16 |  |
+| Differences in Means | tab_3 | r | OK | 1.24 |  |
+| Difference in Means (by study) | tab_4 | r | OK | 2.54 |  |
+| Differences between groups within studies (Summary) | tab_5 | r | OK | 2.39 |  |
+| Reason to take | tab_6 | r | OK | 2.25 |  |
+| Reason to take the vaccine. All categories. | tab_7 | r | OK | 4.74 |  |
+| Reason to take the vaccine: by age. | tab_8 | r | OK | 2.72 |  |
+| Reason not to take the vaccine | tab_9 | r | OK | 4.89 |  |
+| Vaccination Decision-making: most trusted source. | tab_10 | r | OK | 10.31 |  |
+| Summary Stats | tab_11 | r | OK | 8.31 |  |
+
+#### Ethnicity, Insurgency, and Civil War
+
+| Object  | ID          | Engine | Status | Seconds | Error |
+|:--------|:------------|:-------|:-------|--------:|:------|
+| Table 1 | tab_1       | r      | OK     |    0.89 |       |
+| Table 1 | tab_1_stata | stata  | OK     |    5.80 |       |
+
+#### Illustration of re-analysis repo
+
+| Object  | ID    | Engine | Status | Seconds | Error |
+|:--------|:------|:-------|:-------|--------:|:------|
+| Table 1 | tab_1 | r      | OK     |    0.25 |       |
+
+#### Migration, Families, and Counterfactual Families
+
+| Object   | ID    | Engine | Status | Seconds | Error |
+|:---------|:------|:-------|:-------|--------:|:------|
+| Table 1  | tab_1 | stata  | OK     |   20.47 |       |
+| Figure 1 | fig_1 | stata  | OK     |   14.42 |       |
+
+#### Portraits of Power: Facial Appearance and the Tacit Domain of Political Selection in China
+
+| Object   | ID    | Engine | Status | Seconds | Error |
+|:---------|:------|:-------|:-------|--------:|:------|
+| Table 1  | tab_1 | stata  | OK     |    7.42 |       |
+| Table 2  | tab_2 | stata  | OK     |    7.47 |       |
+| Table 3  | tab_3 | stata  | OK     |    6.97 |       |
+| Figure 2 | fig_2 | python | OK     |   30.04 |       |
+| Figure 4 | fig_4 | r      | OK     |    3.45 |       |
+| Figure 5 | fig_5 | r      | OK     |    2.58 |       |
+
+#### Preventing Rebel Resurgence after Civil War: A Field Experiment in Security and Justice Provision in Rural Colombia
+
+| Object  | ID    | Engine | Status | Seconds | Error |
+|:--------|:------|:-------|:-------|--------:|:------|
+| Table 1 | tab_1 | stata  | OK     |    3.69 |       |
+
+#### Public support for global vaccine sharing in the COVID-19 pandemic: Evidence from Germany
+
+| Object   | ID    | Engine | Status | Seconds | Error |
+|:---------|:------|:-------|:-------|--------:|:------|
+| Figure 1 | fig_1 | r      | OK     |    6.23 |       |
+| Figure 2 | fig_2 | r      | OK     |    9.16 |       |
+| Figure 3 | fig_3 | r      | OK     |    1.57 |       |
+| Figure 4 | fig_4 | r      | OK     |    1.48 |       |
+| Figure 5 | fig_5 | r      | OK     |    2.07 |       |
+| Figure 6 | fig_6 | r      | OK     |    2.95 |       |
+| Figure 7 | fig_7 | r      | OK     |    4.87 |       |
+| Figure 8 | fig_8 | r      | OK     |    5.31 |       |
+| Table 2  | tab_2 | r      | OK     |    4.96 |       |
+| Table 1  | tab_1 | r      | OK     |    3.98 |       |
+
+#### Selection and Incentives in Local Service Provision: Theory and Evidence from Sierra Leone
+
+| Object | ID | Engine | Status | Seconds | Error |
+|:---|:---|:---|:---|---:|:---|
+| Components of performance outcome variable | fig_1 | r | OK | 0.45 |  |
+| Components of quality / surveillance outcome variable | fig_2 | r | OK | 0.25 |  |
+| Results Service Provider Quality Period 2 (post) | tab_1 | r | OK | 0.18 |  |
+| Results Service Provider Quality Period 1 (pre) | tab_2 | r | OK | 0.17 |  |
+| Results Service Provider Quality (Average) | tab_3 | r | OK | 0.16 |  |
+| Results Service Provider Performance (Effort, Period 2) | tab_4 | r | OK | 0.17 |  |
+| Results Service Provider Performance (Effort, Period 1) | tab_5 | r | OK | 0.16 |  |
+| Results Service Provider Performance (Effort, Average) | tab_6 | r | OK | 0.17 |  |
+| Structural Model: Posterior Distributions on Model parameters | fig_3 | r | OK | 0.21 |  |
+| Experiments: Expected CAHW Effort | fig_4 | r | OK | 0.20 |  |
+| Experiments: Posterior Probability that Bureaucratic Package Outperforms Community Package | fig_5 | r | OK | 0.19 |  |
+| Model-Based Estimates of Treatment Effects | fig_6 | r | OK | 0.21 |  |
+| Appendix: Performance Index components (without standardization) | fig_7 | r | OK | 0.20 |  |
+| Appendix: Variable Description and Summary Information | tab_a5 | r | OK | 0.11 |  |
+| Appendix: Manipulation checks | tab_a6 | r | OK | 0.19 |  |
+| Appendix: Manipulation checks, frequency reward CAHW | tab_8 | r | OK | 0.11 |  |
+| Appendix: Manipulation checks, frequency motivation CAHW | tab_9 | r | OK | 0.10 |  |
+| Appendix: Timeline | tab_10 | r | OK | 0.13 |  |
+| Appendix: Balance table | tab_11 | r | OK | 0.14 |  |
+| Appendix: Distribution CAHW Performance Index by Treatment Arm | fig_8 | r | OK | 0.25 |  |
+| Appendix: Results by CAHW Performance Index’s Subcomponents | tab_13 | r | OK | 0.16 |  |
+
+#### The Colonial Origins of Comparative Development
+
+| Object  | ID          | Engine | Status | Seconds | Error |
+|:--------|:------------|:-------|:-------|--------:|:------|
+| Table 1 | tab_1       | r      | OK     |    0.91 |       |
+| Table 1 | tab_1_stata | stata  | OK     |    1.11 |       |
+| Table 2 | tab_2       | r      | OK     |    0.17 |       |
+| Table 2 | tab_2_stata | stata  | OK     |    1.98 |       |
+| Table 3 | tab_3       | r      | OK     |    0.16 |       |
+| Table 3 | tab_3_stata | stata  | OK     |    2.09 |       |
+| Table 4 | tab_4       | r      | OK     |    0.27 |       |
+| Table 4 | tab_4_stata | stata  | OK     |    2.21 |       |
+| Table 5 | tab_5       | r      | OK     |    0.20 |       |
+| Table 5 | tab_5_stata | stata  | OK     |    2.22 |       |
+| Table 6 | tab_6       | r      | OK     |    0.23 |       |
+| Table 6 | tab_6_stata | stata  | OK     |    2.27 |       |
+| Table 7 | tab_7       | r      | OK     |    0.24 |       |
+| Table 7 | tab_7_stata | stata  | OK     |    2.33 |       |
+| Table 8 | tab_8       | r      | OK     |    0.38 |       |
+| Table 8 | tab_8_stata | stata  | OK     |    2.78 |       |
 
 ### Failures (concise)
 

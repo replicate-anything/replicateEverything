@@ -8,7 +8,9 @@ save_local_shiny(
   dest = getwd(),
   package = "replicateEverything",
   overwrite = TRUE,
-  live_run = TRUE
+  live_run = TRUE,
+  feedback_enabled = TRUE,
+  feedback_file = "data/feedback.csv"
 )
 }
 \arguments{
@@ -19,7 +21,14 @@ save_local_shiny(
 \item{overwrite}{If \code{TRUE}, replace existing app files except \code{local.R}.}
 
 \item{live_run}{If \code{TRUE} (default), deployed app shows Live Run controls;
-if \code{FALSE}, writes \code{deploy-options.R} for a display-only deployment.}
+if \code{FALSE}, display-only deployment.}
+
+\item{feedback_enabled}{If \code{TRUE} (default for server deploys), enable the
+in-app feedback form and CSV logging at \code{feedback_file}. Interactive
+\code{\link[=run_shiny_app]{run_shiny_app()}} leaves feedback off unless you set options yourself.}
+
+\item{feedback_file}{Relative or absolute path for the feedback CSV
+(default \code{data/feedback.csv}, relative to the deploy directory).}
 }
 \value{
 Invisibly, normalized \code{dest}.
@@ -29,10 +38,15 @@ Materializes \code{inst/shiny} from an installed \code{replicateEverything} buil
 \code{dest}, for Shiny Server and similar hosts that expect \code{app.R} (and \verb{www/})
 in a fixed folder. Existing \code{local.R} in \code{dest} is never overwritten.
 }
+\details{
+Deploy settings (\code{live_run}, feedback) are written to \code{deploy-options.R}
+and baked into the top of the materialized \code{app.R}. No \code{local.R}
+is required for those options.
+}
 \examples{
 \dontrun{
 # After install_github("replicate-anything/replicateEverything"):
-save_local_shiny("/srv/shiny/replicate")
-save_local_shiny("/srv/shiny/replicate", live_run = FALSE) # display-only
+save_local_shiny("/srv/shiny/replicate", live_run = FALSE, feedback_enabled = TRUE)
+save_local_shiny("/srv/shiny/replicate", live_run = TRUE) # feedback ON by default
 }
 }

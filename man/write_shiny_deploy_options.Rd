@@ -4,18 +4,32 @@
 \alias{write_shiny_deploy_options}
 \title{Write deploy-options.R for a Shiny deploy directory}
 \usage{
-write_shiny_deploy_options(dest, live_run = TRUE)
+write_shiny_deploy_options(
+  dest,
+  live_run = TRUE,
+  feedback_enabled = TRUE,
+  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE,
+  package = "replicateEverything"
+)
 }
 \arguments{
 \item{dest}{Deploy directory.}
 
 \item{live_run}{If \code{TRUE}, enable Live Run; if \code{FALSE}, display-only.}
+
+\item{feedback_enabled}{If \code{TRUE}, enable in-app feedback form and
+server-side CSV logging.}
+
+\item{feedback_file}{Relative or absolute feedback CSV path.}
 }
 \value{
-Invisibly, \code{live_run}.
+Invisibly, a list with \code{live_run}, \code{feedback_enabled}, and
+\code{feedback_file}.
 }
 \description{
-Sets \code{options(replicate_shiny.live_run = ...)} when the deployed
-\code{app.R} starts (always overwritten on deploy, like \code{BUNDLE_SHA}).
+Sets \code{options(replicate_shiny.live_run = ...)} and feedback options
+when the deployed \code{app.R} starts (always overwritten on deploy, like
+\code{BUNDLE_SHA}). Does \strong{not} require \code{local.R}; if present,
+\code{local.R} is sourced afterward and may override.
 }
 \keyword{internal}

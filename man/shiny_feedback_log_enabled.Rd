@@ -10,7 +10,7 @@ shiny_feedback_log_enabled()
 Logical scalar.
 }
 \description{
-Disabled by default for local use. Enable on shiny2.wzb.eu via
+Returns \code{FALSE} unless explicitly enabled via
 \code{REPLICATE_SHINY_FEEDBACK_ENABLED=1} or
 \code{options(replicate_shiny.feedback_enabled = TRUE)}.
 }

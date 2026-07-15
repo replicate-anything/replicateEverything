@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,11 +140,84 @@ Live Run while developing (see <code>local.R.example</code>).</p>
 <div class="section level3">
 <h3 id="server-update-workflow">Server update workflow<a class="anchor" aria-label="anchor" href="#server-update-workflow"></a>
 </h3>
+<p>On the <strong>Shiny host</strong>, use the same R library that Shiny
+Server / Connect loads (not necessarily your interactive SSH session).
+Typical causes of “old code” after <code>install_github()</code>:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Two-part deploy</strong> — <code>app.R</code> is copied to
+the deploy directory by <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code>, but
+<code>replicate_fn()</code> calls the <strong>installed</strong> package
+namespace. You must update <strong>both</strong> the library install and
+the deploy bundle.</li>
+<li>
+<strong>Different <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code></strong> — interactive R
+may install to <code>~/R/...</code> while Shiny runs as
+<code>shiny</code> or <code>rstudio-connect</code> with site library
+only.</li>
+<li>
+<strong>Shiny workers not restarted</strong> — long-lived R
+processes keep the old namespace loaded until the service is
+restarted.</li>
+<li>
+<strong><code>local.R</code> devtools::load_all</strong> — if a
+sibling monorepo checkout exists, <code>local.R</code> or auto-detection
+can shadow the installed package.</li>
+<li>
+<strong>Stale GitHub cache</strong> — use
+<code>remotes::install_github(..., force = TRUE)</code> or
+<code>upgrade = "always"</code> when in doubt.</li>
+</ol>
+<p><strong>Checklist</strong> (run on the Shiny server as the Shiny
+service user when possible):</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"replicate-anything/replicateEverything"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># 1. Install into the library Shiny actually uses</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span></span>
+<span>  <span class="st">"replicate-anything/replicateEverything"</span>,</span>
+<span>  upgrade <span class="op">=</span> <span class="st">"always"</span>,</span>
+<span>  force <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
-<p>Restart the app on your host if required.</p>
+<span></span>
+<span><span class="co"># 2. Verify the installed build before copying app.R</span></span>
+<span><span class="fu"><a href="../reference/package_deploy_diagnostics.html">package_deploy_diagnostics</a></span><span class="op">(</span><span class="op">)</span>  <span class="co"># or pass your deploy path explicitly</span></span>
+<span></span>
+<span><span class="co"># 3. Materialize app.R + www/ + BUNDLE_SHA + deploy-options.R</span></span>
+<span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 4. Confirm bundle matches package</span></span>
+<span><span class="fu"><a href="../reference/package_deploy_diagnostics.html">package_deploy_diagnostics</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Restart ALL Shiny processes</strong> after step 3 (systemd
+unit, <code>shiny-server</code>, Posit Connect publisher restart, etc.).
+Reloading the browser is not enough.</p>
+<p><strong>Verify in the browser footer:</strong></p>
+<ul>
+<li>
+<code>pkg</code> SHA — installed package (<code>RemoteSha</code> or
+bundled stamp)</li>
+<li>
+<code>app</code> SHA — <code>BUNDLE_SHA</code> written beside
+deployed <code>app.R</code> (must match <code>pkg</code>)</li>
+<li>
+<code>lib</code> — path from
+<code>system.file(package = "replicateEverything")</code>; if this
+differs from the path in <code>deploy-options.R</code>, the app was
+deployed from a different R session/library than the one serving
+requests</li>
+</ul>
+<p>A yellow banner appears when <code>app</code> and <code>pkg</code>
+SHAs differ.</p>
+</div>
+<div class="section level3">
+<h3 id="diagnose-from-r">Diagnose from R<a class="anchor" aria-label="anchor" href="#diagnose-from-r"></a>
+</h3>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">replicateEverything</span><span class="fu">::</span><span class="fu"><a href="../reference/package_deploy_diagnostics.html">package_deploy_diagnostics</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
+<p>This prints package version, library path, <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code>,
+deploy directory, <code>BUNDLE_SHA</code>, whether key functions exist
+(e.g. <code>shiny_feedback_github_category_url</code>), Live Run /
+feedback settings, and missing-function hints.</p>
 </div>
 <div class="section level3">
 <h3 id="display-artifacts">Display artifacts<a class="anchor" aria-label="anchor" href="#display-artifacts"></a>
@@ -162,7 +235,7 @@ package’s report outputs. Maintainers can verify those files exist with
 </h3>
 <p>On a shared server, create <code>local.R</code> once (from
 <code>local.R.example</code>):</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/registry"</span>,</span>
 <span>  replicate_shiny.auto_update_replicate_everything <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -171,6 +244,52 @@ package’s report outputs. Maintainers can verify those files exist with
 <p>If you rely on the public GitHub registry, you do not need a local
 <code>registry/</code> checkout; omit
 <code>replicateEverything.registry_root</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="deploy-checklist-shiny2-wzb-eu-subpath-hosts">Deploy checklist (shiny2.wzb.eu / subpath hosts)<a class="anchor" aria-label="anchor" href="#deploy-checklist-shiny2-wzb-eu-subpath-hosts"></a>
+</h3>
+<p>After <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code> and
+<code>remotes::install_github(...)</code>:</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Restart Shiny workers</strong> so the installed package and
+<code>app.R</code> reload together.</li>
+<li>
+<strong>Set the public mount URL</strong> in <code>local.R</code>
+(once):
+<code>Sys.setenv(REPLICATE_SHINY_BASE_URL = "https://shiny2.wzb.eu/ipi/replicate")</code>
+Share links and docs use this base; query params (<code>?doi=...</code>)
+are appended by the app.</li>
+<li>
+<strong>Preserve query strings on redirects.</strong> If
+<code>https://host/ipi/replicate?doi=...</code> redirects to
+<code>/ipi/replicate/</code> without <code>?doi=...</code>, fix the
+reverse proxy (nginx: use <code>$is_args$args</code> on trailing-slash
+redirects).</li>
+<li>
+<strong>Clear stale study cache</strong> when code-link fixes ship:
+<code>unlink(list.files(tools::R_user_dir("replicateEverything", "cache"), "study-repos", full.names = TRUE), recursive = TRUE)</code>
+Browser sessions materialize folder-backed studies under
+<code>.../study-repos/&lt;org_repo&gt;/&lt;ref&gt;/</code>; sibling
+monorepo checkouts (from <code>local.R</code>) take precedence when
+present.</li>
+<li>
+<strong>Optional code-viewer diagnostics:</strong>
+<code>options(replicate_shiny.debug_code_viewer = TRUE)</code> in
+<code>local.R</code> shows the study root used on the Code tab.</li>
+<li>
+<strong>Verify footer SHAs:</strong> <code>pkg</code> and
+<code>app</code> should match after deploy; mismatch means
+<code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code> was not re-run after
+<code>install_github()</code>.</li>
+<li>
+<strong>Verify footer <code>lib</code> path</strong> matches
+<code><a href="../reference/package_deploy_diagnostics.html">package_deploy_diagnostics()</a></code> on the server; if not, you
+updated a different R library than Shiny uses.</li>
+<li>
+<strong>Run diagnostics before and after deploy:</strong>
+<code>replicateEverything::package_deploy_diagnostics("&lt;deploy-dir&gt;")</code>.</li>
+</ol>
 </div>
 </div>
 <div class="section level2">

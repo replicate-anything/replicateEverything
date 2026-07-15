@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,74 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.4" id="replicateeverything-064">replicateEverything 0.6.4<a class="anchor" aria-label="anchor" href="#replicateeverything-064"></a></h2>
+<div class="section level3">
+<h3 id="audit-runtime-categories-and-shiny-run-advice-0-6-4">Audit runtime categories and Shiny Run advice<a class="anchor" aria-label="anchor" href="#audit-runtime-categories-and-shiny-run-advice-0-6-4"></a></h3>
+<ul><li>[audit_everything()] records <code>runtime_category</code> (<code>short</code> / <code>medium</code> / <code>slow</code>) from elapsed seconds (thresholds: &lt;30s, &lt;5min, else slow).</li>
+<li>Shiny <strong>Run</strong> uses the registry <code>audit_latest.rds</code> snapshot when available: button tooltips and the live-run progress message advise expected time.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tablefigure-code-display-path-0-6-4">Table/figure code display path<a class="anchor" aria-label="anchor" href="#tablefigure-code-display-path-0-6-4"></a></h3>
+<ul><li>Shiny Code tab annotates entry scripts with upstream prep/input notes and, when missing, an expected <code>make_*()</code> → format path.</li>
+<li>[check_replication()] flags R table/figure scripts that define <code>make_*</code> but never call it (scripts should show the executable replication path, not only helpers).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="re-enable-shiny-feedback-via-baked-deploy-options-0-6-4">Re-enable Shiny feedback via baked deploy options<a class="anchor" aria-label="anchor" href="#re-enable-shiny-feedback-via-baked-deploy-options-0-6-4"></a></h3>
+<ul><li>[save_local_shiny()] defaults to <code>feedback_enabled = TRUE</code> and bakes <code>live_run</code> / feedback into <code>deploy-options.R</code> <strong>and</strong> a marker block in the materialized <code>app.R</code> (no <code>local.R</code> required).</li>
+<li>[run_shiny_app()] keeps feedback off for interactive use; Live Run remains available.</li>
+<li>In-app form follows <code>feedback_enabled</code> when <code>feedback_in_app_enabled</code> is unset. See <code>inst/shiny/FEEDBACK_TODO.md</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.3" id="replicateeverything-063">replicateEverything 0.6.3<a class="anchor" aria-label="anchor" href="#replicateeverything-063"></a></h2>
+<div class="section level3">
+<h3 id="shiny-feedback--safe-mode-for-stale-workers-0-6-3">Shiny feedback — safe mode for stale workers<a class="anchor" aria-label="anchor" href="#shiny-feedback--safe-mode-for-stale-workers-0-6-3"></a></h3>
+<ul><li>
+<strong>Feedback tab</strong> no longer crashes when Shiny workers hold a stale package namespace (e.g. missing <code>shiny_feedback_github_category_url</code> on 0.6.2 workers). GitHub issue links use hardcoded fallbacks.</li>
+<li>
+<strong>In-app feedback form</strong> (text box + submit) disabled by default; enable with <code>options(replicate_shiny.feedback_in_app_enabled = TRUE)</code> once workers reload reliably.</li>
+<li>
+<strong>Defaults</strong> — <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code> and <code><a href="../reference/write_shiny_deploy_options.html">write_shiny_deploy_options()</a></code> now set <code>feedback_enabled = FALSE</code>; CSV logging requires an explicit opt-in.</li>
+<li>See <code>inst/shiny/FEEDBACK_TODO.md</code> for re-enable steps.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.2" id="replicateeverything-062">replicateEverything 0.6.2<a class="anchor" aria-label="anchor" href="#replicateeverything-062"></a></h2>
+<div class="section level3">
+<h3 id="shiny-feedback-and-deploy-config-0-6-2">Shiny feedback and deploy config<a class="anchor" aria-label="anchor" href="#shiny-feedback-and-deploy-config-0-6-2"></a></h3>
+<ul><li>
+<strong>Feedback tab</strong> — server-side CSV logging (<code>data/feedback.csv</code> by default), GitHub issue links, sanitization, and cooldown. Helpers live in <code>R/shiny_feedback.R</code>.</li>
+<li>
+<strong>Deploy config</strong> — <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code> writes <code>deploy-options.R</code> with <code>replicate_shiny.live_run</code>, <code>replicate_shiny.feedback_enabled</code>, and <code>replicate_shiny.feedback_file</code>. Startup order is always <code>deploy-options.R</code> then <code>local.R</code> (manual <code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code> and Shiny Server/proxy sessions).</li>
+<li>
+<strong>Path resolution</strong> — feedback CSV paths resolve against <code>replicate_shiny.app_dir</code> / <code>SHINY_APP_DIR</code>, not <code><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd()</a></code> when they differ.</li>
+<li>
+<strong>Feedback tab footer</strong> — when logging is enabled, shows the resolved CSV path for debugging.</li>
+<li>
+<strong>[package_deploy_diagnostics()]</strong> — prints installed package version, library path, <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code>, deploy <code>BUNDLE_SHA</code>, and whether key functions exist; use on the Shiny host before/after <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code>.</li>
+<li>
+<strong>Deploy stamp</strong> — <code>deploy-options.R</code> records package version, SHA, and install path at deploy time; Shiny footer shows loaded <code>lib</code> path and warns when deploy stamp differs from runtime library.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.1" id="replicateeverything-061">replicateEverything 0.6.1<a class="anchor" aria-label="anchor" href="#replicateeverything-061"></a></h2>
+<div class="section level3">
+<h3 id="maintainer-helpers-and-shiny-polish-0-6-1">Maintainer helpers and Shiny polish<a class="anchor" aria-label="anchor" href="#maintainer-helpers-and-shiny-polish-0-6-1"></a></h3>
+<ul><li>
+<strong>[build_outputs()]</strong> — registry-wide or single-study batch build of precomputed table/figure outputs (<code>doi = "everywhere"</code>, <code>location</code>, <code>only_missing</code>, <code>force_prep</code>). Mirrors [validate_outputs()] dispatch.</li>
+<li>
+<strong>[validate_outputs()]</strong> — exported maintainer check that declared outputs exist on disk without running live replications.</li>
+<li>
+<strong>Code links</strong> — <code>R/code_links.R</code> resolves <code>code:</code> file references in replication scripts; Shiny code viewer renders clickable links; [check_replication()] runs <strong><code><a href="../reference/check_code_links.html">check_code_links()</a></code></strong> and reports broken links.</li>
+<li>
+<strong>Author display</strong> — <code>R/author_display.R</code> parses comma-separated author lists and formats study labels (<code><a href="../reference/format_author_label.html">format_author_label()</a></code>, <code><a href="../reference/format_authors_summary.html">format_authors_summary()</a></code>) for Shiny dropdowns and details.</li>
+<li>
+<strong>Dataverse prep display</strong> — prep steps that fetch a deposit show a structured summary in Shiny when no HTML artifact exists (<code><a href="../reference/load_prep_step_display.html">load_prep_step_display()</a></code>).</li>
+<li>
+<strong>Server path fixes</strong> — code-link resolution tolerates materialized study caches and Shiny reactive state; paths outside the study root are flagged instead of breaking the viewer.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="replicateeverything-060">replicateEverything 0.6.0<a class="anchor" aria-label="anchor" href="#replicateeverything-060"></a></h2>
 <div class="section level3">

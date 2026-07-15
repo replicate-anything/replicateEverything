@@ -10,6 +10,7 @@ shiny_deploy_dir()
 Normalized path.
 }
 \description{
-Shiny deploy directory (app bundle root)
+Prefers \code{options(replicate_shiny.app_dir)}, then \code{SHINY_APP_DIR},
+then \code{getwd()}. Relative feedback paths and \code{local.R} resolve here.
 }
 \keyword{internal}

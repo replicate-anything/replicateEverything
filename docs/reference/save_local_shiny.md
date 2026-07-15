@@ -12,7 +12,9 @@ save_local_shiny(
   dest = getwd(),
   package = "replicateEverything",
   overwrite = TRUE,
-  live_run = TRUE
+  live_run = TRUE,
+  feedback_enabled = TRUE,
+  feedback_file = "data/feedback.csv"
 )
 ```
 
@@ -33,18 +35,36 @@ save_local_shiny(
 - live_run:
 
   If `TRUE` (default), deployed app shows Live Run controls; if `FALSE`,
-  writes `deploy-options.R` for a display-only deployment.
+  display-only deployment.
+
+- feedback_enabled:
+
+  If `TRUE` (default for server deploys), enable the in-app feedback
+  form and CSV logging at `feedback_file`. Interactive
+  [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+  leaves feedback off unless you set options yourself.
+
+- feedback_file:
+
+  Relative or absolute path for the feedback CSV (default
+  `data/feedback.csv`, relative to the deploy directory).
 
 ## Value
 
 Invisibly, normalized `dest`.
+
+## Details
+
+Deploy settings (`live_run`, feedback) are written to `deploy-options.R`
+and baked into the top of the materialized `app.R`. No `local.R` is
+required for those options.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
 # After install_github("replicate-anything/replicateEverything"):
-save_local_shiny("/srv/shiny/replicate")
-save_local_shiny("/srv/shiny/replicate", live_run = FALSE) # display-only
+save_local_shiny("/srv/shiny/replicate", live_run = FALSE, feedback_enabled = TRUE)
+save_local_shiny("/srv/shiny/replicate", live_run = TRUE) # feedback ON by default
 } # }
 ```

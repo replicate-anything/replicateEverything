@@ -1,6 +1,6 @@
-# Short author label for dropdowns (e.g. Blair et al)
+# Short author label for dropdowns (e.g. Velez et al)
 
-Short author label for dropdowns (e.g. Blair et al)
+Short author label for dropdowns (e.g. Velez et al)
 
 ## Usage
 

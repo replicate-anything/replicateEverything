@@ -1,9 +1,11 @@
 # Validate a folder-backed replication study
 
 Runs a transparent checklist: study layout, `replication.yml`, code and
-data paths, baked display outputs, optional `tests/testthat/`,
-substantive (published-value) checks under `tests/substantive/`, and
-(optionally) live execution of every table and figure.
+data paths, resolvable code file links
+([`source()`](https://rdrr.io/r/base/source.html) / Stata `do`), baked
+display outputs, optional `tests/testthat/`, substantive
+(published-value) checks under `tests/substantive/`, and (optionally)
+live execution of every table and figure.
 
 ## Usage
 
@@ -56,8 +58,10 @@ A list with `ok` (logical), `checks` (data frame), and `study_path` or
 - `check_folder_replication()`: Folder-backed implementation.
 
   Runs a transparent checklist: study layout, `replication.yml`, code
-  and data paths, baked display outputs under `outputs/`, optional
-  `tests/testthat/`, substantive (published-value) checks under
+  and data paths, resolvable code file links
+  ([`source()`](https://rdrr.io/r/base/source.html) / Stata `do`), baked
+  display outputs under `outputs/`, optional `tests/testthat/`,
+  substantive substantive (published-value) checks under
   `tests/substantive/`, and (optionally) live execution of every table
   and figure.
 

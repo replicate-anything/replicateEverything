@@ -94,14 +94,77 @@ while developing (see `local.R.example`).
 
 ### Server update workflow
 
+On the **Shiny host**, use the same R library that Shiny Server /
+Connect loads (not necessarily your interactive SSH session). Typical
+causes of “old code” after `install_github()`:
+
+1.  **Two-part deploy** — `app.R` is copied to the deploy directory by
+    [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md),
+    but `replicate_fn()` calls the **installed** package namespace. You
+    must update **both** the library install and the deploy bundle.
+2.  **Different [`.libPaths()`](https://rdrr.io/r/base/libPaths.html)**
+    — interactive R may install to `~/R/...` while Shiny runs as `shiny`
+    or `rstudio-connect` with site library only.
+3.  **Shiny workers not restarted** — long-lived R processes keep the
+    old namespace loaded until the service is restarted.
+4.  **`local.R` devtools::load_all** — if a sibling monorepo checkout
+    exists, `local.R` or auto-detection can shadow the installed
+    package.
+5.  **Stale GitHub cache** — use
+    `remotes::install_github(..., force = TRUE)` or `upgrade = "always"`
+    when in doubt.
+
+**Checklist** (run on the Shiny server as the Shiny service user when
+possible):
+
 ``` r
 
-remotes::install_github("replicate-anything/replicateEverything")
+# 1. Install into the library Shiny actually uses
+.libPaths()
+remotes::install_github(
+  "replicate-anything/replicateEverything",
+  upgrade = "always",
+  force = TRUE
+)
 library(replicateEverything)
+
+# 2. Verify the installed build before copying app.R
+package_deploy_diagnostics()  # or pass your deploy path explicitly
+
+# 3. Materialize app.R + www/ + BUNDLE_SHA + deploy-options.R
 save_local_shiny("/srv/shiny/replicate")
+
+# 4. Confirm bundle matches package
+package_deploy_diagnostics("/srv/shiny/replicate")
 ```
 
-Restart the app on your host if required.
+**Restart ALL Shiny processes** after step 3 (systemd unit,
+`shiny-server`, Posit Connect publisher restart, etc.). Reloading the
+browser is not enough.
+
+**Verify in the browser footer:**
+
+- `pkg` SHA — installed package (`RemoteSha` or bundled stamp)
+- `app` SHA — `BUNDLE_SHA` written beside deployed `app.R` (must match
+  `pkg`)
+- `lib` — path from `system.file(package = "replicateEverything")`; if
+  this differs from the path in `deploy-options.R`, the app was deployed
+  from a different R session/library than the one serving requests
+
+A yellow banner appears when `app` and `pkg` SHAs differ.
+
+### Diagnose from R
+
+``` r
+
+replicateEverything::package_deploy_diagnostics("/srv/shiny/replicate")
+```
+
+This prints package version, library path,
+[`.libPaths()`](https://rdrr.io/r/base/libPaths.html), deploy directory,
+`BUNDLE_SHA`, whether key functions exist
+(e.g. `shiny_feedback_github_category_url`), Live Run / feedback
+settings, and missing-function hints.
 
 ### Display artifacts
 
@@ -127,6 +190,41 @@ options(
 
 If you rely on the public GitHub registry, you do not need a local
 `registry/` checkout; omit `replicateEverything.registry_root`.
+
+### Deploy checklist (shiny2.wzb.eu / subpath hosts)
+
+After
+[`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+and `remotes::install_github(...)`:
+
+1.  **Restart Shiny workers** so the installed package and `app.R`
+    reload together.
+2.  **Set the public mount URL** in `local.R` (once):
+    `Sys.setenv(REPLICATE_SHINY_BASE_URL = "https://shiny2.wzb.eu/ipi/replicate")`
+    Share links and docs use this base; query params (`?doi=...`) are
+    appended by the app.
+3.  **Preserve query strings on redirects.** If
+    `https://host/ipi/replicate?doi=...` redirects to `/ipi/replicate/`
+    without `?doi=...`, fix the reverse proxy (nginx: use
+    `$is_args$args` on trailing-slash redirects).
+4.  **Clear stale study cache** when code-link fixes ship:
+    `unlink(list.files(tools::R_user_dir("replicateEverything", "cache"), "study-repos", full.names = TRUE), recursive = TRUE)`
+    Browser sessions materialize folder-backed studies under
+    `.../study-repos/<org_repo>/<ref>/`; sibling monorepo checkouts
+    (from `local.R`) take precedence when present.
+5.  **Optional code-viewer diagnostics:**
+    `options(replicate_shiny.debug_code_viewer = TRUE)` in `local.R`
+    shows the study root used on the Code tab.
+6.  **Verify footer SHAs:** `pkg` and `app` should match after deploy;
+    mismatch means
+    [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md)
+    was not re-run after `install_github()`.
+7.  **Verify footer `lib` path** matches
+    [`package_deploy_diagnostics()`](https://replicate-anything.github.io/replicateEverything/reference/package_deploy_diagnostics.md)
+    on the server; if not, you updated a different R library than Shiny
+    uses.
+8.  **Run diagnostics before and after deploy:**
+    `replicateEverything::package_deploy_diagnostics("<deploy-dir>")`.
 
 ## Code tab: inspect sourced files
 

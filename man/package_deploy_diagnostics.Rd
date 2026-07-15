@@ -4,7 +4,11 @@
 \alias{package_deploy_diagnostics}
 \title{Diagnose Shiny deployment and installed package identity}
 \usage{
-package_deploy_diagnostics(deploy_dir = NULL, package = "replicateEverything", print = TRUE)
+package_deploy_diagnostics(
+  deploy_dir = NULL,
+  package = "replicateEverything",
+  print = TRUE
+)
 }
 \arguments{
 \item{deploy_dir}{Deploy directory containing \code{app.R}. Defaults to

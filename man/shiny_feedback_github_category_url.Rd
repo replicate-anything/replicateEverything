@@ -2,9 +2,15 @@
 % Please edit documentation in R/shiny_feedback.R
 \name{shiny_feedback_github_category_url}
 \alias{shiny_feedback_github_category_url}
+\alias{shiny_feedback_category_url}
 \title{Build a category-only GitHub new-issue URL (no user body)}
 \usage{
 shiny_feedback_github_category_url(
+  category,
+  repo = "replicate-anything/replicateEverything"
+)
+
+shiny_feedback_category_url(
   category,
   repo = "replicate-anything/replicateEverything"
 )

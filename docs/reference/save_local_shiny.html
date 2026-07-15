@@ -11,7 +11,7 @@ in a fixed folder. Existing local.R in dest is never overwritten."><meta propert
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,9 @@ in a fixed folder. Existing <code>local.R</code> in <code>dest</code> is never o
 <span>  dest <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  package <span class="op">=</span> <span class="st">"replicateEverything"</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  live_run <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  live_run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  feedback_enabled <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  feedback_file <span class="op">=</span> <span class="st">"data/feedback.csv"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -68,20 +70,37 @@ in a fixed folder. Existing <code>local.R</code> in <code>dest</code> is never o
 
 <dt id="arg-live-run">live_run<a class="anchor" aria-label="anchor" href="#arg-live-run"></a></dt>
 <dd><p>If <code>TRUE</code> (default), deployed app shows Live Run controls;
-if <code>FALSE</code>, writes <code>deploy-options.R</code> for a display-only deployment.</p></dd>
+if <code>FALSE</code>, display-only deployment.</p></dd>
+
+
+<dt id="arg-feedback-enabled">feedback_enabled<a class="anchor" aria-label="anchor" href="#arg-feedback-enabled"></a></dt>
+<dd><p>If <code>TRUE</code> (default for server deploys), enable the
+in-app feedback form and CSV logging at <code>feedback_file</code>. Interactive
+<code><a href="run_shiny_app.html">run_shiny_app()</a></code> leaves feedback off unless you set options yourself.</p></dd>
+
+
+<dt id="arg-feedback-file">feedback_file<a class="anchor" aria-label="anchor" href="#arg-feedback-file"></a></dt>
+<dd><p>Relative or absolute path for the feedback CSV
+(default <code>data/feedback.csv</code>, relative to the deploy directory).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly, normalized <code>dest</code>.</p>
     </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Deploy settings (<code>live_run</code>, feedback) are written to <code>deploy-options.R</code>
+and baked into the top of the materialized <code>app.R</code>. No <code>local.R</code>
+is required for those options.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># After install_github("replicate-anything/replicateEverything"):</span></span></span>
-<span class="r-in"><span><span class="fu">save_local_shiny</span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">save_local_shiny</span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span>, live_run <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span> <span class="co"># display-only</span></span></span>
+<span class="r-in"><span><span class="fu">save_local_shiny</span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span>, live_run <span class="op">=</span> <span class="cn">FALSE</span>, feedback_enabled <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">save_local_shiny</span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span>, live_run <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="co"># feedback ON by default</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

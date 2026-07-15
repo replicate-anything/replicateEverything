@@ -13,6 +13,11 @@ workflow. The package also bundles a **Shiny demo app** for browsing
 studies and running replications interactively — try the [live
 demo](https://shiny2.wzb.eu/ipi/replicate/).
 
+**Start here:** [Why
+replicateEverything?](https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.html)
+— the best high-level overview of motivation, the registry, and how to
+run replications.
+
 ## Key features
 
 - **Discovery** — search the registry, look up papers by DOI, and

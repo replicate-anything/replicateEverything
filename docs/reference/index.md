@@ -70,6 +70,8 @@ Probe and install study dependencies; sync studies into the registry.
   : Configure options for a local replicate-anything monorepo
 - [`package_build_info()`](https://replicate-anything.github.io/replicateEverything/reference/package_build_info.md)
   : Package version and build identity
+- [`package_deploy_diagnostics()`](https://replicate-anything.github.io/replicateEverything/reference/package_deploy_diagnostics.md)
+  : Diagnose Shiny deployment and installed package identity
 - [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
   : Check yaml-declared dependencies against this machine (no installs)
 - [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)

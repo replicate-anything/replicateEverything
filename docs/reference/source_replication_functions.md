@@ -1,7 +1,8 @@
 # Load only function definitions from a replication script
 
 Skips the self-run footer so top-level execution (data load + pipe) does
-not run when the package sources the file.
+not run when the package sources the file. Also evaluates safe top-level
+constants referenced by sourced helper functions.
 
 ## Usage
 

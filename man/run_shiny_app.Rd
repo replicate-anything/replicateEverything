@@ -15,7 +15,9 @@ The value returned by \code{\link[shiny:runApp]{shiny::runApp()}}.
 \description{
 Launches the demo from \code{inst/shiny} inside the installed package. Does not
 auto-update \code{replicateEverything} from GitHub (the running session already
-uses the installed package). A live instance is hosted at
+uses the installed package). Interactive defaults: Live Run available;
+feedback form off. For server deploys with feedback on, use
+\code{\link[=save_local_shiny]{save_local_shiny()}}. A live instance is hosted at
 \url{https://shiny2.wzb.eu/ipi/replicate/}.
 }
 \examples{
