@@ -76,21 +76,21 @@ add_paper <- function(
 #' @param x Result from [check_replication()], [add_paper()], or [add_folder_paper()].
 #' @param ... Ignored.
 #' @keywords internal
-#' @export
+#' @exportS3Method print package_replication_check
 print.package_replication_check <- function(x, ...) {
   print_replication_check(x, label = "package")
   invisible(x)
 }
 
 #' @rdname print.package_replication_check
-#' @export
+#' @exportS3Method print folder_replication_check
 print.folder_replication_check <- function(x, ...) {
   print_replication_check(x, label = "folder")
   invisible(x)
 }
 
 #' @rdname print.package_replication_check
-#' @export
+#' @exportS3Method print replication_check
 print.replication_check <- function(x, ...) {
   label <- if (inherits(x, "folder_replication_check")) "folder" else "package"
   print_replication_check(x, label = label)

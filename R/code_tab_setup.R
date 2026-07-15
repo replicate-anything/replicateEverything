@@ -26,24 +26,21 @@ engine_display_name <- function(engine) {
 
 #' Engines to mention in the local setup open instruction
 #'
-#' Multi-engine studies list every declared language; single-engine studies use
-#' the active replication language only.
+#' Uses the active replication language for the current table or figure; falls
+#' back to the sole declared study language when the active language is unknown.
 #'
 #' @param language Active replication language (\code{r}, \code{stata}, \code{python}).
 #' @param study_engines Declared study languages from \code{replication.yml}.
 #' @keywords internal
 code_setup_open_engines <- function(language, study_engines = NULL) {
-  declared <- unique(tolower(as.character(study_engines %||% character(0))))
-  declared <- declared[declared %in% c("r", "stata", "python")]
   lang <- tolower(as.character(language %||% ""))
-  if (length(declared) > 1L) {
-    return(declared)
-  }
   if (nzchar(lang) && lang %in% c("r", "stata", "python")) {
     return(lang)
   }
-  if (length(declared) == 1L) {
-    return(declared)
+  declared <- unique(tolower(as.character(study_engines %||% character(0))))
+  declared <- declared[declared %in% c("r", "stata", "python")]
+  if (length(declared) >= 1L) {
+    return(declared[[1L]])
   }
   "r"
 }
@@ -338,12 +335,17 @@ code_setup_box_content <- function(
     code_setup_open_instruction(language, study_engines)
   )
   req_engines <- code_setup_open_engines(language, study_engines)
-  if (length(study_engines) > 1L) {
-    req_engines <- study_engines
-  }
   req_lines <- code_setup_requirements_lines(meta, audit = audit, engines = req_engines)
   if (nzchar(doi_label)) {
     req_lines <- sub("<doi>", shQuote(doi_label, type = "sh"), req_lines, fixed = TRUE)
+    req_lines <- c(
+      req_lines,
+      paste0(
+        "Or install declared dependencies: install_study_dependencies(",
+        shQuote(doi_label, type = "sh"),
+        ")."
+      )
+    )
   }
   prep_notes <- code_setup_prep_notes(meta, step_id = step_id)
   open_engines <- code_setup_open_engines(language, study_engines)
@@ -358,7 +360,7 @@ code_setup_box_content <- function(
     )
   }
   list(
-    title = "Set up — run this code locally",
+    title = "See here for guidance on running this code",
     step1 = step1_lines,
     step2 = req_lines,
     step2_prep = prep_notes,

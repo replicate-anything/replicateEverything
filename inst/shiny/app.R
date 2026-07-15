@@ -3840,7 +3840,10 @@ code_setup_box_ui <- function(content) {
               )
             )
           },
-          tags$li(tags$code(paste0("git clone ", repo_url, ".git")))
+          tags$li(
+            tags$span("or "),
+            tags$code(paste0("git clone ", repo_url, ".git"))
+          )
         )
       )
     } else {
@@ -3877,7 +3880,7 @@ code_setup_box_ui <- function(content) {
     tags$summary(
       class = "study-details-summary",
       tags$span(class = "study-details-chevron", HTML("&#9660;")),
-      tags$span(class = "ms-1", strong(content$title %||% "Set up — run this code locally"))
+      tags$span(class = "ms-1", strong(content$title %||% "See here for guidance on running this code"))
     ),
     tags$div(
       class = "study-details-body pt-2",
@@ -4862,6 +4865,12 @@ server <- function(input, output, session) {
     selected = ALL_STUDIES_COLLECTION
   )
 
+  # One-shot flags read from session$onFlushed; keep outside reactiveValues.
+  deep_link_flags <- list(
+    url_deep_link_parsed = FALSE,
+    welcome_shown = FALSE
+  )
+
   state <- reactiveValues(
     doi = NULL,
     replications = NULL,
@@ -4880,7 +4889,6 @@ server <- function(input, output, session) {
     group_engines = list(),
     study_audit = NULL,
     study_audit_running = FALSE,
-    url_deep_link_parsed = FALSE,
     pending_deep_link_doi = NULL,
     pending_deep_link_what = NULL,
     code_viewer_stack = character(0),
@@ -4890,8 +4898,7 @@ server <- function(input, output, session) {
     code_viewer_root = NULL,
     code_viewer_entry = NULL,
     pending_deep_link_language = NULL,
-    suppress_url_sync = FALSE,
-    welcome_shown = FALSE
+    suppress_url_sync = FALSE
   )
 
   options(replicateEverything.progress = function(msg) {
@@ -4908,7 +4915,7 @@ server <- function(input, output, session) {
     if (!nzchar(doi)) {
       return(invisible(FALSE))
     }
-    state$welcome_shown <- TRUE
+    deep_link_flags$welcome_shown <- TRUE
     state$suppress_url_sync <- TRUE
     state$pending_deep_link_doi <- doi
     state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
@@ -4918,28 +4925,28 @@ server <- function(input, output, session) {
 
   observe({
     query_string <- session$clientData$url_search
-    if (is.null(query_string) || isTRUE(state$url_deep_link_parsed)) {
+    if (is.null(query_string) || isTRUE(deep_link_flags$url_deep_link_parsed)) {
       return(invisible(NULL))
     }
     link <- parse_shiny_deep_link_from_search(query_string)
     if (!is.null(link)) {
-      state$url_deep_link_parsed <- TRUE
+      deep_link_flags$url_deep_link_parsed <- TRUE
       queue_shiny_deep_link(link)
     }
   })
 
   session$onFlushed(function() {
-    if (isTRUE(state$url_deep_link_parsed)) {
+    if (isTRUE(deep_link_flags$url_deep_link_parsed)) {
       return(invisible(NULL))
     }
     link <- parse_shiny_deep_link_from_search(session$clientData$url_search)
     if (!is.null(link)) {
-      state$url_deep_link_parsed <- TRUE
+      deep_link_flags$url_deep_link_parsed <- TRUE
       queue_shiny_deep_link(link)
       return(invisible(NULL))
     }
-    if (isFALSE(state$welcome_shown)) {
-      state$welcome_shown <- TRUE
+    if (isFALSE(deep_link_flags$welcome_shown)) {
+      deep_link_flags$welcome_shown <- TRUE
       showModal(modalDialog(
         title = "Welcome to our replicateEverything Prototype",
         app_welcome_intro(),
@@ -5192,7 +5199,7 @@ server <- function(input, output, session) {
   observeEvent(input$url_deep_link, {
     link <- input$url_deep_link
     req(is.list(link))
-    state$url_deep_link_parsed <- TRUE
+    deep_link_flags$url_deep_link_parsed <- TRUE
     queue_shiny_deep_link(link)
   }, ignoreInit = TRUE)
 

@@ -16,10 +16,17 @@ test_that("github_repo_zip_url builds main branch archive link", {
   )
 })
 
-test_that("code_setup_open_instruction is engine-aware for multi-engine studies", {
+test_that("code_setup_open_instruction uses active engine on multi-engine studies", {
   expect_match(
     replicateEverything:::code_setup_open_instruction("stata", c("r", "stata")),
-    "R or Stata"
+    "^Open Stata "
+  )
+  expect_false(
+    grepl("R or Stata", replicateEverything:::code_setup_open_instruction("stata", c("r", "stata")), fixed = TRUE)
+  )
+  expect_match(
+    replicateEverything:::code_setup_open_instruction("r", c("r", "stata")),
+    "^Open R "
   )
   expect_match(
     replicateEverything:::code_setup_open_instruction("r", "r"),
@@ -39,13 +46,18 @@ test_that("code_setup_box_content describes Blair Stata table setup", {
     step_id = "tab_1"
   )
 
+  expect_equal(content$title, "See here for guidance on running this code")
   expect_equal(content$repo_slug, "replicate-anything/rep-10.1017-s0003055422000284")
   expect_match(content$zip_url, "/archive/refs/heads/main\\.zip$")
-  expect_match(paste(content$step1, collapse = " "), "R or Stata")
+  expect_match(tail(content$step1, 1L), "^Open Stata ")
+  expect_false(grepl("R or Stata", paste(content$step1, collapse = " "), fixed = TRUE))
   expect_true(any(grepl("Stata:", content$step2, fixed = TRUE)))
+  expect_false(any(grepl("^R:", content$step2)))
   expect_true(any(grepl("estout", content$step2, fixed = TRUE)))
+  expect_true(any(grepl("install_study_dependencies", content$step2, fixed = TRUE)))
   expect_true(any(grepl("Dataverse", content$step2_prep, fixed = TRUE)))
   expect_match(content$step3, "Stata session")
+  expect_false(grepl("R session", content$step3, fixed = TRUE))
 })
 
 test_that("code_setup_box_content describes Velez R table setup", {
@@ -60,10 +72,14 @@ test_that("code_setup_box_content describes Velez R table setup", {
     step_id = "tab_1"
   )
 
+  expect_equal(content$title, "See here for guidance on running this code")
   expect_equal(content$repo_slug, "replicate-anything/rep-10.1017-s0003055426101622")
   expect_match(tail(content$step1, 1L), "^Open R ")
   expect_false(grepl("Stata", tail(content$step1, 1L), fixed = TRUE))
   expect_true(any(grepl("^R:", content$step2)))
+  expect_false(any(grepl("^Stata:", content$step2)))
   expect_true(any(grepl("tidyverse", content$step2, fixed = TRUE)))
+  expect_true(any(grepl("install_study_dependencies", content$step2, fixed = TRUE)))
   expect_match(content$step3, "R session")
+  expect_false(grepl("Stata session", content$step3, fixed = TRUE))
 })

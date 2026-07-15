@@ -464,7 +464,7 @@ audit_everything <- function(
 }
 
 #' @keywords internal
-#' @export
+#' @exportS3Method print audit_everything
 print.audit_everything <- function(x, ...) {
   sm <- x$summary
   substantive_line <- if (!is.null(sm$substantive_failed) && sm$substantive_failed > 0L) {

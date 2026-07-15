@@ -103,7 +103,7 @@ as_replication_list <- function(x, doi = NULL, title = NULL) {
 #' @param n Maximum rows to display.
 #' @param ... Ignored.
 #' @keywords internal
-#' @export
+#' @exportS3Method print replication_list
 print.replication_list <- function(x, n = 20, ...) {
   title <- attr(x, "title", exact = TRUE)
   doi <- attr(x, "doi", exact = TRUE)
