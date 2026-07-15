@@ -7,10 +7,13 @@ test_that("all Shiny feedback helpers referenced from app.R exist in namespace",
     "sanitize_shiny_feedback_text",
     "sanitize_shiny_feedback_email",
     "shiny_feedback_log_enabled",
+    "shiny_feedback_in_app_enabled",
     "append_shiny_feedback_log",
     "shiny_feedback_github_issue_url",
     "shiny_feedback_github_category_url",
-    "shiny_feedback_category_url"
+    "shiny_feedback_category_url",
+    "shiny_feedback_github_category_url_fallback",
+    "shiny_feedback_category_url_safe"
   )
   missing <- feedback_refs[!vapply(
     feedback_refs,
@@ -18,6 +21,52 @@ test_that("all Shiny feedback helpers referenced from app.R exist in namespace",
     FUN.VALUE = logical(1L)
   )]
   expect_equal(missing, character(0))
+})
+
+test_that("shiny_feedback_in_app_enabled is false by default", {
+  withr::local_options(list(replicate_shiny.feedback_in_app_enabled = NULL))
+  expect_false(shiny_feedback_in_app_enabled())
+})
+
+test_that("shiny_feedback_github_category_url_fallback builds static issue links", {
+  bug_url <- shiny_feedback_github_category_url_fallback("bug")
+  expect_true(startsWith(bug_url, "https://github.com/replicate-anything/replicateEverything/issues/new?"))
+  expect_true(grepl("labels=bug", bug_url, fixed = TRUE))
+  expect_true(grepl("%5BBug%5D%20", bug_url, fixed = TRUE))
+
+  feature_url <- shiny_feedback_github_category_url_fallback("feature")
+  expect_true(grepl("labels=enhancement", feature_url, fixed = TRUE))
+
+  other_url <- shiny_feedback_github_category_url_fallback("other")
+  expect_false(grepl("labels=", other_url, fixed = TRUE))
+  expect_true(grepl("%5BFeedback%5D%20", other_url, fixed = TRUE))
+})
+
+test_that("shiny_feedback_category_url_safe matches package helper when available", {
+  expect_equal(
+    shiny_feedback_category_url_safe("bug"),
+    shiny_feedback_github_category_url("bug")
+  )
+  expect_equal(
+    shiny_feedback_category_url_safe("feature"),
+    shiny_feedback_github_category_url("feature")
+  )
+  expect_equal(
+    shiny_feedback_category_url_safe("other"),
+    shiny_feedback_github_category_url("other")
+  )
+})
+
+test_that("deployed app.R avoids hard-stop on missing feedback category URL helper", {
+  app_r <- system.file("shiny", "app.R", package = "replicateEverything")
+  skip_if_not(nzchar(app_r) && file.exists(app_r), "bundled app.R not available")
+  lines <- readLines(app_r, warn = FALSE)
+  expect_true(any(grepl("feedback_github_category_url", lines, fixed = TRUE)))
+  expect_true(any(grepl("TODO\\(replicate-shiny-feedback\\)", lines)))
+  expect_false(any(grepl(
+    "feedback_pkg_fn\\(\"shiny_feedback_github_category_url\"\\)\\(category",
+    lines
+  )))
 })
 
 test_that("sanitize_shiny_feedback_text strips HTML and control characters", {

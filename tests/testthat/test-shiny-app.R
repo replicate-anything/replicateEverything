@@ -14,7 +14,7 @@ test_that("save_local_shiny copies app and www", {
   expect_true(file.exists(file.path(dest, "deploy-options.R")))
   opts <- readLines(file.path(dest, "deploy-options.R"))
   expect_true(any(grepl("replicate_shiny.live_run = TRUE", opts)))
-  expect_true(any(grepl("replicate_shiny.feedback_enabled = TRUE", opts)))
+  expect_true(any(grepl("replicate_shiny.feedback_enabled = FALSE", opts)))
   expect_true(any(grepl("replicate_shiny.feedback_file", opts)))
 })
 
@@ -32,7 +32,7 @@ test_that("save_local_shiny with live_run=FALSE writes display-only deploy-optio
   expect_true(file.exists(opts_path))
   opts <- readLines(opts_path)
   expect_true(any(grepl("replicate_shiny.live_run = FALSE", opts)))
-  expect_true(any(grepl("replicate_shiny.feedback_enabled = TRUE", opts)))
+  expect_true(any(grepl("replicate_shiny.feedback_enabled = FALSE", opts)))
 })
 
 test_that("shiny_live_run_enabled reads replicate_shiny.live_run option", {

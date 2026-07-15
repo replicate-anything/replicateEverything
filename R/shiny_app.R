@@ -114,7 +114,8 @@ source_shiny_deploy_config <- function(dir) {
 #'
 #' @param dest Deploy directory.
 #' @param live_run If \code{TRUE}, enable Live Run; if \code{FALSE}, display-only.
-#' @param feedback_enabled If \code{TRUE}, enable server-side feedback CSV logging.
+#' @param feedback_enabled If \code{TRUE}, enable server-side feedback CSV logging;
+#'   default \code{FALSE} (in-app form also off until workers reload reliably).
 #' @param feedback_file Relative or absolute feedback CSV path.
 #' @return Invisibly, a list with \code{live_run}, \code{feedback_enabled}, and
 #'   \code{feedback_file}.
@@ -122,7 +123,7 @@ source_shiny_deploy_config <- function(dir) {
 write_shiny_deploy_options <- function(
   dest,
   live_run = TRUE,
-  feedback_enabled = TRUE,
+  feedback_enabled = FALSE,
   feedback_file = SHINY_FEEDBACK_DEFAULT_FILE,
   package = "replicateEverything"
 ) {
@@ -263,8 +264,8 @@ parse_shiny_deep_link_from_search <- function(url_search) {
 #' @param overwrite If `TRUE`, replace existing app files except `local.R`.
 #' @param live_run If `TRUE` (default), deployed app shows Live Run controls;
 #'   if `FALSE`, writes `deploy-options.R` for a display-only deployment.
-#' @param feedback_enabled If `TRUE` (default), `deploy-options.R` enables
-#'   server-side feedback CSV logging at `feedback_file`.
+#' @param feedback_enabled If `TRUE`, `deploy-options.R` enables server-side
+#'   feedback CSV logging at `feedback_file`; default `FALSE`.
 #' @param feedback_file Relative or absolute path for the feedback CSV
 #'   (default `data/feedback.csv`, relative to the deploy directory).
 #' @return Invisibly, normalized `dest`.
@@ -280,7 +281,7 @@ save_local_shiny <- function(
   package = "replicateEverything",
   overwrite = TRUE,
   live_run = TRUE,
-  feedback_enabled = TRUE,
+  feedback_enabled = FALSE,
   feedback_file = "data/feedback.csv"
 ) {
   src <- shiny_app_dir(package)

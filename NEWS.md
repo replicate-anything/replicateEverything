@@ -1,3 +1,12 @@
+# replicateEverything 0.6.3
+
+## Shiny feedback — safe mode for stale workers
+
+* **Feedback tab** no longer crashes when Shiny workers hold a stale package namespace (e.g. missing `shiny_feedback_github_category_url` on 0.6.2 workers). GitHub issue links use hardcoded fallbacks.
+* **In-app feedback form** (text box + submit) disabled by default; enable with `options(replicate_shiny.feedback_in_app_enabled = TRUE)` once workers reload reliably.
+* **Defaults** — `save_local_shiny()` and `write_shiny_deploy_options()` now set `feedback_enabled = FALSE`; CSV logging requires an explicit opt-in.
+* See `inst/shiny/FEEDBACK_TODO.md` for re-enable steps.
+
 # replicateEverything 0.6.2
 
 ## Shiny feedback and deploy config

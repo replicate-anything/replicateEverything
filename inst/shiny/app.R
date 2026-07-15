@@ -3699,17 +3699,14 @@ feedback_pkg_fn_aliases <- function(name) {
   )
 }
 
-feedback_pkg_fn <- function(name) {
+feedback_pkg_fn <- function(name, required = FALSE) {
   if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-    stop("replicateEverything is not installed.", call. = FALSE)
+    if (isTRUE(required)) {
+      stop("replicateEverything is not installed.", call. = FALSE)
+    }
+    return(NULL)
   }
   ns <- asNamespace("replicateEverything")
-  if (exists("get_package_namespace_fn", envir = ns, inherits = FALSE)) {
-    return(get("get_package_namespace_fn", envir = ns)(
-      name,
-      aliases = feedback_pkg_fn_aliases(name)
-    ))
-  }
   resolve <- function(nm) {
     if (exists(nm, envir = ns, inherits = FALSE)) {
       return(get(nm, envir = ns, inherits = FALSE))
@@ -3720,79 +3717,164 @@ feedback_pkg_fn <- function(name) {
     }
     NULL
   }
-  fn <- resolve(name)
-  if (is.null(fn)) {
-    pkg_ver <- tryCatch(
-      as.character(utils::packageVersion("replicateEverything")),
-      error = function(e) "unknown"
+  fn <- if (exists("get_package_namespace_fn", envir = ns, inherits = FALSE)) {
+    tryCatch(
+      get("get_package_namespace_fn", envir = ns)(
+        name,
+        aliases = feedback_pkg_fn_aliases(name)
+      ),
+      error = function(e) resolve(name)
     )
-    if (isNamespaceLoaded("replicateEverything")) {
-      ns_ver <- tryCatch(
-        as.character(getNamespaceVersion("replicateEverything")),
-        error = function(e) ""
-      )
-      if (nzchar(ns_ver) && !identical(ns_ver, pkg_ver)) {
-        stop(
-          "Function replicateEverything::", name,
-          " is not available because this R session loaded replicateEverything ",
-          ns_ver, " but version ", pkg_ver, " is installed on disk. ",
-          "Restart all Shiny/R worker processes after updating the package.",
-          call. = FALSE
-        )
-      }
-    }
-    stop(
-      "Function replicateEverything::", name,
-      " is not available (installed version ", pkg_ver, "). ",
-      "Update replicateEverything ",
-      "(remotes::install_github('replicate-anything/replicateEverything')) ",
-      "and redeploy the Shiny app from the same release.",
-      call. = FALSE
-    )
+  } else {
+    resolve(name)
   }
-  fn
+  if (!is.null(fn)) {
+    return(fn)
+  }
+  if (!isTRUE(required)) {
+    return(NULL)
+  }
+  pkg_ver <- tryCatch(
+    as.character(utils::packageVersion("replicateEverything")),
+    error = function(e) "unknown"
+  )
+  if (isNamespaceLoaded("replicateEverything")) {
+    ns_ver <- tryCatch(
+      as.character(getNamespaceVersion("replicateEverything")),
+      error = function(e) ""
+    )
+    if (nzchar(ns_ver) && !identical(ns_ver, pkg_ver)) {
+      stop(
+        "Function replicateEverything::", name,
+        " is not available because this R session loaded replicateEverything ",
+        ns_ver, " but version ", pkg_ver, " is installed on disk. ",
+        "Restart all Shiny/R worker processes after updating the package.",
+        call. = FALSE
+      )
+    }
+  }
+  stop(
+    "Function replicateEverything::", name,
+    " is not available (installed version ", pkg_ver, "). ",
+    "Update replicateEverything ",
+    "(remotes::install_github('replicate-anything/replicateEverything')) ",
+    "and redeploy the Shiny app from the same release.",
+    call. = FALSE
+  )
+}
+
+feedback_in_app_enabled <- function() {
+  fn <- feedback_pkg_fn("shiny_feedback_in_app_enabled", required = FALSE)
+  if (!is.null(fn)) {
+    return(isTRUE(fn()))
+  }
+  isTRUE(getOption("replicate_shiny.feedback_in_app_enabled", FALSE))
+}
+
+feedback_github_category_url <- function(
+  category,
+  repo = "replicate-anything/replicateEverything"
+) {
+  safe_fn <- feedback_pkg_fn("shiny_feedback_category_url_safe", required = FALSE)
+  if (!is.null(safe_fn)) {
+    return(safe_fn(category, repo = repo))
+  }
+  fallback_fn <- feedback_pkg_fn("shiny_feedback_github_category_url_fallback", required = FALSE)
+  if (!is.null(fallback_fn)) {
+    return(fallback_fn(category, repo = repo))
+  }
+  fn <- feedback_pkg_fn("shiny_feedback_github_category_url", required = FALSE)
+  if (!is.null(fn)) {
+    return(fn(category, repo = repo))
+  }
+  base <- paste0("https://github.com/", repo, "/issues/new")
+  switch(
+    category,
+    bug = paste0(base, "?title=", utils::URLencode("[Bug] ", reserved = TRUE), "&labels=bug"),
+    feature = paste0(
+      base, "?title=", utils::URLencode("[Feature] ", reserved = TRUE), "&labels=enhancement"
+    ),
+    other = paste0(base, "?title=", utils::URLencode("[Feedback] ", reserved = TRUE)),
+    base
+  )
 }
 
 feedback_tab_ui <- function() {
+  # TODO(replicate-shiny-feedback): re-enable in-app form when workers reliably load 0.6.2+ namespace
   category_url <- function(category, repo = "replicate-anything/replicateEverything") {
-    feedback_pkg_fn("shiny_feedback_github_category_url")(category, repo = repo)
+    feedback_github_category_url(category, repo = repo)
+  }
+  github_links <- tags$ul(
+    tags$li(
+      tags$a(
+        href = category_url("bug"),
+        target = "_blank",
+        rel = "noopener noreferrer",
+        "Bug report"
+      )
+    ),
+    tags$li(
+      tags$a(
+        href = category_url("feature"),
+        target = "_blank",
+        rel = "noopener noreferrer",
+        "Feature request"
+      )
+    ),
+    tags$li(
+      tags$a(
+        href = category_url("other"),
+        target = "_blank",
+        rel = "noopener noreferrer",
+        "Other / general"
+      )
+    )
+  )
+  in_app_form <- if (feedback_in_app_enabled()) {
+    tagList(
+      tags$hr(),
+      h4("Send feedback"),
+      selectInput(
+        "feedback_category",
+        "Category",
+        choices = c(
+          "Bug report" = "bug",
+          "Feature request" = "feature",
+          "Other / general" = "other"
+        ),
+        selected = "bug"
+      ),
+      textAreaInput(
+        "feedback_text",
+        "Your feedback",
+        placeholder = "Describe the bug, idea, or question…",
+        rows = 6,
+        resize = "vertical"
+      ),
+      p(class = "text-muted small mb-1", "Plain text only (max 2,000 characters)."),
+      textInput(
+        "feedback_email",
+        "Email (optional)",
+        placeholder = "you@example.org"
+      ),
+      actionButton("feedback_submit", "Submit feedback", class = "btn-primary"),
+      uiOutput("feedback_status_ui"),
+      uiOutput("feedback_log_hint_ui")
+    )
+  } else {
+    NULL
   }
   fluidPage(
     class = "px-3 py-2",
     h3("Feedback"),
     p(
       class = "mb-3",
-      "Help us improve this prototype. Share bugs, ideas, or general feedback ",
-      "— we read every report."
+      "Help us improve this prototype. Report bugs, ideas, or general feedback ",
+      "on GitHub — we read every issue."
     ),
     h4("Report on GitHub"),
-    p("Prefer GitHub? Open an issue with a category label:"),
-    tags$ul(
-      tags$li(
-        tags$a(
-          href = category_url("bug"),
-          target = "_blank",
-          rel = "noopener noreferrer",
-          "Bug report"
-        )
-      ),
-      tags$li(
-        tags$a(
-          href = category_url("feature"),
-          target = "_blank",
-          rel = "noopener noreferrer",
-          "Feature request"
-        )
-      ),
-      tags$li(
-        tags$a(
-          href = category_url("other"),
-          target = "_blank",
-          rel = "noopener noreferrer",
-          "Other / general"
-        )
-      )
-    ),
+    p("Open an issue with a category label:"),
+    github_links,
     p(
       class = "text-muted small",
       "Package: ",
@@ -3810,34 +3892,7 @@ feedback_tab_ui <- function() {
         "registry issues"
       )
     ),
-    tags$hr(),
-    h4("Send feedback"),
-    selectInput(
-      "feedback_category",
-      "Category",
-      choices = c(
-        "Bug report" = "bug",
-        "Feature request" = "feature",
-        "Other / general" = "other"
-      ),
-      selected = "bug"
-    ),
-    textAreaInput(
-      "feedback_text",
-      "Your feedback",
-      placeholder = "Describe the bug, idea, or question…",
-      rows = 6,
-      resize = "vertical"
-    ),
-    p(class = "text-muted small mb-1", "Plain text only (max 2,000 characters)."),
-    textInput(
-      "feedback_email",
-      "Email (optional)",
-      placeholder = "you@example.org"
-    ),
-    actionButton("feedback_submit", "Submit feedback", class = "btn-primary"),
-    uiOutput("feedback_status_ui"),
-    uiOutput("feedback_log_hint_ui")
+    in_app_form
   )
 }
 
@@ -6625,103 +6680,114 @@ server <- function(input, output, session) {
     message_kind = NULL
   )
 
-  output$feedback_status_ui <- renderUI({
-    msg <- feedback_state$message
-    if (is.null(msg) || !nzchar(msg)) {
-      return(NULL)
-    }
-    cls <- switch(
-      feedback_state$message_kind %||% "info",
-      success = "alert alert-success mt-3",
-      error = "alert alert-danger mt-3",
-      "alert alert-info mt-3"
-    )
-    tags$div(class = cls, htmltools::htmlEscape(msg))
-  })
-
-  output$feedback_log_hint_ui <- renderUI({
-    enabled <- tryCatch(
-      feedback_pkg_fn("shiny_feedback_log_enabled")(),
-      error = function(e) FALSE
-    )
-    if (!isTRUE(enabled)) {
-      return(NULL)
-    }
-    path <- tryCatch(
-      feedback_pkg_fn("shiny_feedback_file_path")(),
-      error = function(e) NULL
-    )
-    if (is.null(path) || !length(path) || !nzchar(path)) {
-      return(NULL)
-    }
-    tags$p(
-      class = "text-muted small mt-3 mb-0",
-      "Feedback is logged on this server at ",
-      tags$code(htmltools::htmlEscape(path)),
-      "."
-    )
-  })
-
-  observeEvent(input$feedback_submit, {
-    cooldown <- feedback_pkg_fn("SHINY_FEEDBACK_COOLDOWN_SECS")
-    if (
-      !is.null(feedback_state$last_submit) &&
-        difftime(Sys.time(), feedback_state$last_submit, units = "secs") < cooldown
-    ) {
-      feedback_state$message <- sprintf(
-        "Please wait %d seconds before submitting again.",
-        as.integer(cooldown)
-      )
-      feedback_state$message_kind <- "error"
-      return(invisible(NULL))
-    }
-
-    category <- feedback_pkg_fn("validate_shiny_feedback_category")(input$feedback_category)
-    if (is.na(category)) {
-      feedback_state$message <- "Please choose a valid category."
-      feedback_state$message_kind <- "error"
-      return(invisible(NULL))
-    }
-
-    text <- feedback_pkg_fn("sanitize_shiny_feedback_text")(input$feedback_text)
-    if (!nzchar(text)) {
-      feedback_state$message <- "Please enter your feedback."
-      feedback_state$message_kind <- "error"
-      return(invisible(NULL))
-    }
-
-    email <- feedback_pkg_fn("sanitize_shiny_feedback_email")(input$feedback_email)
-    feedback_state$last_submit <- Sys.time()
-
-    if (feedback_pkg_fn("shiny_feedback_log_enabled")()) {
-      ok <- feedback_pkg_fn("append_shiny_feedback_log")(category, text, email = email)
-      if (isTRUE(ok)) {
-        feedback_state$message <- "Thank you — your feedback was recorded."
-        feedback_state$message_kind <- "success"
-      } else {
-        feedback_state$message <- "Could not save feedback. Try a GitHub issue instead."
-        feedback_state$message_kind <- "error"
+  if (feedback_in_app_enabled()) {
+    output$feedback_status_ui <- renderUI({
+      msg <- feedback_state$message
+      if (is.null(msg) || !nzchar(msg)) {
+        return(NULL)
       }
-    } else {
-      url <- feedback_pkg_fn("shiny_feedback_github_issue_url")(
-        category,
-        text,
-        email = email
+      cls <- switch(
+        feedback_state$message_kind %||% "info",
+        success = "alert alert-success mt-3",
+        error = "alert alert-danger mt-3",
+        "alert alert-info mt-3"
       )
-      if (!nzchar(url)) {
-        feedback_state$message <- "Could not prepare a GitHub issue link. Check your input and try again."
+      tags$div(class = cls, htmltools::htmlEscape(msg))
+    })
+
+    output$feedback_log_hint_ui <- renderUI({
+      enabled <- tryCatch(
+        {
+          fn <- feedback_pkg_fn("shiny_feedback_log_enabled", required = FALSE)
+          if (is.null(fn)) FALSE else fn()
+        },
+        error = function(e) FALSE
+      )
+      if (!isTRUE(enabled)) {
+        return(NULL)
+      }
+      path <- tryCatch(
+        {
+          fn <- feedback_pkg_fn("shiny_feedback_file_path", required = FALSE)
+          if (is.null(fn)) NULL else fn()
+        },
+        error = function(e) NULL
+      )
+      if (is.null(path) || !length(path) || !nzchar(path)) {
+        return(NULL)
+      }
+      tags$p(
+        class = "text-muted small mt-3 mb-0",
+        "Feedback is logged on this server at ",
+        tags$code(htmltools::htmlEscape(path)),
+        "."
+      )
+    })
+
+    observeEvent(input$feedback_submit, {
+      cooldown_fn <- feedback_pkg_fn("SHINY_FEEDBACK_COOLDOWN_SECS", required = FALSE)
+      cooldown <- if (is.null(cooldown_fn)) 30L else cooldown_fn
+      if (
+        !is.null(feedback_state$last_submit) &&
+          difftime(Sys.time(), feedback_state$last_submit, units = "secs") < cooldown
+      ) {
+        feedback_state$message <- sprintf(
+          "Please wait %d seconds before submitting again.",
+          as.integer(cooldown)
+        )
         feedback_state$message_kind <- "error"
         return(invisible(NULL))
       }
-      session$sendCustomMessage("openExternalUrl", list(url = url))
-      feedback_state$message <- paste(
-        "Thank you — a pre-filled GitHub issue should open in a new tab.",
-        "Submit it there to send your report."
-      )
-      feedback_state$message_kind <- "success"
-    }
-    invisible(NULL)
-  })
+
+      validate_fn <- feedback_pkg_fn("validate_shiny_feedback_category", required = FALSE)
+      category <- if (is.null(validate_fn)) NA_character_ else validate_fn(input$feedback_category)
+      if (is.na(category)) {
+        feedback_state$message <- "Please choose a valid category."
+        feedback_state$message_kind <- "error"
+        return(invisible(NULL))
+      }
+
+      sanitize_text_fn <- feedback_pkg_fn("sanitize_shiny_feedback_text", required = FALSE)
+      text <- if (is.null(sanitize_text_fn)) "" else sanitize_text_fn(input$feedback_text)
+      if (!nzchar(text)) {
+        feedback_state$message <- "Please enter your feedback."
+        feedback_state$message_kind <- "error"
+        return(invisible(NULL))
+      }
+
+      sanitize_email_fn <- feedback_pkg_fn("sanitize_shiny_feedback_email", required = FALSE)
+      email <- if (is.null(sanitize_email_fn)) "" else sanitize_email_fn(input$feedback_email)
+      feedback_state$last_submit <- Sys.time()
+
+      log_enabled_fn <- feedback_pkg_fn("shiny_feedback_log_enabled", required = FALSE)
+      if (!is.null(log_enabled_fn) && isTRUE(log_enabled_fn())) {
+        append_fn <- feedback_pkg_fn("append_shiny_feedback_log", required = FALSE)
+        ok <- if (is.null(append_fn)) FALSE else append_fn(category, text, email = email)
+        if (isTRUE(ok)) {
+          feedback_state$message <- "Thank you — your feedback was recorded."
+          feedback_state$message_kind <- "success"
+        } else {
+          feedback_state$message <- "Could not save feedback. Try a GitHub issue instead."
+          feedback_state$message_kind <- "error"
+        }
+      } else {
+        issue_url_fn <- feedback_pkg_fn("shiny_feedback_github_issue_url", required = FALSE)
+        url <- if (is.null(issue_url_fn)) "" else issue_url_fn(category, text, email = email)
+        if (!nzchar(url)) {
+          feedback_state$message <- "Could not prepare a GitHub issue link. Check your input and try again."
+          feedback_state$message_kind <- "error"
+          return(invisible(NULL))
+        }
+        session$sendCustomMessage("openExternalUrl", list(url = url))
+        feedback_state$message <- paste(
+          "Thank you — a pre-filled GitHub issue should open in a new tab.",
+          "Submit it there to send your report."
+        )
+        feedback_state$message_kind <- "success"
+      }
+      invisible(NULL)
+    })
+  }
 }
 
 shinyApp(ui, server)

@@ -1,7 +1,32 @@
+# Shiny feedback helpers
+#
+# In-app feedback form is disabled by default pending reliable Shiny worker
+# namespace reload on shiny2.wzb.eu (stale 0.6.2 workers). GitHub issue links
+# remain available via hardcoded fallbacks when package helpers are missing.
+# Re-enable the form when server admin can restart workers or namespace
+# detection is fixed. See inst/shiny/FEEDBACK_TODO.md.
+
 #' Allowed Shiny feedback categories
 #'
 #' @keywords internal
 SHINY_FEEDBACK_CATEGORIES <- c("bug", "feature", "other")
+
+#' Default GitHub repo for Shiny feedback issue links
+#'
+#' @keywords internal
+SHINY_FEEDBACK_GITHUB_REPO <- "replicate-anything/replicateEverything"
+
+#' Whether the in-app Shiny feedback form (text box + submit) is enabled
+#'
+#' Disabled by default. Enable via
+#' \code{options(replicate_shiny.feedback_in_app_enabled = TRUE)} once Shiny
+#' workers reliably load the current package namespace.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+shiny_feedback_in_app_enabled <- function() {
+  isTRUE(getOption("replicate_shiny.feedback_in_app_enabled", FALSE))
+}
 
 #' Sanitize free-text Shiny feedback input
 #'
@@ -75,7 +100,7 @@ SHINY_FEEDBACK_DEFAULT_FILE <- "data/feedback.csv"
 
 #' Whether server-side Shiny feedback CSV logging is enabled
 #'
-#' Disabled by default for local use. Enable on shiny2.wzb.eu via
+#' Returns \code{FALSE} unless explicitly enabled via
 #' \code{REPLICATE_SHINY_FEEDBACK_ENABLED=1} or
 #' \code{options(replicate_shiny.feedback_enabled = TRUE)}.
 #'
@@ -244,6 +269,62 @@ shiny_feedback_github_category_url <- function(
 #' @rdname shiny_feedback_github_category_url
 #' @keywords internal
 shiny_feedback_category_url <- shiny_feedback_github_category_url
+
+#' Hardcoded GitHub new-issue URL when package helpers are unavailable
+#'
+#' Used by the Shiny Feedback tab when \code{shiny_feedback_github_category_url}
+#' is missing from a stale worker namespace (no dynamic package lookup).
+#'
+#' @param category Allowlisted category.
+#' @param repo GitHub \code{owner/repo} slug.
+#' @return Character URL.
+#' @keywords internal
+shiny_feedback_github_category_url_fallback <- function(
+  category,
+  repo = SHINY_FEEDBACK_GITHUB_REPO
+) {
+  category <- validate_shiny_feedback_category(category)
+  base <- paste0("https://github.com/", repo, "/issues/new")
+  if (is.na(category)) {
+    return(base)
+  }
+  meta <- shiny_feedback_category_meta(category)
+  params <- list(title = meta$title_prefix)
+  if (length(meta$label) > 0L && nzchar(meta$label)) {
+    params$labels <- meta$label
+  }
+  qs <- paste(
+    names(params),
+    vapply(params, utils::URLencode, FUN.VALUE = character(1L), reserved = TRUE),
+    sep = "=",
+    collapse = "&"
+  )
+  paste0(base, "?", qs)
+}
+
+#' Safe GitHub category URL (package helper or hardcoded fallback)
+#'
+#' Never errors when \code{shiny_feedback_github_category_url} is missing.
+#'
+#' @param category Allowlisted category.
+#' @param repo GitHub \code{owner/repo} slug.
+#' @return Character URL.
+#' @keywords internal
+shiny_feedback_category_url_safe <- function(
+  category,
+  repo = SHINY_FEEDBACK_GITHUB_REPO
+) {
+  ns <- tryCatch(asNamespace("replicateEverything"), error = function(e) NULL)
+  if (!is.null(ns)) {
+    for (nm in c("shiny_feedback_github_category_url", "shiny_feedback_category_url")) {
+      if (exists(nm, envir = ns, inherits = FALSE)) {
+        fn <- get(nm, envir = ns, inherits = FALSE)
+        return(fn(category, repo = repo))
+      }
+    }
+  }
+  shiny_feedback_github_category_url_fallback(category, repo = repo)
+}
 
 #' Append one sanitized feedback record to the server CSV log
 #'
