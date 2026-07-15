@@ -34,6 +34,13 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 # Share links always point at the public server (never localhost). If shiny2 moves, set:
 # Sys.setenv(REPLICATE_SHINY_BASE_URL = "https://shiny2.wzb.eu/ipi/replicate")
 # (Default is LIVE_DEMO_URL at the top of app.R.)
+#
+# Optional: show study root on the Code tab while debugging path resolution:
+# options(replicate_shiny.debug_code_viewer = TRUE)
+#
+# Optional: server-side feedback log (Shiny Feedback tab writes JSON lines here):
+# Sys.setenv(REPLICATE_SHINY_FEEDBACK_DIR = "/var/log/replicate-shiny/feedback")
+# options(replicate_shiny.feedback_dir = "/var/log/replicate-shiny/feedback")
 
 if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv"))) {
   options(

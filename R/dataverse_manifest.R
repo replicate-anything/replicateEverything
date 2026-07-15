@@ -520,7 +520,7 @@ load_prep_step_display <- function(meta, ctx, prep) {
   if (ext %in% c("html", "png", "svg")) {
     return(load_artifact_file_path(path))
   }
-  if (identical(ext, "rds")) {
+  if (ext %in% c("rds", "csv", "dta")) {
     return(preview_data_file(path))
   }
   structure(

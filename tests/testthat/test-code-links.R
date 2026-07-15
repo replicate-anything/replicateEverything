@@ -465,3 +465,29 @@ test_that("normalize_code_from_file accepts study-relative caller paths", {
     normalizePath(file.path(study_root, "code/tables/tab_1.R"), winslash = "/", mustWork = FALSE)
   )
 })
+
+test_that("normalize_code_from_file accepts materialized cache absolute caller paths", {
+  study_root <- cache_study_fixture_root()
+  on.exit(unlink(dirname(dirname(study_root)), recursive = TRUE), add = TRUE)
+  abs_caller <- normalizePath(
+    file.path(study_root, "code/tables/tab_1.R"),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  abs_from <- normalize_code_from_file(abs_caller, study_root, study_root)
+  expect_equal(abs_from, abs_caller)
+})
+
+test_that("prepare_code_viewer_state uses cache study root for fixture doi", {
+  study_root <- cache_study_fixture_root()
+  on.exit(unlink(dirname(dirname(study_root)), recursive = TRUE), add = TRUE)
+  lines <- readLines(file.path(study_root, "code/tables/tab_1.R"), warn = FALSE)
+  rendered <- render_code_html_with_links(
+    lines,
+    language = "r",
+    study_root = study_root,
+    source_path = "code/tables/tab_1.R"
+  )
+  expect_equal(rendered$links[[1]]$status, "ok")
+  expect_equal(rendered$links[[1]]$display, "code/helpers/dataverse_deposit.R")
+})

@@ -91,6 +91,69 @@ write_shiny_deploy_options <- function(dest, live_run = TRUE) {
   invisible(isTRUE(live_run))
 }
 
+#' Parse a Shiny URL query string
+#'
+#' Accepts values from \code{session$clientData$url_search} or
+#' \code{window.location.search}. Leading \code{?} is optional.
+#'
+#' @param query_string Character scalar, e.g. \code{"?doi=10.1017/..."}.
+#' @return Named character list suitable for deep-link handling; empty when absent.
+#' @keywords internal
+parse_shiny_query_string <- function(query_string) {
+  if (is.null(query_string) || length(query_string) != 1L) {
+    return(list())
+  }
+  query_string <- trimws(as.character(query_string))
+  if (!nzchar(query_string)) {
+    return(list())
+  }
+  qs <- sub("^\\?", "", query_string)
+  if (!nzchar(trimws(qs))) {
+    return(list())
+  }
+  if (!requireNamespace("shiny", quietly = TRUE)) {
+    parts <- strsplit(qs, "&", fixed = TRUE)[[1]]
+    out <- list()
+    for (part in parts) {
+      kv <- strsplit(part, "=", fixed = TRUE)[[1]]
+      if (length(kv) >= 2L) {
+        out[[URLdecode(kv[[1]])]] <- URLdecode(paste(kv[-1], collapse = "="))
+      }
+    }
+    return(out)
+  }
+  shiny::parseQueryString(qs)
+}
+
+#' Extract DOI deep-link fields from a parsed query list
+#'
+#' @param query_list Named list from \code{parse_shiny_query_string()}.
+#' @return List with \code{doi}, \code{what}, \code{language}, or \code{NULL}.
+#' @keywords internal
+extract_shiny_deep_link <- function(query_list) {
+  if (is.null(query_list) || !length(query_list)) {
+    return(NULL)
+  }
+  doi <- trimws(as.character(query_list$doi %||% ""))
+  if (!nzchar(doi)) {
+    return(NULL)
+  }
+  list(
+    doi = doi,
+    what = trimws(as.character(query_list$what %||% "")),
+    language = trimws(as.character(query_list$language %||% ""))
+  )
+}
+
+#' Parse DOI deep-link fields from a URL search string
+#'
+#' @param url_search Value of \code{session$clientData$url_search}.
+#' @return List from \code{extract_shiny_deep_link()}, or \code{NULL}.
+#' @keywords internal
+parse_shiny_deep_link_from_search <- function(url_search) {
+  extract_shiny_deep_link(parse_shiny_query_string(url_search))
+}
+
 #' Copy the bundled Shiny app into a deploy directory
 #'
 #' Materializes `inst/shiny` from an installed `replicateEverything` build into

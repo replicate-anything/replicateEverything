@@ -77,3 +77,27 @@ test_that("shiny_path_has_suffix detects trailing path segments", {
   expect_true(shiny_path_has_suffix("/srv/shiny_apps/replicate", "shiny_apps/replicate"))
   expect_false(shiny_path_has_suffix("/srv/shiny", "shiny_apps/replicate"))
 })
+
+test_that("parse_shiny_query_string reads doi and optional fields", {
+  skip_if_not(requireNamespace("shiny", quietly = TRUE), "shiny not installed")
+  parsed <- parse_shiny_query_string("?doi=10.1017%2Fs0003055426101749&what=tab_1&language=stata")
+  expect_equal(parsed$doi, "10.1017/s0003055426101749")
+  expect_equal(parsed$what, "tab_1")
+  expect_equal(parsed$language, "stata")
+})
+
+test_that("parse_shiny_deep_link_from_search ignores empty search", {
+  expect_null(parse_shiny_deep_link_from_search(""))
+  expect_null(parse_shiny_deep_link_from_search("?"))
+})
+
+test_that("parse_shiny_deep_link_from_search extracts doi without base path", {
+  link <- parse_shiny_deep_link_from_search("?doi=10.1017/s0003055426101749")
+  expect_equal(link$doi, "10.1017/s0003055426101749")
+  expect_equal(link$what, "")
+  expect_equal(link$language, "")
+})
+
+test_that("extract_shiny_deep_link returns NULL without doi", {
+  expect_null(extract_shiny_deep_link(list(what = "tab_1")))
+})

@@ -118,6 +118,27 @@ options(
 If you rely on the public GitHub registry, you do not need a local `registry/`
 checkout; omit `replicateEverything.registry_root`.
 
+### Deploy checklist (shiny2.wzb.eu / subpath hosts)
+
+After `save_local_shiny()` and `remotes::install_github(...)`:
+
+1. **Restart Shiny workers** so the installed package and `app.R` reload together.
+2. **Set the public mount URL** in `local.R` (once):
+   `Sys.setenv(REPLICATE_SHINY_BASE_URL = "https://shiny2.wzb.eu/ipi/replicate")`
+   Share links and docs use this base; query params (`?doi=...`) are appended by the app.
+3. **Preserve query strings on redirects.** If `https://host/ipi/replicate?doi=...`
+   redirects to `/ipi/replicate/` without `?doi=...`, fix the reverse proxy (nginx:
+   use `$is_args$args` on trailing-slash redirects).
+4. **Clear stale study cache** when code-link fixes ship:
+   `unlink(list.files(tools::R_user_dir("replicateEverything", "cache"), "study-repos", full.names = TRUE), recursive = TRUE)`
+   Browser sessions materialize folder-backed studies under
+   `.../study-repos/<org_repo>/<ref>/`; sibling monorepo checkouts (from `local.R`)
+   take precedence when present.
+5. **Optional code-viewer diagnostics:** `options(replicate_shiny.debug_code_viewer = TRUE)`
+   in `local.R` shows the study root used on the Code tab.
+6. **Verify footer SHAs:** `pkg` and `app` should match after deploy; mismatch means
+   `save_local_shiny()` was not re-run after `install_github()`.
+
 ## Code tab: inspect sourced files
 
 On the **Code** tab, Stata runners are shown as authored (not inlined). Lines

@@ -9,6 +9,9 @@ PKGDOCS_URL <- "https://replicate-anything.github.io/replicateEverything/index.h
 WHY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.html"
 SHINY_VIGNETTE_URL <- "https://replicate-anything.github.io/replicateEverything/articles/shiny-app.html"
 LIVE_DEMO_URL <- "https://shiny2.wzb.eu/ipi/replicate/"
+PKG_GITHUB <- "https://github.com/replicate-anything/replicateEverything"
+PKG_GITHUB_ISSUES <- paste0(PKG_GITHUB, "/issues")
+REGISTRY_GITHUB_ISSUES <- paste0(REGISTRY_GITHUB, "/issues")
 # Share links (Studies table, replication sidebar) always use the public server URL above.
 # Override without editing app.R: REPLICATE_SHINY_BASE_URL in local.R / server env.
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
@@ -60,7 +63,7 @@ app_welcome_intro <- function() {
       tags$div(
         class = "welcome-copy",
         p(
-          "This app lets you browse replication materials for published studies, ",
+          "This app (still in beta!) lets you browse replication materials for published studies, ",
           "view precomputed tables and figures, and run live replications on demand."
         ),
         p(
@@ -69,6 +72,15 @@ app_welcome_intro <- function() {
           " for a precomputed result or ",
           strong("Run"),
           " to rerun the analysis in R."
+        ),
+        p(
+          "Help us develop the app by contributing your own study to the ",
+          tags$a(
+            href = REGISTRY_GITHUB,
+            "replicateEverything registry",
+            target = "_blank"
+          ),
+          "."
         )
       )
     )
@@ -723,6 +735,44 @@ prep_step_title <- function(prep_df, step_id) {
   match$label_full[[1]] %||% match$label[[1]]
 }
 
+prep_step_entry <- function(prep_steps, step_id) {
+  if (is.null(prep_steps) || !length(prep_steps)) {
+    return(NULL)
+  }
+  matches <- prep_steps[vapply(prep_steps, function(x) {
+    identical(as.character(x$id), step_id)
+  }, logical(1))]
+  if (length(matches) == 0L) {
+    return(NULL)
+  }
+  matches[[1]]
+}
+
+prep_step_display_caption <- function(prep_steps, step_id) {
+  step <- prep_step_entry(prep_steps, step_id)
+  if (is.null(step)) {
+    return(NULL)
+  }
+  replicate_fn("prep_step_display_caption", step)
+}
+
+prep_preview_table_ui <- function(obj) {
+  tagList(
+    tags$p(class = "text-muted mb-1", "Preview (first rows):"),
+    if (requireNamespace("knitr", quietly = TRUE)) {
+      htmltools::HTML(
+        knitr::kable(
+          obj,
+          format = "html",
+          table.attr = 'class="table table-sm table-striped replication-table"'
+        )
+      )
+    } else {
+      tableOutput("selected_prep_table")
+    }
+  )
+}
+
 prep_step_language <- function(step_id, prep_steps) {
   if (is.null(prep_steps) || !length(prep_steps)) {
     return("r")
@@ -774,6 +824,15 @@ replication_row_for_id <- function(replications_df, replication_id) {
 }
 
 selected_replication_title <- function(state) {
+  if (is_step_replication(state$selected_type)) {
+    prep_caption <- prep_step_display_caption(
+      state$prep_steps,
+      state$selected_replication
+    )
+    if (!is.null(coalesce_chr(prep_caption))) {
+      return(prep_caption)
+    }
+  }
   prep_title <- prep_step_title(state$prep_df, state$selected_replication)
   if (!is.null(coalesce_chr(prep_title))) {
     return(prep_title)
@@ -1651,6 +1710,13 @@ shiny_deep_link_query_list <- function(doi, what = NULL, language = NULL) {
   out
 }
 
+parse_shiny_deep_link_from_search <- function(url_search) {
+  tryCatch(
+    replicate_fn("parse_shiny_deep_link_from_search", url_search),
+    error = function(e) NULL
+  )
+}
+
 shiny_query_string <- function(params) {
   if (is.null(params) || length(params) == 0L) {
     return("")
@@ -2119,6 +2185,20 @@ registry_index_row_for <- function(key, index_df = registry_index) {
     return(empty)
   }
   norm <- tryCatch(replicate_fn("normalize_doi", key), error = function(e) key)
+  if ("doi" %in% names(index_df)) {
+    index_dois <- as.character(index_df$doi %||% "")
+    normalized_index <- vapply(index_dois, function(x) {
+      x <- trimws(x)
+      if (!nzchar(x)) {
+        return(NA_character_)
+      }
+      tryCatch(replicate_fn("normalize_doi", x), error = function(e) x)
+    }, character(1))
+    row <- index_df[!is.na(normalized_index) & normalized_index == norm, , drop = FALSE]
+    if (nrow(row) > 0L) {
+      return(row)
+    }
+  }
   row <- index_df[nzchar(as.character(index_df$doi %||% "")) & index_df$doi == norm, , drop = FALSE]
   if (nrow(row) > 0L) {
     return(row)
@@ -3504,6 +3584,97 @@ contribute_tab_ui <- function() {
   )
 }
 
+feedback_pkg_fn <- function(name) {
+  get(name, envir = asNamespace("replicateEverything"))
+}
+
+feedback_tab_ui <- function() {
+  category_url <- function(category, repo = "replicate-anything/replicateEverything") {
+    feedback_pkg_fn("shiny_feedback_github_category_url")(category, repo = repo)
+  }
+  fluidPage(
+    class = "px-3 py-2",
+    h3("Feedback"),
+    p(
+      class = "mb-3",
+      "Help us improve this prototype. Share bugs, ideas, or general feedback ",
+      "— we read every report."
+    ),
+    h4("Report on GitHub"),
+    p("Prefer GitHub? Open an issue with a category label:"),
+    tags$ul(
+      tags$li(
+        tags$a(
+          href = category_url("bug"),
+          target = "_blank",
+          rel = "noopener noreferrer",
+          "Bug report"
+        )
+      ),
+      tags$li(
+        tags$a(
+          href = category_url("feature"),
+          target = "_blank",
+          rel = "noopener noreferrer",
+          "Feature request"
+        )
+      ),
+      tags$li(
+        tags$a(
+          href = category_url("other"),
+          target = "_blank",
+          rel = "noopener noreferrer",
+          "Other / general"
+        )
+      )
+    ),
+    p(
+      class = "text-muted small",
+      "Package: ",
+      tags$a(
+        href = PKG_GITHUB_ISSUES,
+        target = "_blank",
+        rel = "noopener noreferrer",
+        "replicateEverything issues"
+      ),
+      " · Registry / study contributions: ",
+      tags$a(
+        href = REGISTRY_GITHUB_ISSUES,
+        target = "_blank",
+        rel = "noopener noreferrer",
+        "registry issues"
+      )
+    ),
+    tags$hr(),
+    h4("Send feedback"),
+    selectInput(
+      "feedback_category",
+      "Category",
+      choices = c(
+        "Bug report" = "bug",
+        "Feature request" = "feature",
+        "Other / general" = "other"
+      ),
+      selected = "bug"
+    ),
+    textAreaInput(
+      "feedback_text",
+      "Your feedback",
+      placeholder = "Describe the bug, idea, or question…",
+      rows = 6,
+      resize = "vertical"
+    ),
+    p(class = "text-muted small mb-1", "Plain text only (max 2,000 characters)."),
+    textInput(
+      "feedback_email",
+      "Email (optional)",
+      placeholder = "you@example.org"
+    ),
+    actionButton("feedback_submit", "Submit feedback", class = "btn-primary"),
+    uiOutput("feedback_status_ui")
+  )
+}
+
 replication_run_snippet <- function(doi, what, language = NULL, include_language = NULL) {
   lang <- tolower(trimws(as.character(language %||% "")))
   args <- c(
@@ -3633,6 +3804,105 @@ linked_code_block_ui <- function(
   )
 }
 
+code_setup_box_ui <- function(content) {
+  if (is.null(content)) {
+    return(NULL)
+  }
+  repo_slug <- content$repo_slug %||% ""
+  repo_url <- content$repo_url %||% ""
+  zip_url <- content$zip_url %||% ""
+  step1_body <- tagList(
+    if (nzchar(repo_slug)) {
+      tagList(
+        tags$p(
+          class = "mb-1",
+          "Get the study repository ",
+          tags$strong(repo_slug),
+          ":"
+        ),
+        tags$ul(
+          class = "mb-2",
+          tags$li(
+            tags$a(
+              href = repo_url,
+              target = "_blank",
+              rel = "noopener",
+              "Browse on GitHub"
+            )
+          ),
+          if (nzchar(zip_url)) {
+            tags$li(
+              tags$a(
+                href = zip_url,
+                target = "_blank",
+                rel = "noopener",
+                "Download main branch (.zip)"
+              )
+            )
+          },
+          tags$li(tags$code(paste0("git clone ", repo_url, ".git")))
+        )
+      )
+    } else {
+      tags$p(class = "mb-2", content$step1[[1L]] %||% "Clone the study repository.")
+    },
+    tags$p(
+      class = "mb-0",
+      content$step1[[length(content$step1)]] %||% ""
+    )
+  )
+  step2_body <- tagList(
+    tags$p(
+      class = "mb-1 text-muted small",
+      "Declared in ",
+      tags$code("replication.yml"),
+      " — probe locally with ",
+      tags$code("check_study_compatibility()"),
+      "."
+    ),
+    tags$ul(
+      class = "mb-1",
+      lapply(content$step2 %||% character(0), function(line) {
+        tags$li(line)
+      })
+    ),
+    if (length(content$step2_prep %||% character(0)) > 0L) {
+      lapply(content$step2_prep, function(note) {
+        tags$p(class = "text-muted small mb-1", tags$em(note))
+      })
+    }
+  )
+  tags$details(
+    class = "study-details-expand code-setup-expand mb-3",
+    tags$summary(
+      class = "study-details-summary",
+      tags$span(class = "study-details-chevron", HTML("&#9660;")),
+      tags$span(class = "ms-1", strong(content$title %||% "Set up — run this code locally"))
+    ),
+    tags$div(
+      class = "study-details-body pt-2",
+      tags$ol(
+        class = "code-setup-steps ps-3 mb-0",
+        tags$li(
+          class = "mb-2",
+          tags$strong("Get the repository. "),
+          step1_body
+        ),
+        tags$li(
+          class = "mb-2",
+          tags$strong("System requirements. "),
+          step2_body
+        ),
+        tags$li(
+          class = "mb-0",
+          tags$strong("Copy and paste. "),
+          content$step3 %||% "Copy and paste the code below."
+        )
+      )
+    )
+  )
+}
+
 code_panel_ui <- function(
   simple_code,
   full_code = NULL,
@@ -3721,6 +3991,11 @@ ui <- tagList(
           if (window.hljs) hljs.highlightElement(el);
         });
       });
+      Shiny.addCustomMessageHandler('openExternalUrl', function(msg) {
+        if (msg && msg.url) {
+          window.open(msg.url, '_blank', 'noopener,noreferrer');
+        }
+      });
       $(document).on('click', '.code-file-link--ok', function(e) {
         e.preventDefault();
         var path = this.getAttribute('data-rel-path');
@@ -3739,7 +4014,11 @@ ui <- tagList(
       });
       $(document).on('shiny:connected', function() {
         try {
-          var params = new URLSearchParams(window.location.search);
+          var search = window.location.search;
+          if (!search && window.location.href.indexOf('?') >= 0) {
+            search = window.location.href.substring(window.location.href.indexOf('?'));
+          }
+          var params = new URLSearchParams(search || '');
           var doi = params.get('doi');
           if (!doi) return;
           Shiny.setInputValue('url_deep_link', {
@@ -3759,6 +4038,9 @@ ui <- tagList(
     .replication-table th, .replication-table td { display: table-cell; vertical-align: top; }
     .replication-table caption { caption-side: top; font-weight: 600; padding-bottom: 0.5rem; }
     .replication-code-panel { margin-top: 0.25rem; }
+    .code-setup-expand { margin-bottom: 0.75rem; }
+    .code-setup-steps > li { line-height: 1.45; }
+    .code-setup-steps > li + li { margin-top: 0.35rem; }
     .replication-code-wrap { margin-bottom: 0.85rem; }
     .replication-code-wrap:last-child { margin-bottom: 0; }
     .replication-code-title {
@@ -4494,6 +4776,10 @@ ui <- tagList(
     contribute_tab_ui()
   ),
   tabPanel(
+    "Feedback",
+    feedback_tab_ui()
+  ),
+  tabPanel(
     "About",
     fluidPage(
       class = "px-3 py-2",
@@ -4602,6 +4888,7 @@ server <- function(input, output, session) {
     code_viewer_globals = character(0),
     code_viewer_lang = "r",
     code_viewer_root = NULL,
+    code_viewer_entry = NULL,
     pending_deep_link_language = NULL,
     suppress_url_sync = FALSE,
     welcome_shown = FALSE
@@ -4613,40 +4900,55 @@ server <- function(input, output, session) {
     }
   })
 
+  queue_shiny_deep_link <- function(link) {
+    if (is.null(link) || !is.list(link)) {
+      return(invisible(FALSE))
+    }
+    doi <- trimws(as.character(link$doi %||% ""))
+    if (!nzchar(doi)) {
+      return(invisible(FALSE))
+    }
+    state$welcome_shown <- TRUE
+    state$suppress_url_sync <- TRUE
+    state$pending_deep_link_doi <- doi
+    state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
+    state$pending_deep_link_language <- trimws(as.character(link$language %||% ""))
+    invisible(TRUE)
+  }
+
   observe({
     query_string <- session$clientData$url_search
-    if (is.null(query_string)) {
+    if (is.null(query_string) || isTRUE(state$url_deep_link_parsed)) {
       return(invisible(NULL))
     }
-
-    if (isFALSE(state$url_deep_link_parsed)) {
+    link <- parse_shiny_deep_link_from_search(query_string)
+    if (!is.null(link)) {
       state$url_deep_link_parsed <- TRUE
-      qs <- sub("^\\?", "", query_string)
-      if (nzchar(qs)) {
-        query <- parseQueryString(qs)
-        doi <- trimws(as.character(query$doi %||% ""))
-        if (nzchar(doi)) {
-          state$welcome_shown <- TRUE
-          state$suppress_url_sync <- TRUE
-          state$pending_deep_link_doi <- doi
-          state$pending_deep_link_what <- trimws(as.character(query$what %||% ""))
-          state$pending_deep_link_language <- trimws(as.character(query$language %||% ""))
-          return(invisible(NULL))
-        }
-      }
+      queue_shiny_deep_link(link)
     }
+  })
 
+  session$onFlushed(function() {
+    if (isTRUE(state$url_deep_link_parsed)) {
+      return(invisible(NULL))
+    }
+    link <- parse_shiny_deep_link_from_search(session$clientData$url_search)
+    if (!is.null(link)) {
+      state$url_deep_link_parsed <- TRUE
+      queue_shiny_deep_link(link)
+      return(invisible(NULL))
+    }
     if (isFALSE(state$welcome_shown)) {
       state$welcome_shown <- TRUE
       showModal(modalDialog(
-        title = "Welcome to Replicate Everything",
+        title = "Welcome to our replicateEverything Prototype",
         app_welcome_intro(),
         size = "m",
         easyClose = TRUE,
         footer = modalButton("Get started")
       ))
     }
-  })
+  }, once = TRUE)
 
   replication_has_engine <- function(reps, engine) {
     col <- switch(
@@ -4890,16 +5192,8 @@ server <- function(input, output, session) {
   observeEvent(input$url_deep_link, {
     link <- input$url_deep_link
     req(is.list(link))
-    doi <- trimws(as.character(link$doi %||% ""))
-    req(nzchar(doi))
-    if (isFALSE(state$url_deep_link_parsed)) {
-      state$url_deep_link_parsed <- TRUE
-    }
-    state$welcome_shown <- TRUE
-    state$suppress_url_sync <- TRUE
-    state$pending_deep_link_doi <- doi
-    state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
-    state$pending_deep_link_language <- trimws(as.character(link$language %||% ""))
+    state$url_deep_link_parsed <- TRUE
+    queue_shiny_deep_link(link)
   }, ignoreInit = TRUE)
 
   observeEvent(state$pending_deep_link_doi, {
@@ -5602,6 +5896,10 @@ server <- function(input, output, session) {
 
   output$selected_prep_ui <- renderUI({
     tryCatch({
+      req(state$selected_replication, state$doi)
+      if (is.null(state$selected_result) && is_artifact_source(state$selected_source)) {
+        load_selected_artifact(fallback_live = FALSE)
+      }
       if (inherits(state$selected_result, "error")) {
         return(replication_error_ui(
           state$selected_result,
@@ -5611,6 +5909,15 @@ server <- function(input, output, session) {
         ))
       }
       if (is.null(state$selected_result)) {
+        if (is_artifact_source(state$selected_source)) {
+          return(artifact_missing_ui(
+            state$doi,
+            state$selected_replication,
+            folder = state$registry_folder,
+            repo = state$registry_repo,
+            kind = "pipeline step"
+          ))
+        }
         return(helpText(
           if (shiny_live_run_enabled()) {
             "Click Run to execute this pipeline step."
@@ -5622,11 +5929,13 @@ server <- function(input, output, session) {
       raw <- state$selected_result
       status <- NULL
       output_path <- NULL
-      obj <- raw
       if (is.list(raw) && !is.null(raw$object)) {
         status <- raw$status %||% NULL
         output_path <- raw$output_path %||% NULL
-        obj <- replicate_fn("replication_object", raw)
+      }
+      obj <- replicate_fn("resolve_prep_display_object", raw)
+      if (is.list(raw) && is.null(output_path)) {
+        output_path <- raw$output_path %||% NULL
       }
       state$prep_download_path <- output_path
       tagList(
@@ -5640,14 +5949,7 @@ server <- function(input, output, session) {
           )
         },
         if (is.data.frame(obj)) {
-          tagList(
-            tags$p(class = "text-muted mb-1", "Preview (first rows):"),
-            if (requireNamespace("knitr", quietly = TRUE)) {
-              htmltools::HTML(knitr::kable(utils::head(obj, 6), format = "html", table.attr = 'class="table table-sm"'))
-            } else {
-              tableOutput("selected_prep_table")
-            }
-          )
+          prep_preview_table_ui(obj)
         } else if (inherits(obj, "dataverse_deposit_summary")) {
           tagList(
             tags$div(
@@ -5664,6 +5966,12 @@ server <- function(input, output, session) {
               style = "white-space: pre-wrap;",
               format(obj)
             )
+          )
+        } else if (inherits(obj, "prep_output_preview") && !is.null(obj$note)) {
+          tags$pre(
+            class = "mb-0",
+            style = "white-space: pre-wrap;",
+            obj$note
           )
         } else if (is.list(obj) && !is.null(obj$note)) {
           tags$pre(
@@ -5691,12 +5999,7 @@ server <- function(input, output, session) {
 
   output$selected_prep_table <- renderTable({
     req(state$selected_result)
-    raw <- state$selected_result
-    obj <- if (is.list(raw) && !is.null(raw$object)) {
-      replicate_fn("replication_object", raw)
-    } else {
-      raw
-    }
+    obj <- replicate_fn("resolve_prep_display_object", state$selected_result)
     req(is.data.frame(obj))
     obj
   }, striped = TRUE, bordered = TRUE, spacing = "s")
@@ -5870,6 +6173,20 @@ server <- function(input, output, session) {
       }
     }
     current_path <- tail(breadcrumb, 1L)
+    if (is.null(current_path) || !nzchar(current_path)) {
+      current_path <- state$code_viewer_entry
+    }
+    if (is.null(current_path) || !nzchar(current_path)) {
+      current_path <- tryCatch({
+        rep <- replicate_fn(
+          "find_replication_entry",
+          replicate_fn("get_replication_meta", state$doi, folder = state$registry_folder, repo = state$registry_repo),
+          target$id,
+          language = lang
+        )
+        as.character(rep$code)
+      }, error = function(e) NULL)
+    }
     if (!is.null(current_path) && nzchar(current_path) && code_viewer_root_usable(state$code_viewer_root)) {
       cache_key <- current_path
       rendered <- state$code_viewer_cache[[cache_key]]
@@ -5944,13 +6261,54 @@ server <- function(input, output, session) {
         "folder-backed and registry studies load scripts from the study or registry repo."
       ))
     }
-    code_panel_ui(
-      simple_code,
-      full_code = NULL,
-      language = code_lang,
-      linked_html = linked_html,
-      breadcrumb_paths = breadcrumb,
-      plain_full_code = plain_full
+    setup_audit <- state$study_audit
+    if (
+      !is.null(setup_audit) &&
+      nzchar(as.character(state$doi %||% "")) &&
+      !identical(
+        as.character(setup_audit$doi %||% ""),
+        as.character(state$doi %||% "")
+      )
+    ) {
+      setup_audit <- NULL
+    }
+    setup_content <- tryCatch(
+      replicate_fn(
+        "code_setup_box_content",
+        doi = state$doi,
+        language = lang,
+        step_id = target$id,
+        audit = setup_audit,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      ),
+      error = function(e) NULL
+    )
+    tagList(
+      code_setup_box_ui(setup_content),
+      code_panel_ui(
+        simple_code,
+        full_code = NULL,
+        language = code_lang,
+        linked_html = linked_html,
+        breadcrumb_paths = breadcrumb,
+        plain_full_code = plain_full
+      ),
+      if (isTRUE(getOption("replicate_shiny.debug_code_viewer", FALSE)) &&
+          code_viewer_root_usable(state$code_viewer_root)) {
+        tags$p(
+          class = "text-muted small mb-0",
+          tags$strong("Code viewer root: "),
+          tags$code(state$code_viewer_root),
+          if (!is.null(current_path) && nzchar(current_path)) {
+            tagList(
+              tags$br(),
+              tags$strong("Current file: "),
+              tags$code(current_path)
+            )
+          }
+        )
+      }
     )
   })
 
@@ -5973,9 +6331,11 @@ server <- function(input, output, session) {
       state$code_viewer_cache <- list()
       state$code_viewer_globals <- character(0)
       state$code_viewer_root <- NULL
+      state$code_viewer_entry <- NULL
       return()
     }
     state$code_viewer_root <- viewer$study_root
+    state$code_viewer_entry <- viewer$entry_path
     state$code_viewer_globals <- as.list(viewer$graph$globals %||% character())
     state$code_viewer_lang <- viewer$language
     state$code_viewer_stack <- viewer$entry_path
@@ -6085,6 +6445,87 @@ server <- function(input, output, session) {
       session$sendCustomMessage("highlightCode", list())
     }, once = TRUE)
   }, ignoreInit = TRUE)
+
+  feedback_state <- reactiveValues(
+    last_submit = NULL,
+    message = NULL,
+    message_kind = NULL
+  )
+
+  output$feedback_status_ui <- renderUI({
+    msg <- feedback_state$message
+    if (is.null(msg) || !nzchar(msg)) {
+      return(NULL)
+    }
+    cls <- switch(
+      feedback_state$message_kind %||% "info",
+      success = "alert alert-success mt-3",
+      error = "alert alert-danger mt-3",
+      "alert alert-info mt-3"
+    )
+    tags$div(class = cls, htmltools::htmlEscape(msg))
+  })
+
+  observeEvent(input$feedback_submit, {
+    cooldown <- feedback_pkg_fn("SHINY_FEEDBACK_COOLDOWN_SECS")
+    if (
+      !is.null(feedback_state$last_submit) &&
+        difftime(Sys.time(), feedback_state$last_submit, units = "secs") < cooldown
+    ) {
+      feedback_state$message <- sprintf(
+        "Please wait %d seconds before submitting again.",
+        as.integer(cooldown)
+      )
+      feedback_state$message_kind <- "error"
+      return(invisible(NULL))
+    }
+
+    category <- feedback_pkg_fn("validate_shiny_feedback_category")(input$feedback_category)
+    if (is.na(category)) {
+      feedback_state$message <- "Please choose a valid category."
+      feedback_state$message_kind <- "error"
+      return(invisible(NULL))
+    }
+
+    text <- feedback_pkg_fn("sanitize_shiny_feedback_text")(input$feedback_text)
+    if (!nzchar(text)) {
+      feedback_state$message <- "Please enter your feedback."
+      feedback_state$message_kind <- "error"
+      return(invisible(NULL))
+    }
+
+    email <- feedback_pkg_fn("sanitize_shiny_feedback_email")(input$feedback_email)
+    feedback_state$last_submit <- Sys.time()
+
+    if (feedback_pkg_fn("shiny_feedback_log_enabled")()) {
+      ok <- feedback_pkg_fn("append_shiny_feedback_log")(category, text, email = email)
+      if (isTRUE(ok)) {
+        feedback_state$message <- "Thank you — your feedback was recorded."
+        feedback_state$message_kind <- "success"
+      } else {
+        feedback_state$message <- "Could not save feedback. Try a GitHub issue instead."
+        feedback_state$message_kind <- "error"
+      }
+    } else {
+      url <- feedback_pkg_fn("shiny_feedback_github_issue_url")(
+        category,
+        text,
+        email = email
+      )
+      if (!nzchar(url)) {
+        feedback_state$message <- "Could not prepare a GitHub issue link. Check your input and try again."
+        feedback_state$message_kind <- "error"
+        return(invisible(NULL))
+      }
+      session$sendCustomMessage("openExternalUrl", list(url = url))
+      feedback_state$message <- paste(
+        "Thank you — a pre-filled GitHub issue should open in a new tab.",
+        "Submit it there to send your report."
+      )
+      feedback_state$message_kind <- "success"
+    }
+    invisible(NULL)
+  })
 }
 
 shinyApp(ui, server)

@@ -79,6 +79,63 @@ find_prep_entry <- function(meta, step_id) {
   matches[[1]]
 }
 
+#' Caption for a prep / transform step in Shiny and reports
+#'
+#' @param prep Prep step entry from \code{replication.yml}.
+#' @return Character string like \code{`Analysis data` step (Rename ...)}.
+#' @keywords internal
+prep_step_display_caption <- function(prep) {
+  if (is.null(prep) || !is.list(prep)) {
+    return("pipeline step")
+  }
+  id <- as.character(prep$id %||% "step")
+  label <- trimws(as.character(prep$label %||% id))
+  desc <- trimws(as.character(prep$description %||% prep$desc %||% ""))
+  step_name <- paste0("`", label, "` step")
+  if (nzchar(desc) && !identical(desc, label)) {
+    return(paste0(step_name, " (", desc, ")"))
+  }
+  step_name
+}
+
+#' Resolve a prep display value to a kable-ready preview when possible
+#'
+#' Accepts a data frame, \code{replication_result}, or
+#' \code{prep_output_preview} and returns a data frame head when the backing
+#' file is tabular.
+#'
+#' @param obj Artifact, replication result, or preview object.
+#' @param n Maximum preview rows.
+#' @keywords internal
+resolve_prep_display_object <- function(obj, n = 6L) {
+  if (inherits(obj, "error")) {
+    return(obj)
+  }
+  if (is.list(obj) && !is.null(obj$object)) {
+    obj <- replicate_fn_result_object(obj)
+  }
+  if (is.data.frame(obj)) {
+    return(utils::head(obj, n))
+  }
+  if (inherits(obj, "dataverse_deposit_summary")) {
+    return(obj)
+  }
+  if (inherits(obj, "prep_output_preview")) {
+    path <- obj$path %||% NULL
+    if (!is.null(path) && nzchar(path) && file.exists(path)) {
+      ext <- tolower(tools::file_ext(path))
+      if (ext %in% c("rds", "csv", "dta")) {
+        preview <- tryCatch(preview_data_file(path, n = n), error = function(e) NULL)
+        if (is.data.frame(preview)) {
+          return(preview)
+        }
+      }
+    }
+    return(obj)
+  }
+  obj
+}
+
 #' Summarize an RDS prep output for display
 #'
 #' @param path Local RDS path.

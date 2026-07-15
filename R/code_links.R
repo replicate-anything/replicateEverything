@@ -27,19 +27,45 @@ normalize_code_from_file <- function(from_file, study_root, allowed_root = study
   if (is.null(from_file) || length(from_file) != 1L || is.na(from_file) || !nzchar(from_file)) {
     return(NULL)
   }
-  from_file <- as.character(from_file)
-  abs_from <- if (grepl("^[A-Za-z]:[/\\\\]|^/", from_file)) {
-    from_file
-  } else {
-    file.path(study_root, from_file)
+  if (!is_study_root_usable(study_root)) {
+    return(NULL)
   }
-  abs_from <- normalize_path_slashes(
-    normalizePath(abs_from, winslash = "/", mustWork = FALSE)
+  from_file <- normalize_path_slashes(as.character(from_file))
+  study_norm <- normalize_path_slashes(
+    normalizePath(study_root, winslash = "/", mustWork = FALSE)
   )
   allowed_norm <- normalize_path_slashes(
     normalizePath(allowed_root, winslash = "/", mustWork = FALSE)
   )
+  abs_from <- if (grepl("^[A-Za-z]:[/\\\\]|^/", from_file)) {
+    from_file
+  } else {
+    file.path(study_norm, from_file)
+  }
+  abs_from <- normalize_path_slashes(
+    normalizePath(abs_from, winslash = "/", mustWork = FALSE)
+  )
   if (!path_within_root(abs_from, allowed_norm)) {
+    # Cached GitHub checkouts live under .../<repo>/<ref>/; accept caller paths
+    # that include the study root as a suffix (e.g. materialized cache paths).
+    if (grepl("^[A-Za-z]:[/\\\\]|^/", from_file)) {
+      suffix <- sub(
+        paste0("^.*", gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", study_norm)),
+        "",
+        abs_from
+      )
+      if (nzchar(suffix) && !grepl("^/", suffix)) {
+        suffix <- paste0("/", suffix)
+      }
+      if (nzchar(suffix) && suffix != abs_from) {
+        candidate <- normalize_path_slashes(
+          normalizePath(file.path(study_norm, sub("^/", "", suffix)), winslash = "/", mustWork = FALSE)
+        )
+        if (path_within_root(candidate, allowed_norm)) {
+          return(candidate)
+        }
+      }
+    }
     return(NULL)
   }
   abs_from
@@ -472,8 +498,9 @@ resolve_code_path <- function(
     }
     candidate <- normalize_path_slashes(file.path(base, candidate))
   }
-  candidate <- normalizePath(candidate, winslash = "/", mustWork = FALSE)
-  candidate <- normalize_path_slashes(candidate)
+  candidate <- normalize_path_slashes(
+    normalizePath(candidate, winslash = "/", mustWork = FALSE)
+  )
   if (!path_within_root(candidate, allowed_norm)) {
     return(list(
       status = "outside_root",
@@ -1134,21 +1161,28 @@ study_code_reader <- function(ctx, meta) {
 resolve_study_code_root <- function(doi, repo = NULL, folder = NULL) {
   ctx <- paper_context(doi, repo = repo, folder = folder)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  normalize_study_code_root <- function(root) {
+    if (!is_study_root_usable(root)) {
+      return(NULL)
+    }
+    root <- normalizePath(root, winslash = "/", mustWork = FALSE)
+    if (!file.exists(file.path(root, "replication.yml"))) {
+      return(NULL)
+    }
+    root
+  }
   if (!is.null(meta) && is_folder_study_replication(meta, ctx)) {
-    materialized <- ensure_study_folder_local(meta, ctx)
-    if (is_study_root_usable(materialized)) {
-      return(normalizePath(materialized, winslash = "/", mustWork = FALSE))
+    local <- normalize_study_code_root(ensure_study_folder_local(meta, ctx))
+    if (!is.null(local)) {
+      return(local)
     }
   }
-  root <- ctx$local_root
-  if (
-    is_study_root_usable(root) &&
-      file.exists(file.path(root, "replication.yml"))
-  ) {
-    return(normalizePath(root, winslash = "/", mustWork = FALSE))
+  local <- normalize_study_code_root(ctx$local_root)
+  if (!is.null(local)) {
+    return(local)
   }
   if (!is.null(meta)) {
-    ensure_study_folder_local(meta, ctx)
+    normalize_study_code_root(ensure_study_folder_local(meta, ctx))
   } else {
     NULL
   }

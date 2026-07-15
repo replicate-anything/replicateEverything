@@ -703,7 +703,7 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL
   if (!is.null(rep) && is_prep_entry(rep)) {
     prep_display <- load_prep_step_display(meta, ctx, rep)
     if (!artifact_content_missing(prep_display)) {
-      return(prep_display)
+      return(resolve_prep_display_object(prep_display))
     }
   }
 
@@ -793,7 +793,9 @@ read_artifact_file <- function(path, ext) {
     html = normalize_html_table(paste(readLines(path, warn = FALSE), collapse = "\n")),
     png = path,
     svg = path,
-    rds = readRDS(path),
+    rds = preview_data_file(path),
+    csv = preview_data_file(path),
+    dta = preview_data_file(path),
     paste(readLines(path, warn = FALSE), collapse = "\n")
   )
 }

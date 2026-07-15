@@ -84,6 +84,10 @@ default_format_object <- function(object, rep, paper_meta = NULL) {
     if (inherits(object, "dataverse_deposit_summary")) {
       return(object)
     }
+    resolved <- resolve_prep_display_object(object)
+    if (is.data.frame(resolved)) {
+      return(resolved)
+    }
     path <- object$path %||% NULL
     if (!is.null(path) && nzchar(path) && file.exists(path)) {
       if (grepl("\\.(png|jpg|jpeg|gif|svg|pdf)$", path, ignore.case = TRUE)) {
