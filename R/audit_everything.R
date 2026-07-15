@@ -103,6 +103,156 @@ audit_jobs_from_replications <- function(reps) {
   do.call(rbind, rows)
 }
 
+#' Rough runtime category thresholds (seconds)
+#'
+#' \itemize{
+#'   \item \code{short} — under 30 seconds
+#'   \item \code{medium} — 30 seconds up to 5 minutes
+#'   \item \code{slow} — over 5 minutes
+#' }
+#' @keywords internal
+AUDIT_RUNTIME_SHORT_MAX <- 30
+AUDIT_RUNTIME_MEDIUM_MAX <- 300
+
+#' Bucket audit elapsed seconds into short / medium / slow
+#'
+#' @param seconds Numeric elapsed seconds (scalar or vector; \code{NA} allowed).
+#' @return Character vector of categories (\code{"short"}, \code{"medium"},
+#'   \code{"slow"}), or \code{NA_character_} when \code{seconds} is missing.
+#' @keywords internal
+audit_runtime_category <- function(seconds) {
+  seconds <- as.numeric(seconds)
+  out <- rep(NA_character_, length(seconds))
+  ok <- is.finite(seconds) & !is.na(seconds) & seconds >= 0
+  out[ok & seconds < AUDIT_RUNTIME_SHORT_MAX] <- "short"
+  out[ok & seconds >= AUDIT_RUNTIME_SHORT_MAX & seconds < AUDIT_RUNTIME_MEDIUM_MAX] <- "medium"
+  out[ok & seconds >= AUDIT_RUNTIME_MEDIUM_MAX] <- "slow"
+  out
+}
+
+#' Human-readable expected-time advice from an audit runtime category
+#'
+#' @param category \code{"short"}, \code{"medium"}, or \code{"slow"}.
+#' @param seconds Optional elapsed seconds from the last audit for a more
+#'   specific tip.
+#' @return Character scalar (may be empty when category is missing).
+#' @keywords internal
+audit_runtime_advice <- function(category, seconds = NULL) {
+  cat <- tolower(trimws(as.character(category[[1L]] %||% "")))
+  secs <- if (!is.null(seconds) && length(seconds)) {
+    as.numeric(seconds[[1L]])
+  } else {
+    NA_real_
+  }
+  secs_note <- if (is.finite(secs) && secs >= 0) {
+    if (secs < 60) {
+      sprintf(" (last audit: %.0fs)", secs)
+    } else if (secs < 3600) {
+      sprintf(" (last audit: ~%.0f min)", secs / 60)
+    } else {
+      sprintf(" (last audit: ~%.1f h)", secs / 3600)
+    }
+  } else {
+    ""
+  }
+  switch(
+    cat,
+    short = paste0("Expected time: typically seconds", secs_note, "."),
+    medium = paste0("Expected time: about a minute or a few minutes", secs_note, "."),
+    slow = paste0(
+      "Expected time: several minutes or longer",
+      secs_note,
+      ". Consider leaving this tab open while it runs."
+    ),
+    ""
+  )
+}
+
+#' Look up audit runtime for one study object
+#'
+#' Reads the registry \code{audit_latest.rds} snapshot when available and returns
+#' elapsed seconds and a short/medium/slow category for Shiny Run advice.
+#'
+#' @param doi Study DOI.
+#' @param what Replication id (or group id).
+#' @param engine Optional engine filter (\code{"r"}, \code{"stata"}, \code{"python"}).
+#' @param registry_root Optional registry root.
+#' @return List with \code{available}, \code{seconds}, \code{runtime_category},
+#'   \code{advice}, \code{timed_out}, and matching \code{object}.
+#' @keywords internal
+lookup_replication_audit_runtime <- function(
+  doi,
+  what,
+  engine = NULL,
+  registry_root = NULL
+) {
+  empty <- list(
+    available = FALSE,
+    seconds = NA_real_,
+    runtime_category = NA_character_,
+    advice = "",
+    timed_out = FALSE,
+    object = NA_character_
+  )
+  snap <- tryCatch(
+    load_registry_audit_snapshot(registry_root),
+    error = function(e) NULL
+  )
+  if (is.null(snap) || is.null(snap$results) || !nrow(snap$results)) {
+    return(empty)
+  }
+  doi_norm <- normalize_doi(doi)
+  what <- as.character(what[[1L]] %||% what)
+  results <- snap$results
+  results$doi_norm <- vapply(results$doi, normalize_doi, character(1))
+  sub <- results[results$doi_norm == doi_norm, , drop = FALSE]
+  if (!nrow(sub)) {
+    return(empty)
+  }
+  objs <- as.character(sub$object)
+  hit <- sub[objs == what, , drop = FALSE]
+  if (!nrow(hit) && nzchar(what)) {
+    hit <- sub[
+      objs == paste0(what, "_stata") |
+        objs == paste0(what, "_python") |
+        startsWith(objs, paste0(what, "_")),
+      ,
+      drop = FALSE
+    ]
+  }
+  eng <- tolower(trimws(as.character(engine[[1L]] %||% "")))
+  if (nzchar(eng) && nrow(hit)) {
+    eng_hit <- hit[tolower(as.character(hit$engine)) == eng, , drop = FALSE]
+    if (nrow(eng_hit)) {
+      hit <- eng_hit
+    }
+  }
+  if (!nrow(hit)) {
+    return(empty)
+  }
+  # Prefer a successful timed run when multiple rows match
+  prefer <- hit
+  if ("success" %in% names(prefer) && any(prefer$success %in% TRUE)) {
+    prefer <- prefer[prefer$success %in% TRUE, , drop = FALSE]
+  }
+  row <- prefer[1L, , drop = FALSE]
+  seconds <- as.numeric(row$seconds[[1L]])
+  category <- if ("runtime_category" %in% names(row) &&
+    nzchar(as.character(row$runtime_category[[1L]] %||% ""))) {
+    as.character(row$runtime_category[[1L]])
+  } else {
+    audit_runtime_category(seconds)
+  }
+  list(
+    available = TRUE,
+    seconds = seconds,
+    runtime_category = category,
+    advice = audit_runtime_advice(category, seconds),
+    timed_out = isTRUE(row$timed_out[[1L]]),
+    object = as.character(row$object[[1L]] %||% what)
+  )
+}
+
 #' Truncate an error message for audit output
 #' @keywords internal
 audit_error_snippet <- function(x, max_chars = 240L) {
@@ -341,6 +491,7 @@ audit_everything <- function(
         run_ok = FALSE,
         substantive_ok = NA,
         seconds = NA_real_,
+        runtime_category = NA_character_,
         timed_out = FALSE,
         error_snippet = audit_error_snippet(reps),
         stringsAsFactors = FALSE
@@ -361,6 +512,7 @@ audit_everything <- function(
         run_ok = FALSE,
         substantive_ok = NA,
         seconds = NA_real_,
+        runtime_category = NA_character_,
         timed_out = FALSE,
         error_snippet = "No table, figure, or pipeline step replications listed for this study.",
         stringsAsFactors = FALSE
@@ -409,6 +561,7 @@ audit_everything <- function(
         run_ok = run$run_ok,
         substantive_ok = run$substantive_ok,
         seconds = run$seconds,
+        runtime_category = audit_runtime_category(run$seconds),
         timed_out = run$timed_out,
         error_snippet = err_snippet,
         stringsAsFactors = FALSE
@@ -418,6 +571,10 @@ audit_everything <- function(
 
   results_df <- do.call(rbind, results)
   rownames(results_df) <- NULL
+  if (!is.null(results_df) && nrow(results_df) > 0L &&
+      !"runtime_category" %in% names(results_df)) {
+    results_df$runtime_category <- audit_runtime_category(results_df$seconds)
+  }
 
   finished_at <- Sys.time()
   n_ok <- sum(results_df$success, na.rm = TRUE)

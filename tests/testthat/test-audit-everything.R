@@ -1,3 +1,74 @@
+test_that("audit_runtime_category buckets short/medium/slow", {
+  expect_equal(audit_runtime_category(5), "short")
+  expect_equal(audit_runtime_category(29.9), "short")
+  expect_equal(audit_runtime_category(30), "medium")
+  expect_equal(audit_runtime_category(299), "medium")
+  expect_equal(audit_runtime_category(300), "slow")
+  expect_equal(audit_runtime_category(NA_real_), NA_character_)
+  expect_equal(
+    audit_runtime_category(c(1, 60, 600)),
+    c("short", "medium", "slow")
+  )
+})
+
+test_that("audit_runtime_advice describes categories", {
+  expect_match(audit_runtime_advice("short", 12), "seconds")
+  expect_match(audit_runtime_advice("medium", 90), "minute")
+  expect_match(audit_runtime_advice("slow", 400), "minutes")
+  expect_equal(audit_runtime_advice(NA_character_), "")
+})
+
+test_that("lookup_replication_audit_runtime reads snapshot rows", {
+  root <- tempfile("audit-runtime-")
+  dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+
+  results <- data.frame(
+    doi = "10.9999/example",
+    title = "Example",
+    object = "tab_1",
+    object_label = "Table 1",
+    type = "table",
+    engine = "r",
+    success = TRUE,
+    run_ok = TRUE,
+    substantive_ok = NA,
+    seconds = 12.5,
+    runtime_category = "short",
+    timed_out = FALSE,
+    error_snippet = "",
+    stringsAsFactors = FALSE
+  )
+  audit <- structure(
+    list(
+      patience = 20,
+      started_at = Sys.time(),
+      finished_at = Sys.time(),
+      results = results,
+      summary = list(studies = 1L, runs = 1L, success = 1L, failed = 0L, timed_out = 0L)
+    ),
+    class = "audit_everything"
+  )
+  saveRDS(audit, file.path(root, "audit_latest.rds"))
+
+  # Clear session cache so the temp snapshot is used
+  if (exists(".registry_audit_cache", envir = asNamespace("replicateEverything"), inherits = FALSE)) {
+    cache <- get(".registry_audit_cache", envir = asNamespace("replicateEverything"))
+    rm(list = ls(envir = cache), envir = cache)
+  }
+
+  hit <- lookup_replication_audit_runtime(
+    "10.9999/example",
+    "tab_1",
+    engine = "r",
+    registry_root = root
+  )
+  expect_true(hit$available)
+  expect_equal(hit$runtime_category, "short")
+  expect_equal(hit$seconds, 12.5)
+  expect_match(hit$advice, "seconds")
+})
+
 test_that("audit_jobs_from_replications lists each engine", {
   reps <- list(
     list(id = "tab_1", type = "table", label = "Table 1", code = "code/tab_1.R"),

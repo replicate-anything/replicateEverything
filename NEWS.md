@@ -1,3 +1,10 @@
+# replicateEverything 0.6.4
+
+## Audit runtime categories and Shiny Run advice
+
+* [audit_everything()] records `runtime_category` (`short` / `medium` / `slow`) from elapsed seconds (thresholds: &lt;30s, &lt;5min, else slow).
+* Shiny **Run** uses the registry `audit_latest.rds` snapshot when available: button tooltips and the live-run progress message advise expected time.
+
 # replicateEverything 0.6.3
 
 ## Shiny feedback — safe mode for stale workers

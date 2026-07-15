@@ -5748,10 +5748,24 @@ server <- function(input, output, session) {
           )
         ),
         if (shiny_live_run_enabled()) {
+          run_title <- "Run live replication"
+          rt <- tryCatch(
+            replicate_fn(
+              "lookup_replication_audit_runtime",
+              state$doi,
+              group,
+              engine = engine
+            ),
+            error = function(e) NULL
+          )
+          if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
+            run_title <- rt$advice
+          }
           actionButton(
             paste0("replicate_", safe_group),
             "Run",
             class = "btn-primary btn-sm",
+            title = run_title,
             onclick = sprintf(
               "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
               group
@@ -5842,10 +5856,25 @@ server <- function(input, output, session) {
                   )
                 ),
                 if (shiny_live_run_enabled()) {
+                  step_run_title <- "Run live replication"
+                  step_rt <- tryCatch(
+                    replicate_fn(
+                      "lookup_replication_audit_runtime",
+                      state$doi,
+                      step_id,
+                      engine = step_engine
+                    ),
+                    error = function(e) NULL
+                  )
+                  if (!is.null(step_rt) && isTRUE(step_rt$available) &&
+                      nzchar(step_rt$advice %||% "")) {
+                    step_run_title <- step_rt$advice
+                  }
                   actionButton(
                     paste0("data_run_", safe_id),
                     "Run",
                     class = "btn-outline-primary btn-sm",
+                    title = step_run_title,
                     onclick = sprintf(
                       "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
                       step_id
@@ -6058,9 +6087,27 @@ server <- function(input, output, session) {
       return(invisible(NULL))
     }
 
+    run_msg <- "Running live replication..."
+    rt <- tryCatch(
+      replicate_fn(
+        "lookup_replication_audit_runtime",
+        doi,
+        what,
+        engine = language
+      ),
+      error = function(e) NULL
+    )
+    if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
+      run_msg <- paste0("Running live replication... ", rt$advice)
+    }
+
     tryCatch({
-      withProgress(message = "Running live replication...", value = 0.2, {
-        state$progress <- "Running replication"
+      withProgress(message = run_msg, value = 0.2, {
+        state$progress <- if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
+          paste0("Running replication — ", rt$advice)
+        } else {
+          "Running replication"
+        }
         ensure_study_replication_package(doi, folder = state$registry_folder, repo = state$registry_repo)
         loaded <- replicate_fn(
           "load_replication_for_display",
