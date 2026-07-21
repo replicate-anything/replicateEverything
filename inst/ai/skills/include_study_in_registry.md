@@ -53,7 +53,7 @@ library(replicateEverything)
 prepare_study_for_registry(".", build_artifacts = TRUE)
 
 # Package study (same function — auto-detects layout)
-prepare_study_for_registry("../rep-10.1371_journal.pone.0278337")
+prepare_study_for_registry("../rep-10.1371-journal.pone.0278337")
 ```
 
 `prepare_study_for_registry()`:

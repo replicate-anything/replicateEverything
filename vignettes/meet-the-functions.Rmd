@@ -207,8 +207,8 @@ validate_outputs(doi = "everywhere", what = "everything")
 Package-backed studies export `run_replication()`, `get_code()`, and related helpers from the study package itself. Validate with [check_replication()], then `prepare_study_for_registry()` for handoff files under `inst/registry/`.
 
 ```{r}
-check_replication("../rep-10.1371_journal.pone.0278337")
-check_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
+check_replication("../rep-10.1371-journal.pone.0278337")
+check_replication("../rep-10.1371-journal.pone.0278337", full_replication = TRUE)
 ```
 
 See `vignette("package-replication-checklist")` for layout and API requirements.

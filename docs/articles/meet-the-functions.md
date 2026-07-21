@@ -266,8 +266,8 @@ for handoff files under `inst/registry/`.
 
 ``` r
 
-check_replication("../rep-10.1371_journal.pone.0278337")
-check_replication("../rep-10.1371_journal.pone.0278337", full_replication = TRUE)
+check_replication("../rep-10.1371-journal.pone.0278337")
+check_replication("../rep-10.1371-journal.pone.0278337", full_replication = TRUE)
 ```
 
 See

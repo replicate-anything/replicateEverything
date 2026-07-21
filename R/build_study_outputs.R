@@ -69,7 +69,7 @@ build_study_outputs <- function(
   if (looks_like_study_alias(loc)) {
     stop(
       "Could not resolve study location: ", loc, ". ",
-      "Pass the study repo path (e.g. \"rep-10.5555_cahw\"), call ",
+      "Pass the study repo path (e.g. \"rep-10.5555-cahw\"), call ",
       "configure_local_monorepo(), or set options(replicateEverything.registry_root = ...).",
       call. = FALSE
     )

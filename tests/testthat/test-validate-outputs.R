@@ -65,7 +65,7 @@ test_that("study_artifact_rel_candidates uses outputs paths only", {
 
 test_that("get_artifact_path resolves figure png under local folder-backed study", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_test")
+  study_dir <- file.path(local_root, "rep-10.5555-test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
@@ -86,9 +86,9 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
       "paper:",
       "  doi: 10.5555/test",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_test",
-      "  study_folder: rep-10.5555_test",
-      "repo: replicate-anything/rep-10.5555_test"
+      "  study_repo: replicate-anything/rep-10.5555-test",
+      "  study_folder: rep-10.5555-test",
+      "repo: replicate-anything/rep-10.5555-test"
     ),
     file.path(local_root, "studies", "10.5555_test.yml")
   )
@@ -102,7 +102,7 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_test",
+    repo = "replicate-anything/rep-10.5555-test",
     stringsAsFactors = FALSE
   )
 
@@ -127,7 +127,7 @@ test_that("get_artifact_path resolves figure png under local folder-backed study
 
 test_that("validate_outputs fails when file is missing", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_missing")
+  study_dir <- file.path(local_root, "rep-10.5555-missing")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
@@ -148,9 +148,9 @@ test_that("validate_outputs fails when file is missing", {
       "paper:",
       "  doi: 10.5555/missing",
       "  materials: folder",
-      "study_repo: replicate-anything/rep-10.5555_missing",
-      "  study_folder: rep-10.5555_missing",
-      "repo: replicate-anything/rep-10.5555_missing"
+      "study_repo: replicate-anything/rep-10.5555-missing",
+      "  study_folder: rep-10.5555-missing",
+      "repo: replicate-anything/rep-10.5555-missing"
     ),
     file.path(local_root, "studies", "10.5555_missing.yml")
   )
@@ -162,7 +162,7 @@ test_that("validate_outputs fails when file is missing", {
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_missing",
+    repo = "replicate-anything/rep-10.5555-missing",
     stringsAsFactors = FALSE
   )
 
@@ -185,7 +185,7 @@ test_that("validate_outputs fails when file is missing", {
 
 test_that("validate_outputs passes for registry and study location", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_test")
+  study_dir <- file.path(local_root, "rep-10.5555-test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
@@ -206,9 +206,9 @@ test_that("validate_outputs passes for registry and study location", {
       "paper:",
       "  doi: 10.5555/test",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_test",
-      "  study_folder: rep-10.5555_test",
-      "repo: replicate-anything/rep-10.5555_test",
+      "  study_repo: replicate-anything/rep-10.5555-test",
+      "  study_folder: rep-10.5555-test",
+      "repo: replicate-anything/rep-10.5555-test",
       "replications:",
       "  - id: fig_1",
       "    type: figure"
@@ -225,7 +225,7 @@ test_that("validate_outputs passes for registry and study location", {
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_test",
+    repo = "replicate-anything/rep-10.5555-test",
     stringsAsFactors = FALSE
   )
 
@@ -248,12 +248,12 @@ test_that("validate_outputs passes for registry and study location", {
 
 test_that("validate_outputs everywhere accepts handle-only registry studies", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_alt")
+  study_dir <- file.path(local_root, "rep-10.5555-alt")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
       "paper:",
-      "  study_handle: rep-10.5555_alt",
+      "  study_handle: rep-10.5555-alt",
       "  title: Alt study",
       "steps:",
       "  - id: tab_1",
@@ -268,26 +268,26 @@ test_that("validate_outputs everywhere accepts handle-only registry studies", {
   writeLines(
     c(
       "paper:",
-      "  study_handle: rep-10.5555_alt",
+      "  study_handle: rep-10.5555-alt",
       "  title: Alt study",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_alt",
-      "  study_folder: rep-10.5555_alt",
-      "repo: replicate-anything/rep-10.5555_alt"
+      "  study_repo: replicate-anything/rep-10.5555-alt",
+      "  study_folder: rep-10.5555-alt",
+      "repo: replicate-anything/rep-10.5555-alt"
     ),
-    file.path(local_root, "studies", "rep-10.5555_alt.yml")
+    file.path(local_root, "studies", "rep-10.5555-alt.yml")
   )
   writeLines("<table></table>", file.path(study_dir, "outputs", "tab_1.html"))
 
   local_index <- data.frame(
-    folder = "rep-10.5555_alt",
-    handle = "rep-10.5555_alt",
+    folder = "rep-10.5555-alt",
+    handle = "rep-10.5555-alt",
     doi = "",
     title = "Alt study",
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_alt",
+    repo = "replicate-anything/rep-10.5555-alt",
     stringsAsFactors = FALSE
   )
 
@@ -304,7 +304,7 @@ test_that("validate_outputs everywhere accepts handle-only registry studies", {
           doi = "everywhere",
           what = "everything",
           registry_root = local_root,
-          folders = "rep-10.5555_alt"
+          folders = "rep-10.5555-alt"
         )
       ))
     }

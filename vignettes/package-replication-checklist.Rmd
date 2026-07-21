@@ -130,7 +130,7 @@ The registry stub does **not** store artifacts.
 library(replicateEverything)
 
 prepare_study_for_registry(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   build_artifacts = TRUE
 )
 ```
@@ -143,7 +143,7 @@ Writes `inst/registry/replication.yml` and `inst/registry/index.csv` in the pack
 options(replicateEverything.registry_root = "../registry")
 
 sync_study_to_registry(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   registry_root = "../registry",
   audit = TRUE
 )
@@ -156,12 +156,12 @@ refresh_registry("../registry", audit = TRUE)
 
 ```{r, eval = FALSE}
 check_replication(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   full_replication = FALSE
 )
 
 check_replication(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   full_replication = TRUE
 )
 ```
@@ -174,4 +174,4 @@ See Fearon & Laitin Table 1 in [rep-10.1017-S0003055403000534](https://github.co
 
 ## Reference implementation
 
-See [rep-10.1371_journal.pone.0278337](https://github.com/replicate-anything/rep-10.1371_journal.pone.0278337) (vaccine solidarity paper).
+See [rep-10.1371-journal.pone.0278337](https://github.com/replicate-anything/rep-10.1371-journal.pone.0278337) (vaccine solidarity paper).

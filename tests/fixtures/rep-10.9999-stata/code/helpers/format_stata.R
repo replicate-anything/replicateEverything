@@ -1,4 +1,4 @@
-# Minimal Stata format helper for package tests (rep-10.9999_stata fixture).
+# Minimal Stata format helper for package tests (rep-10.9999-stata fixture).
 
 format_tab_2_stata <- function(object) {
   path <- if (is.character(object)) object else object$output_path

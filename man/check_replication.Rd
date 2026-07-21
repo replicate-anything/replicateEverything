@@ -69,7 +69,7 @@ baked artifacts, substantive (published-value) checks under
 \dontrun{
 check_replication(".")
 check_replication(".", full_replication = TRUE)
-check_replication("../rep-10.1371_journal.pone.0278337")
+check_replication("../rep-10.1371-journal.pone.0278337")
 }
 
 }

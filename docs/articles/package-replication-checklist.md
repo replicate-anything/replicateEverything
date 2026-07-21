@@ -127,7 +127,7 @@ The registry stub does **not** store artifacts.
 library(replicateEverything)
 
 prepare_study_for_registry(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   build_artifacts = TRUE
 )
 ```
@@ -142,7 +142,7 @@ the package source tree. Commit these with your study PR.
 options(replicateEverything.registry_root = "../registry")
 
 sync_study_to_registry(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   registry_root = "../registry",
   audit = TRUE
 )
@@ -156,12 +156,12 @@ refresh_registry("../registry", audit = TRUE)
 ``` r
 
 check_replication(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   full_replication = FALSE
 )
 
 check_replication(
-  "../rep-10.1371_journal.pone.0278337",
+  "../rep-10.1371-journal.pone.0278337",
   full_replication = TRUE
 )
 ```
@@ -183,5 +183,5 @@ study repo).
 ## Reference implementation
 
 See
-[rep-10.1371_journal.pone.0278337](https://github.com/replicate-anything/rep-10.1371_journal.pone.0278337)
+[rep-10.1371-journal.pone.0278337](https://github.com/replicate-anything/rep-10.1371-journal.pone.0278337)
 (vaccine solidarity paper).

@@ -2,7 +2,7 @@ test_that("run_replication defaults to live run when outputs/ already exist", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
-      "rep-10.9999_example"
+      "rep-10.9999-example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
 

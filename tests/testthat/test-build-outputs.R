@@ -1,6 +1,6 @@
 test_that("filter_replications_only_missing keeps entries without artifacts", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_test")
+  study_dir <- file.path(local_root, "rep-10.5555-test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
@@ -26,9 +26,9 @@ test_that("filter_replications_only_missing keeps entries without artifacts", {
       "paper:",
       "  doi: 10.5555/test",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_test",
-      "  study_folder: rep-10.5555_test",
-      "repo: replicate-anything/rep-10.5555_test"
+      "  study_repo: replicate-anything/rep-10.5555-test",
+      "  study_folder: rep-10.5555-test",
+      "repo: replicate-anything/rep-10.5555-test"
     ),
     file.path(local_root, "studies", "10.5555_test.yml")
   )
@@ -41,7 +41,7 @@ test_that("filter_replications_only_missing keeps entries without artifacts", {
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_test",
+    repo = "replicate-anything/rep-10.5555-test",
     stringsAsFactors = FALSE
   )
 
@@ -73,7 +73,7 @@ test_that("filter_replications_only_missing keeps entries without artifacts", {
 
 test_that("build_study_outputs only_missing skips when all artifacts exist", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_test")
+  study_dir <- file.path(local_root, "rep-10.5555-test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
@@ -94,9 +94,9 @@ test_that("build_study_outputs only_missing skips when all artifacts exist", {
       "paper:",
       "  doi: 10.5555/test",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_test",
-      "  study_folder: rep-10.5555_test",
-      "repo: replicate-anything/rep-10.5555_test"
+      "  study_repo: replicate-anything/rep-10.5555-test",
+      "  study_folder: rep-10.5555-test",
+      "repo: replicate-anything/rep-10.5555-test"
     ),
     file.path(local_root, "studies", "10.5555_test.yml")
   )
@@ -109,7 +109,7 @@ test_that("build_study_outputs only_missing skips when all artifacts exist", {
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_test",
+    repo = "replicate-anything/rep-10.5555-test",
     stringsAsFactors = FALSE
   )
 
@@ -151,7 +151,7 @@ test_that("build_outputs requires doi, location, or everywhere", {
 
 test_that("build_single_output only_missing skips existing artifact", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_test")
+  study_dir <- file.path(local_root, "rep-10.5555-test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
@@ -172,9 +172,9 @@ test_that("build_single_output only_missing skips existing artifact", {
       "paper:",
       "  doi: 10.5555/test",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_test",
-      "  study_folder: rep-10.5555_test",
-      "repo: replicate-anything/rep-10.5555_test",
+      "  study_repo: replicate-anything/rep-10.5555-test",
+      "  study_folder: rep-10.5555-test",
+      "repo: replicate-anything/rep-10.5555-test",
       "replications:",
       "  - id: fig_1",
       "    type: figure"
@@ -190,7 +190,7 @@ test_that("build_single_output only_missing skips existing artifact", {
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_test",
+    repo = "replicate-anything/rep-10.5555-test",
     stringsAsFactors = FALSE
   )
 
@@ -216,7 +216,7 @@ test_that("build_single_output only_missing skips existing artifact", {
 
 test_that("build_outputs location dispatch skips with only_missing", {
   local_root <- withr::local_tempdir()
-  study_dir <- file.path(local_root, "rep-10.5555_test")
+  study_dir <- file.path(local_root, "rep-10.5555-test")
   dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
   writeLines(
     c(
@@ -251,9 +251,9 @@ test_that("build_registry_outputs skips folder study without local repo", {
       "paper:",
       "  doi: 10.5555/remote",
       "  materials: folder",
-      "  study_repo: replicate-anything/rep-10.5555_remote",
-      "  study_folder: rep-10.5555_remote",
-      "repo: replicate-anything/rep-10.5555_remote",
+      "  study_repo: replicate-anything/rep-10.5555-remote",
+      "  study_folder: rep-10.5555-remote",
+      "repo: replicate-anything/rep-10.5555-remote",
       "replications:",
       "  - id: fig_1",
       "    type: figure"
@@ -268,7 +268,7 @@ test_that("build_registry_outputs skips folder study without local repo", {
     journal = "",
     year = 2026,
     authors = "A",
-    repo = "replicate-anything/rep-10.5555_remote",
+    repo = "replicate-anything/rep-10.5555-remote",
     stringsAsFactors = FALSE
   )
 

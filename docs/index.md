@@ -276,10 +276,10 @@ paper:
   doi: https://doi.org/10.1371/journal.pone.0278337
   title: "Public support for global vaccine sharing in the COVID-19 pandemic"
   package: rep1371journalpone0278337
-  package_folder: rep-10.1371_journal.pone.0278337
-  package_repo: replicate-anything/rep-10.1371_journal.pone.0278337
+  package_folder: rep-10.1371-journal.pone.0278337
+  package_repo: replicate-anything/rep-10.1371-journal.pone.0278337
   package_ref: main
-repo: replicate-anything/rep-10.1371_journal.pone.0278337
+repo: replicate-anything/rep-10.1371-journal.pone.0278337
 ```
 
 `replicateEverything` merges the full `replications:` list from the

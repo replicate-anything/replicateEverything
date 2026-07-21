@@ -78,6 +78,6 @@ A list with `ok` (logical), `checks` (data frame), and `study_path` or
 if (FALSE) { # \dontrun{
 check_replication(".")
 check_replication(".", full_replication = TRUE)
-check_replication("../rep-10.1371_journal.pone.0278337")
+check_replication("../rep-10.1371-journal.pone.0278337")
 } # }
 ```

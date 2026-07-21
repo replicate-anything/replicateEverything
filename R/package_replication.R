@@ -18,7 +18,7 @@ is_package_replication <- function(meta) {
 #'
 #' Used when no local sibling package is found. Set \code{paper.package_repo}
 #' or top-level \code{repo} in \code{replication.yml} (GitHub slug, e.g.
-#' \code{replicate-anything/rep-10.1371_journal.pone.0278337}).
+#' \code{replicate-anything/rep-10.1371-journal.pone.0278337}).
 #'
 #' @param meta Parsed replication.yml contents.
 #' @param ctx Paper context from \code{paper_context()}.
@@ -438,7 +438,7 @@ fetch_package_replication_yaml <- function(meta, ctx) {
 #' When a package-backed study lists no tables/figures, this shows which
 #' \code{replication.yml} URLs were checked. The study index should come from
 #' the package repo (e.g.
-#' \code{replicate-anything/rep-10.1371_journal.pone.0278337}), not only the
+#' \code{replicate-anything/rep-10.1371-journal.pone.0278337}), not only the
 #' registry stub under \code{studies/<folder>.yml}.
 #'
 #' @param doi Character DOI.

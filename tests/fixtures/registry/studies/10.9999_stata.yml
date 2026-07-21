@@ -6,7 +6,7 @@ paper:
   year: 2025
   authors: Test Author
   materials: folder
-  study_repo: replicate-anything/rep-10.9999_stata
-  study_folder: rep-10.9999_stata
+  study_repo: replicate-anything/rep-10.9999-stata
+  study_folder: rep-10.9999-stata
   study_ref: main
-repo: replicate-anything/rep-10.9999_stata
+repo: replicate-anything/rep-10.9999-stata

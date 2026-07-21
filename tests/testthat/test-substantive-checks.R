@@ -87,7 +87,7 @@ test_that("check_replication reports substantive check coverage", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
-      "rep-10.9999_example"
+      "rep-10.9999-example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
     result <- check_replication(

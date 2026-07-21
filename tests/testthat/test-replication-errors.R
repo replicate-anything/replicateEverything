@@ -18,7 +18,7 @@ test_that("get_artifact_path resolves figure from fixture study folder", {
   skip_on_cran()
   with_fixture_opts({
     study <- file.path(
-      testthat::test_path(".."), "fixtures", "rep-10.9999_example"
+      testthat::test_path(".."), "fixtures", "rep-10.9999-example"
     )
     png_path <- file.path(study, "artifacts", "fig_1.png")
     dir.create(dirname(png_path), recursive = TRUE, showWarnings = FALSE)

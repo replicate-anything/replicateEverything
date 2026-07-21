@@ -206,20 +206,20 @@ test_that("resolve_doi_input path errors include formatting hints", {
 
 test_that("folder_manifest_metadata uses github slug not absolute paths", {
   tmp <- withr::local_tempdir()
-  study <- file.path(tmp, "rep-10.9999_manifest")
+  study <- file.path(tmp, "rep-10.9999-manifest")
   dir.create(study, recursive = TRUE)
   meta <- list(
     paper = list(
       doi = "https://doi.org/10.9999/manifest",
       title = "Manifest test"
     ),
-    repo = "replicate-anything/rep-10.9999_manifest"
+    repo = "replicate-anything/rep-10.9999-manifest"
   )
   yaml::write_yaml(meta, file.path(study, "replication.yml"))
   withr::with_options(list(replicateEverything.study_folders_root = tmp), {
     out <- folder_manifest_metadata(study, meta)
-    expect_equal(out$study_repo, "replicate-anything/rep-10.9999_manifest")
-    expect_equal(out$study_folder, "rep-10.9999_manifest")
+    expect_equal(out$study_repo, "replicate-anything/rep-10.9999-manifest")
+    expect_equal(out$study_folder, "rep-10.9999-manifest")
     expect_null(out$monorepo_path)
     expect_false(grepl(normalizePath(tmp, winslash = "/"), paste(unlist(out), collapse = " ")))
   })
@@ -294,7 +294,7 @@ test_that("try_resolve_study_from_registry_folder maps registry folder to study 
     winslash = "/",
     mustWork = FALSE
   )
-  study_dir <- file.path(monorepo_root, "rep-10.5555_cahw")
+  study_dir <- file.path(monorepo_root, "rep-10.5555-cahw")
   testthat::skip_if_not(dir.exists(study_dir), "cahw study repo missing")
 
   old <- options(
@@ -312,7 +312,7 @@ test_that("try_resolve_study_from_registry_folder maps registry folder to study 
 
 test_that("looks_like_study_alias identifies registry folder handles", {
   expect_true(replicateEverything:::looks_like_study_alias("10.5555_cahw"))
-  expect_true(replicateEverything:::looks_like_study_alias("rep-10.5555_cahw"))
+  expect_true(replicateEverything:::looks_like_study_alias("rep-10.5555-cahw"))
   expect_false(replicateEverything:::looks_like_study_alias("rep1371journalpone0278337"))
 })
 

@@ -109,7 +109,7 @@ test_that("check_replication validates fixture study", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
-      "rep-10.9999_example"
+      "rep-10.9999-example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
     result <- check_replication(
@@ -126,7 +126,7 @@ test_that("build_study_outputs writes manifest for fixture study", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
-      "rep-10.9999_example"
+      "rep-10.9999-example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
     skip_if_not_installed("ggplot2")
@@ -149,7 +149,7 @@ test_that("prepare_study_for_registry validates without writing study handoff", 
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
-      "rep-10.9999_example"
+      "rep-10.9999-example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
 
@@ -176,7 +176,7 @@ test_that("sync_study_to_registry builds stub from study yaml into registry", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
-      "rep-10.9999_example"
+      "rep-10.9999-example"
     )
     skip_if_not(dir.exists(study_dir), "fixture study repo missing")
 

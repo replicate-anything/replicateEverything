@@ -138,7 +138,7 @@ test_that("render_replication works against local fixture", {
     journal = "Test Journal",
     year = 2025,
     authors = "Test Author",
-    repo = "replicate-anything/rep-10.9999_example",
+    repo = "replicate-anything/rep-10.9999-example",
     stringsAsFactors = FALSE
   )
 

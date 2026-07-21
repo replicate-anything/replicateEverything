@@ -5,7 +5,7 @@ paper:
   year: 2025
   authors: Test Author
 
-repo: replicate-anything/rep-10.9999_stata
+repo: replicate-anything/rep-10.9999-stata
 
 languages:
   - stata

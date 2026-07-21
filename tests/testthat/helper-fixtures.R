@@ -8,7 +8,7 @@ fixture_stata_doi <- function() {
 
 fixture_stata_study_root <- function() {
   normalizePath(
-    file.path(testthat::test_path(".."), "fixtures", "rep-10.9999_stata"),
+    file.path(testthat::test_path(".."), "fixtures", "rep-10.9999-stata"),
     winslash = "/",
     mustWork = FALSE
   )
@@ -27,7 +27,7 @@ fixture_stata_index <- function() {
     journal = "Test Journal",
     year = 2025,
     authors = "Test Author",
-    repo = "replicate-anything/rep-10.9999_stata",
+    repo = "replicate-anything/rep-10.9999-stata",
     stringsAsFactors = FALSE
   )
 }
@@ -64,7 +64,7 @@ fixture_index <- function() {
     journal = "Test Journal",
     year = 2025,
     authors = "Test Author",
-    repo = "replicate-anything/rep-10.9999_example",
+    repo = "replicate-anything/rep-10.9999-example",
     stringsAsFactors = FALSE
   )
 }

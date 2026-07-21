@@ -180,7 +180,7 @@ test_that("lookup_study_folders_option matches rep-* alias for fixture study", {
 
   withr::local_options(list(
     replicateEverything.study_folders = list(
-      "rep-10.9999_stata" = study_dir
+      "rep-10.9999-stata" = study_dir
     ),
     replicateEverything.use_sibling_packages = FALSE,
     replicateEverything.study_folders_root = NULL

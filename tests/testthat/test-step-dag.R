@@ -168,8 +168,8 @@ test_that("describe_study_dag renders component chains", {
 })
 
 test_that("assert_parents_ready errors when parent output missing", {
-  skip_if_not(dir.exists(testthat::test_path("fixtures", "rep-10.9999_example")))
-  root <- testthat::test_path("fixtures", "rep-10.9999_example")
+  skip_if_not(dir.exists(testthat::test_path("fixtures", "rep-10.9999-example")))
+  root <- testthat::test_path("fixtures", "rep-10.9999-example")
   meta <- yaml::read_yaml(file.path(root, "replication.yml"))
   meta$steps <- list(
     list(id = "prep_x", type = "transform", label = "Prep", parents = list(),
