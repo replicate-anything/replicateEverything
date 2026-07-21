@@ -2,7 +2,7 @@
 % Please edit documentation in R/prepare_folder_paper.R
 \name{sync_study_to_registry}
 \alias{sync_study_to_registry}
-\title{Sync a prepared study into the registry repository (maintainer)}
+\title{Sync a study into the registry repository (maintainer)}
 \usage{
 sync_study_to_registry(
   location = ".",
@@ -32,14 +32,15 @@ Invisibly, a list with \code{stub_path}, \code{index_updated}, \code{folder}, an
 optional \code{audit}.
 }
 \description{
-Reads the short registry yaml from the study repository (\verb{registry/} or
-\verb{inst/registry/}), copies it to \verb{studies/<folder>.yml} in a registry
-checkout, and rebuilds \code{index.csv} via \code{\link[=build_registry_index]{build_registry_index()}}.
+Builds a lightweight registry stub from the study's root \code{replication.yml}
+(via \code{\link[=build_registry_stub_from_meta]{build_registry_stub_from_meta()}}) and writes it to
+\verb{studies/<folder>.yml} in a registry checkout, then rebuilds \code{index.csv}
+via \code{\link[=build_registry_index]{build_registry_index()}}.
 }
 \details{
-This is a \strong{maintainer} function. Contributors should run
-\code{\link[=prepare_study_for_registry]{prepare_study_for_registry()}} and open a pull request; maintainers run this
-(or \code{\link[=refresh_registry]{refresh_registry()}}) from a local registry checkout.
+Stub and index files belong in the \strong{registry} repository only — not in the
+study repo. Study-local \verb{registry/} or \verb{inst/registry/} handoff folders are
+not required.
 }
 \examples{
 \dontrun{

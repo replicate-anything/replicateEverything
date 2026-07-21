@@ -75,7 +75,12 @@ test_that("paper_article_url falls back to doi.org", {
 
 test_that("get_code returns replication script text", {
   with_fixture_opts({
-    code <- get_code(fixture_doi(), "fig_1")
+    withr::with_options(
+      list(replicateEverything.quiet_get_code = TRUE),
+      {
+        code <- get_code(fixture_doi(), "fig_1")
+      }
+    )
     expect_type(code, "character")
     expect_true(any(nchar(code) > 10L))
   })

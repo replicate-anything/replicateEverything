@@ -9,6 +9,7 @@ get_code(
   what,
   language = NULL,
   style = c("inline", "source"),
+  mode = c("definitions", "run"),
   repo = NULL,
   folder = NULL
 )
@@ -22,6 +23,11 @@ get_code(
 
 \item{style}{Display style: \code{"inline"} (default, inlines Stata sources for
 copy-paste) or \code{"source"} (raw runner only, for linked inspection in Shiny).}
+
+\item{mode}{\code{"definitions"} (default) returns the stored script (function
+definitions; interactive footers stay gated). \code{"run"} returns definitions
+plus a final expression that loads yaml \code{data:}, calls \code{make_*},
+and pipes \code{format_*} when applicable (or ungates an interactive footer).}
 
 \item{repo}{Optional repository slug.}
 
@@ -41,6 +47,15 @@ script only; optional \code{format_*} helpers in separate files are labeled
 and omitted for Stata.
 }
 \details{
+Scripts keep pure \code{make_*} / \code{format_*} definitions; the package
+orchestrates load \eqn{\rightarrow}{->} make \eqn{\rightarrow}{->} format via
+\code{\link{run_replication}}. An optional footer guarded by
+\code{if (sys.nframe() == 0L)} runs only when you Source the file in an IDE
+(so loading definitions does not also execute). Use \code{mode = "run"} when
+you want script text that also includes a final expression so
+\code{eval(parse(text = ...))} can produce the object (set the working
+directory to the study root).
+
 For package-backed studies, reads \code{inst/replication_code/*.R} from the
 study package GitHub repo when the package is not installed (same idea as
 reading \code{code/*.R} from the registry repo).
@@ -49,6 +64,7 @@ reading \code{code/*.R} from the registry repo).
 \dontrun{
 head(get_code("10.1177/00491241211036161", "fig_1"))
 get_code("10.1017/S0003055403000534", "tab_1", language = "stata")
+get_code("rep-template", "tab_1", mode = "run")
 }
 
 }

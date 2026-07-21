@@ -1,3 +1,15 @@
+# replicateEverything 0.6.10
+
+## get_code modes and usage tip
+
+* [get_code()] gains `mode = c("definitions", "run")` (default
+  `"definitions"`). `"run"` ungates an `sys.nframe() == 0` footer or appends a
+  yaml-implied load → make → format expression so `eval(parse(text = ...))`
+  can produce the object (study root as working directory).
+* Calling [get_code()] prints a short tip: prefer [run_replication()], or
+  `mode = "run"` then eval, or Source the script for the manual footer block.
+  Suppress with `options(replicateEverything.quiet_get_code = TRUE)`.
+
 # replicateEverything 0.6.9
 
 ## Live Run by default

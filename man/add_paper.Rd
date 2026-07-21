@@ -30,13 +30,13 @@ Invisibly, the result of \code{\link[=check_replication]{check_replication()}}, 
 \code{stub_path} and \code{index_updated} when registration succeeds.
 }
 \description{
-Validates a study replication package with \code{\link[=check_replication]{check_replication()}},
-ensures registry handoff files exist (via \code{\link[=write_study_registry_stub]{write_study_registry_stub()}} when
-missing), then installs the stub in a registry checkout via
-\code{\link[=sync_study_to_registry]{sync_study_to_registry()}}.
+Validates a study replication package with \code{\link[=check_replication]{check_replication()}}, then
+installs a stub built from the study \code{replication.yml} into a registry
+checkout via \code{\link[=sync_study_to_registry]{sync_study_to_registry()}}. Stub files are written only under
+the registry repository — not into the study package.
 }
 \details{
-Contributors should run \code{\link[=prepare_study_for_registry]{prepare_study_for_registry()}} and open a pull request.
+Contributors should run \code{\link[=prepare_study_for_registry]{prepare_study_for_registry()}} (validate / build).
 Maintainers use this function from a local registry checkout.
 
 Package-backed studies do \strong{not} copy code, data, or artifacts into the

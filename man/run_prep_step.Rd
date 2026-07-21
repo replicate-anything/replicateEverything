@@ -26,7 +26,11 @@ run_prep_step(
 
 \item{folder}{Optional registry folder name from \code{index.csv}.}
 
-\item{force}{Logical. Re-run steps even when outputs already exist.}
+\item{force}{Logical. Re-run steps even when declared \code{outputs/} already
+exist. Defaults to \code{TRUE}: \code{\link[=run_replication]{run_replication()}} is a live Run (unlike
+Display / \code{\link[=load_artifact]{load_artifact()}}, which use precomputed files). Set
+\code{force = FALSE} to reuse existing upstream outputs when present; the
+target step still recomputes.}
 }
 \value{
 A data preview, file path character vector, or replication result.

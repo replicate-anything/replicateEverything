@@ -182,7 +182,14 @@ is_package_dataset_name <- function(name) {
 #' @param what Replication id.
 #' @param package R package name.
 #' @keywords internal
-get_code_from_package_repo <- function(meta, ctx, what, package) {
+get_code_from_package_repo <- function(
+  meta,
+  ctx,
+  what,
+  package,
+  mode = c("definitions", "run")
+) {
+  mode <- match.arg(mode)
   entry <- find_replication_entry(meta, what)
   source_name <- entry$make %||% entry$code
   if (is.null(source_name) || !nzchar(source_name)) {
@@ -275,16 +282,22 @@ get_code_from_package_repo <- function(meta, ctx, what, package) {
   }
   run_lines <- c(run_lines, "obj")
 
-  c(
+  out <- c(
     header,
     setup_lines,
     data_lines,
     paste0("# --- ", source_name, ".R (from ", repo, ") ---"),
-    source_lines,
-    "",
-    "# --- run (from replication.yml) ---",
-    run_lines
+    source_lines
   )
+  if (identical(mode, "run")) {
+    out <- c(
+      out,
+      "",
+      "# --- run (from replication.yml) ---",
+      run_lines
+    )
+  }
+  out
 }
 
 #' Download a registry or package file to a temp path

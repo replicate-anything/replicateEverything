@@ -2,14 +2,15 @@
 % Please edit documentation in R/prepare_folder_paper.R
 \name{prepare_study_for_registry}
 \alias{prepare_study_for_registry}
-\title{Prepare a study repository for registry handoff (contributor)}
+\title{Validate a study repository before registry onboarding (contributor)}
 \usage{
 prepare_study_for_registry(
   location = ".",
   build_artifacts = TRUE,
   install_deps = TRUE,
   full_replication = FALSE,
-  registry_root = NULL
+  registry_root = NULL,
+  write_handoff = FALSE
 )
 }
 \arguments{
@@ -22,27 +23,20 @@ prepare_study_for_registry(
 \item{full_replication}{If \code{TRUE}, also run every table and figure live.}
 
 \item{registry_root}{Optional registry checkout (passed to build/check helpers).}
+
+\item{write_handoff}{If \code{TRUE}, also write a legacy study-local stub under
+\verb{registry/} or \verb{inst/registry/} (not recommended; stubs belong in the
+registry repo). Default \code{FALSE}.}
 }
 \value{
-Invisibly, a checklist result with \code{registry_stub_path} and
-\code{registry_index_path} when successful.
+Invisibly, a checklist result; when \code{write_handoff = TRUE} and checks
+pass, also includes \code{registry_stub_path} and \code{registry_index_path}.
 }
 \description{
-Validates a folder- or package-backed study, then writes the short registry
-yaml and one-row \code{index.csv} into the study repository:
-}
-\details{
-\itemize{
-\item Folder studies: \code{registry/replication.yml} and \code{registry/index.csv}
-\item Package studies: \code{inst/registry/replication.yml} and \code{inst/registry/index.csv}
-}
-
-This is the \strong{contributor} step. A registry maintainer installs those files
-with \code{\link[=sync_study_to_registry]{sync_study_to_registry()}} and refreshes the central index with
-\code{\link[=refresh_registry]{refresh_registry()}}.
-
-Runs \code{\link[=build_study_outputs]{build_study_outputs()}} (optional), then \code{\link[=check_replication]{check_replication()}}, and on
-success writes and validates the registry stub via \code{\link[=write_study_registry_stub]{write_study_registry_stub()}}.
+Builds outputs (optional) and runs \code{\link[=check_replication]{check_replication()}}. On success, the
+study is ready for a maintainer to register it with
+\code{\link[=sync_study_to_registry]{sync_study_to_registry()}}, which writes the stub \strong{only} into the central
+registry repository (not into the study repo).
 }
 \examples{
 \dontrun{
