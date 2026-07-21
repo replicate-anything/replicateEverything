@@ -94,6 +94,7 @@ steps:
     parent: fig_1
     code: code/format_fig_1.R
     outputs: [outputs/fig_1_display.png]
+    # no label: — format children are sidebar-hidden wiring
 
   - id: tab_1
     type: table

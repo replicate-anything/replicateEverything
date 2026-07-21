@@ -132,7 +132,30 @@ Reference repos: `rep-10.1017-S0003055403000534`, `rep-10.1017-s0003055426101749
 | `table` / `figure` | Analysis + display sink | Tables / Figures |
 | `format` | Format parent output for Display | Hidden (runs with `format = TRUE`) |
 
-**Labels** name the **output** (`Table 1`, `Analysis dataset`). Put methodology in `description`.
+**Labels** name the **output** (`Table 1`, `Analysis dataset`). Put methodology in `description`
+(Shiny hover tooltip and Display title via `label_full`; also prep captions and DAG tips).
+
+**Format children** need `type: format` + `parent:` in unified `steps:` yaml (not auto-inferred
+from `make_*`/`format_*` alone). Omit `label:` on format steps — they are hidden from the
+sidebar and labels are unused there. Legacy `prep:`/`replications:` with `format:` still
+auto-creates `<id>_format`.
+
+**Common step fields**
+
+| Field | Purpose |
+|-------|---------|
+| `id` | Stable key for code (`make_<id>`), DAG, Run, tests, inheritance |
+| `type` | `table` / `figure` / `transform` / `format` — sidebar + run behavior |
+| `label` | Short Display / DAG name (skip on format children) |
+| `description` | Longer caption: Shiny hover + Display title; prep caption parenthetical |
+| `parents` | Upstream step ids (default none); raw `data/` files go in `inputs:` / `data:` |
+| `engine` | `r` (default), `stata`, or `python` |
+| `code` | Script path defining `make_*` / `format_*` |
+| `format` | `format_*` name or helper `.R` path (on the table/figure parent) |
+| `data` / `inputs` | Files loaded or declared as inputs |
+| `outputs` | Files written under `outputs/` (prefer over deprecated `artifact:`) |
+| `dependencies` | Step-level R packages (unioned with `paper.dependencies`) |
+| `languages` (root) | Study engines for registry / system checks |
 
 **Edges:** `parents: [step_a, step_b]` (legacy `requires:` still parsed). Raw files are not parents — list them under `inputs:`.
 
@@ -282,7 +305,7 @@ steps:
   - id: fig_1
     type: figure
     label: Figure 1
-    description: Short caption for Shiny
+    description: Short caption for Shiny hover / Display title
     parents:
       - build_data
     engine: r
@@ -292,7 +315,6 @@ steps:
     format: format_fig_1
     outputs:
       - outputs/fig_1.png
-    artifact: outputs/fig_1.png
 
   - id: fig_1_format
     type: format
@@ -311,7 +333,6 @@ steps:
     format: code/helpers/format_stata.R
     outputs:
       - outputs/tab_1.html
-    artifact: outputs/tab_1.html
 ```
 
 Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
@@ -329,8 +350,7 @@ Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
 | `maintainer:` | **Required** — name + email |
 | `collections:` | Tags copied to registry `index.csv` |
 | `steps[].parents` | Immediate upstream steps (not raw `data/` files) |
-| `steps[].outputs` | Files this step produces under `outputs/` |
-| `steps[].artifact` | Primary display file for tables/figures (= main `outputs/` path) |
+| `steps[].outputs` | Files this step produces under `outputs/` (first displayable html/png/rds/svg is what Shiny Display reads) |
 | `steps[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
 | `steps[].dependencies` | **R only** — extra CRAN packages for that step |
 
@@ -338,7 +358,7 @@ Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
 
 **Shiny Server (large files):** place files at `data/<study_folder>/<basename>` beside the app. Use the study repo folder name (`paper.study_folder` or `rep-<doi-with-hyphens>`), not the registry stub folder (`10.x_y`).
 
-**Tables without format step:** omit `format:`; `artifact:` is usually `.html` from analysis output.
+**Tables without format step:** omit `format:`; declare the `.html` product under `outputs:`.
 
 **Validate yaml before moving on:**
 
@@ -360,7 +380,7 @@ The **replicateEverything** package reads study metadata only — it does not em
 | Full `replication.yml` | repo root | `paper:`, **`steps:`** DAG, `repo:` slug |
 | `languages:` | top-level (recommended) | `r`, `stata`, `python` — used by system compatibility check |
 | `code:` per step | `code/<id>.R` or `.do` | Live Run executes this |
-| `artifact:` / `outputs:` per step | `outputs/<id>.{html,png,…}` | Shiny Display tab |
+| `outputs:` per step | `outputs/<id>.{html,png,…}` | Shiny Display tab |
 | Registry stub | `registry/studies/<folder>.yml` | Points to study repo; not the full yaml |
 
 If `languages:` is omitted, engines are inferred from `engine:` / `code:` extensions on steps.
@@ -447,7 +467,7 @@ Maintainers: `install_study_dependencies(doi)` once. Live Run and Shiny probe on
 
 ### Outputs and data (summary)
 
-- **`outputs:`** — canonical step products; **`artifact:`** is the display path Shiny reads (usually the primary html/png under `outputs/`).
+- **`outputs:`** — canonical step products; the first displayable path (html/png/rds/svg) is what Shiny Display reads.
 - **Data ≤ 50 MB** — commit under `data/` so clones work for live Run.
 - **Data > 50 MB** — gitignore by explicit filename; stage under `registry/data/<folder>/`; rely on precomputed `outputs/` for Display when absent locally.
 
