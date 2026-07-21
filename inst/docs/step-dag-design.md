@@ -12,7 +12,7 @@
 ## Running
 
 ```r
-# Default: immediate parent outputs must exist
+# Default: live run of the target; immediate parent outputs must exist
 run_replication(doi, "tab_1", language = "stata", given = "parents")
 
 # Full upstream pipeline
@@ -21,9 +21,12 @@ run_replication(doi, "tab_1", given = "nothing")
 # Assume construct_analysis_dataset done; run anything else needed
 run_replication(doi, "fig_4", given = "construct_analysis_dataset")
 
-# Re-run even when outputs exist
-run_replication(doi, "tab_1", force = TRUE)
+# Opt into reusing existing upstream outputs/ (target still recomputes)
+run_replication(doi, "tab_1", force = FALSE)
 ```
+
+Display / [load_artifact()] use precomputed files under `outputs/`.
+[run_replication()] defaults to `force = TRUE` so Run is always live.
 
 ## given validation
 

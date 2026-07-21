@@ -21,7 +21,11 @@
 #'   \code{"parents"} (immediate parent outputs must exist). For
 #'   \code{what = "everything"}, defaults to \code{"nothing"} (run the full
 #'   upstream DAG). May also be a character vector of step ids.
-#' @param force Logical. Re-run steps even when outputs already exist.
+#' @param force Logical. Re-run steps even when declared \code{outputs/} already
+#'   exist. Defaults to \code{TRUE}: [run_replication()] is a live Run (unlike
+#'   Display / [load_artifact()], which use precomputed files). Set
+#'   \code{force = FALSE} to reuse existing upstream outputs when present; the
+#'   target step still recomputes.
 #' @param install_deps Logical. Install missing CRAN dependencies when
 #'   \code{TRUE}. Defaults to \code{FALSE}.
 #' @param format Logical or \code{"if_available"}. Apply display formatting when
@@ -49,7 +53,7 @@ run_replication <- function(
   what,
   language = NULL,
   given = NULL,
-  force = FALSE,
+  force = TRUE,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
@@ -90,7 +94,7 @@ run_replication_one <- function(
   what,
   language = NULL,
   given = "parents",
-  force = FALSE,
+  force = TRUE,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
@@ -187,7 +191,7 @@ run_all_replications <- function(
   doi,
   language = NULL,
   given = "nothing",
-  force = FALSE,
+  force = TRUE,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,

@@ -525,9 +525,17 @@ Each **table/figure** script must be an **executable replication path**, not onl
 3. `library(...)` / thin `source("../helpers/…")` for **analysis** helpers only — do **not** start table scripts with deposit/download machinery
 4. `make_<id>(data)` — analysis; returns model, data.frame, ggplot, etc.
 5. `format_<id>(object)` — in the same file or via yaml `format:` helper
-6. **Footer that calls** `make_<id>(…)` (and formats): e.g. `make_tab_1(readRDS("../outputs/…")) |> format_tab_1()`
+6. **Footer that calls** `make_<id>(…)` (and formats), guarded so definitions-only
+   sourcing does not execute:
 
-`source_replication_functions()` skips that footer when the package Live-Runs (it loads `make_*` then calls it with yaml `data:`). The Shiny **Code** tab should still show the call + formatting so readers see how the display object is produced. Prep/data loading lives in upstream DAG steps — show those under Data steps, not as the start of table display code.
+```r
+# Run the code below to manually create outputs using functions defined above.
+if (sys.nframe() == 0L) {
+  make_tab_1(readRDS("../outputs/…")) |> format_tab_1()
+}
+```
+
+`source_replication_functions()` skips that footer when the package Live-Runs (it loads `make_*` then calls it with yaml `data:`). [get_code()] defaults to `mode = "definitions"` (script as stored); use `mode = "run"` for text that evaluates to the result. Prep/data loading lives in upstream DAG steps — show those under Data steps, not as the start of table display code.
 
 **Split rule:** if Shiny stores **display** files (HTML/PNG), analysis output should be the **object** passed to `format_*`, not the formatted HTML (unless no format step).
 

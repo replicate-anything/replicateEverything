@@ -1,12 +1,18 @@
 #' Execute a planned study run (ordered steps, memoized within session)
 #'
+#' The **target** step always runs live. When \code{force = FALSE}, non-target
+#' upstream steps whose declared \code{outputs/} already exist are skipped
+#' (message: "Using existing output for step"). [run_replication()] defaults to
+#' \code{force = TRUE} so a Run recomputes; Display uses [load_artifact()].
+#'
 #' @param plan Output of [plan_study_run()].
 #' @param doi Study DOI or local path.
 #' @param meta Parsed replication metadata.
 #' @param ctx Paper context.
 #' @param language Optional engine for display steps.
 #' @param install_deps Passed to [render_replication()].
-#' @param force Re-run steps even when outputs exist.
+#' @param force Re-run upstream steps even when outputs exist. The target always
+#'   re-runs regardless of this flag.
 #' @param format Whether to include format child in plan (already applied in plan).
 #' @param repo Optional registry repo slug.
 #' @param folder Optional registry folder.
@@ -30,6 +36,7 @@ execute_study_plan <- function(
   results <- list()
   executed <- character(0)
   run_engines <- study_engines_for_plan(meta, plan)
+  target_id <- plan$target_id
 
   for (step_id in plan$step_ids) {
     if (step_id %in% executed) {
@@ -40,7 +47,15 @@ execute_study_plan <- function(
       stop("Step '", step_id, "' missing from study metadata.", call. = FALSE)
     }
     is_format <- identical(as.character(step$type), "format")
-    if (!isTRUE(force) && !is_format && step_outputs_ready(step, ctx, meta = meta)) {
+    is_target <- identical(step_id, target_id)
+    # Display artifacts live under outputs/; reuse those only for upstream
+    # steps. The requested target always recomputes (Run != Display).
+    if (
+      !isTRUE(force) &&
+        !is_format &&
+        !is_target &&
+        step_outputs_ready(step, ctx, meta = meta)
+    ) {
       message("Using existing output for step: ", step_id)
       results[[step_id]] <- list(status = "cached", id = step_id)
       executed <- c(executed, step_id)
@@ -51,6 +66,7 @@ execute_study_plan <- function(
       lang <- language
     }
     message("Running step: ", step_id)
+    step_force <- isTRUE(force) || is_target
     result <- render_replication_step(
       doi,
       step_id,
@@ -61,15 +77,16 @@ execute_study_plan <- function(
       repo = repo,
       folder = folder,
       skip_prep = TRUE,
-      force = force,
+      force = step_force,
       engines = run_engines
     )
     results[[step_id]] <- result
     executed <- c(executed, step_id)
   }
 
-  target_id <- plan$target_id
-  if (!target_id %in% executed || isTRUE(force)) {
+  result <- results[[target_id]]
+  if (is.null(result) || (is.list(result) && identical(result$status, "cached"))) {
+    message("Running step: ", target_id)
     result <- render_replication_step(
       doi,
       target_id,
@@ -80,29 +97,10 @@ execute_study_plan <- function(
       repo = repo,
       folder = folder,
       skip_prep = TRUE,
-      force = force,
+      force = TRUE,
       engines = run_engines
     )
     results[[target_id]] <- result
-  } else {
-    cached <- results[[target_id]]
-    if (is.list(cached) && identical(cached$status, "cached")) {
-      result <- render_replication_step(
-        doi,
-        target_id,
-        meta = meta,
-        ctx = ctx,
-        language = language,
-        install_deps = install_deps,
-        repo = repo,
-        folder = folder,
-        skip_prep = TRUE,
-        force = FALSE,
-        engines = run_engines
-      )
-    } else {
-      result <- cached
-    }
   }
 
   list(

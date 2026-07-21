@@ -30,7 +30,8 @@ execute_study_plan(
 
 \item{install_deps}{Passed to \code{\link[=render_replication]{render_replication()}}.}
 
-\item{force}{Re-run steps even when outputs exist.}
+\item{force}{Re-run upstream steps even when outputs exist. The target always
+re-runs regardless of this flag.}
 
 \item{format}{Whether to include format child in plan (already applied in plan).}
 
@@ -42,6 +43,9 @@ execute_study_plan(
 List with final step result and named intermediate results.
 }
 \description{
-Execute a planned study run (ordered steps, memoized within session)
+The \strong{target} step always runs live. When \code{force = FALSE}, non-target
+upstream steps whose declared \code{outputs/} already exist are skipped
+(message: "Using existing output for step"). \code{\link[=run_replication]{run_replication()}} defaults to
+\code{force = TRUE} so a Run recomputes; Display uses \code{\link[=load_artifact]{load_artifact()}}.
 }
 \keyword{internal}

@@ -9,7 +9,7 @@ run_replication(
   what,
   language = NULL,
   given = NULL,
-  force = FALSE,
+  force = TRUE,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
@@ -33,7 +33,11 @@ preferred unless \code{language} is set.}
 \code{what = "everything"}, defaults to \code{"nothing"} (run the full
 upstream DAG). May also be a character vector of step ids.}
 
-\item{force}{Logical. Re-run steps even when outputs already exist.}
+\item{force}{Logical. Re-run steps even when declared \code{outputs/} already
+exist. Defaults to \code{TRUE}: \code{\link[=run_replication]{run_replication()}} is a live Run (unlike
+Display / \code{\link[=load_artifact]{load_artifact()}}, which use precomputed files). Set
+\code{force = FALSE} to reuse existing upstream outputs when present; the
+target step still recomputes.}
 
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}

@@ -1,6 +1,11 @@
 # Execute a planned study run (ordered steps, memoized within session)
 
-Execute a planned study run (ordered steps, memoized within session)
+The **target** step always runs live. When `force = FALSE`, non-target
+upstream steps whose declared `outputs/` already exist are skipped
+(message: "Using existing output for step").
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+defaults to `force = TRUE` so a Run recomputes; Display uses
+[`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md).
 
 ## Usage
 
@@ -49,7 +54,8 @@ execute_study_plan(
 
 - force:
 
-  Re-run steps even when outputs exist.
+  Re-run upstream steps even when outputs exist. The target always
+  re-runs regardless of this flag.
 
 - format:
 

@@ -12,7 +12,7 @@ run_replication(
   what,
   language = NULL,
   given = NULL,
-  force = FALSE,
+  force = TRUE,
   install_deps = FALSE,
   format = FALSE,
   repo = NULL,
@@ -48,7 +48,12 @@ run_replication(
 
 - force:
 
-  Logical. Re-run steps even when outputs already exist.
+  Logical. Re-run steps even when declared `outputs/` already exist.
+  Defaults to `TRUE`: [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  is a live Run (unlike Display /
+  [`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md),
+  which use precomputed files). Set `force = FALSE` to reuse existing
+  upstream outputs when present; the target step still recomputes.
 
 - install_deps:
 
