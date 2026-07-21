@@ -4134,7 +4134,12 @@ code_setup_box_ui <- function(content) {
           tags$li(
             class = "mb-0",
             tags$strong("Run. "),
-            content$step3 %||% content$one_liner %||% "Prefer run_replication(doi, what)."
+            tags$div(
+              class = "code-setup-step3",
+              style = "white-space: pre-wrap;",
+              content$step3 %||% content$one_liner %||%
+                "Prefer run_replication(doi, what)  (simplest)."
+            )
           )
         )
       )

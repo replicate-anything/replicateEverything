@@ -4,10 +4,11 @@
 
 * Authors write pure `make_*` / `format_*` (or Stata/Python equivalents).
   Interactive `sys.nframe() == 0` footers are optional and not required.
-* [get_code()] tips are engine- and yaml-aware: R shows the implied
-  load → make → format call (or points to [run_replication()] /
-  `mode = "run"`); Stata/Python warn against `eval(parse())` and point to
-  [run_replication()] or `do` / `python` from the study root.
+* [get_code()] tips are engine- and yaml-aware numbered lists under
+  "To produce the table/figure/step:": prefer [run_replication()] first;
+  R also shows the yaml-implied load → make → format call and
+  `eval(parse(text = get_code(..., mode = "run")))`; Stata/Python point to
+  `do` / `python` from the study root (no `eval(parse)` option).
 * [get_code()] `mode = "run"` always appends the yaml-implied recipe (does
   not rely on ungating a footer).
 * Folder checks only require that R table/figure scripts *define* `make_*`.

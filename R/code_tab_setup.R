@@ -395,23 +395,27 @@ code_setup_box_content <- function(
   } else {
     character(0)
   }
+  tip_args <- get_code_tip_call_args(doi_label, step_id)
+  prefer_one <- paste0(
+    "Prefer run_replication(", tip_args$doi, ", ", tip_args$what, ")  (simplest)."
+  )
   one_liner <- if (length(advice)) {
-    advice[[1L]]
+    hit <- grep("Prefer run_replication", advice, value = TRUE)[1L]
+    if (!is.na(hit) && nzchar(hit)) {
+      cleaned <- sub("^\\d+\\.\\s*", "", hit)
+      cleaned <- sub(",\\s*or:?\\s*$", ".", cleaned)
+      if (!grepl("\\.\\s*$", cleaned)) {
+        cleaned <- paste0(cleaned, ".")
+      }
+      cleaned
+    } else {
+      prefer_one
+    }
   } else {
-    paste0(
-      "Prefer run_replication(",
-      if (nzchar(doi_label)) shQuote(doi_label, type = "cmd") else "doi",
-      ", ",
-      if (!is.null(step_id) && nzchar(as.character(step_id))) {
-        shQuote(as.character(step_id), type = "cmd")
-      } else {
-        "what"
-      },
-      ")."
-    )
+    prefer_one
   }
   step3 <- if (length(advice)) {
-    paste(advice, collapse = " ")
+    paste(advice, collapse = "\n")
   } else if (length(open_names) == 1L) {
     paste0(
       one_liner,

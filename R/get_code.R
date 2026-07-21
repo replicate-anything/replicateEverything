@@ -198,10 +198,43 @@ get_code_tip_call_args <- function(doi = NULL, what = NULL) {
   )
 }
 
+#' Append ", or" / ", or:" connectors to numbered advice items
+#'
+#' @param items List of character vectors (one entry per numbered option).
+#' @return Character vector of formatted lines (no header).
+#' @keywords internal
+format_get_code_advice_items <- function(items) {
+  n <- length(items)
+  if (!n) {
+    return(character(0))
+  }
+  out <- character(0)
+  for (i in seq_len(n)) {
+    block <- as.character(items[[i]])
+    if (!length(block)) {
+      next
+    }
+    is_last <- i == n
+    # Penultimate R eval(parse) option uses ", or:"; others use ", or"
+    suffix <- if (is_last) {
+      ""
+    } else if (grepl("^evaluate yaml-driven", block[[1L]])) {
+      ", or:"
+    } else {
+      ", or"
+    }
+    block[[length(block)]] <- paste0(block[[length(block)]], suffix)
+    block[[1L]] <- paste0(i, ". ", block[[1L]])
+    out <- c(out, block)
+  }
+  out
+}
+
 #' How-to-run advice shared by [get_code()] tips and the Code tab setup box
 #'
 #' Yaml / [run_replication()] is primary. Does not mention optional
-#' \code{sys.nframe()} script footers.
+#' \code{sys.nframe()} script footers. Returns a numbered list under
+#' \code{"To produce the <kind>:"}.
 #'
 #' @param engine \code{"r"}, \code{"stata"}, or \code{"python"} (default \code{"r"}).
 #' @param type Optional step type from yaml.
@@ -235,19 +268,19 @@ get_code_run_advice <- function(
     ""
   }
 
+  header <- paste0("To produce the ", kind, ":")
+  prefer <- paste0("Prefer ", run_call, "  (simplest)")
+
   if (identical(engine, "stata")) {
     do_hint <- if (nzchar(code_rel)) {
       paste0('do "', code_rel, '"')
     } else {
       'do "path/to/script.do"'
     }
-    c(
-      paste0("Prefer ", run_call, " to produce the ", kind, "."),
-      paste0(
-        "Or from the study root run ", do_hint,
-        " in Stata — do not eval(parse()) this text in R."
-      ),
-      "Or paste the Stata script below into Stata with the study root as the working directory."
+    items <- list(
+      prefer,
+      paste0("From the study root run ", do_hint, " in Stata"),
+      "paste the Stata script below into Stata with the study root as the working directory."
     )
   } else if (identical(engine, "python")) {
     py_hint <- if (nzchar(code_rel)) {
@@ -255,38 +288,42 @@ get_code_run_advice <- function(
     } else {
       'python "path/to/script.py"'
     }
-    c(
-      paste0("Prefer ", run_call, " to produce the ", kind, "."),
-      paste0(
-        "Or from the study root run ", py_hint,
-        " — do not eval(parse()) this text in R."
-      ),
-      "Or paste the Python script below into a session with the study root as the working directory."
+    items <- list(
+      prefer,
+      paste0("From the study root run ", py_hint),
+      "paste the Python script below into a session with the study root as the working directory."
     )
   } else {
+    items <- list(prefer)
     recipe <- yaml_implied_call_lines(rep, lines)
-    out <- paste0("Prefer ", run_call, " to produce the ", kind, ".")
     if (length(recipe)) {
-      out <- c(
-        out,
-        "From the study root (yaml-implied):",
-        paste0("  ", recipe)
+      items <- c(
+        items,
+        list(c(
+          "From the study root (yaml-implied):",
+          paste0("  ", recipe)
+        ))
       )
     }
-    c(
-      out,
-      paste0(
-        "Or evaluate yaml-driven script text: eval(parse(text = ",
-        get_run_call, ")) from the study root."
-      ),
-      "Or paste the code below into your R session with the study root as the working directory."
+    items <- c(
+      items,
+      list(paste0(
+        "evaluate yaml-driven script text: eval(parse(text = ",
+        get_run_call, ")) from the study root"
+      )),
+      list(
+        "paste the code below into your R session with the study root as the working directory."
+      )
     )
   }
+
+  c(header, format_get_code_advice_items(items))
 }
 
 #' Single tip string for [get_code()] (any mode)
 #'
 #' Engine- and yaml-aware. Shared body from [get_code_run_advice()].
+#' Multiline numbered list (blank line after the preamble).
 #'
 #' @inheritParams get_code_run_advice
 #' @return Character scalar tip.
@@ -304,11 +341,11 @@ get_code_usage_tip <- function(
     engine <- "r"
   }
   preamble <- if (identical(engine, "stata")) {
-    "get_code() returns Stata script text (not R). "
+    "get_code() returns Stata script text (not R)."
   } else if (identical(engine, "python")) {
-    "get_code() returns Python script text (not R). "
+    "get_code() returns Python script text (not R)."
   } else {
-    "get_code() returns R function definitions. "
+    "get_code() returns R function definitions."
   }
   advice <- get_code_run_advice(
     engine = engine,
@@ -318,12 +355,7 @@ get_code_usage_tip <- function(
     doi = doi,
     what = what
   )
-  # Preserve a readable multiline yaml recipe in console tips
-  if (identical(engine, "r") && any(grepl("^  ", advice))) {
-    paste0(preamble, paste(advice, collapse = "\n"))
-  } else {
-    paste0(preamble, paste(advice, collapse = " "))
-  }
+  paste(c(preamble, "", advice), collapse = "\n")
 }
 
 #' Usage tip printed by [get_code()] (any mode)
