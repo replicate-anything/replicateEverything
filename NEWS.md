@@ -6,8 +6,9 @@
   `"definitions"`). `"run"` ungates an `sys.nframe() == 0` footer or appends a
   yaml-implied load → make → format expression so `eval(parse(text = ...))`
   can produce the object (study root as working directory).
-* Calling [get_code()] prints a short tip: prefer [run_replication()], or
-  `mode = "run"` then eval, or Source the script for the manual footer block.
+* Calling [get_code()] prints a short tip tailored by engine and step type
+  (R: prefer [run_replication()], `mode = "run"` then eval, or Source the
+  manual footer; Stata/Python: analogous guidance without assuming R).
   Suppress with `options(replicateEverything.quiet_get_code = TRUE)`.
 
 # replicateEverything 0.6.9

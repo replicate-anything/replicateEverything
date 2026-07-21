@@ -1,4 +1,4 @@
-test_that("get_code emits usage tip for any mode", {
+test_that("get_code emits R figure usage tip", {
   with_fixture_opts({
     msgs <- character(0)
     withCallingHandlers(
@@ -10,9 +10,68 @@ test_that("get_code emits usage tip for any mode", {
         invokeRestart("muffleMessage")
       }
     )
-    expect_true(any(grepl("run_replication", msgs, fixed = TRUE)))
-    expect_true(any(grepl("mode = \"run\"", msgs, fixed = TRUE)))
+    tip <- paste(msgs, collapse = "\n")
+    expect_true(grepl("R script text", tip, fixed = TRUE))
+    expect_true(grepl("figure", tip, fixed = TRUE))
+    expect_true(grepl("run_replication", tip, fixed = TRUE))
+    expect_true(grepl("mode = \"run\"", tip, fixed = TRUE))
   })
+})
+
+test_that("get_code emits R table usage tip", {
+  with_fixture_opts({
+    msgs <- character(0)
+    withCallingHandlers(
+      {
+        invisible(get_code(fixture_doi(), "tab_1", mode = "definitions"))
+      },
+      message = function(m) {
+        msgs <<- c(msgs, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+    tip <- paste(msgs, collapse = "\n")
+    expect_true(grepl("R script text", tip, fixed = TRUE))
+    expect_true(grepl("table", tip, fixed = TRUE))
+    expect_true(grepl("run_replication", tip, fixed = TRUE))
+  })
+})
+
+test_that("get_code emits Stata usage tip for stata fixture", {
+  with_fixture_stata_opts({
+    msgs <- character(0)
+    withCallingHandlers(
+      {
+        invisible(get_code(fixture_stata_doi(), "tab_1"))
+      },
+      message = function(m) {
+        msgs <<- c(msgs, conditionMessage(m))
+        invokeRestart("muffleMessage")
+      }
+    )
+    tip <- paste(msgs, collapse = "\n")
+    expect_true(grepl("Stata script text", tip, fixed = TRUE))
+    expect_true(grepl("run_replication", tip, fixed = TRUE))
+    expect_false(grepl("mode = \"run\"", tip, fixed = TRUE))
+  })
+})
+
+test_that("emit_get_code_usage_message is engine- and type-aware", {
+  msgs <- character(0)
+  withCallingHandlers(
+    {
+      emit_get_code_usage_message(engine = "r", type = "transform")
+      emit_get_code_usage_message(engine = "python", type = "figure")
+    },
+    message = function(m) {
+      msgs <<- c(msgs, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(grepl("R script text", msgs[[1]], fixed = TRUE))
+  expect_true(grepl("step", msgs[[1]], fixed = TRUE))
+  expect_true(grepl("Python script text", msgs[[2]], fixed = TRUE))
+  expect_true(grepl("figure", msgs[[2]], fixed = TRUE))
 })
 
 test_that("get_code quiet option suppresses usage tip", {

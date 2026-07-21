@@ -54,12 +54,12 @@ get_code <- function(
 ) {
   style <- match.arg(style)
   mode <- match.arg(mode)
-  emit_get_code_usage_message()
 
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
   if (is_package_replication(meta)) {
+    emit_get_code_usage_message(engine = "r", type = NULL)
     pkg <- as.character(meta$paper$package[[1]])
     tryCatch(
       prepare_package_replication(pkg, meta, ctx),
@@ -73,6 +73,10 @@ get_code <- function(
   }
 
   rep <- find_replication_entry(meta, what, language = language)
+  emit_get_code_usage_message(
+    engine = replication_engine(rep, meta$paper),
+    type = rep$type %||% NULL
+  )
 
   read_code_file <- function(path) {
     if (!is.null(ctx$local_root)) {
@@ -141,17 +145,53 @@ get_code <- function(
 }
 
 #' Usage tip printed by [get_code()] (any mode)
+#'
+#' Prefer a short, engine-aware tip. Step \code{type} customizes the noun
+#' (table / figure / step) when known.
+#'
+#' @param engine \code{"r"}, \code{"stata"}, or \code{"python"} (default \code{"r"}).
+#' @param type Optional step type from yaml (\code{table}, \code{figure},
+#'   \code{transform}, ...).
 #' @keywords internal
-emit_get_code_usage_message <- function() {
+emit_get_code_usage_message <- function(engine = NULL, type = NULL) {
   if (isTRUE(getOption("replicateEverything.quiet_get_code", FALSE))) {
     return(invisible(NULL))
   }
-  message(
-    "get_code() returns script text. To produce the result object, use ",
-    "run_replication(doi, what); or get_code(..., mode = \"run\") then eval() ",
-    "from the study root; or Source the script at top level in the IDE to run ",
-    "the manual footer block."
-  )
+  engine <- tolower(as.character(engine %||% "r")[[1]])
+  if (!nzchar(engine)) {
+    engine <- "r"
+  }
+  type <- tolower(as.character(type %||% "")[[1]])
+  kind <- if (identical(type, "table")) {
+    "table"
+  } else if (identical(type, "figure")) {
+    "figure"
+  } else if (nzchar(type) && !identical(type, "format")) {
+    "step"
+  } else {
+    "result"
+  }
+
+  msg <- if (identical(engine, "stata")) {
+    paste0(
+      "get_code() returns Stata script text. To produce the ", kind,
+      ", use run_replication(doi, what); or paste into Stata with the study ",
+      "root as the working directory."
+    )
+  } else if (identical(engine, "python")) {
+    paste0(
+      "get_code() returns Python script text. To produce the ", kind,
+      ", use run_replication(doi, what); or run the script from the study root."
+    )
+  } else {
+    paste0(
+      "get_code() returns R script text. To produce the ", kind,
+      ", use run_replication(doi, what); or get_code(..., mode = \"run\") then ",
+      "eval() from the study root; or Source the script at top level in the IDE ",
+      "to run the manual footer block."
+    )
+  }
+  message(msg)
   invisible(NULL)
 }
 
