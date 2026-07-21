@@ -15,9 +15,11 @@ Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `re
 `Codebook.pdf`, monolithic `.do` / `.Rmd` files, mixed Stata/R/Python) into a
 **folder-backed study repo** wired to [replicateEverything](https://github.com/replicate-anything/replicateEverything) and the [registry](https://github.com/replicate-anything/registry).
 
-**Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml), `update-my-skills` (sync this folder to Cursor).
+**Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml; **gold example** `rep-template`), `include-study-in-registry` (maintainer `sync_study_to_registry`).
 
-**Canonical examples:** `rep-10.1017-s0003055426101749` (Jiang & Yang, multi-engine); [`rep-10.1017-s0003055422000284`](https://github.com/replicate-anything/rep-10.1017-s0003055422000284) (Blair et al., Dataverse fetch + Stata).
+**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title.
+
+**Canonical examples:** [`rep-template`](https://github.com/replicate-anything/rep-template) (minimal gold); `rep-10.1017-s0003055426101749` (Jiang & Yang, multi-engine); [`rep-10.1017-s0003055422000284`](https://github.com/replicate-anything/rep-10.1017-s0003055422000284) (Blair et al., Dataverse fetch + Stata).
 
 ## When to use
 
@@ -680,13 +682,12 @@ make_fig_N <- function(data = NULL) {
 }
 
 format_fig_N <- function(object) object
-
-if (sys.nframe() == 0L) make_fig_N()
 ```
 
-- Read paths from `data/raw/`
-- `ggsave` → `outputs/fig_N.png` when run via replicateEverything
-- List all input CSVs under `data:` in yaml
+- Pure `make_*` / `format_*` only — no required `sys.nframe()` footer
+- Read paths from `data/raw/` (or accept `data` from yaml `data:`)
+- `ggsave` → `outputs/fig_N.png` when run via `run_replication()` / `build_study_outputs()`
+- List all input CSVs under `data:` / `inputs:` in yaml
 
 ## Step 7 — Python figures / prep
 
@@ -746,7 +747,7 @@ steps:
   - id: fig_2
     type: figure
     label: Figure 2
-    parents: []
+    # root step: omit parents (do not write parents: [])
     engine: python
     code: code/figures/fig_2.py
     inputs:
@@ -763,22 +764,18 @@ steps:
 | R | `r` | `.R` | CRAN via `install_deps=TRUE` |
 | Python | `python` | `.py` or `.ipynb` | pip via `install_deps=TRUE` |
 
-## Step 9 — Registry stub
+## Step 9 — Registry stub (maintainer)
 
-`registry/studies/10.1017S0003055426101749.yml` (or `registry/drafts/` while WIP):
+Do **not** hand-edit a stub into the study repo. Maintainer syncs from study
+`replication.yml`:
 
-```yaml
-paper:
-  doi: https://doi.org/10.1017/S0003055426101749
-  title: "..."
-  materials: folder
-  study_repo: replicate-anything/rep-10.1017-s0003055426101749
-  study_folder: rep-10.1017-s0003055426101749
-  study_ref: main
-repo: replicate-anything/rep-10.1017-s0003055426101749
+```r
+sync_study_to_registry("../rep-10.1017-s0003055426101749", registry_root = "../registry")
+refresh_registry("../registry", audit = TRUE)
 ```
 
-Add row to `registry/index.csv` with `handle`, `doi`, `repo`.
+Writes `registry/studies/<folder>.yml` and updates `index.csv`. See
+`include_study_in_registry.md`.
 
 **Do not** put the full `steps:` list in the registry — only in the study repo.
 

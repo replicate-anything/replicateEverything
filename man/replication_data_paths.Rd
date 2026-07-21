@@ -7,6 +7,7 @@
 replication_data_paths(rep)
 }
 \description{
-Resolve data paths listed on a replication entry
+Prefers \code{data:}; falls back to \code{inputs:} when \code{data:} is omitted
+so yaml remains the execute recipe for \code{\link[=get_code]{get_code()}} / Live Run tips.
 }
 \keyword{internal}

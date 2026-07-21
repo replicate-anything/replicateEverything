@@ -1,14 +1,30 @@
+# replicateEverything 0.6.11
+
+## Yaml is the execute recipe (no required script footers)
+
+* Authors write pure `make_*` / `format_*` (or Stata/Python equivalents).
+  Interactive `sys.nframe() == 0` footers are optional and not required.
+* [get_code()] tips are engine- and yaml-aware: R shows the implied
+  load → make → format call (or points to [run_replication()] /
+  `mode = "run"`); Stata/Python warn against `eval(parse())` and point to
+  [run_replication()] or `do` / `python` from the study root.
+* [get_code()] `mode = "run"` always appends the yaml-implied recipe (does
+  not rely on ungating a footer).
+* Folder checks only require that R table/figure scripts *define* `make_*`.
+* Shiny Code tab: expandable setup steps; always-visible one-liner tip;
+  step 3 uses the same [get_code()] run advice (no footer guidance).
+* Agent skills under `inst/ai/skills/` document minimal yaml, pure helpers,
+  and maintainer [sync_study_to_registry()] (no study-local registry handoff).
+
 # replicateEverything 0.6.10
 
 ## get_code modes and usage tip
 
 * [get_code()] gains `mode = c("definitions", "run")` (default
-  `"definitions"`). `"run"` ungates an `sys.nframe() == 0` footer or appends a
-  yaml-implied load → make → format expression so `eval(parse(text = ...))`
-  can produce the object (study root as working directory).
-* Calling [get_code()] prints a short tip tailored by engine and step type
-  (R: prefer [run_replication()], `mode = "run"` then eval, or Source the
-  manual footer; Stata/Python: analogous guidance without assuming R).
+  `"definitions"`). `"run"` appends a yaml-implied load → make → format
+  expression so `eval(parse(text = ...))` can produce the object (study
+  root as working directory).
+* Calling [get_code()] prints a short tip tailored by engine and step type.
   Suppress with `options(replicateEverything.quiet_get_code = TRUE)`.
 
 # replicateEverything 0.6.9

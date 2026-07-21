@@ -166,17 +166,13 @@ format_tab_1 <- function(object) {
 
 When `replication.yml` lists a `format` field, the package passes the analysis output through the corresponding `format_*` function before display or artifact export.
 
-### Self-contained scripts
+### Pure definitions; yaml executes
 
-Scripts can also be run directly from the paper folder. Use `self_run()` at the bottom of a script so the package can source only the function definitions:
-
-```r
-if (sys.nframe() == 0) {
-  self_run(make_fig_1, "data/fig_1.csv")
-} else {
-  generate_figure <- make_fig_1
-}
-```
+Authors write `make_*` / `format_*` only. [run_replication()] loads data from
+yaml `data:` / `inputs:`, calls `make_*`, and applies `format_*` when requested.
+No interactive footer is required. For a copy-pasteable recipe, use
+`get_code(doi, what, mode = "run")` (appends the yaml-implied call) or prefer
+`run_replication(doi, what)` directly.
 
 ## Folder-backed replications
 

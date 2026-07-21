@@ -30,9 +30,11 @@ is_safe_script_constant_rhs <- function(rhs) {
 
 #' Load only function definitions from a replication script
 #'
-#' Skips the self-run footer so top-level execution (data load + pipe) does not
-#' run when the package sources the file. Also evaluates safe top-level constants
-#' referenced by sourced helper functions.
+#' Skips top-level execution (data load + pipe / legacy interactive footers)
+#' when the package sources the file. Also evaluates safe top-level constants
+#' referenced by sourced helper functions. Authors only need pure
+#' \code{make_*} / \code{format_*} definitions; [run_replication()] supplies
+#' the execute recipe from \code{replication.yml}.
 #'
 #' @param path Path to an R script.
 #' @param env Environment in which to define functions.
@@ -129,8 +131,8 @@ make_function_name <- function(what) {
 
 #' Whether script lines call make_<id>() outside its definition
 #'
-#' Used to verify table/figure scripts expose an executable replication path
-#' (footer that builds and optionally formats the display object).
+#' Detects optional top-level / footer calls. Not required for Live Run —
+#' [run_replication()] loads definitions and calls \code{make_*} from yaml.
 #'
 #' @param lines Character vector of script lines.
 #' @param what Replication identifier.
@@ -179,12 +181,12 @@ replication_code_display_preamble <- function(rep, meta = NULL) {
     if (length(inputs)) {
       paste0("# inputs: ", paste(inputs, collapse = ", "))
     },
-    "# This script should load those built inputs, call make_*(), and format.",
+    "# Live Run loads these inputs via replication.yml and calls make_*().",
     "#"
   )
 }
 
-#' Epilogue notes when a script defines make_* but never calls it
+#' Epilogue notes when a script defines make_* (yaml supplies the execute path)
 #' @keywords internal
 replication_code_display_epilogue <- function(rep, lines) {
   type <- as.character(rep$type %||% "")
@@ -196,15 +198,28 @@ replication_code_display_epilogue <- function(rep, lines) {
   format_rel <- as.character(rep$format[[1]] %||% rep$format %||% "")
   out <- character(0)
   if (!script_has_make_call(lines, what)) {
+    recipe <- character(0)
+    if (exists("yaml_implied_call_lines", mode = "function", inherits = TRUE)) {
+      recipe <- tryCatch(
+        yaml_implied_call_lines(rep, lines),
+        error = function(e) character(0)
+      )
+    }
     out <- c(
       out,
       "",
-      "# --- Expected runnable path (Live Run / local Rscript) ---",
-      paste0("# object <- ", make_name, "(data)  # data from yaml inputs/data"),
-      if (nzchar(format_rel)) {
-        paste0("# then format via ", format_rel)
+      "# --- Execute via replication.yml (run_replication / get_code mode=run) ---",
+      if (length(recipe)) {
+        paste0("# ", recipe)
       } else {
-        paste0("# then format_", what, "(object) when a format step exists")
+        c(
+          paste0("# object <- ", make_name, "(data)  # data from yaml data:/inputs:"),
+          if (nzchar(format_rel)) {
+            paste0("# then format via ", format_rel)
+          } else {
+            paste0("# then format_", what, "(object) when a format step exists")
+          }
+        )
       }
     )
   } else if (nzchar(format_rel) && grepl("[/\\\\]|\\.R$", format_rel, ignore.case = TRUE)) {
@@ -227,7 +242,9 @@ annotate_replication_code_for_display <- function(lines, rep, meta = NULL) {
   )
 }
 
-#' Checklist: R table/figure scripts call make_<id>() (executable path)
+#' Checklist: R table/figure scripts define make_<id>()
+#'
+#' Footers / top-level calls are optional; yaml + [run_replication()] execute.
 #' @keywords internal
 check_replication_script_entries <- function(study_root, meta) {
   reps <- if (exists("folder_display_replications", mode = "function", inherits = TRUE)) {
@@ -263,19 +280,11 @@ check_replication_script_entries <- function(study_root, meta) {
     lines <- readLines(code_path, warn = FALSE, encoding = "UTF-8")
     make_name <- make_function_name(rid)
     has_def <- any(grepl(paste0("^\\s*", make_name, "\\s*<-\\s*function\\b"), lines))
-    has_call <- script_has_make_call(lines, rid)
-    ok <- has_def && has_call
+    ok <- has_def
     msg <- if (!has_def) {
       paste0(code_rel, ": missing ", make_name, "()")
-    } else if (!has_call) {
-      paste0(
-        code_rel,
-        ": defines ", make_name,
-        "() but never calls it — add a footer that loads prep inputs, calls ",
-        make_name, "(), and formats the result"
-      )
     } else {
-      paste0(code_rel, ": ", make_name, "() entry OK")
+      paste0(code_rel, ": ", make_name, "() defined (execute via replication.yml)")
     }
     rows[[length(rows) + 1L]] <- check_result(
       paste0("script_entry_", rid),

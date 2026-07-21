@@ -281,16 +281,24 @@ infer_study_repo_slug <- function(study_root, meta) {
 }
 
 #' Resolve data paths listed on a replication entry
+#'
+#' Prefers \code{data:}; falls back to \code{inputs:} when \code{data:} is omitted
+#' so yaml remains the execute recipe for [get_code()] / Live Run tips.
 #' @keywords internal
 replication_data_paths <- function(rep) {
   data <- rep$data %||% NULL
+  if (is.null(data) || (is.list(data) && !length(data)) ||
+      (is.character(data) && !any(nzchar(data)))) {
+    data <- rep$inputs %||% NULL
+  }
   if (is.null(data)) {
     return(character(0))
   }
   if (is.list(data) && !is.data.frame(data)) {
     data <- unlist(data, use.names = FALSE)
   }
-  as.character(data)
+  paths <- as.character(data)
+  paths[nzchar(paths)]
 }
 
 #' Check whether a baked table artifact file is valid for folder checks

@@ -205,21 +205,13 @@ When `replication.yml` lists a `format` field, the package passes the
 analysis output through the corresponding `format_*` function before
 display or artifact export.
 
-### Self-contained scripts
+### Pure definitions; yaml executes
 
-Scripts can also be run directly from the paper folder. Use
-[`self_run()`](https://replicate-anything.github.io/replicateEverything/reference/self_run.md)
-at the bottom of a script so the package can source only the function
-definitions:
-
-``` r
-
-if (sys.nframe() == 0) {
-  self_run(make_fig_1, "data/fig_1.csv")
-} else {
-  generate_figure <- make_fig_1
-}
-```
+Authors write `make_*` / `format_*` only.
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.html)
+loads data from yaml, calls `make_*`, and applies `format_*` when requested.
+No interactive footer is required. For a copy-pasteable recipe, use
+`get_code(doi, what, mode = "run")` or prefer `run_replication(doi, what)`.
 
 ## Folder-backed replications
 

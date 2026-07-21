@@ -2,11 +2,11 @@
 % Please edit documentation in R/source_replication_functions.R
 \name{check_replication_script_entries}
 \alias{check_replication_script_entries}
-\title{Checklist: R table/figure scripts call make_\if{html}{\out{<id>}}() (executable path)}
+\title{Checklist: R table/figure scripts define make_\if{html}{\out{<id>}}()}
 \usage{
 check_replication_script_entries(study_root, meta)
 }
 \description{
-Checklist: R table/figure scripts call make_\if{html}{\out{<id>}}() (executable path)
+Footers / top-level calls are optional; yaml + \code{\link[=run_replication]{run_replication()}} execute.
 }
 \keyword{internal}

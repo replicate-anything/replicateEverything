@@ -15,7 +15,7 @@ script_has_make_call(lines, what)
 Logical scalar.
 }
 \description{
-Used to verify table/figure scripts expose an executable replication path
-(footer that builds and optionally formats the display object).
+Detects optional top-level / footer calls. Not required for Live Run —
+\code{\link[=run_replication]{run_replication()}} loads definitions and calls \code{make_*} from yaml.
 }
 \keyword{internal}

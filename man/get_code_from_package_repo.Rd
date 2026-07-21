@@ -4,7 +4,13 @@
 \alias{get_code_from_package_repo}
 \title{Build get_code output for a package-backed study from remote source}
 \usage{
-get_code_from_package_repo(meta, ctx, what, package)
+get_code_from_package_repo(
+  meta,
+  ctx,
+  what,
+  package,
+  mode = c("definitions", "run")
+)
 }
 \arguments{
 \item{meta}{Parsed replication metadata (with replications list).}

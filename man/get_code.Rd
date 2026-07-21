@@ -24,10 +24,9 @@ get_code(
 \item{style}{Display style: \code{"inline"} (default, inlines Stata sources for
 copy-paste) or \code{"source"} (raw runner only, for linked inspection in Shiny).}
 
-\item{mode}{\code{"definitions"} (default) returns the stored script (function
-definitions; interactive footers stay gated). \code{"run"} returns definitions
-plus a final expression that loads yaml \code{data:}, calls \code{make_*},
-and pipes \code{format_*} when applicable (or ungates an interactive footer).}
+\item{mode}{\code{"definitions"} (default) returns the stored script (pure
+function definitions). \code{"run"} appends a yaml-implied execute recipe
+(load \code{data:}, call \code{make_*}, pipe \code{format_*} when applicable).}
 
 \item{repo}{Optional repository slug.}
 
@@ -49,12 +48,12 @@ and omitted for Stata.
 \details{
 Scripts keep pure \code{make_*} / \code{format_*} definitions; the package
 orchestrates load \eqn{\rightarrow}{->} make \eqn{\rightarrow}{->} format via
-\code{\link{run_replication}}. An optional footer guarded by
-\code{if (sys.nframe() == 0L)} runs only when you Source the file in an IDE
-(so loading definitions does not also execute). Use \code{mode = "run"} when
-you want script text that also includes a final expression so
-\code{eval(parse(text = ...))} can produce the object (set the working
-directory to the study root).
+\code{\link[=run_replication]{run_replication()}} using \code{replication.yml} as the single source of truth.
+Authors do not need an interactive \code{sys.nframe()} footer. Use
+\code{mode = "run"} when you want script text that appends a yaml-implied
+load \eqn{\rightarrow}{->} make \eqn{\rightarrow}{->} format expression so
+\code{eval(parse(text = ...))} can produce the object (working directory =
+study root).
 
 For package-backed studies, reads \code{inst/replication_code/*.R} from the
 study package GitHub repo when the package is not installed (same idea as

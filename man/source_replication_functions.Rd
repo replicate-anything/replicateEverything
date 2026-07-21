@@ -16,8 +16,10 @@ source_replication_functions(path, env, install_deps = FALSE, visited = NULL)
 \item{visited}{Optional environment memoizing normalized paths already sourced.}
 }
 \description{
-Skips the self-run footer so top-level execution (data load + pipe) does not
-run when the package sources the file. Also evaluates safe top-level constants
-referenced by sourced helper functions.
+Skips top-level execution (data load + pipe / legacy interactive footers)
+when the package sources the file. Also evaluates safe top-level constants
+referenced by sourced helper functions. Authors only need pure
+\code{make_*} / \code{format_*} definitions; \code{\link[=run_replication]{run_replication()}} supplies
+the execute recipe from \code{replication.yml}.
 }
 \keyword{internal}

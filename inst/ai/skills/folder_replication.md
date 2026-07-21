@@ -15,6 +15,18 @@ Turn delivered analysis materials into a **folder-backed study repository** wire
 
 **Not** an R package — use the package-replication skill for package-backed studies.
 
+**Gold example:** [`rep-template`](https://github.com/replicate-anything/rep-template) — minimal `replication.yml`, pure `make_*`/`format_*`, no script footers, registry stub via maintainer sync.
+
+## Architecture (current)
+
+| Rule | Detail |
+|------|--------|
+| **Yaml is the execute recipe** | `replication.yml` + [run_replication()] are the one verb to run a step. Scripts only define helpers. |
+| **Minimal step yaml** | Declare `outputs:` (not deprecated `artifact:`). **Omit** empty `parents: []`. Format children: no unused `label:`. Use `description:` for Shiny hover + Display title (`label_full`). |
+| **Pure helpers** | `make_<id>()` / `format_<id>()` only — **no required** `sys.nframe()` footers. |
+| **Code tips** | [get_code()] defaults to `mode = "definitions"`; `mode = "run"` appends the yaml-implied load → make → format recipe. Tips are engine-aware (R / Stata / Python). |
+| **Registry stub** | Maintainer runs [sync_study_to_registry()] from study root yaml — **no** study-local `registry/` handoff folder. |
+
 ## Target layout
 
 ```
@@ -66,7 +78,7 @@ Copy and track progress:
 - [ ] 7. Build outputs; write outputs/manifest.json
 - [ ] 8. Add testthat tests (run_replication + output match)
 - [ ] 8b. Add substantive checks under `tests/substantive/<step_id>.R` when published benchmarks are available (see Fearon & Laitin tab_1)
-- [ ] 9. Slim registry stub; run **`build_registry_index()`** so `index.csv` has repo, **collections**, **maintainer**, **languages**
+- [ ] 9. Maintainer: **`sync_study_to_registry()`** (no study-local `registry/`); **`build_registry_index()`** / refresh so `index.csv` has repo, **collections**, **maintainer**, **languages**
 - [ ] 10. Remove code/data from registry study folder (if migrating)
 - [ ] 11. Verify replicateEverything + Shiny (Display + Run + system compatibility check)
 - [ ] 12. Commit and push study repo + registry
@@ -296,7 +308,7 @@ steps:
   - id: build_data
     type: transform
     label: Build analysis dataset
-    parents: []
+    # omit parents when root (no empty parents: [])
     inputs:
       - data/raw/survey.dta
     outputs:
@@ -320,6 +332,7 @@ steps:
 
   - id: fig_1_format
     type: format
+    # no label: on format children (unused / hidden from sidebar)
     parent: fig_1
     code: code/fig_1.R
 
@@ -337,6 +350,8 @@ steps:
       - outputs/tab_1.html
 ```
 
+**Gold minimal R table:** copy field comments and layout from `rep-template/replication.yml` (root step omits `parents:`; `outputs:` only; format child without `label:`).
+
 Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
 `compile_steps_from_legacy()` but **new studies must use `steps:` + `outputs/`**.
 
@@ -351,8 +366,9 @@ Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
 | `stata_packages:` | User-written ado names from `.do` files — include **`require`** whenever **`reghdfe`** is listed |
 | `maintainer:` | **Required** — name + email |
 | `collections:` | Tags copied to registry `index.csv` |
-| `steps[].parents` | Immediate upstream steps (not raw `data/` files) |
-| `steps[].outputs` | Files this step produces under `outputs/` (first displayable html/png/rds/svg is what Shiny Display reads) |
+| `steps[].parents` | Immediate upstream steps (omit when none — do not write `parents: []`) |
+| `steps[].outputs` | Files this step produces under `outputs/` (first displayable html/png/rds/svg is what Shiny Display reads). Prefer `outputs:` over deprecated `artifact:`. |
+| `steps[].description` | Longer caption: Shiny hover + Display title |
 | `steps[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
 | `steps[].dependencies` | **R only** — extra CRAN packages for that step |
 
@@ -518,32 +534,44 @@ inputs and breaks live replication.
 
 ## Step 6 — Code scripts (`code/<id>.R` or `.do`)
 
-Each **table/figure** script must be an **executable replication path**, not only helper definitions.
+Each **table/figure** script defines pure analysis helpers. Yaml +
+[run_replication()] are the execute path — no interactive footer required.
 
 1. Header comment with study repo URL
 2. Note upstream prep parents / `inputs:` (Display and Live Run assume prep products under `outputs/` already exist or will be built via the DAG)
 3. `library(...)` / thin `source("../helpers/…")` for **analysis** helpers only — do **not** start table scripts with deposit/download machinery
 4. `make_<id>(data)` — analysis; returns model, data.frame, ggplot, etc.
 5. `format_<id>(object)` — in the same file or via yaml `format:` helper
-6. **Footer that calls** `make_<id>(…)` (and formats), guarded so definitions-only
-   sourcing does not execute:
 
 ```r
-# Run the code below to manually create outputs using functions defined above.
-if (sys.nframe() == 0L) {
-  make_tab_1(readRDS("../outputs/…")) |> format_tab_1()
+# Table 1 — …
+library(estimatr)
+
+make_tab_1 <- function(data) {
+  estimatr::lm_robust(Y ~ X, data = data)
+}
+
+format_tab_1 <- function(object) {
+  # return HTML / display object
+  object
 }
 ```
 
-`source_replication_functions()` skips that footer when the package Live-Runs (it loads `make_*` then calls it with yaml `data:`). [get_code()] defaults to `mode = "definitions"` (script as stored); use `mode = "run"` for text that evaluates to the result. Prep/data loading lives in upstream DAG steps — show those under Data steps, not as the start of table display code.
+Optional local convenience (not required): a gated `if (sys.nframe() == 0L) { … }`
+block for IDE "Source". Prefer documenting `run_replication(doi, "tab_1")` in the
+README instead — **do not** treat footers as part of the study contract.
+[get_code()] defaults to `mode = "definitions"`; use `mode = "run"` for text that
+appends the yaml-implied load → make → format recipe. Prep/data loading lives in
+upstream DAG steps — show those under Data steps, not as the start of table
+display code.
 
 **Split rule:** if Shiny stores **display** files (HTML/PNG), analysis output should be the **object** passed to `format_*`, not the formatted HTML (unless no format step).
 
 Transform steps write to paths declared in `outputs:` (under `outputs/<step_id>/`).
 
-`check_replication()` flags R table/figure scripts that define `make_*` but never call it.
+`check_replication()` flags R table/figure scripts that are missing `make_*`.
 
-Reference: `rep-10.1017-S0003055403000534/code/tab_1.R`, `rep-10.1177-00491241211036161/code/fig_1.R`.
+Reference: `rep-template/code/tab_1.R`, `rep-10.1017-S0003055403000534/code/tab_1.R`.
 
 ## Step 7 — Build outputs
 
@@ -565,24 +593,26 @@ Commit under `outputs/`:
 
 `registry/scripts/build_artifacts.R` **skips** folder-backed papers.
 
-## Step 8 — Registry stub
+## Step 8 — Registry stub (maintainer)
 
-`registry/studies/<folder>.yml` only (flat file, not a subfolder):
+Do **not** commit a study-local `registry/` handoff. The stub lives only in the
+central [registry](https://github.com/replicate-anything/registry) repo.
 
-```yaml
-paper:
-  doi: https://doi.org/...
-  title: "..."
-  materials: folder
-  study_repo: replicate-anything/rep-<doi-hyphenated>
-  study_folder: rep-<doi-hyphenated>
-  study_ref: main
-repo: replicate-anything/rep-<doi-hyphenated>
+Maintainer, from a monorepo checkout:
+
+```r
+library(replicateEverything)
+options(replicateEverything.registry_root = "../registry")
+sync_study_to_registry(".", audit = TRUE)   # or path to the study repo
+# or batch: refresh_registry("../registry", audit = TRUE)
 ```
 
-Update `registry/index.csv` — set `repo` column to the study slug (not `replicate-anything/registry`).
+That writes `registry/studies/<folder>.yml` from the study root `replication.yml`
+and rebuilds `index.csv` (repo slug, collections, maintainer, languages).
 
-Delete `code/`, `data/`, `outputs/` under the registry paper folder.
+See `include_study_in_registry.md` for the full contributor vs maintainer split.
+
+Delete `code/`, `data/`, `outputs/` under any legacy registry paper folder if migrating.
 
 ## Step 9 — Tests (`tests/testthat/`)
 
@@ -717,7 +747,9 @@ When merging a study row into [registry/index.csv](https://github.com/replicate-
 | `maintainer_name`, `maintainer_email` | stub `maintainer:` block |
 | `languages` | Semicolon-separated engines from stub `languages:` |
 
-`prepare_study_for_registry()` / `write_study_registry_stub()` copy these fields into the study's `registry/replication.yml` (or `inst/registry/` for packages). **Every new contribution must name a maintainer** — do not leave these blank.
+`prepare_study_for_registry()` / `sync_study_to_registry()` copy these fields into
+`registry/studies/<folder>.yml`. **Every new contribution must name a maintainer** —
+do not leave these blank. Do not write study-local `registry/` handoff folders.
 
 ## Common pitfalls
 
@@ -728,8 +760,10 @@ When merging a study row into [registry/index.csv](https://github.com/replicate-
 - **No maintainer** — every study repo needs `maintainer:` (name + email)
 - **Stata names in `paper.dependencies`** — use `stata_packages:` instead
 - Putting the **stub** yaml in the study repo (must be **full** yaml with `steps:`)
-- Forgetting to update `index.csv` `repo` column
-- **`artifacts/` instead of `outputs/`** on new studies (0.6+)
-- Missing `format_*` when display file is HTML/PNG but analysis returns raw models
+- Committing study-local `registry/` handoff — use maintainer `sync_study_to_registry()` instead
+- Writing empty `parents: []` — omit the field on root steps
+- Using deprecated `artifact:` instead of `outputs:`
+- Adding unused `label:` on `type: format` children
+- Forgetting to update `index.csv` `repo` column (sync/refresh handles this)
 - Extension study listing every base step — only `inherit:` / local steps belong in the extension yaml
 - Tests without `replicateEverything.index` override for the new `repo` slug

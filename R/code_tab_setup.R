@@ -284,7 +284,8 @@ code_setup_repo_slug <- function(meta, ctx = NULL) {
 #' @param step_id Replication or prep step id.
 #' @param repo,folder Optional registry row hints.
 #' @return List with \code{title}, \code{step1}, \code{step2}, \code{step2_prep},
-#'   \code{step3}, \code{repo_slug}, \code{repo_url}, and \code{zip_url}.
+#'   \code{step3}, \code{one_liner}, \code{repo_slug}, \code{repo_url}, and
+#'   \code{zip_url}.
 #' @keywords internal
 code_setup_box_content <- function(
   doi = NULL,
@@ -350,11 +351,78 @@ code_setup_box_content <- function(
   prep_notes <- code_setup_prep_notes(meta, step_id = step_id)
   open_engines <- code_setup_open_engines(language, study_engines)
   open_names <- vapply(open_engines, engine_display_name, character(1))
-  step3 <- if (length(open_names) == 1L) {
-    paste0("Copy and paste the code below into your ", open_names[[1L]], " session.")
+
+  # Shared tip with get_code() — yaml / run_replication(); no script-footer advice
+  tip_engine <- tolower(as.character(language %||% "r")[[1]])
+  tip_rep <- NULL
+  tip_type <- NULL
+  tip_lines <- NULL
+  if (!is.null(step_id) && nzchar(as.character(step_id))) {
+    tip_rep <- tryCatch(
+      find_replication_entry(meta, step_id, language = language),
+      error = function(e) NULL
+    )
+    if (!is.null(tip_rep)) {
+      tip_engine <- tryCatch(
+        replication_engine(tip_rep, meta$paper),
+        error = function(e) tip_engine
+      )
+      tip_type <- tip_rep$type %||% NULL
+      code_rel <- as.character(tip_rep$code[[1]] %||% tip_rep$code %||% "")
+      if (nzchar(code_rel) && !is.null(ctx$local_root)) {
+        code_abs <- file.path(ctx$local_root, code_rel)
+        if (file.exists(code_abs)) {
+          tip_lines <- tryCatch(
+            readLines(code_abs, warn = FALSE),
+            error = function(e) NULL
+          )
+        }
+      }
+    }
+  }
+  advice <- if (exists("get_code_run_advice", mode = "function", inherits = TRUE)) {
+    tryCatch(
+      get_code_run_advice(
+        engine = tip_engine,
+        type = tip_type,
+        rep = tip_rep,
+        lines = tip_lines,
+        doi = doi_label,
+        what = step_id
+      ),
+      error = function(e) character(0)
+    )
+  } else {
+    character(0)
+  }
+  one_liner <- if (length(advice)) {
+    advice[[1L]]
   } else {
     paste0(
-      "Copy and paste the code below into your ",
+      "Prefer run_replication(",
+      if (nzchar(doi_label)) shQuote(doi_label, type = "cmd") else "doi",
+      ", ",
+      if (!is.null(step_id) && nzchar(as.character(step_id))) {
+        shQuote(as.character(step_id), type = "cmd")
+      } else {
+        "what"
+      },
+      ")."
+    )
+  }
+  step3 <- if (length(advice)) {
+    paste(advice, collapse = " ")
+  } else if (length(open_names) == 1L) {
+    paste0(
+      one_liner,
+      " Or paste the code below into your ",
+      open_names[[1L]],
+      " session."
+    )
+  } else {
+    paste0(
+      one_liner,
+      " Or paste the code below into your ",
       paste(open_names, collapse = " or "),
       " session."
     )
@@ -365,6 +433,7 @@ code_setup_box_content <- function(
     step2 = req_lines,
     step2_prep = prep_notes,
     step3 = step3,
+    one_liner = one_liner,
     repo_slug = repo_slug,
     repo_url = repo_url,
     zip_url = zip_url

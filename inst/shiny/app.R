@@ -4109,34 +4109,42 @@ code_setup_box_ui <- function(content) {
       })
     }
   )
-  tags$details(
-    class = "study-details-expand code-setup-expand mb-3",
-    tags$summary(
-      class = "study-details-summary",
-      tags$span(class = "study-details-chevron", HTML("&#9660;")),
-      tags$span(class = "ms-1", strong(content$title %||% "See here for guidance on running this code"))
-    ),
-    tags$div(
-      class = "study-details-body pt-2",
-      tags$ol(
-        class = "code-setup-steps ps-3 mb-0",
-        tags$li(
-          class = "mb-2",
-          tags$strong("Get the repository. "),
-          step1_body
-        ),
-        tags$li(
-          class = "mb-2",
-          tags$strong("System requirements. "),
-          step2_body
-        ),
-        tags$li(
-          class = "mb-0",
-          tags$strong("Copy and paste. "),
-          content$step3 %||% "Copy and paste the code below."
+  tagList(
+    tags$details(
+      class = "study-details-expand code-setup-expand mb-2",
+      tags$summary(
+        class = "study-details-summary",
+        tags$span(class = "study-details-chevron", HTML("&#9660;")),
+        tags$span(class = "ms-1", strong(content$title %||% "See here for guidance on running this code"))
+      ),
+      tags$div(
+        class = "study-details-body pt-2",
+        tags$ol(
+          class = "code-setup-steps ps-3 mb-0",
+          tags$li(
+            class = "mb-2",
+            tags$strong("Get the repository. "),
+            step1_body
+          ),
+          tags$li(
+            class = "mb-2",
+            tags$strong("System requirements. "),
+            step2_body
+          ),
+          tags$li(
+            class = "mb-0",
+            tags$strong("Run. "),
+            content$step3 %||% content$one_liner %||% "Prefer run_replication(doi, what)."
+          )
         )
       )
-    )
+    ),
+    if (nzchar(as.character(content$one_liner %||% ""))) {
+      tags$p(
+        class = "code-setup-one-liner text-muted small mb-3 mt-1",
+        content$one_liner
+      )
+    }
   )
 }
 

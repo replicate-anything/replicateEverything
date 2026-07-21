@@ -11,12 +11,12 @@
 #'
 #' Scripts keep pure \code{make_*} / \code{format_*} definitions; the package
 #' orchestrates load \eqn{\rightarrow}{->} make \eqn{\rightarrow}{->} format via
-#' [run_replication()]. An optional footer guarded by
-#' \code{if (sys.nframe() == 0L)} runs only when you Source the file in an IDE
-#' (so loading definitions does not also execute). Use \code{mode = "run"} when
-#' you want script text that also includes a final expression so
-#' \code{eval(parse(text = ...))} can produce the object (set the working
-#' directory to the study root).
+#' [run_replication()] using \code{replication.yml} as the single source of truth.
+#' Authors do not need an interactive \code{sys.nframe()} footer. Use
+#' \code{mode = "run"} when you want script text that appends a yaml-implied
+#' load \eqn{\rightarrow}{->} make \eqn{\rightarrow}{->} format expression so
+#' \code{eval(parse(text = ...))} can produce the object (working directory =
+#' study root).
 #'
 #' For package-backed studies, reads \code{inst/replication_code/*.R} from the
 #' study package GitHub repo when the package is not installed (same idea as
@@ -27,10 +27,9 @@
 #' @param language Optional \code{"R"} or \code{"stata"}.
 #' @param style Display style: \code{"inline"} (default, inlines Stata sources for
 #'   copy-paste) or \code{"source"} (raw runner only, for linked inspection in Shiny).
-#' @param mode \code{"definitions"} (default) returns the stored script (function
-#'   definitions; interactive footers stay gated). \code{"run"} returns definitions
-#'   plus a final expression that loads yaml \code{data:}, calls \code{make_*},
-#'   and pipes \code{format_*} when applicable (or ungates an interactive footer).
+#' @param mode \code{"definitions"} (default) returns the stored script (pure
+#'   function definitions). \code{"run"} appends a yaml-implied execute recipe
+#'   (load \code{data:}, call \code{make_*}, pipe \code{format_*} when applicable).
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #' @return A character vector containing the lines of the replication script(s).
@@ -59,7 +58,12 @@ get_code <- function(
   ctx <- paper_context(doi, repo = repo, folder = folder)
 
   if (is_package_replication(meta)) {
-    emit_get_code_usage_message(engine = "r", type = NULL)
+    emit_get_code_usage_message(
+      engine = "r",
+      type = NULL,
+      doi = doi,
+      what = what
+    )
     pkg <- as.character(meta$paper$package[[1]])
     tryCatch(
       prepare_package_replication(pkg, meta, ctx),
@@ -73,10 +77,7 @@ get_code <- function(
   }
 
   rep <- find_replication_entry(meta, what, language = language)
-  emit_get_code_usage_message(
-    engine = replication_engine(rep, meta$paper),
-    type = rep$type %||% NULL
-  )
+  engine <- replication_engine(rep, meta$paper)
 
   read_code_file <- function(path) {
     if (!is.null(ctx$local_root)) {
@@ -116,10 +117,28 @@ get_code <- function(
   }
 
   if (is_stata_replication(rep, meta$paper)) {
+    emit_get_code_usage_message(
+      engine = engine,
+      type = rep$type %||% NULL,
+      rep = rep,
+      doi = doi,
+      what = what
+    )
     if (identical(style, "source")) {
       return(read_code_file(rep$code))
     }
     return(assemble_stata_display_code(rep, read_code_file))
+  }
+
+  if (is_python_replication(rep, meta$paper)) {
+    emit_get_code_usage_message(
+      engine = "python",
+      type = rep$type %||% NULL,
+      rep = rep,
+      doi = doi,
+      what = what
+    )
+    return(read_code_file(rep$code))
   }
 
   lines <- read_code_file(rep$code)
@@ -138,31 +157,26 @@ get_code <- function(
     }
   }
 
+  emit_get_code_usage_message(
+    engine = engine,
+    type = rep$type %||% NULL,
+    rep = rep,
+    lines = lines,
+    doi = doi,
+    what = what
+  )
+
   if (identical(mode, "run")) {
     lines <- prepare_get_code_for_run(lines, rep)
   }
   lines
 }
 
-#' Usage tip printed by [get_code()] (any mode)
-#'
-#' Prefer a short, engine-aware tip. Step \code{type} customizes the noun
-#' (table / figure / step) when known.
-#'
-#' @param engine \code{"r"}, \code{"stata"}, or \code{"python"} (default \code{"r"}).
-#' @param type Optional step type from yaml (\code{table}, \code{figure},
-#'   \code{transform}, ...).
+#' Noun for get_code / Code-tab run tips (table / figure / step / result)
 #' @keywords internal
-emit_get_code_usage_message <- function(engine = NULL, type = NULL) {
-  if (isTRUE(getOption("replicateEverything.quiet_get_code", FALSE))) {
-    return(invisible(NULL))
-  }
-  engine <- tolower(as.character(engine %||% "r")[[1]])
-  if (!nzchar(engine)) {
-    engine <- "r"
-  }
+get_code_result_kind <- function(type = NULL) {
   type <- tolower(as.character(type %||% "")[[1]])
-  kind <- if (identical(type, "table")) {
+  if (identical(type, "table")) {
     "table"
   } else if (identical(type, "figure")) {
     "figure"
@@ -171,31 +185,174 @@ emit_get_code_usage_message <- function(engine = NULL, type = NULL) {
   } else {
     "result"
   }
+}
 
-  msg <- if (identical(engine, "stata")) {
-    paste0(
-      "get_code() returns Stata script text. To produce the ", kind,
-      ", use run_replication(doi, what); or paste into Stata with the study ",
-      "root as the working directory."
+#' Quoted args for run_replication / get_code examples
+#' @keywords internal
+get_code_tip_call_args <- function(doi = NULL, what = NULL) {
+  doi_s <- trimws(as.character(doi %||% "")[[1]])
+  what_s <- trimws(as.character(what %||% "")[[1]])
+  list(
+    doi = if (nzchar(doi_s)) shQuote(doi_s, type = "cmd") else "doi",
+    what = if (nzchar(what_s)) shQuote(what_s, type = "cmd") else "what"
+  )
+}
+
+#' How-to-run advice shared by [get_code()] tips and the Code tab setup box
+#'
+#' Yaml / [run_replication()] is primary. Does not mention optional
+#' \code{sys.nframe()} script footers.
+#'
+#' @param engine \code{"r"}, \code{"stata"}, or \code{"python"} (default \code{"r"}).
+#' @param type Optional step type from yaml.
+#' @param rep Optional replication / step entry (yaml-implied R recipe; Stata/Python path).
+#' @param lines Optional script lines (so R tips detect generate_* names).
+#' @param doi,what Optional concrete ids; placeholders when omitted.
+#' @return Character vector of advice lines (no \code{get_code() returns...} preamble).
+#' @keywords internal
+get_code_run_advice <- function(
+  engine = NULL,
+  type = NULL,
+  rep = NULL,
+  lines = NULL,
+  doi = NULL,
+  what = NULL
+) {
+  engine <- tolower(as.character(engine %||% "r")[[1]])
+  if (!nzchar(engine)) {
+    engine <- "r"
+  }
+  kind <- get_code_result_kind(type)
+  args <- get_code_tip_call_args(doi, what)
+  run_call <- paste0("run_replication(", args$doi, ", ", args$what, ")")
+  get_run_call <- paste0(
+    "get_code(", args$doi, ", ", args$what, ", mode = \"run\")"
+  )
+
+  code_rel <- if (!is.null(rep)) {
+    as.character(rep$code[[1]] %||% rep$code %||% "")
+  } else {
+    ""
+  }
+
+  if (identical(engine, "stata")) {
+    do_hint <- if (nzchar(code_rel)) {
+      paste0('do "', code_rel, '"')
+    } else {
+      'do "path/to/script.do"'
+    }
+    c(
+      paste0("Prefer ", run_call, " to produce the ", kind, "."),
+      paste0(
+        "Or from the study root run ", do_hint,
+        " in Stata — do not eval(parse()) this text in R."
+      ),
+      "Or paste the Stata script below into Stata with the study root as the working directory."
     )
   } else if (identical(engine, "python")) {
-    paste0(
-      "get_code() returns Python script text. To produce the ", kind,
-      ", use run_replication(doi, what); or run the script from the study root."
+    py_hint <- if (nzchar(code_rel)) {
+      paste0('python "', code_rel, '"')
+    } else {
+      'python "path/to/script.py"'
+    }
+    c(
+      paste0("Prefer ", run_call, " to produce the ", kind, "."),
+      paste0(
+        "Or from the study root run ", py_hint,
+        " — do not eval(parse()) this text in R."
+      ),
+      "Or paste the Python script below into a session with the study root as the working directory."
     )
   } else {
-    paste0(
-      "get_code() returns R script text. To produce the ", kind,
-      ", use run_replication(doi, what); or get_code(..., mode = \"run\") then ",
-      "eval() from the study root; or Source the script at top level in the IDE ",
-      "to run the manual footer block."
+    recipe <- yaml_implied_call_lines(rep, lines)
+    out <- paste0("Prefer ", run_call, " to produce the ", kind, ".")
+    if (length(recipe)) {
+      out <- c(
+        out,
+        "From the study root (yaml-implied):",
+        paste0("  ", recipe)
+      )
+    }
+    c(
+      out,
+      paste0(
+        "Or evaluate yaml-driven script text: eval(parse(text = ",
+        get_run_call, ")) from the study root."
+      ),
+      "Or paste the code below into your R session with the study root as the working directory."
     )
   }
-  message(msg)
+}
+
+#' Single tip string for [get_code()] (any mode)
+#'
+#' Engine- and yaml-aware. Shared body from [get_code_run_advice()].
+#'
+#' @inheritParams get_code_run_advice
+#' @return Character scalar tip.
+#' @keywords internal
+get_code_usage_tip <- function(
+  engine = NULL,
+  type = NULL,
+  rep = NULL,
+  lines = NULL,
+  doi = NULL,
+  what = NULL
+) {
+  engine <- tolower(as.character(engine %||% "r")[[1]])
+  if (!nzchar(engine)) {
+    engine <- "r"
+  }
+  preamble <- if (identical(engine, "stata")) {
+    "get_code() returns Stata script text (not R). "
+  } else if (identical(engine, "python")) {
+    "get_code() returns Python script text (not R). "
+  } else {
+    "get_code() returns R function definitions. "
+  }
+  advice <- get_code_run_advice(
+    engine = engine,
+    type = type,
+    rep = rep,
+    lines = lines,
+    doi = doi,
+    what = what
+  )
+  # Preserve a readable multiline yaml recipe in console tips
+  if (identical(engine, "r") && any(grepl("^  ", advice))) {
+    paste0(preamble, paste(advice, collapse = "\n"))
+  } else {
+    paste0(preamble, paste(advice, collapse = " "))
+  }
+}
+
+#' Usage tip printed by [get_code()] (any mode)
+#'
+#' @inheritParams get_code_run_advice
+#' @keywords internal
+emit_get_code_usage_message <- function(
+  engine = NULL,
+  type = NULL,
+  rep = NULL,
+  lines = NULL,
+  doi = NULL,
+  what = NULL
+) {
+  if (isTRUE(getOption("replicateEverything.quiet_get_code", FALSE))) {
+    return(invisible(NULL))
+  }
+  message(get_code_usage_tip(
+    engine = engine,
+    type = type,
+    rep = rep,
+    lines = lines,
+    doi = doi,
+    what = what
+  ))
   invisible(NULL)
 }
 
-#' Whether script lines contain an interactive sys.nframe() footer
+#' Whether script lines contain an interactive sys.nframe() footer (legacy)
 #' @keywords internal
 has_nframe_footer <- function(lines) {
   if (!length(lines)) {
@@ -207,7 +364,10 @@ has_nframe_footer <- function(lines) {
   ))
 }
 
-#' Ungate interactive footer so eval(parse()) runs the call body
+#' Ungate interactive footer so eval(parse()) runs the call body (legacy)
+#'
+#' Prefer [assemble_get_code_run_from_yaml()] / [prepare_get_code_for_run()];
+#' footers are optional and not required for Live Run.
 #' @keywords internal
 ungate_nframe_footer <- function(lines) {
   if (!length(lines)) {
@@ -221,17 +381,37 @@ ungate_nframe_footer <- function(lines) {
   )
 }
 
+#' Drop a previously appended yaml run section from script lines
+#' @keywords internal
+strip_yaml_run_section <- function(lines) {
+  if (!length(lines)) {
+    return(lines)
+  }
+  idx <- which(grepl("^\\s*# --- run \\(from replication\\.yml", lines))
+  if (!length(idx)) {
+    return(lines)
+  }
+  cut_at <- idx[[1]]
+  if (cut_at > 1L && !nzchar(trimws(lines[[cut_at - 1L]]))) {
+    cut_at <- cut_at - 1L
+  }
+  if (cut_at <= 1L) {
+    return(character(0))
+  }
+  lines[seq_len(cut_at - 1L)]
+}
+
 #' Analysis function name defined in script lines (make_* or generate_*)
 #' @keywords internal
 detect_analysis_fn_name <- function(lines, what) {
   make_name <- make_function_name(what)
-  if (any(grepl(paste0("^\\s*", make_name, "\\s*<-\\s*function\\b"), lines))) {
+  if (length(lines) && any(grepl(paste0("^\\s*", make_name, "\\s*<-\\s*function\\b"), lines))) {
     return(make_name)
   }
-  if (any(grepl("^\\s*generate_table\\s*<-\\s*function\\b", lines))) {
+  if (length(lines) && any(grepl("^\\s*generate_table\\s*<-\\s*function\\b", lines))) {
     return("generate_table")
   }
-  if (any(grepl("^\\s*generate_figure\\s*<-\\s*function\\b", lines))) {
+  if (length(lines) && any(grepl("^\\s*generate_figure\\s*<-\\s*function\\b", lines))) {
     return("generate_figure")
   }
   make_name
@@ -239,8 +419,8 @@ detect_analysis_fn_name <- function(lines, what) {
 
 #' Format helper name from yaml or script definitions
 #' @keywords internal
-detect_format_fn_name <- function(rep, lines) {
-  what <- as.character(rep$id[[1]] %||% rep$id)
+detect_format_fn_name <- function(rep, lines = NULL) {
+  what <- as.character(rep$id[[1]] %||% rep$id %||% "")
   fmt_field <- as.character(rep$format[[1]] %||% rep$format %||% "")
   if (length(fmt_field) && nzchar(fmt_field[[1]])) {
     fmt_field <- fmt_field[[1]]
@@ -248,8 +428,15 @@ detect_format_fn_name <- function(rep, lines) {
       return(fmt_field)
     }
   }
+  if (!nzchar(what)) {
+    return(NULL)
+  }
   candidate <- paste0("format_", gsub("[^a-zA-Z0-9_]", "_", what))
-  if (any(grepl(paste0("^\\s*", candidate, "\\s*<-\\s*function\\b"), lines))) {
+  if (length(lines) && any(grepl(paste0("^\\s*", candidate, "\\s*<-\\s*function\\b"), lines))) {
+    return(candidate)
+  }
+  # Format child step or yaml format: path — still suggest format_<id> when defined later
+  if (length(fmt_field) && nzchar(fmt_field[[1]])) {
     return(candidate)
   }
   NULL
@@ -279,16 +466,35 @@ suggest_data_load_expr <- function(path) {
   )
 }
 
-#' Append a yaml-implied run expression when no interactive footer exists
+#' Compact yaml-implied call lines (no section banner) for tips / recipes
+#'
+#' Shared by [emit_get_code_usage_message()] and [assemble_get_code_run_from_yaml()].
 #' @keywords internal
-assemble_get_code_run_from_yaml <- function(rep, lines) {
-  what <- as.character(rep$id[[1]] %||% rep$id)
+yaml_implied_call_lines <- function(rep, lines = NULL) {
+  if (is.null(rep)) {
+    return(character(0))
+  }
+  what <- as.character(rep$id[[1]] %||% rep$id %||% "")
+  if (!nzchar(what)) {
+    return(character(0))
+  }
   fn_name <- detect_analysis_fn_name(lines, what)
-  data_paths <- replication_data_paths(rep)
-  out <- c(
-    "",
-    "# --- run (from replication.yml; working directory = study root) ---"
-  )
+  data_paths <- character(0)
+  if (exists("replication_data_paths", mode = "function", inherits = TRUE)) {
+    data_paths <- tryCatch(
+      as.character(replication_data_paths(rep) %||% character(0)),
+      error = function(e) character(0)
+    )
+  }
+  if (!length(data_paths)) {
+    data_paths <- unique(as.character(unlist(
+      c(rep$data %||% list(), rep$inputs %||% list()),
+      use.names = FALSE
+    )))
+    data_paths <- data_paths[nzchar(data_paths)]
+  }
+
+  out <- character(0)
   if (!length(data_paths)) {
     call_line <- paste0(fn_name, "()")
   } else if (length(data_paths) == 1L) {
@@ -311,17 +517,24 @@ assemble_get_code_run_from_yaml <- function(rep, lines) {
   c(out, call_line)
 }
 
-#' Make R get_code lines runnable under eval(parse())
+#' Append a yaml-implied run expression (replication.yml is the execute recipe)
+#' @keywords internal
+assemble_get_code_run_from_yaml <- function(rep, lines) {
+  recipe <- yaml_implied_call_lines(rep, lines)
+  c(
+    "",
+    "# --- run (from replication.yml; working directory = study root) ---",
+    recipe
+  )
+}
+
+#' Make R get_code lines runnable under eval(parse()) via yaml recipe
+#'
+#' Always appends the yaml-implied execute recipe. Does not rely on optional
+#' \code{sys.nframe()} footers (left gated if present).
 #' @keywords internal
 prepare_get_code_for_run <- function(lines, rep) {
-  if (has_nframe_footer(lines)) {
-    return(ungate_nframe_footer(lines))
-  }
-  what <- as.character(rep$id[[1]] %||% rep$id)
-  # Top-level make_*() call already present (unguarded script)
-  if (isTRUE(script_has_make_call(lines, what))) {
-    return(lines)
-  }
+  lines <- strip_yaml_run_section(lines)
   c(lines, assemble_get_code_run_from_yaml(rep, lines))
 }
 
@@ -332,15 +545,7 @@ adjust_package_get_code_for_mode <- function(lines, mode) {
   if (identical(mode, "run") || !length(lines)) {
     return(lines)
   }
-  idx <- which(grepl("^\\s*# --- run \\(from replication\\.yml\\) ---\\s*$", lines))
-  if (!length(idx)) {
-    return(lines)
-  }
-  cut_at <- idx[[1]]
-  if (cut_at > 1L && !nzchar(trimws(lines[[cut_at - 1L]]))) {
-    cut_at <- cut_at - 1L
-  }
-  lines[seq_len(cut_at - 1L)]
+  strip_yaml_run_section(lines)
 }
 
 #' @keywords internal

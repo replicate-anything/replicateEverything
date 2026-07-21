@@ -32,11 +32,33 @@ test_that("annotate_replication_code_for_display adds prep notes", {
   expect_true(any(grepl("format_table.R", out, fixed = TRUE)))
 })
 
-test_that("check_replication_script_entries fails when make_* is never called", {
+test_that("check_replication_script_entries passes when make_* is defined without call", {
   tmp <- withr::local_tempdir()
   dir.create(file.path(tmp, "code"), recursive = TRUE)
   writeLines(
     "make_tab_1 <- function(data) data",
+    file.path(tmp, "code", "tab_1.R")
+  )
+  meta <- list(
+    replications = list(
+      list(
+        id = "tab_1",
+        type = "table",
+        engine = "r",
+        code = "code/tab_1.R"
+      )
+    )
+  )
+  checks <- check_replication_script_entries(tmp, meta)
+  expect_true(any(checks$passed[checks$check == "script_entry_tab_1"]))
+  expect_true(any(grepl("replication\\.yml", checks$message[checks$check == "script_entry_tab_1"])))
+})
+
+test_that("check_replication_script_entries fails when make_* is missing", {
+  tmp <- withr::local_tempdir()
+  dir.create(file.path(tmp, "code"), recursive = TRUE)
+  writeLines(
+    "helper <- function(data) data",
     file.path(tmp, "code", "tab_1.R")
   )
   meta <- list(

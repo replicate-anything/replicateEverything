@@ -2,11 +2,11 @@
 % Please edit documentation in R/source_replication_functions.R
 \name{replication_code_display_epilogue}
 \alias{replication_code_display_epilogue}
-\title{Epilogue notes when a script defines make_* but never calls it}
+\title{Epilogue notes when a script defines make_* (yaml supplies the execute path)}
 \usage{
 replication_code_display_epilogue(rep, lines)
 }
 \description{
-Epilogue notes when a script defines make_* but never calls it
+Epilogue notes when a script defines make_* (yaml supplies the execute path)
 }
 \keyword{internal}
