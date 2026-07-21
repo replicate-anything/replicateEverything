@@ -129,7 +129,8 @@ build_paper_outputs <- function(
 #' @param registry_root Path to the registry repository.
 #' @param folders Optional character vector of study folder names.
 #' @inheritParams build_single_output
-#' @return Invisibly \code{TRUE} if every build succeeds.
+#' @return Invisibly a list with `built`, `skipped`, and `failures`
+#'   (character vectors of registry folder names / error strings).
 #' @keywords internal
 build_registry_outputs <- function(
   registry_root = NULL,
@@ -158,6 +159,8 @@ build_registry_outputs <- function(
   }
 
   failures <- character(0)
+  skipped <- character(0)
+  built <- character(0)
   old_registry <- getOption("replicateEverything.registry_root", NULL)
   options(replicateEverything.registry_root = registry_root)
   on.exit(options(replicateEverything.registry_root = old_registry), add = TRUE)
@@ -177,12 +180,15 @@ build_registry_outputs <- function(
     if (is_package_replication(meta)) {
       message("Building ", folder, " (package-backed) ...")
       tryCatch(
-        build_study_outputs(
-          meta$paper$package,
-          install_deps = install_deps,
-          only_missing = only_missing,
-          force_prep = force_prep
-        ),
+        {
+          build_study_outputs(
+            meta$paper$package,
+            install_deps = install_deps,
+            only_missing = only_missing,
+            force_prep = force_prep
+          )
+          built <<- c(built, folder)
+        },
         error = function(e) {
           failures <<- c(failures, paste0(folder, ": ", conditionMessage(e)))
         }
@@ -197,6 +203,7 @@ build_registry_outputs <- function(
           "Skipping ", folder,
           " (folder-backed; no local study repo)."
         )
+        skipped <- c(skipped, folder)
         next
       }
       message(
@@ -204,13 +211,16 @@ build_registry_outputs <- function(
         ctx$materials_repo, ") ..."
       )
       tryCatch(
-        build_study_outputs(
-          ctx$local_root,
-          install_deps = install_deps,
-          registry_root = registry_root,
-          only_missing = only_missing,
-          force_prep = force_prep
-        ),
+        {
+          build_study_outputs(
+            ctx$local_root,
+            install_deps = install_deps,
+            registry_root = registry_root,
+            only_missing = only_missing,
+            force_prep = force_prep
+          )
+          built <<- c(built, folder)
+        },
         error = function(e) {
           failures <<- c(failures, paste0(folder, ": ", conditionMessage(e)))
         }
@@ -220,7 +230,18 @@ build_registry_outputs <- function(
         "Skipping ", folder,
         " (registry-local; use scripts/build_artifacts.R)."
       )
+      skipped <- c(skipped, folder)
     }
+  }
+
+  if (length(skipped) > 0) {
+    message(
+      "Skipped ", length(skipped), " study(ies) not available locally:\n",
+      paste0(" - ", skipped, collapse = "\n")
+    )
+  }
+  if (length(built) > 0) {
+    message("Built ", length(built), " study(ies) from local monorepo.")
   }
 
   if (length(failures) > 0) {
@@ -231,7 +252,7 @@ build_registry_outputs <- function(
     )
   }
 
-  invisible(TRUE)
+  invisible(list(built = built, skipped = skipped, failures = failures))
 }
 
 #' Build precomputed outputs
@@ -242,7 +263,8 @@ build_registry_outputs <- function(
 #' dispatch for registry-wide or single-study builds.
 #'
 #' @param doi Character DOI, or \code{"everywhere"} to build every registry
-#'   study. Ignored when \code{location} is set.
+#'   study that is cloned locally in the monorepo (skips and lists studies
+#'   without a local checkout). Ignored when \code{location} is set.
 #' @param what Replication id, or \code{"everything"} (default when \code{doi}
 #'   or \code{location} is set) to build every table and figure in scope.
 #' @param location Local study path or GitHub address. When set, builds outputs
@@ -259,7 +281,9 @@ build_registry_outputs <- function(
 #' @param only_missing Logical. When \code{TRUE}, skip replications whose
 #'   artifacts already exist (see [artifact_available()]).
 #' @param force_prep Logical. Re-run prep steps even when outputs already exist.
-#' @return Invisibly \code{TRUE} on success.
+#' @return Invisibly \code{TRUE} on success for a single study, or (when
+#'   \code{doi = "everywhere"}) a list with \code{built}, \code{skipped}, and
+#'   \code{failures}.
 #' @seealso [validate_outputs()], [build_study_outputs()]
 #' @export
 #'

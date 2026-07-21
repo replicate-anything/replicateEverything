@@ -314,12 +314,33 @@ collect_required_prep_ids <- function(meta, replications) {
 prep_steps_for_build <- function(meta, display_reps = NULL) {
   all_prep <- meta$prep %||% list()
   if (length(all_prep) == 0L) {
+    steps <- tryCatch(normalize_study_steps(meta), error = function(e) list())
+    all_prep <- steps[vapply(steps, function(x) {
+      is_pipeline_step_type(x$type %||% "")
+    }, logical(1))]
+  }
+  if (length(all_prep) == 0L) {
     return(list())
   }
   if (is.null(display_reps)) {
     return(all_prep)
   }
   required_ids <- collect_required_prep_ids(meta, display_reps)
+  # Unified steps: use parents: / DAG ancestors when legacy requires: is empty
+  if (length(required_ids) == 0L) {
+    steps <- tryCatch(normalize_study_steps(meta), error = function(e) list())
+    if (length(steps) > 0L && length(display_reps) > 0L) {
+      graph <- study_step_graph(steps)
+      needed <- character(0)
+      for (rep in display_reps) {
+        tid <- as.character(rep$id %||% "")
+        if (nzchar(tid) && tid %in% graph$ids) {
+          needed <- union(needed, step_ancestors(tid, graph))
+        }
+      }
+      required_ids <- needed
+    }
+  }
   if (length(required_ids) == 0L) {
     return(list())
   }

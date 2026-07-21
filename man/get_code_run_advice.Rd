@@ -29,6 +29,7 @@ Character vector of advice lines (no \code{get_code() returns...} preamble).
 }
 \description{
 Yaml / \code{\link[=run_replication]{run_replication()}} is primary. Does not mention optional
-\code{sys.nframe()} script footers.
+\code{sys.nframe()} script footers. Returns a numbered list under
+\code{"To produce the <kind>:"}.
 }
 \keyword{internal}

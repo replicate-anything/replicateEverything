@@ -20,7 +20,8 @@ build_outputs(
 }
 \arguments{
 \item{doi}{Character DOI, or \code{"everywhere"} to build every registry
-study. Ignored when \code{location} is set.}
+study that is cloned locally in the monorepo (skips and lists studies
+without a local checkout). Ignored when \code{location} is set.}
 
 \item{what}{Replication id, or \code{"everything"} (default when \code{doi}
 or \code{location} is set) to build every table and figure in scope.}
@@ -49,7 +50,9 @@ artifacts already exist (see \code{\link[=artifact_available]{artifact_available
 \item{force_prep}{Logical. Re-run prep steps even when outputs already exist.}
 }
 \value{
-Invisibly \code{TRUE} on success.
+Invisibly \code{TRUE} on success for a single study, or (when
+\code{doi = "everywhere"}) a list with \code{built}, \code{skipped}, and
+\code{failures}.
 }
 \description{
 Maintainer helper: runs registered table and figure replications and writes

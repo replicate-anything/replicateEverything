@@ -280,14 +280,140 @@ test_that("build_registry_outputs skips folder study without local repo", {
       replicateEverything.index = local_index
     ),
     {
-      expect_message(
-        build_registry_outputs(
+      msgs <- character(0)
+      withCallingHandlers(
+        result <- build_registry_outputs(
           registry_root = local_root,
           folders = "10.5555_remote",
           install_deps = FALSE
         ),
-        "Skipping 10.5555_remote \\(folder-backed; no local study repo\\)"
+        message = function(m) {
+          msgs <<- c(msgs, conditionMessage(m))
+          invokeRestart("muffleMessage")
+        }
       )
+      expect_true(any(grepl(
+        "Skipping 10.5555_remote \\(folder-backed; no local study repo\\)",
+        msgs
+      )))
+      expect_true(any(grepl(
+        "Skipped 1 study\\(ies\\) not available locally",
+        msgs
+      )))
+      expect_equal(result$skipped, "10.5555_remote")
+      expect_equal(result$built, character(0))
     }
   )
+})
+
+test_that("build_study_outputs creates outputs/ when missing", {
+  local_root <- withr::local_tempdir()
+  study_dir <- file.path(local_root, "rep-10.5555-chain")
+  dir.create(file.path(study_dir, "code"), recursive = TRUE)
+  writeLines(
+    c(
+      "make_tab_1 <- function(data = NULL) {",
+      "  data.frame(n = 3L, mean_x = 2)",
+      "}",
+      "format_tab_1 <- function(object) {",
+      "  paste0('<table><tr><td>', object$n[[1]], '</td></tr></table>')",
+      "}"
+    ),
+    file.path(study_dir, "code", "tab_1.R")
+  )
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/chain",
+      "steps:",
+      "  - id: tab_1",
+      "    type: table",
+      "    code: code/tab_1.R",
+      "    format: format_tab_1",
+      "    outputs:",
+      "      - outputs/tab_1.html"
+    ),
+    file.path(study_dir, "replication.yml")
+  )
+  dir.create(file.path(local_root, "studies"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/chain",
+      "  materials: folder",
+      "  study_repo: replicate-anything/rep-10.5555-chain",
+      "  study_folder: rep-10.5555-chain",
+      "repo: replicate-anything/rep-10.5555-chain"
+    ),
+    file.path(local_root, "studies", "10.5555_chain.yml")
+  )
+
+  expect_false(dir.exists(file.path(study_dir, "outputs")))
+
+  local_index <- data.frame(
+    folder = "10.5555_chain",
+    doi = "10.5555/chain",
+    title = "Chain",
+    journal = "",
+    year = 2026,
+    authors = "A",
+    repo = "replicate-anything/rep-10.5555-chain",
+    stringsAsFactors = FALSE
+  )
+
+  withr::with_options(
+    list(
+      replicateEverything.registry_root = local_root,
+      replicateEverything.study_folders_root = local_root,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.index = local_index
+    ),
+    {
+      rm(list = ls(envir = .replication_meta_cache), envir = .replication_meta_cache)
+      result <- build_study_outputs(
+        study_dir,
+        install_deps = FALSE,
+        registry_root = local_root
+      )
+      expect_true(dir.exists(file.path(study_dir, "outputs")))
+      expect_true(file.exists(file.path(study_dir, "outputs", "tab_1.html")))
+      expect_true(file.exists(file.path(study_dir, "outputs", "manifest.json")))
+      expect_equal(result$manifest$replications$tab_1$status, "ok")
+    }
+  )
+})
+
+test_that("replication_data_paths falls back from data: to inputs:", {
+  expect_equal(
+    replication_data_paths(list(inputs = list("outputs/analysis_data.rds"))),
+    "outputs/analysis_data.rds"
+  )
+  expect_equal(
+    replication_data_paths(list(
+      data = "data/raw.csv",
+      inputs = list("outputs/analysis_data.rds")
+    )),
+    "data/raw.csv"
+  )
+})
+
+test_that("prep_steps_for_build includes unified steps: transforms", {
+  meta <- list(
+    steps = list(
+      list(
+        id = "analysis_data",
+        type = "transform",
+        outputs = list("outputs/analysis_data.rds")
+      ),
+      list(
+        id = "tab_1",
+        type = "table",
+        parents = list("analysis_data"),
+        inputs = list("outputs/analysis_data.rds")
+      )
+    )
+  )
+  display <- list(list(id = "tab_1", type = "table"))
+  prep <- prep_steps_for_build(meta, display)
+  expect_equal(vapply(prep, function(x) x$id, character(1)), "analysis_data")
 })

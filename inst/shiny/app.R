@@ -3311,15 +3311,14 @@ contribute_tab_ui <- function() {
 
   example_script <- paste0(
     "# Study repo: https://github.com/replicate-anything/rep-10.1017-S0003055403000534\n",
+    "# Execute via: run_replication(doi, \"tab_1\")  (yaml is the recipe)\n",
     "\n",
     "library(haven)\n",
     "library(modelsummary)\n",
     "library(kableExtra)\n",
     "\n",
     "make_tab_1 <- function(data) { ... }\n",
-    "format_tab_1 <- function(object) { ... }\n",
-    "\n",
-    "make_tab_1(haven::read_dta(\"../data/repdata.dta\")) |> format_tab_1()"
+    "format_tab_1 <- function(object) { ... }"
   )
 
   example_figure <- paste0(
@@ -4038,6 +4037,18 @@ linked_code_block_ui <- function(
   )
 }
 
+code_setup_nested_step <- function(summary_label, body) {
+  tags$details(
+    class = "study-details-expand code-setup-step-expand mb-2",
+    tags$summary(
+      class = "study-details-summary",
+      tags$span(class = "study-details-chevron", HTML("&#9660;")),
+      tags$span(class = "ms-1", strong(summary_label))
+    ),
+    tags$div(class = "study-details-body pt-2", body)
+  )
+}
+
 code_setup_box_ui <- function(content) {
   if (is.null(content)) {
     return(NULL)
@@ -4109,47 +4120,28 @@ code_setup_box_ui <- function(content) {
       })
     }
   )
-  tagList(
-    tags$details(
-      class = "study-details-expand code-setup-expand mb-2",
-      tags$summary(
-        class = "study-details-summary",
-        tags$span(class = "study-details-chevron", HTML("&#9660;")),
-        tags$span(class = "ms-1", strong(content$title %||% "See here for guidance on running this code"))
-      ),
-      tags$div(
-        class = "study-details-body pt-2",
-        tags$ol(
-          class = "code-setup-steps ps-3 mb-0",
-          tags$li(
-            class = "mb-2",
-            tags$strong("Get the repository. "),
-            step1_body
-          ),
-          tags$li(
-            class = "mb-2",
-            tags$strong("System requirements. "),
-            step2_body
-          ),
-          tags$li(
-            class = "mb-0",
-            tags$strong("Run. "),
-            tags$div(
-              class = "code-setup-step3",
-              style = "white-space: pre-wrap;",
-              content$step3 %||% content$one_liner %||%
-                "Prefer run_replication(doi, what)  (simplest)."
-            )
-          )
-        )
+  step3_body <- tags$div(
+    class = "code-setup-step3",
+    style = "white-space: pre-wrap;",
+    content$step3 %||% content$one_liner %||%
+      "Prefer run_replication(doi, what)  (simplest)."
+  )
+  tags$details(
+    class = "study-details-expand code-setup-expand mb-3",
+    tags$summary(
+      class = "study-details-summary",
+      tags$span(class = "study-details-chevron", HTML("&#9660;")),
+      tags$span(
+        class = "ms-1",
+        strong(content$title %||% "See here for guidance on running this code")
       )
     ),
-    if (nzchar(as.character(content$one_liner %||% ""))) {
-      tags$p(
-        class = "code-setup-one-liner text-muted small mb-3 mt-1",
-        content$one_liner
-      )
-    }
+    tags$div(
+      class = "study-details-body pt-2",
+      code_setup_nested_step("1. Get the repository", step1_body),
+      code_setup_nested_step("2. System requirements", step2_body),
+      code_setup_nested_step("3. Run", step3_body)
+    )
   )
 }
 
@@ -4159,11 +4151,12 @@ code_panel_ui <- function(
   language = "r",
   linked_html = NULL,
   breadcrumb_paths = NULL,
-  plain_full_code = NULL
+  plain_full_code = NULL,
+  setup_content = NULL
 ) {
-  if ((is.null(simple_code) || !nzchar(simple_code)) &&
-      (is.null(full_code) || !nzchar(full_code)) &&
-      (is.null(linked_html) || !nzchar(linked_html))) {
+  has_full <- (!is.null(linked_html) && nzchar(linked_html)) ||
+    (!is.null(full_code) && nzchar(full_code))
+  if ((is.null(simple_code) || !nzchar(simple_code)) && !has_full) {
     return(helpText("Select a table or figure to view code."))
   }
   tags$div(
@@ -4175,12 +4168,16 @@ code_panel_ui <- function(
       "One-line replication",
       language = language
     ),
+    if (has_full || !is.null(setup_content)) {
+      tags$div(class = "replication-code-title mb-2", "Full replication code")
+    },
+    code_setup_box_ui(setup_content),
     if (!is.null(linked_html) && nzchar(linked_html)) {
       linked_code_block_ui(
         linked_html,
         "replication_full_code_block",
         "copy_full_code_btn",
-        "Full replication code",
+        title = NULL,
         language = language,
         breadcrumb_paths = breadcrumb_paths,
         plain_text = plain_full_code
@@ -4190,7 +4187,7 @@ code_panel_ui <- function(
         full_code,
         "replication_full_code_block",
         "copy_full_code_btn",
-        "Full replication code",
+        title = NULL,
         language = language
       )
     }
@@ -6615,14 +6612,14 @@ server <- function(input, output, session) {
       error = function(e) NULL
     )
     tagList(
-      code_setup_box_ui(setup_content),
       code_panel_ui(
         simple_code,
         full_code = NULL,
         language = code_lang,
         linked_html = linked_html,
         breadcrumb_paths = breadcrumb,
-        plain_full_code = plain_full
+        plain_full_code = plain_full,
+        setup_content = setup_content
       ),
       if (isTRUE(getOption("replicate_shiny.debug_code_viewer", FALSE)) &&
           code_viewer_root_usable(state$code_viewer_root)) {

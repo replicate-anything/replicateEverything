@@ -472,8 +472,9 @@ render_replication <- function(
         env <- new.env(parent = globalenv())
         source_replication_scripts(rep, run_ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)
         fn <- get_analysis_function(env, what, rep$type %||% "step")
-        if (!is.null(rep$data)) {
-          data <- load_replication_data(rep$data, run_ctx, meta = meta)
+        data_paths <- replication_data_paths(rep)
+        if (length(data_paths) > 0L) {
+          data <- load_replication_data(data_paths, run_ctx, meta = meta)
           retry_with_missing_package(fn(data), install_missing = allow_dependency_install(install_deps))
         } else {
           retry_with_missing_package(fn(), install_missing = allow_dependency_install(install_deps))
@@ -575,7 +576,12 @@ render_replication <- function(
     install_missing = allow_dependency_install(install_deps)
   )
 
-  data <- load_replication_data(rep$data, run_ctx, meta = meta)
+  data_paths <- replication_data_paths(rep)
+  data <- load_replication_data(
+    if (length(data_paths) > 0L) data_paths else NULL,
+    run_ctx,
+    meta = meta
+  )
 
   study_root <- step_study_root(rep, meta, ctx)
   env <- new.env(parent = globalenv())

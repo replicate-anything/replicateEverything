@@ -35,7 +35,8 @@ code_setup_box_content(
 }
 \value{
 List with \code{title}, \code{step1}, \code{step2}, \code{step2_prep},
-\code{step3}, \code{repo_slug}, \code{repo_url}, and \code{zip_url}.
+\code{step3}, \code{one_liner}, \code{repo_slug}, \code{repo_url}, and
+\code{zip_url}.
 }
 \description{
 Returns a list of strings suitable for UI rendering and unit tests. Content

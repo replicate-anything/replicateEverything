@@ -24,7 +24,8 @@ build_registry_outputs(
 \item{force_prep}{Logical. Re-run prep steps even when outputs already exist.}
 }
 \value{
-Invisibly \code{TRUE} if every build succeeds.
+Invisibly a list with \code{built}, \code{skipped}, and \code{failures}
+(character vectors of registry folder names / error strings).
 }
 \description{
 Build precomputed outputs for every study in a registry checkout

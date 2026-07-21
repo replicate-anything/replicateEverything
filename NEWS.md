@@ -1,3 +1,22 @@
+# replicateEverything 0.6.12
+
+## Single build entrypoint
+
+* Removed public/documented aliases `build_package_artifacts()` and
+  `build_study_artifacts()`. Use [build_study_outputs()] only; it already
+  dispatches to package- vs folder-backed implementations
+  (`build_package_outputs_impl` / `build_folder_outputs_impl`, unexported).
+* [build_study_outputs()] creates `outputs/` when missing and wires DAG parent
+  `outputs:` into child `inputs:` / `data:` via [replication_data_paths()].
+* [build_outputs()] with `doi = "everywhere"` builds only studies cloned in the
+  local monorepo; skipped studies are listed in the return value and messages.
+
+## Shiny Code tab
+
+* Code tab order: One-line replication → **Full replication code** subtitle →
+  collapsed **See here for guidance...** (three nested collapsed steps) →
+  code viewer. Step 3 uses shared [get_code_run_advice()] (no script-footer tip).
+
 # replicateEverything 0.6.11
 
 ## Yaml is the execute recipe (no required script footers)
@@ -128,7 +147,7 @@
 
 ## Public API cleanup
 
-* **Unified contribute API:** [build_study_outputs()] replaces [build_study_artifacts()] and [build_package_artifacts()]; [check_replication()] replaces [check_folder_replication()] and [check_package_replication()]; [validate_outputs()] replaces `validate_artifact()`, `validate_paper_artifacts()`, `validate_study_artifacts()`, and `validate_registry_artifacts()`. Use `doi = "everywhere"` and `what = "everything"` for registry-wide checks. The kind-specific functions remain internal.
+* **Unified contribute API:** [build_study_outputs()] replaces [build_study_artifacts()] and [build_package_artifacts()]; [check_replication()] replaces [check_folder_replication()] and [check_package_replication()]; [validate_outputs()] replaces `validate_artifact()`, `validate_paper_artifacts()`, `validate_study_artifacts()`, and `validate_registry_artifacts()`. Use `doi = "everywhere"` and `what = "everything"` for registry-wide checks. Kind-specific check helpers remain internal; build helpers were later folded into [build_study_outputs()] (0.6.12).
 * Removed deprecated exports: `list_replication_groups()`, `list_prep_steps()`, `prepare_folder_paper()`, and `sync_folder_paper()`.
 * Internal (no longer in Reference): `print(<replication_list>)`, [study_dag_display()], [study_dag_facets()], [study_output_dir()], [migrate_legacy_steps_yaml()], [run_prep_step()], and [replication_kind()].
 * [refresh_registry()] moved to the **Registry audit** reference section.
@@ -187,7 +206,7 @@
 
 ## Bug fixes
 
-* Stata dependency checks are **study-declared** via `stata_deps_probe:` (check-only `.do` in the study repo) or `stata_packages:` (generic `which`-only probe). The package no longer hardcodes ftools/reghdfe/estout. Live Run probes only; `install_stata_deps.do` runs only when `options(replicateEverything.install_stata_deps = TRUE)` (e.g. `build_study_artifacts(install_deps = TRUE)`).
+* Stata dependency checks are **study-declared** via `stata_deps_probe:` (check-only `.do` in the study repo) or `stata_packages:` (generic `which`-only probe). The package no longer hardcodes ftools/reghdfe/estout. Live Run probes only; `install_stata_deps.do` runs only when `options(replicateEverything.install_stata_deps = TRUE)` (e.g. `build_study_outputs(install_deps = TRUE)`).
 * Stata dependency probe and study `install_stata_deps.do` load tests use `help reghdfe` instead of bare `reghdfe` where applicable (study probe script). Invoking `reghdfe` with no data returns r(301) even when installed. When satisfied (as on a typical dev machine), the install script is skipped and Shiny shows "Stata dependencies OK — skipped install". Install runs only when the probe fails. Progress lines are reported via `replicate_progress()` / `options(replicateEverything.progress)` for Shiny's "Working:" banner.
 * Stata batch runs honour `timeout` when the suggested **processx** package is installed; overdue runs are killed so Shiny can recover instead of freezing indefinitely. Tune with `options(replicateEverything.stata_timeout)`, `stata_deps_probe_timeout` (default 120s), and `stata_deps_install_timeout` (default 600s). Set `options(replicateEverything.install_stata_deps = FALSE)` to skip study Stata installs entirely.
 * Shiny artifact loading no longer passes `install_deps = TRUE` (only live Run installs dependencies).
@@ -223,7 +242,7 @@
 
 ## Folder-backed study workflow
 
-* `build_study_artifacts()` — run replications and write `outputs/` + `manifest.json` from a study repo.
+* `build_study_outputs()` — run replications and write `outputs/` + `manifest.json` from a study repo (formerly `build_study_artifacts()`).
 * `check_folder_replication()` — pre-merge checklist (layout, yaml, code/data paths, artifacts, tests).
 * `prepare_folder_paper()` — build artifacts, validate, write `registry/replication.yml` + `registry/index.csv` in study repo.
 * `sync_folder_paper()` — copy prepared stub files into a registry checkout.

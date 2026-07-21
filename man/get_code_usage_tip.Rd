@@ -29,5 +29,6 @@ Character scalar tip.
 }
 \description{
 Engine- and yaml-aware. Shared body from \code{\link[=get_code_run_advice]{get_code_run_advice()}}.
+Multiline numbered list (blank line after the preamble).
 }
 \keyword{internal}

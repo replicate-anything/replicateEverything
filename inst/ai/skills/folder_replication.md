@@ -557,9 +557,9 @@ format_tab_1 <- function(object) {
 }
 ```
 
-Optional local convenience (not required): a gated `if (sys.nframe() == 0L) { … }`
-block for IDE "Source". Prefer documenting `run_replication(doi, "tab_1")` in the
-README instead — **do not** treat footers as part of the study contract.
+Do **not** add interactive `sys.nframe()` assembly footers. Yaml +
+[run_replication()] / [build_study_outputs()] are the execute path.
+Prefer documenting `run_replication(doi, "tab_1")` in the README.
 [get_code()] defaults to `mode = "definitions"`; use `mode = "run"` for text that
 appends the yaml-implied load → make → format recipe. Prep/data loading lives in
 upstream DAG steps — show those under Data steps, not as the start of table
