@@ -2116,13 +2116,13 @@ replications_to_df <- function(reps) {
     if (!type %in% c("figure", "table")) {
       return(FALSE)
     }
-    # A displayable entry is runnable or has a precomputed artifact. Folder
-    # studies declare a `code:` path; package-backed studies declare `make:`
-    # (an R function) instead. Either, or a declared `artifact:`, qualifies.
+    # A displayable entry is runnable or has a precomputed display output.
+    # Folder studies declare a `code:` path; package-backed studies declare
+    # `make:` (an R function) instead. Either, or declared `outputs:`, qualifies.
     has_code <- nzchar(as.character(x$code %||% ""))
     has_make <- nzchar(as.character(x$make %||% ""))
-    has_artifact <- nzchar(as.character(x$artifact %||% ""))
-    has_code || has_make || has_artifact
+    has_outputs <- !is.null(x$outputs) && length(x$outputs) > 0L
+    has_code || has_make || has_outputs
   }, logical(1))]
   if (length(reps) == 0) return(NULL)
 
@@ -3290,7 +3290,8 @@ contribute_tab_ui <- function() {
     "    data: data/repdata.dta\n",
     "    code: code/tab_1.R\n",
     "    format: format_tab_1\n",
-    "    artifact: outputs/tab_1.rds"
+    "    outputs:\n",
+    "      - outputs/tab_1.html"
   )
 
   example_make_format <- paste0(
@@ -3326,7 +3327,8 @@ contribute_tab_ui <- function() {
     "    type: figure\n",
     "    data: data/example.csv\n",
     "    code: code/fig_1.R\n",
-    "    artifact: outputs/fig_1.png\n",
+    "    outputs:\n",
+    "      - outputs/fig_1.png\n",
     "\n",
     "make_fig_1 <- function(data) {\n",
     "  ggplot2::ggplot(data, ggplot2::aes(x, y)) +\n",

@@ -15,7 +15,8 @@ test_that("filter_replications_only_missing keeps entries without artifacts", {
       "  - id: tab_1",
       "    type: table",
       "    code: code/tab_1.R",
-      "    artifact: outputs/tab_1.html"
+      "    outputs:",
+      "      - outputs/tab_1.html"
     ),
     file.path(study_dir, "replication.yml")
   )
@@ -52,6 +53,7 @@ test_that("filter_replications_only_missing keeps entries without artifacts", {
       replicateEverything.index = local_index
     ),
     {
+      rm(list = ls(envir = .replication_meta_cache), envir = .replication_meta_cache)
       reps <- list(
         list(id = "fig_1", type = "figure"),
         list(id = "tab_1", type = "table")
@@ -60,7 +62,8 @@ test_that("filter_replications_only_missing keeps entries without artifacts", {
         reps,
         "10.5555/test",
         folder = "10.5555_test",
-        only_missing = TRUE
+        only_missing = TRUE,
+        study_root = study_dir
       )
       expect_length(filtered, 1L)
       expect_equal(filtered[[1]]$id, "tab_1")

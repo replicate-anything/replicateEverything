@@ -119,7 +119,8 @@ replications:
     description: Example figure
     data: data/fig_1.csv
     code: code/fig_1.R
-    artifact: outputs/fig_1.png
+    outputs:
+      - outputs/fig_1.png
     dependencies:
       - ggplot2
 
@@ -130,7 +131,8 @@ replications:
     data: data/tab_1.csv
     code: code/tab_1.R
     format: format_tab_1
-    artifact: outputs/tab_1.html
+    outputs:
+      - outputs/tab_1.html
     dependencies:
       - dplyr
       - gt

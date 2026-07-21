@@ -11,9 +11,9 @@ is_prep_entry <- function(rep) {
   if (type %in% c("step", "prep", "pipeline", "transform")) {
     return(TRUE)
   }
-  !is.null(rep$output) &&
-    is.null(rep$artifact) &&
-    nzchar(as.character(rep$output %||% ""))
+  has_outputs <- (!is.null(rep$outputs) && length(rep$outputs) > 0L) ||
+    (!is.null(rep$output) && nzchar(as.character(rep$output %||% "")))
+  has_outputs && is.null(rep$type)
 }
 
 #' List pipeline prep steps for a paper
@@ -38,11 +38,11 @@ prep_output_path <- function(prep, ctx, meta = NULL) {
   if (!is.null(p) && nzchar(p)) {
     return(p)
   }
-  out <- prep$output %||% prep$artifact %||% NULL
-  if (is.null(out) || !nzchar(as.character(out))) {
+  outs <- step_primary_declared_output_rels(prep)
+  if (length(outs) == 0L || !nzchar(as.character(outs[[1]] %||% ""))) {
     return(NULL)
   }
-  out <- as.character(out[[1]] %||% out)
+  out <- as.character(outs[[1]])
   resolve_registry_file(out, ctx, meta = meta, local_only = TRUE)
 }
 

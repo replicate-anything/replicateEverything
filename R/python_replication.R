@@ -376,7 +376,8 @@ run_python_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) 
   }
 
   run_dir <- python_run_dir(rep, ctx, meta = meta)
-  out_path <- rep$output %||% rep$artifact %||% NULL
+  declared <- step_primary_declared_output_rels(rep)
+  out_path <- if (length(declared) > 0L) declared[[1]] else NULL
   if (!is.null(out_path) && nzchar(as.character(out_path))) {
     out_path <- resolve_registry_file(as.character(out_path), ctx, meta = meta, local_only = TRUE)
     dir.create(dirname(out_path), recursive = TRUE, showWarnings = FALSE)

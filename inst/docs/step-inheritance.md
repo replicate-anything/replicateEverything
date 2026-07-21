@@ -23,7 +23,8 @@ steps:
     parents: [prep_data]
     data: outputs/prep_data/repdata.rds
     code: code/tab_1.R
-    artifact: outputs/tab_1.html
+    outputs:
+      - outputs/tab_1.html
 ```
 
 At load time the package merges base `steps:` with extension `steps:` (extension wins on id collision unless `override: true`).
@@ -97,7 +98,6 @@ steps:
       - outputs/construct_analysis_dataset/all_asperson_fulldata.dta
     outputs:
       - outputs/tab_ext_1.html
-    artifact: outputs/tab_ext_1.html
 ```
 
 `inherit:` pulls the full step record (code path, outputs, engine) from the base study. The extension repo does not ship `construct_analysis_dataset.do`; live runs fetch or use a cached checkout of the base repo.

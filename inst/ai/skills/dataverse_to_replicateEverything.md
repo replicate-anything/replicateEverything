@@ -87,7 +87,7 @@ folder-replication Step 4b.
 
 **RTF readme.** Newer deliveries use `readme.rtf` instead of `README.txt` — extract the numbered pipeline list from RTF (or open in Word) and convert contributor notes to `README.md`.
 
-Mark **artifact-only** outputs (schematics, morphs) with `artifact:` + `note:` and no `code:`.
+Mark **display-only** outputs (schematics, morphs) with `outputs:` + `note:` and no `code:`.
 
 ## Step 2 — Target layout
 
@@ -611,8 +611,9 @@ steps:
 Downstream tables/figures set `parents: [construct_analysis_dataset]` (and other
 transforms as needed).
 
-`run_replication(..., "tab_1", given = "nothing")` runs upstream transforms first
-(skip if `outputs/` exist unless `force = TRUE`).
+`run_replication(..., "tab_1", given = "nothing")` runs upstream transforms first.
+By default `force = TRUE` (live Run). With `force = FALSE`, existing upstream
+`outputs/` are reused; the target step still recomputes.
 
 **Audit:** `audit_everything()` walks all non-format steps — verify after onboarding.
 
@@ -741,7 +742,6 @@ steps:
     format: code/helpers/format_stata.R
     outputs:
       - outputs/tab_1.html
-    artifact: outputs/tab_1.html
 
   - id: fig_2
     type: figure
@@ -753,10 +753,9 @@ steps:
       - data/raw/10fold_training_results.csv
     outputs:
       - outputs/fig_2.png
-    artifact: outputs/fig_2.png
 ```
 
-**Display paths:** `artifact:` (and primary `outputs:` entry) is the **only** path Shiny uses. Stata tables: export with `esttab ... using "${result}/tab_N_table.html", html replace` in `mk_tab_N.do`; `format_stata.R` reads that file, not the full log.
+**Display paths:** the first displayable entry under `outputs:` (html/png/rds/svg) is the path Shiny uses. Stata tables: export with `esttab ... using "${result}/tab_N_table.html", html replace` in `mk_tab_N.do`; `format_stata.R` reads that file, not the full log.
 
 | Engine | yaml `engine` | `code` extension | `dependencies` installs |
 |--------|---------------|------------------|-------------------------|
@@ -874,7 +873,7 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 | Shiny “not configured” for Stata deps | Add `languages:` and `stata_packages:` to study `replication.yml` (registry stub does not carry these) |
 | Stata names in R `dependencies` | Only CRAN packages in `paper.dependencies` / R entry `dependencies` — not `reghdfe`, `estout` |
 | `format_tab_N not found` for Stata tables | Use `format: code/helpers/format_stata.R` (shared formatter); replicateEverything falls back to `format_tab_N_stata` |
-| Figure with `outputs:` only (no `artifact:`) | Add `artifact:` for display figures |
+| Figure missing displayable `outputs:` path | Add `outputs: [outputs/fig_N.png]` (or `.html`) for Display |
 | Using `prep:`/`replications:` on new studies | Use unified `steps:` + `outputs/` (0.6+) |
 | Python fig prints `[1] "…/fig_2.png"` during build | Fixed in replicateEverything ≥0.5: PNG paths must copy, not `print()` — deploy current package |
 | Python fig shows as engine `r` in audit | Set `engine: python`; audit must pass `language` to `render_replication()` |

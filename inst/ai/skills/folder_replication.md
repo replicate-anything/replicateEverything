@@ -153,7 +153,7 @@ auto-creates `<id>_format`.
 | `code` | Script path defining `make_*` / `format_*` |
 | `format` | `format_*` name or helper `.R` path (on the table/figure parent) |
 | `data` / `inputs` | Files loaded or declared as inputs |
-| `outputs` | Files written under `outputs/` (prefer over deprecated `artifact:`) |
+| `outputs` | Files written under `outputs/` (first displayable path is used for Shiny Display) |
 | `dependencies` | Step-level R packages (unioned with `paper.dependencies`) |
 | `languages` (root) | Study engines for registry / system checks |
 
@@ -162,11 +162,13 @@ auto-creates `<id>_format`.
 **Running:**
 
 ```r
-run_replication(doi, "tab_1", given = "parents")   # default: parent outputs must exist
+run_replication(doi, "tab_1", given = "parents")   # default: live run; parent outputs must exist
 run_replication(doi, "tab_1", given = "nothing") # run full upstream pipeline first
 run_replication(doi, "tab_1", given = "prep_data") # assume prep_data done; run rest
-run_replication(doi, "tab_1", force = TRUE)        # re-run even if outputs exist
+run_replication(doi, "tab_1", force = FALSE)       # reuse existing upstream outputs/ if present
 ```
+
+Display uses precomputed `outputs/`; [run_replication()] defaults to `force = TRUE` (live Run).
 
 See `inst/docs/step-dag-design.md` in the package for `given` downward-closure rules.
 

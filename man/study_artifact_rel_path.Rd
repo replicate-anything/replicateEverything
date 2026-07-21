@@ -10,7 +10,8 @@ study_artifact_rel_path(rep)
 \item{rep}{A single replication entry from \code{replication.yml}.}
 }
 \description{
-Returns the \code{artifact:} entry from \code{replication.yml} when declared,
+Returns the first displayable path from \code{outputs:} in
+\code{replication.yml}, otherwise a deprecated \code{artifact:} fallback,
 otherwise the type-based default from \code{default_artifact_path()}. This is
 the one rule used by both \code{save_artifact()} (build) and artifact lookup
 (Shiny), so builds write exactly where lookup reads.

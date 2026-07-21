@@ -13,7 +13,26 @@ test_that("default artifact path uses html for legacy tables", {
   expect_equal(default_artifact_path(rep, "tab_1"), "outputs/tab_1.html")
 })
 
-test_that("study_artifact_rel_path uses replication.yml artifact when set", {
+test_that("study_artifact_rel_path uses replication.yml outputs when set", {
+  rep <- list(
+    id = "tab_2",
+    type = "table",
+    outputs = list("outputs/tab_2.html")
+  )
+  expect_equal(study_artifact_rel_path(rep), "outputs/tab_2.html")
+})
+
+test_that("study_artifact_rel_path prefers outputs over deprecated artifact", {
+  rep <- list(
+    id = "tab_2",
+    type = "table",
+    outputs = list("outputs/tab_2.html"),
+    artifact = "outputs/tab_2_legacy.html"
+  )
+  expect_equal(study_artifact_rel_path(rep), "outputs/tab_2.html")
+})
+
+test_that("study_artifact_rel_path falls back to deprecated artifact when no outputs", {
   rep <- list(
     id = "tab_2",
     type = "table",
@@ -37,7 +56,7 @@ test_that("study_artifact_rel_candidates uses outputs paths only", {
   rep <- list(
     id = "tab_1",
     type = "table",
-    artifact = "outputs/tab_1.html"
+    outputs = list("outputs/tab_1.html")
   )
   cands <- study_artifact_rel_candidates(rep)
   expect_true("outputs/tab_1.html" %in% cands)
@@ -240,7 +259,8 @@ test_that("validate_outputs everywhere accepts handle-only registry studies", {
       "  - id: tab_1",
       "    type: table",
       "    code: code/tab_1.R",
-      "    artifact: outputs/tab_1.html"
+      "    outputs:",
+      "      - outputs/tab_1.html"
     ),
     file.path(study_dir, "replication.yml")
   )

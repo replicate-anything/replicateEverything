@@ -1,3 +1,26 @@
+# replicateEverything 0.6.9
+
+## Live Run by default
+
+* [run_replication()] now defaults to **`force = TRUE`**: the requested step
+  always recomputes. Display / [load_artifact()] still use precomputed
+  `outputs/` files. Set `force = FALSE` to reuse existing **upstream**
+  outputs when present; the target step still runs live.
+* [execute_study_plan()] never skips the target step as "Using existing
+  output" (that message is only for non-target ancestors when
+  `force = FALSE`).
+
+# replicateEverything 0.6.8
+
+## Display paths from `outputs:` only
+
+* Folder-backed (and package) studies declare display products under
+  **`outputs:`** only. The redundant **`artifact:`** field is no longer
+  documented; [study_artifact_rel_path()] prefers the first displayable
+  `outputs:` path (html/png/rds/svg) and treats `artifact:` as a deprecated
+  fallback for older yaml.
+* Skills, README, Shiny Contribute examples, and fixtures updated accordingly.
+
 # replicateEverything 0.6.7
 
 ## Registry stubs from study yaml (no study-local handoff)

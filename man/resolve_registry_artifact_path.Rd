@@ -17,10 +17,10 @@ resolve_registry_artifact_path(what, ctx, rep = NULL, doi = NULL)
 }
 \description{
 The artifact location comes from a single rule -- \code{study_artifact_rel_path()}
-(the \code{artifact:} entry in \code{replication.yml}, or the type-based
-default). Builds write to that same path, so lookup is deterministic: return
-the local file when present, otherwise the registry URL. Availability of the
-remote file is decided by the actual fetch in \code{load_artifact_file_path()},
+(first displayable path from \code{outputs:} in \code{replication.yml}, or the
+type-based default). Builds write to that same path, so lookup is deterministic:
+return the local file when present, otherwise the registry URL. Availability of
+the remote file is decided by the actual fetch in \code{load_artifact_file_path()},
 not by a separate existence probe.
 }
 \details{

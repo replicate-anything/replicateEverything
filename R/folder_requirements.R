@@ -319,20 +319,26 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
 }
 
 #' Candidate display artifact paths under \code{outputs/}
+#'
+#' Prefers displayable paths from \code{outputs:} (html/png/rds/svg). The
+#' legacy \code{artifact:} field is accepted only as a deprecated fallback.
+#'
 #' @param rep A single replication entry from \code{replication.yml}.
 #' @keywords internal
 study_artifact_rel_candidates <- function(rep) {
   id <- as.character(rep$id %||% "")
   cands <- character(0)
-  artifact <- rep$artifact %||% NULL
-  if (!is.null(artifact) && nzchar(as.character(artifact[[1]] %||% ""))) {
-    cands <- c(cands, as.character(artifact[[1]]))
-  }
   outs <- rep$outputs %||% NULL
   if (!is.null(outs) && length(outs) > 0L) {
     outs <- vapply(outs, function(x) as.character(x), character(1))
     display <- outs[grepl("\\.(html|png|rds|svg)$", outs, ignore.case = TRUE)]
     cands <- c(cands, display)
+  }
+  # Deprecated: prefer outputs: in replication.yml; artifact: is ignored when
+  # outputs: already declares a display path.
+  artifact <- rep$artifact %||% NULL
+  if (!is.null(artifact) && nzchar(as.character(artifact[[1]] %||% ""))) {
+    cands <- c(cands, as.character(artifact[[1]]))
   }
   if (nzchar(id)) {
     if (identical(rep$type, "figure")) {
@@ -356,7 +362,8 @@ study_artifact_rel_candidates <- function(rep) {
 
 #' Artifact path relative to study root (primary candidate)
 #'
-#' Returns the \code{artifact:} entry from \code{replication.yml} when declared,
+#' Returns the first displayable path from \code{outputs:} in
+#' \code{replication.yml}, otherwise a deprecated \code{artifact:} fallback,
 #' otherwise the type-based default from \code{default_artifact_path()}. This is
 #' the one rule used by both \code{save_artifact()} (build) and artifact lookup
 #' (Shiny), so builds write exactly where lookup reads.

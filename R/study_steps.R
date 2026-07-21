@@ -63,7 +63,9 @@ compile_steps_from_legacy <- function(meta) {
   for (rep in reps) {
     step <- normalize_step_entry(rep)
     if (!is_display_step_type(step$type) && !is_pipeline_step_type(step$type)) {
-      if (is.null(step$artifact) && is.null(step$output)) {
+      has_outputs <- (!is.null(step$outputs) && length(step$outputs) > 0L) ||
+        !is.null(step$output)
+      if (!has_outputs) {
         step$type <- "transform"
       }
     }
@@ -229,9 +231,14 @@ step_declared_output_paths <- function(step) {
   if (!is.null(outs) && length(outs) > 0L) {
     return(vapply(outs, function(x) as.character(x), character(1)))
   }
-  single <- step$output %||% step$artifact %||% NULL
+  single <- step$output %||% NULL
   if (!is.null(single) && nzchar(as.character(single[[1]] %||% single))) {
     return(as.character(single[[1]] %||% single))
+  }
+  # Deprecated fallback for older yaml that used artifact: instead of outputs:
+  legacy <- step$artifact %||% NULL
+  if (!is.null(legacy) && nzchar(as.character(legacy[[1]] %||% legacy))) {
+    return(as.character(legacy[[1]] %||% legacy))
   }
   id <- as.character(step$id)
   type <- tolower(as.character(step$type %||% ""))
@@ -255,9 +262,13 @@ step_primary_declared_output_rels <- function(step) {
   if (!is.null(outs) && length(outs) > 0L) {
     return(vapply(outs, function(x) as.character(x), character(1)))
   }
-  single <- step$output %||% step$stata_output %||% step$artifact %||% NULL
+  single <- step$output %||% step$stata_output %||% NULL
   if (!is.null(single) && nzchar(as.character(single[[1]] %||% single))) {
     return(as.character(single[[1]] %||% single))
+  }
+  legacy <- step$artifact %||% NULL
+  if (!is.null(legacy) && nzchar(as.character(legacy[[1]] %||% legacy))) {
+    return(as.character(legacy[[1]] %||% legacy))
   }
   step_declared_output_paths(step)
 }
