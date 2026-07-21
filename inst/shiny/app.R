@@ -4291,7 +4291,21 @@ ui <- tagList(
     .replication-table th, .replication-table td { display: table-cell; vertical-align: top; }
     .replication-table caption { caption-side: top; font-weight: 600; padding-bottom: 0.5rem; }
     .replication-code-panel { margin-top: 0.25rem; }
-    .code-setup-expand { margin-bottom: 0.75rem; }
+    .code-setup-expand {
+      margin-bottom: 0.75rem;
+      padding: 0.5rem 0.8rem 0.55rem;
+      border: 1px solid #d0d7de;
+      border-left: 3px solid #6e9fd4;
+      border-radius: 6px;
+      background: #f0f6fc;
+    }
+    .code-setup-expand > .study-details-summary {
+      color: #24292f;
+    }
+    .code-setup-expand > .study-details-body {
+      border-left-color: #d8dee4;
+      margin-top: 0.35rem;
+    }
     .code-setup-steps > li { line-height: 1.45; }
     .code-setup-steps > li + li { margin-top: 0.35rem; }
     .replication-code-wrap { margin-bottom: 0.85rem; }

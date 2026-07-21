@@ -1,3 +1,10 @@
+# replicateEverything 0.6.13
+
+## Shiny Code tab
+
+* **See here for guidance...** outer collapse is a distinct subtle box
+  (cool tint + left accent) so it stands apart from the code viewers.
+
 # replicateEverything 0.6.12
 
 ## Single build entrypoint
