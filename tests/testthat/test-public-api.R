@@ -140,7 +140,7 @@ test_that("build_study_outputs writes manifest for fixture study", {
   })
 })
 
-test_that("prepare_study_for_registry writes registry stub when checks pass", {
+test_that("prepare_study_for_registry validates without writing study handoff", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
@@ -163,14 +163,11 @@ test_that("prepare_study_for_registry writes registry stub when checks pass", {
       registry_root = getOption("replicateEverything.registry_root")
     )
     expect_s3_class(result, "folder_replication_check")
-    stub <- file.path(copy_root, "registry", "replication.yml")
-    if (isTRUE(result$ok)) {
-      expect_true(file.exists(stub))
-    }
+    expect_false(dir.exists(file.path(copy_root, "registry")))
   })
 })
 
-test_that("sync_study_to_registry copies stub into registry checkout", {
+test_that("sync_study_to_registry builds stub from study yaml into registry", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
@@ -189,11 +186,11 @@ test_that("sync_study_to_registry copies stub into registry checkout", {
 
     file.copy(study_dir, tmp, recursive = TRUE)
     copy_root <- file.path(tmp, basename(study_dir))
-    write_folder_registry_stub(copy_root)
 
     synced <- sync_study_to_registry(copy_root, registry_root = reg)
     expect_true(file.exists(synced$stub_path))
     expect_true(file.exists(file.path(studies, paste0(synced$folder, ".yml"))))
+    expect_false(dir.exists(file.path(copy_root, "registry")))
   })
 })
 

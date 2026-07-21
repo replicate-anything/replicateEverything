@@ -2,8 +2,8 @@
 name: include-study-in-registry
 description: >-
   Check a folder- or package-backed replication study and include it in the
-  replicate-anything registry: prepare handoff yaml in the study repo,
-  maintainer sync to registry/studies/, rebuild index.csv, and audit.
+  replicate-anything registry: validate the study, maintainer sync stub into
+  registry/studies/ from study replication.yml, rebuild index.csv, and audit.
 ---
 
 # Include a study in the registry
@@ -15,19 +15,23 @@ Use this skill when a study repository is ready for the central
 
 | Role | What they do |
 |------|----------------|
-| **Contributor** | Validates the study and writes **short** registry yaml into the study repo |
-| **Maintainer** | Copies that yaml into the registry, rebuilds `index.csv`, reruns audit |
+| **Contributor** | Validates the study (`prepare_study_for_registry` / `check_replication`) |
+| **Maintainer** | Builds stub **from study `replication.yml`** into the registry, rebuilds `index.csv`, audits |
 
-## Handoff files (in the study repo — not in `outputs/`)
+## Important: no study-local registry handoff
 
-| Layout | Short yaml location |
-|--------|---------------------|
-| Folder-backed | `registry/replication.yml` + `registry/index.csv` |
-| Package-backed | `inst/registry/replication.yml` + `inst/registry/index.csv` |
+Stub yaml and `index.csv` belong **only** in the registry repository
+(`registry/studies/<folder>.yml` + `registry/index.csv`).
 
-`outputs/` is for replication products only (`manifest.json`, tables, figures, intermediate data).
+Do **not** commit `registry/` or `inst/registry/` handoff folders inside study
+repos. `sync_study_to_registry()` reads the study root `replication.yml` and
+writes the stub into the registry checkout.
 
-The full contract stays at repo root: `replication.yml` (folder) or `replication.yml` / `inst/replication.yml` (package).
+`outputs/` is for replication products only (`manifest.json`, tables, figures,
+intermediate data).
+
+The full contract stays at repo root: `replication.yml` (folder) or
+`replication.yml` / `inst/replication.yml` (package).
 
 ## Contributor checklist
 
@@ -36,16 +40,16 @@ The full contract stays at repo root: `replication.yml` (folder) or `replication
 - [ ] 2. `maintainer:` (name + email) and `collections:` declared
 - [ ] 3. Build outputs: `build_study_outputs()`
 - [ ] 4. Validate: `check_replication()` (includes substantive-check coverage)
-- [ ] 4b. Add `tests/substantive/<step_id>.R` for published benchmarks where possible (see Fearon & Laitin tab_1)
-- [ ] 5. Prepare handoff: `prepare_study_for_registry(".")`
-- [ ] 6. Commit study repo including `registry/` or `inst/registry/` handoff files
+- [ ] 4b. Add `tests/substantive/<step_id>.R` for published benchmarks where possible
+- [ ] 5. Prepare / validate: `prepare_study_for_registry(".")` (does not write study handoff)
+- [ ] 6. Commit study repo (code, data, outputs, tests, replication.yml) — no registry/
 - [ ] 7. Open PR on study repo; notify registry maintainer
 ```
 
 ```r
 library(replicateEverything)
 
-# Folder study
+# Folder study — validate only; stub is written later by the maintainer
 prepare_study_for_registry(".", build_artifacts = TRUE)
 
 # Package study (same function — auto-detects layout)
@@ -56,17 +60,16 @@ prepare_study_for_registry("../rep-10.1371_journal.pone.0278337")
 
 1. Builds artifacts (optional)
 2. Runs the appropriate checklist
-3. Writes short yaml + one-row `index.csv` under `registry/` or `inst/registry/`
-4. Validates stub consistency against the full `replication.yml`
+3. Does **not** write stub files into the study repo (unless `write_handoff = TRUE`, legacy)
 
 ## Maintainer checklist
 
 ```
-- [ ] 1. Study PR merged; handoff files present in study repo
+- [ ] 1. Study PR merged; root `replication.yml` complete
 - [ ] 2. Re-validate if needed: `check_replication()`
-- [ ] 3. Sync stub: `sync_study_to_registry(study_path, registry_root = "../registry")`
+- [ ] 3. Sync stub from study yaml: `sync_study_to_registry(study_path, registry_root = "../registry")`
 - [ ] 4. Full refresh: `refresh_registry("../registry", audit = TRUE)`
-- [ ] 4b. Check display outputs: `validate_outputs(doi = "everywhere", what = "everything")` or `Rscript scripts/validate_outputs.R`
+- [ ] 4b. Check display outputs: `validate_outputs(doi = "everywhere", what = "everything")`
 - [ ] 5. Commit registry: `studies/<folder>.yml`, `index.csv`, audit outputs
 - [ ] 6. Deploy Shiny / clear study cache if needed
 ```
@@ -75,7 +78,7 @@ prepare_study_for_registry("../rep-10.1371_journal.pone.0278337")
 library(replicateEverything)
 options(replicateEverything.registry_root = "../registry")
 
-# One study
+# One study — builds stub from study replication.yml into registry/studies/
 sync_study_to_registry("../rep-10.1177-00491241211036161", audit = TRUE)
 
 # After batch of syncs — recompile index + audit everything
@@ -95,26 +98,8 @@ refresh_registry("../registry", audit = TRUE)
 
 Short yaml includes only what the registry needs:
 
-- `paper:` — doi, title, journal, year, authors, `materials`, repo pointers
+- `paper:` — doi or `study_handle`, title, journal, year, authors, `materials`, repo pointers
 - `repo:` — GitHub slug
 - `maintainer:`, `collections:`, `languages:`
 
-No `steps:` block in the registry stub.
-
-## Related skills
-
-- Folder layout and DAG: `folder_replication.md`
-- Dataverse deliveries: `dataverse_to_replicateEverything.md`
-
-## Deprecated names
-
-| Old | New |
-|-----|-----|
-| `build_study_artifacts()` | `build_study_outputs()` |
-| `build_package_artifacts()` | `build_study_outputs()` |
-| `check_folder_replication()` | `check_replication()` |
-| `check_package_replication()` | `check_replication()` |
-| `validate_artifact()` | `validate_outputs(doi, what)` |
-| `validate_paper_artifacts()` | `validate_outputs(doi, what = "everything")` |
-| `validate_registry_artifacts()` | `validate_outputs(doi = "everywhere", what = "everything")` |
-| `scripts/validate_artifacts.R` | `scripts/validate_outputs.R` |
+Generated by `build_registry_stub_from_meta()` from the full study yaml.

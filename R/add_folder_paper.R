@@ -1,10 +1,11 @@
 #' Add a folder-backed study to the replication registry (maintainer)
 #'
-#' Validates a folder-backed study with [check_replication()], ensures
-#' registry handoff files exist (via [write_study_registry_stub()] when missing),
-#' then installs the stub in a registry checkout via [sync_study_to_registry()].
+#' Validates a folder-backed study with [check_replication()], then installs a
+#' stub built from the study `replication.yml` into a registry checkout via
+#' [sync_study_to_registry()]. Stub files are written only under the registry
+#' repository — not into the study repo.
 #'
-#' Contributors should run [prepare_study_for_registry()] and open a pull request.
+#' Contributors should run [prepare_study_for_registry()] (validate / build).
 #' Maintainers use this function (or `sync_study_to_registry()` directly) from a
 #' local registry checkout.
 #'
@@ -63,10 +64,6 @@ add_folder_paper <- function(
   }
 
   study_root <- result$study_path
-  paths <- study_registry_handoff_paths(study_root, kind = "folder")
-  if (!file.exists(paths$stub_path)) {
-    write_study_registry_stub(study_root)
-  }
 
   synced <- sync_study_to_registry(
     study_root,
@@ -77,7 +74,5 @@ add_folder_paper <- function(
   result$stub_path <- synced$stub_path
   result$index_updated <- synced$index_updated
   result$folder <- synced$folder
-  result$registry_stub_path <- paths$stub_path
-  result$registry_index_path <- paths$index_path
   invisible(structure(result, class = c("folder_replication_check", "replication_check", "list")))
 }

@@ -1,3 +1,21 @@
+# replicateEverything 0.6.7
+
+## Registry stubs from study yaml (no study-local handoff)
+
+* [sync_study_to_registry()] builds the registry stub from the study root
+  `replication.yml` and writes **only** into the registry checkout
+  (`studies/<folder>.yml` + rebuilt `index.csv`). Study repos no longer need a
+  `registry/` or `inst/registry/` handoff folder.
+* [prepare_study_for_registry()] validates / optionally builds outputs; does not
+  write study-local stubs by default (`write_handoff = TRUE` keeps the legacy
+  path). [add_folder_paper()] / [add_paper()] likewise sync without writing
+  handoff into the study.
+* Folder stubs include `study_handle` (and related fields) when the study has no
+  article DOI. Skill `include_study_in_registry.md` updated.
+* [check_replication()] live Run for folder studies uses `study_handle` when
+  there is no article DOI (fixes length-zero DOI lookup). Analysis objects are
+  kept unformatted so substantive checks receive models, not HTML.
+
 # replicateEverything 0.6.6
 
 ## Shiny welcome modal reactive-context fix

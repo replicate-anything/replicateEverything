@@ -85,10 +85,13 @@ registry_stub_from_folder_meta <- function(meta, study_folder = NULL, study_root
   }
   stub_paper <- list(
     doi = paper$doi,
+    study_handle = paper$study_handle %||% paper$handle %||% NULL,
     title = paper$title,
     journal = paper$journal %||% NULL,
     year = paper$year %||% NULL,
     authors = paper$authors %||% NULL,
+    abstract = paper$abstract %||% NULL,
+    study_url = paper$study_url %||% paper$article_url %||% NULL,
     materials = "folder",
     study_repo = study_repo,
     study_ref = as.character((paper$study_ref %||% "main")[[1]])

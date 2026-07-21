@@ -1,27 +1,20 @@
-#' Prepare a study repository for registry handoff (contributor)
+#' Validate a study repository before registry onboarding (contributor)
 #'
-#' Validates a folder- or package-backed study, then writes the short registry
-#' yaml and one-row `index.csv` into the study repository:
-#'
-#' \itemize{
-#'   \item Folder studies: `registry/replication.yml` and `registry/index.csv`
-#'   \item Package studies: `inst/registry/replication.yml` and `inst/registry/index.csv`
-#' }
-#'
-#' This is the **contributor** step. A registry maintainer installs those files
-#' with [sync_study_to_registry()] and refreshes the central index with
-#' [refresh_registry()].
-#'
-#' Runs [build_study_outputs()] (optional), then [check_replication()], and on
-#' success writes and validates the registry stub via [write_study_registry_stub()].
+#' Builds outputs (optional) and runs [check_replication()]. On success, the
+#' study is ready for a maintainer to register it with
+#' [sync_study_to_registry()], which writes the stub **only** into the central
+#' registry repository (not into the study repo).
 #'
 #' @param location Study repo path or GitHub address. Defaults to `"."`.
 #' @param build_artifacts If `TRUE`, build precomputed outputs first.
 #' @param install_deps Passed to the build function.
 #' @param full_replication If `TRUE`, also run every table and figure live.
 #' @param registry_root Optional registry checkout (passed to build/check helpers).
-#' @return Invisibly, a checklist result with `registry_stub_path` and
-#'   `registry_index_path` when successful.
+#' @param write_handoff If `TRUE`, also write a legacy study-local stub under
+#'   `registry/` or `inst/registry/` (not recommended; stubs belong in the
+#'   registry repo). Default `FALSE`.
+#' @return Invisibly, a checklist result; when `write_handoff = TRUE` and checks
+#'   pass, also includes `registry_stub_path` and `registry_index_path`.
 #'
 #' @examples
 #' \dontrun{
@@ -34,7 +27,8 @@ prepare_study_for_registry <- function(
   build_artifacts = TRUE,
   install_deps = TRUE,
   full_replication = FALSE,
-  registry_root = NULL
+  registry_root = NULL,
+  write_handoff = FALSE
 ) {
   study_root <- resolve_study_root(location)
   kind <- detect_study_kind_from_root(study_root)
@@ -71,19 +65,24 @@ prepare_study_for_registry <- function(
     return(invisible(result))
   }
 
-  written <- write_study_registry_stub(study_root)
+  message("All checks passed (", nrow(result$checks), " items).")
   message(
-    "All checks passed (", nrow(result$checks), " items). ",
-    "Registry handoff written under ", written$stub_dir
-  )
-  message(
-    "A registry maintainer can install this with sync_study_to_registry() ",
-    "and refresh_registry()."
+    "A registry maintainer can register this study with sync_study_to_registry() ",
+    "(stub is written only into the registry repository)."
   )
 
-  result$registry_stub_path <- written$stub_path
-  result$registry_index_path <- written$index_path
-  result$folder <- written$folder
+  if (isTRUE(write_handoff)) {
+    written <- write_study_registry_stub(study_root)
+    message("Legacy study-local handoff written under ", written$stub_dir)
+    result$registry_stub_path <- written$stub_path
+    result$registry_index_path <- written$index_path
+    result$folder <- written$folder
+  } else {
+    result$folder <- registry_folder_from_paper(
+      read_study_meta_from_root(study_root, kind = kind)$paper
+    )
+  }
+
   result$study_kind <- kind
   cls <- if (identical(kind, "package")) {
     c("package_replication_check", "replication_check", "list")
@@ -93,15 +92,16 @@ prepare_study_for_registry <- function(
   invisible(structure(result, class = cls))
 }
 
-#' Sync a prepared study into the registry repository (maintainer)
+#' Sync a study into the registry repository (maintainer)
 #'
-#' Reads the short registry yaml from the study repository (`registry/` or
-#' `inst/registry/`), copies it to `studies/<folder>.yml` in a registry
-#' checkout, and rebuilds `index.csv` via [build_registry_index()].
+#' Builds a lightweight registry stub from the study's root `replication.yml`
+#' (via [build_registry_stub_from_meta()]) and writes it to
+#' `studies/<folder>.yml` in a registry checkout, then rebuilds `index.csv`
+#' via [build_registry_index()].
 #'
-#' This is a **maintainer** function. Contributors should run
-#' [prepare_study_for_registry()] and open a pull request; maintainers run this
-#' (or [refresh_registry()]) from a local registry checkout.
+#' Stub and index files belong in the **registry** repository only — not in the
+#' study repo. Study-local `registry/` or `inst/registry/` handoff folders are
+#' not required.
 #'
 #' @param location Study repo path or GitHub address. Defaults to `"."`.
 #' @param registry_root Path to the registry repository root. Defaults to
@@ -130,24 +130,7 @@ sync_study_to_registry <- function(
 ) {
   study_root <- resolve_study_root(location)
   kind <- detect_study_kind_from_root(study_root)
-  paths <- study_registry_handoff_paths(study_root, kind = kind)
-  local_stub <- paths$stub_path
-  local_index <- paths$index_path
-
-  if (!file.exists(local_stub)) {
-    stop(
-      "No registry handoff yaml at ", local_stub, ". ",
-      "Run prepare_study_for_registry() in the study repository first.",
-      call. = FALSE
-    )
-  }
-  if (!file.exists(local_index)) {
-    stop(
-      "No registry handoff index at ", local_index, ". ",
-      "Run prepare_study_for_registry() in the study repository first.",
-      call. = FALSE
-    )
-  }
+  meta <- read_study_meta_from_root(study_root, kind = kind)
 
   if (is.null(registry_root) || !nzchar(registry_root)) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
@@ -160,22 +143,32 @@ sync_study_to_registry <- function(
     )
   }
 
-  row <- utils::read.csv(local_index, stringsAsFactors = FALSE)
-  if (nrow(row) != 1L) {
-    stop("Study registry/index.csv must contain exactly one row.", call. = FALSE)
-  }
-  folder <- row$folder[[1]]
-
+  folder <- registry_folder_from_paper(meta$paper)
   studies_dir <- registry_studies_dir(registry_root)
   dir.create(studies_dir, recursive = TRUE, showWarnings = FALSE)
   stub_path <- file.path(studies_dir, paste0(folder, ".yml"))
-  file.copy(local_stub, stub_path, overwrite = TRUE)
+
+  stub <- build_registry_stub_from_meta(meta, study_root, kind = kind)
+  materials <- if (identical(kind, "package")) {
+    "package-backed"
+  } else {
+    "folder-backed"
+  }
+  header <- c(
+    paste0("# Lightweight registry stub for a ", materials, " study."),
+    paste0("# Generated from study replication.yml by sync_study_to_registry()."),
+    paste0("# Registry folder: ", folder),
+    ""
+  )
+  writeLines(c(header, yaml::as.yaml(stub)), stub_path, useBytes = TRUE)
+
   legacy_dir <- file.path(studies_dir, folder)
   if (dir.exists(legacy_dir)) {
     unlink(legacy_dir, recursive = TRUE)
   }
 
   index_updated <- build_registry_index(registry_root)
+  row <- registry_index_row_from_meta(meta, study_root = study_root)
 
   message("Synced registry stub: ", stub_path)
   message("Updated index: ", index_updated$index_path)

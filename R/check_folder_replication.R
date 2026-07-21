@@ -292,7 +292,7 @@ check_folder_replication <- function(
       registry_root <- getOption("replicateEverything.registry_root", NULL)
     }
     run_opts <- folder_study_run_options(study_root, meta, registry_root = registry_root)
-    doi <- normalize_doi(paper$doi)
+    lookup <- study_lookup_from_paper(paper)
 
     old_opts <- options(run_opts)
     on.exit(options(old_opts), add = TRUE)
@@ -303,17 +303,23 @@ check_folder_replication <- function(
         {
           use_format <- format_specified(rep)
           obj <- run_replication(
-            doi,
+            lookup,
             rid,
             install_deps = TRUE,
-            format = use_format
+            format = FALSE
           )
           live_objects[[rid]] <- obj
           if (identical(rep$type, "figure")) {
             inherits(obj, "ggplot") || inherits(obj, "gg") || inherits(obj, "gtable")
           } else if (use_format) {
-            is.character(obj) || inherits(obj, "knitr_kable") ||
-              grepl("<table", as.character(obj)[1], ignore.case = TRUE)
+            formatted <- run_replication(
+              lookup,
+              rid,
+              install_deps = FALSE,
+              format = TRUE
+            )
+            is.character(formatted) || inherits(formatted, "knitr_kable") ||
+              grepl("<table", as.character(formatted)[1], ignore.case = TRUE)
           } else {
             !is.null(obj)
           }
@@ -347,7 +353,7 @@ check_folder_replication <- function(
     study_root = study_root,
     display_reps = display_reps,
     objects = if (length(live_objects) > 0L) live_objects else NULL,
-    doi = if (doi_ok) normalize_doi(paper$doi) else NULL
+    doi = if (doi_ok || handle_ok) study_lookup_from_paper(paper) else NULL
   )
 
   list(
