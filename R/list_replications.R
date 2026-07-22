@@ -72,8 +72,19 @@ list_replications <- function(
     pkg <- as.character(meta$paper$package[[1]])
     ensure_replication_package(pkg, meta = meta, ctx = ctx)
     if (replication_package_usable(pkg)) {
-      out <- call_replication_package(pkg, "list_replications")
-      return(wrap(out))
+      pkg_meta <- tryCatch(
+        read_package_replication_meta(pkg),
+        error = function(e) NULL
+      )
+      if (!is.null(pkg_meta)) {
+        legacy <- package_yaml_entries(pkg_meta)
+        return(wrap(filter_replication_entries(list(steps = legacy), include = include)))
+      }
+      ns <- asNamespace(pkg)
+      if (exists("list_replications", envir = ns, inherits = FALSE)) {
+        out <- call_replication_package(pkg, "list_replications")
+        return(wrap(out))
+      }
     }
   }
   if (is_folder_study_replication(meta)) {

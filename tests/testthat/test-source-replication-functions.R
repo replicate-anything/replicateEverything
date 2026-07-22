@@ -16,6 +16,7 @@ test_that("annotate_replication_code_for_display adds prep notes", {
   rep <- list(
     id = "tab_1",
     type = "table",
+    engine = "r",
     code = "code/tables/tab_1.R",
     parents = list("prep_studies"),
     data = "outputs/prep_studies/studies.rds",
@@ -30,6 +31,55 @@ test_that("annotate_replication_code_for_display adds prep notes", {
   expect_true(any(grepl("parents: prep_studies", out, fixed = TRUE)))
   expect_true(any(grepl("inputs:", out)))
   expect_true(any(grepl("format_table.R", out, fixed = TRUE)))
+  expect_true(any(grepl("Live Run executes this step via replication.yml", out, fixed = TRUE)))
+})
+
+test_that("annotate_replication_code_for_display adds R yaml epilogue for defs-only script", {
+  rep <- list(
+    id = "tab_1",
+    type = "table",
+    engine = "r",
+    data = "outputs/data.dta",
+    format = "format_tab_1"
+  )
+  lines <- "make_tab_1 <- function(data) data"
+  out <- annotate_replication_code_for_display(lines, rep)
+  expect_true(any(grepl("Execute via replication\\.yml", out)))
+  expect_true(any(grepl("haven::read_dta|make_tab_1\\(data\\)", out)))
+})
+
+test_that("annotate_replication_code_for_display omits R epilogue for Stata", {
+  rep <- list(
+    id = "tab_1",
+    type = "table",
+    engine = "stata",
+    data = "outputs/data.dta",
+    code = "code/tables/tab_1.do",
+    format = "code/helpers/format_stata.R"
+  )
+  lines <- c(
+    'do "code/helpers/init_study_paths.do"',
+    'do "${maindir}/code/tables/mk_tab_1.do"'
+  )
+  out <- annotate_replication_code_for_display(lines, rep)
+  expect_true(any(grepl("parents:|inputs:", out)) || any(grepl("Display path notes", out)))
+  expect_false(any(grepl("Execute via replication\\.yml", out)))
+  expect_false(any(grepl("make_tab_1", out)))
+  expect_false(any(grepl("haven::read_dta", out)))
+})
+
+test_that("annotate_replication_code_for_display omits R epilogue for Python", {
+  rep <- list(
+    id = "fig_2",
+    type = "figure",
+    engine = "python",
+    data = "data/raw/x.csv",
+    code = "code/figures/fig_2.py"
+  )
+  lines <- c("import pandas as pd", "print(1)")
+  out <- annotate_replication_code_for_display(lines, rep)
+  expect_false(any(grepl("Execute via replication\\.yml", out)))
+  expect_false(any(grepl("make_fig_2", out)))
 })
 
 test_that("check_replication_script_entries passes when make_* is defined without call", {

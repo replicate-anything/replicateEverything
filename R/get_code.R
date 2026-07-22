@@ -70,8 +70,11 @@ get_code <- function(
       error = function(e) NULL
     )
     if (replication_package_usable(pkg)) {
-      lines <- call_replication_package(pkg, "get_code", what)
-      return(adjust_package_get_code_for_mode(lines, mode))
+      ns <- asNamespace(pkg)
+      if (exists("get_code", envir = ns, inherits = FALSE)) {
+        lines <- call_replication_package(pkg, "get_code", what)
+        return(adjust_package_get_code_for_mode(lines, mode))
+      }
     }
     return(get_code_from_package_repo(meta, ctx, what, pkg, mode = mode))
   }
@@ -232,9 +235,10 @@ format_get_code_advice_items <- function(items) {
 
 #' How-to-run advice shared by [get_code()] tips and the Code tab setup box
 #'
-#' Yaml / [run_replication()] is primary. Does not mention optional
-#' \code{sys.nframe()} script footers. Returns a numbered list under
-#' \code{"To produce the <kind>:"}.
+#' Guidance for using the displayed script (not the package Live Run path).
+#' Does not mention optional \code{sys.nframe()} script footers. Returns a
+#' working-directory note plus a numbered list under \code{"To produce the
+#' <kind>:"}.
 #'
 #' @param engine \code{"r"}, \code{"stata"}, or \code{"python"} (default \code{"r"}).
 #' @param type Optional step type from yaml.
@@ -257,7 +261,6 @@ get_code_run_advice <- function(
   }
   kind <- get_code_result_kind(type)
   args <- get_code_tip_call_args(doi, what)
-  run_call <- paste0("run_replication(", args$doi, ", ", args$what, ")")
   get_run_call <- paste0(
     "get_code(", args$doi, ", ", args$what, ", mode = \"run\")"
   )
@@ -269,7 +272,7 @@ get_code_run_advice <- function(
   }
 
   header <- paste0("To produce the ", kind, ":")
-  prefer <- paste0("Prefer ", run_call, "  (simplest)")
+  wd_note <- "Set your working directory to the study repository root, then:"
 
   if (identical(engine, "stata")) {
     do_hint <- if (nzchar(code_rel)) {
@@ -278,9 +281,8 @@ get_code_run_advice <- function(
       'do "path/to/script.do"'
     }
     items <- list(
-      prefer,
-      paste0("From the study root run ", do_hint, " in Stata"),
-      "paste the Stata script below into Stata with the study root as the working directory."
+      paste0("in Stata run ", do_hint),
+      "paste the Stata script below into Stata."
     )
   } else if (identical(engine, "python")) {
     py_hint <- if (nzchar(code_rel)) {
@@ -289,18 +291,17 @@ get_code_run_advice <- function(
       'python "path/to/script.py"'
     }
     items <- list(
-      prefer,
-      paste0("From the study root run ", py_hint),
-      "paste the Python script below into a session with the study root as the working directory."
+      paste0("run ", py_hint),
+      "paste the Python script below into a Python session."
     )
   } else {
-    items <- list(prefer)
+    items <- list()
     recipe <- yaml_implied_call_lines(rep, lines)
     if (length(recipe)) {
       items <- c(
         items,
         list(c(
-          "From the study root (yaml-implied):",
+          "run the yaml-implied call:",
           paste0("  ", recipe)
         ))
       )
@@ -309,15 +310,13 @@ get_code_run_advice <- function(
       items,
       list(paste0(
         "evaluate yaml-driven script text: eval(parse(text = ",
-        get_run_call, ")) from the study root"
+        get_run_call, "))"
       )),
-      list(
-        "paste the code below into your R session with the study root as the working directory."
-      )
+      list("paste the code below into your R session.")
     )
   }
 
-  c(header, format_get_code_advice_items(items))
+  c(header, wd_note, format_get_code_advice_items(items))
 }
 
 #' Single tip string for [get_code()] (any mode)

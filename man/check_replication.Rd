@@ -60,9 +60,10 @@ substantive (published-value) checks under \verb{tests/substantive/}, and
 
 \item \code{check_package_replication()}: Package-backed implementation.
 
-Runs a transparent checklist: package layout, \code{replication.yml}, exported API,
-baked artifacts, substantive (published-value) checks under
-\verb{tests/substantive/}, and (optionally) live execution of every table and figure.
+Runs a transparent checklist: package layout, \code{replication.yml},
+study \verb{make_*} / \verb{format_*} helpers, baked artifacts, substantive
+(published-value) checks under \verb{tests/substantive/}, and (optionally)
+live execution of every table and figure via replicateEverything.
 
 }}
 \examples{

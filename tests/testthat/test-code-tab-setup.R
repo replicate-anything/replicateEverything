@@ -56,14 +56,19 @@ test_that("code_setup_box_content describes Blair Stata table setup", {
   expect_true(any(grepl("estout", content$step2, fixed = TRUE)))
   expect_true(any(grepl("install_study_dependencies", content$step2, fixed = TRUE)))
   expect_true(any(grepl("Dataverse", content$step2_prep, fixed = TRUE)))
-  expect_match(content$one_liner, "Prefer run_replication")
-  expect_match(content$one_liner, "\\(simplest\\)")
+  expect_match(content$one_liner, "working directory to the study repository root")
+  expect_false(grepl("Prefer run_replication", content$one_liner, fixed = TRUE))
   expect_match(content$step3, "To produce the table:")
-  expect_match(content$step3, "1\\. Prefer run_replication")
+  expect_match(content$step3, "working directory to the study repository root")
+  expect_false(grepl("Prefer run_replication", content$step3, fixed = TRUE))
   expect_match(content$step3, "do \"")
   expect_false(grepl("eval\\(parse", content$step3))
   expect_false(grepl("sys\\.nframe", content$step3))
   expect_false(grepl("R session", content$step3, fixed = TRUE))
+  expect_equal(
+    length(gregexpr("working directory", content$step3, fixed = TRUE)[[1]]),
+    1L
+  )
 })
 
 test_that("code_setup_box_content describes Velez R table setup", {
@@ -86,10 +91,10 @@ test_that("code_setup_box_content describes Velez R table setup", {
   expect_false(any(grepl("^Stata:", content$step2)))
   expect_true(any(grepl("tidyverse", content$step2, fixed = TRUE)))
   expect_true(any(grepl("install_study_dependencies", content$step2, fixed = TRUE)))
-  expect_match(content$one_liner, "Prefer run_replication")
-  expect_match(content$one_liner, "\\(simplest\\)")
+  expect_match(content$one_liner, "working directory to the study repository root")
+  expect_false(grepl("Prefer run_replication", content$one_liner, fixed = TRUE))
   expect_match(content$step3, "To produce the table:")
-  expect_match(content$step3, "1\\. Prefer run_replication")
+  expect_false(grepl("Prefer run_replication", content$step3, fixed = TRUE))
   expect_match(content$step3, "yaml-implied|mode = \"run\"|paste the code")
   expect_false(grepl("sys\\.nframe", content$step3))
   expect_false(grepl("Stata session", content$step3, fixed = TRUE))

@@ -209,8 +209,8 @@ format_for_display <- function(
   doi <- normalize_doi(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
 
-  # Package run_replication() already applies format_* ; registry stub yaml
-  # may not list individual replications.
+  # Package make_*/format_* already applied in run_package_replication();
+  # registry stub yaml may not list individual replications.
   if (is_package_replication(meta)) {
     return(object)
   }

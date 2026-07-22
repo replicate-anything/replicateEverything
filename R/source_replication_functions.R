@@ -181,16 +181,30 @@ replication_code_display_preamble <- function(rep, meta = NULL) {
     if (length(inputs)) {
       paste0("# inputs: ", paste(inputs, collapse = ", "))
     },
-    "# Live Run loads these inputs via replication.yml and calls make_*().",
+    "# Live Run executes this step via replication.yml.",
     "#"
   )
 }
 
-#' Epilogue notes when a script defines make_* (yaml supplies the execute path)
+#' Epilogue notes for R scripts that define make_* but never call it
+#'
+#' R-only: commented yaml-implied load \eqn{\rightarrow}{->} make \eqn{\rightarrow}{->}
+#' format recipe. Stata/Python scripts omit this (no fake R call chains).
 #' @keywords internal
-replication_code_display_epilogue <- function(rep, lines) {
+replication_code_display_epilogue <- function(rep, lines, meta = NULL) {
   type <- as.character(rep$type %||% "")
   if (!type %in% c("table", "figure")) {
+    return(character(0))
+  }
+  eng <- if (exists("replication_engine", mode = "function", inherits = TRUE)) {
+    tryCatch(
+      replication_engine(rep, meta$paper %||% NULL),
+      error = function(e) "r"
+    )
+  } else {
+    tolower(as.character(rep$engine %||% "r")[[1]])
+  }
+  if (!identical(eng, "r")) {
     return(character(0))
   }
   what <- as.character(rep$id[[1]] %||% rep$id)
@@ -208,7 +222,7 @@ replication_code_display_epilogue <- function(rep, lines) {
     out <- c(
       out,
       "",
-      "# --- Execute via replication.yml (run_replication / get_code mode=run) ---",
+      "# --- Execute via replication.yml (get_code mode=run) ---",
       if (length(recipe)) {
         paste0("# ", recipe)
       } else {
@@ -238,7 +252,7 @@ annotate_replication_code_for_display <- function(lines, rep, meta = NULL) {
   c(
     replication_code_display_preamble(rep, meta = meta),
     lines,
-    replication_code_display_epilogue(rep, lines)
+    replication_code_display_epilogue(rep, lines, meta = meta)
   )
 }
 

@@ -28,8 +28,9 @@ get_code_run_advice(
 Character vector of advice lines (no \code{get_code() returns...} preamble).
 }
 \description{
-Yaml / \code{\link[=run_replication]{run_replication()}} is primary. Does not mention optional
-\code{sys.nframe()} script footers. Returns a numbered list under
-\code{"To produce the <kind>:"}.
+Guidance for using the displayed script (not the package Live Run path).
+Does not mention optional \code{sys.nframe()} script footers. Returns a
+working-directory note plus a numbered list under \code{"To produce the
+<kind>:"}.
 }
 \keyword{internal}

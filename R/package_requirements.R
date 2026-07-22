@@ -1,14 +1,19 @@
-#' Required exported API for package-backed replication studies
+#' Optional legacy exports some older study packages still ship
+#'
+#' Study packages should **not** export these; they belong in
+#' replicateEverything. Kept only so checks can report (and skip) legacy
+#' wrappers without requiring them.
 #' @keywords internal
-PACKAGE_REPLICATION_API <- c(
+PACKAGE_REPLICATION_LEGACY_API <- c(
   "list_replications",
-  "replication_meta",
   "run_replication",
   "load_artifact",
-  "artifact_file",
-  "get_code",
-  "build_report"
+  "get_code"
 )
+
+#' Recommended study-package helpers (not the replicateEverything verbs)
+#' @keywords internal
+PACKAGE_REPLICATION_HELPERS <- c("build_report")
 
 #' Display replication types validated for artifacts
 #' @keywords internal

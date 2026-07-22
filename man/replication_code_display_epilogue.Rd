@@ -2,11 +2,12 @@
 % Please edit documentation in R/source_replication_functions.R
 \name{replication_code_display_epilogue}
 \alias{replication_code_display_epilogue}
-\title{Epilogue notes when a script defines make_* (yaml supplies the execute path)}
+\title{Epilogue notes for R scripts that define make_* but never call it}
 \usage{
-replication_code_display_epilogue(rep, lines)
+replication_code_display_epilogue(rep, lines, meta = NULL)
 }
 \description{
-Epilogue notes when a script defines make_* (yaml supplies the execute path)
+R-only: commented yaml-implied load \eqn{\rightarrow}{->} make \eqn{\rightarrow}{->}
+format recipe. Stata/Python scripts omit this (no fake R call chains).
 }
 \keyword{internal}

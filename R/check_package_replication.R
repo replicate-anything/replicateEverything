@@ -2,9 +2,10 @@
 #'
 #' @describeIn check_replication Package-backed implementation.
 #'
-#' Runs a transparent checklist: package layout, `replication.yml`, exported API,
-#' baked artifacts, substantive (published-value) checks under
-#' `tests/substantive/`, and (optionally) live execution of every table and figure.
+#' Runs a transparent checklist: package layout, `replication.yml`,
+#' study `make_*` / `format_*` helpers, baked artifacts, substantive
+#' (published-value) checks under `tests/substantive/`, and (optionally)
+#' live execution of every table and figure via replicateEverything.
 #'
 #' @param location Local package path or GitHub address (`org/repo` or URL).
 #' @param full_replication If `TRUE`, also run every table and figure via
@@ -203,14 +204,31 @@ check_package_replication <- function(location, full_replication = FALSE) {
   }
   ns <- asNamespace(pkg_name)
 
-  for (fn in PACKAGE_REPLICATION_API) {
+  for (fn in PACKAGE_REPLICATION_LEGACY_API) {
+    exists_fn <- exists(fn, envir = ns, inherits = FALSE)
+    if (exists_fn) {
+      checks <- bind_check_results(
+        checks,
+        check_result(
+          paste0("legacy_api_", fn),
+          FALSE,
+          paste0(
+            fn, "() should not live in the study package — ",
+            "use replicateEverything::", fn, "() against this study instead"
+          )
+        )
+      )
+    }
+  }
+
+  for (fn in PACKAGE_REPLICATION_HELPERS) {
     exists_fn <- exists(fn, envir = ns, inherits = FALSE)
     checks <- bind_check_results(
       checks,
       check_result(
-        paste0("api_", fn),
+        paste0("helper_", fn),
         exists_fn,
-        if (exists_fn) "exported" else "missing exported function"
+        if (exists_fn) "found" else paste0("recommended helper missing: ", fn, "()")
       )
     )
   }
@@ -238,7 +256,7 @@ check_package_replication <- function(location, full_replication = FALSE) {
       check_result(
         "artifact_directory",
         FALSE,
-        "Missing inst/report/artifacts/ (run build_report())"
+        "Missing inst/report/artifacts/ (run build_report() or build_study_outputs())"
       )
     )
   } else {
@@ -252,10 +270,13 @@ check_package_replication <- function(location, full_replication = FALSE) {
     rid <- as.character(rep$id[[1]])
     rtype <- as.character(rep$type[[1]])
     ext <- if (identical(rtype, "figure")) "png" else "html"
-    art_path <- tryCatch(
-      call_replication_package(pkg_name, "artifact_file", rid),
-      error = function(e) NULL
-    )
+    art_path <- NULL
+    if (exists("artifact_file", envir = ns, inherits = FALSE)) {
+      art_path <- tryCatch(
+        call_replication_package(pkg_name, "artifact_file", rid),
+        error = function(e) NULL
+      )
+    }
     if (is.null(art_path) || !nzchar(art_path) || !file.exists(art_path)) {
       fallback <- file.path(artifact_dir, paste0(rid, ".", ext))
       art_path <- if (file.exists(fallback)) fallback else NULL
@@ -283,7 +304,13 @@ check_package_replication <- function(location, full_replication = FALSE) {
       )
     } else {
       html <- tryCatch(
-        call_replication_package(pkg_name, "load_artifact", rid),
+        {
+          if (exists("load_artifact", envir = ns, inherits = FALSE)) {
+            call_replication_package(pkg_name, "load_artifact", rid)
+          } else {
+            paste(readLines(art_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+          }
+        },
         error = function(e) NULL
       )
       ok_html <- is.character(html) &&
@@ -303,11 +330,15 @@ check_package_replication <- function(location, full_replication = FALSE) {
 
   if (isTRUE(full_replication)) {
     live_objects <- list()
+    pkg_meta <- tryCatch(
+      read_package_replication_meta(pkg_name),
+      error = function(e) meta
+    )
     for (rep in display_reps) {
       rid <- as.character(rep$id[[1]])
       live_ok <- tryCatch(
         {
-          obj <- call_replication_package(pkg_name, "run_replication", rid)
+          obj <- run_package_replication(pkg_name, rid, meta = pkg_meta)
           live_objects[[rid]] <- obj
           if (identical(rep$type, "figure")) {
             inherits(obj, "ggplot") || inherits(obj, "gg") || inherits(obj, "gtable")
@@ -333,7 +364,7 @@ check_package_replication <- function(location, full_replication = FALSE) {
           check_result(
             paste0("live_", rid),
             isTRUE(live_ok),
-            if (isTRUE(live_ok)) "run_replication() OK" else "Unexpected output type"
+            if (isTRUE(live_ok)) "run_package_replication() OK" else "Unexpected output type"
           )
         )
       }

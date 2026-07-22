@@ -175,6 +175,134 @@ is_package_dataset_name <- function(name) {
     !grepl("\\.[a-zA-Z0-9]+$", name)
 }
 
+#' Load a LazyData / exported object from a study package
+#' @keywords internal
+get_study_package_object <- function(name, package) {
+  if (!requireNamespace(package, quietly = TRUE)) {
+    stop("Package ", package, " is not installed.", call. = FALSE)
+  }
+  eval(call("::", package, name), envir = parent.frame())
+}
+
+#' Package yaml entries (prep + replications + steps)
+#' @keywords internal
+package_yaml_entries <- function(meta) {
+  c(
+    meta$prep %||% list(),
+    meta$replications %||% list(),
+    meta$steps %||% list()
+  )
+}
+
+#' Find a prep/replication entry by id in package yaml
+#' @keywords internal
+find_package_yaml_entry <- function(meta, id) {
+  entries <- package_yaml_entries(meta)
+  match <- entries[vapply(entries, function(x) identical(x$id, id), logical(1))]
+  if (length(match) == 0) {
+    stop("Replication ", id, " not found in package replication.yml.", call. = FALSE)
+  }
+  match[[1]]
+}
+
+#' Read make_*/prep source from an installed study package
+#' @keywords internal
+read_installed_package_source <- function(name, package) {
+  inst_path <- system.file("replication_code", paste0(name, ".R"), package = package)
+  if (nzchar(inst_path) && file.exists(inst_path)) {
+    return(readLines(inst_path, warn = FALSE))
+  }
+  if (requireNamespace(package, quietly = TRUE)) {
+    dev_path <- file.path(
+      getNamespaceInfo(asNamespace(package), "path"),
+      "R",
+      paste0(name, ".R")
+    )
+    if (file.exists(dev_path)) {
+      return(readLines(dev_path, warn = FALSE))
+    }
+  }
+  character(0)
+}
+
+#' Run a package-backed replication via study make_*/format_* (or legacy wrapper)
+#'
+#' Prefers a legacy study-package `run_replication()` only when present.
+#' New study packages should not ship that verb — this function calls
+#' exported `make_*` / `format_*` (and prep helpers) from the package namespace.
+#'
+#' @param package Study package name.
+#' @param id Replication id from yaml.
+#' @param meta Optional parsed package yaml (defaults to installed yaml).
+#' @param install_deps Ignored for native runs; passed to legacy wrappers.
+#' @return Analysis or display object (format_* applied when declared).
+#' @keywords internal
+run_package_replication <- function(package, id, meta = NULL, install_deps = FALSE) {
+  package <- as.character(package[[1]])
+  if (!replication_package_usable(package)) {
+    stop("Replication package ", package, " is not installed.", call. = FALSE)
+  }
+  ns <- asNamespace(package)
+  if (exists("run_replication", envir = ns, inherits = FALSE)) {
+    return(call_replication_package(package, "run_replication", id, install_deps = install_deps))
+  }
+
+  if (is.null(meta)) {
+    meta <- read_package_replication_meta(package)
+  }
+  entry <- find_package_yaml_entry(meta, id)
+
+  make_name <- entry$make %||% entry$code
+  if (is.null(make_name) || !nzchar(as.character(make_name[[1]]))) {
+    stop("Replication ", id, " has no make/code entry.", call. = FALSE)
+  }
+  make_name <- as.character(make_name[[1]])
+  if (!exists(make_name, envir = ns, inherits = FALSE, mode = "function")) {
+    stop(
+      "Function ", make_name, " not found in package ", package, ".",
+      call. = FALSE
+    )
+  }
+  make_fn <- get(make_name, mode = "function", envir = ns)
+
+  data_names <- entry$data
+  if (is.null(data_names)) {
+    obj <- make_fn()
+  } else if (length(data_names) == 1L) {
+    if (is_package_dataset_name(data_names[[1]])) {
+      dataset <- get_study_package_object(data_names[[1]], package)
+      obj <- make_fn(dataset)
+    } else {
+      obj <- make_fn(data_names[[1]])
+    }
+  } else {
+    args <- lapply(data_names, function(nm) {
+      if (is_package_dataset_name(nm)) {
+        get_study_package_object(nm, package)
+      } else {
+        nm
+      }
+    })
+    if (identical(make_name, "make_table_2")) {
+      names(args) <- c("survey", "labels")
+    }
+    obj <- do.call(make_fn, args)
+  }
+
+  fmt_name <- entry$format %||% NULL
+  if (is.null(fmt_name) || !nzchar(as.character(fmt_name[[1]]))) {
+    return(obj)
+  }
+  fmt_name <- as.character(fmt_name[[1]])
+  if (!exists(fmt_name, envir = ns, inherits = FALSE, mode = "function")) {
+    stop(
+      "Format function ", fmt_name, " not found in package ", package, ".",
+      call. = FALSE
+    )
+  }
+  get(fmt_name, mode = "function", envir = ns)(obj)
+}
+
 #' Build get_code output for a package-backed study from remote source
 #'
 #' @param meta Parsed replication metadata (with replications list).
@@ -199,12 +327,18 @@ get_code_from_package_repo <- function(
   repo <- package_repo_slug(meta, ctx)
   ref <- package_repo_ref(meta)
   source_lines <- clean_replication_source_lines(
-    read_package_repo_source(source_name, repo, ref)
+    read_installed_package_source(source_name, package)
   )
   if (!length(source_lines)) {
+    source_lines <- clean_replication_source_lines(
+      read_package_repo_source(source_name, repo, ref)
+    )
+  }
+  if (!length(source_lines)) {
     stop(
-      "Could not read ", source_name, " from package repo ",
-      repo, " (ref: ", ref, "). Tried inst/replication_code/ and R/.",
+      "Could not read ", source_name, " from installed package ", package,
+      " or package repo ", repo, " (ref: ", ref,
+      "). Tried inst/replication_code/ and R/.",
       call. = FALSE
     )
   }

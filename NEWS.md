@@ -1,3 +1,57 @@
+# replicateEverything 0.6.17
+
+## Shiny Contribute tab
+
+* Restructured Contribute guidance: lead with `replication.yml`, then yaml /
+  registry compatibility (maintainer, collections, engines, steps, analysis
+  helpers, substantive tests, validate via replicateEverything APIs), then the
+  two setup approaches (folder vs package), then shared check + shared registry
+  connect (maintainer sync or contributor PR).
+* Copy now states that `run_replication()` / `list_replications()` /
+  `load_artifact()` / `get_code()` live only in replicateEverything and must
+  not appear in study repos or study packages.
+
+## Package-backed studies
+
+* Package runners no longer require study packages to export those verbs.
+  `run_package_replication()` calls study `make_*` / `format_*` from yaml
+  (legacy wrappers still work if present).
+* `check_package_replication()` fails if a study package still exports the
+  legacy verbs; recommends `build_report()` and checks `make_*` / `format_*`.
+
+# replicateEverything 0.6.16
+
+## Shiny Contribute tab
+
+* Contribute copy now leads with `replication.yml` (gold example from
+  `rep-template`), then shared guidance (maintainer, collections, engines,
+  steps, validate via replicateEverything APIs), then the two packaging
+  approaches with their specific features.
+* Package-backed section no longer claims study packages must export
+  `run_replication()` / `list_replications()` / `load_artifact()` /
+  `get_code()` — those verbs live in replicateEverything; study packages
+  supply yaml plus `make_*` / `format_*` (and bake artifacts).
+
+# replicateEverything 0.6.15
+
+## Shiny Code tab / get_code guidance
+
+* Code-tab display annotations no longer append R `make_*` /
+  `haven::read_dta` footers to Stata or Python scripts. Those commented
+  yaml-implied recipes are R-only (defs without a top-level call).
+* [get_code_run_advice()] (shared by [get_code()] tips and Code tab step 3)
+  drops "Prefer run_replication" — that path does not use the displayed
+  script. Guidance now states the study-root working directory once, then
+  lists engine-appropriate options (do / python / yaml-implied / paste).
+
+# replicateEverything 0.6.14
+
+## Shiny study selector
+
+* Dropdown labels append a short title snippet (first ~16 characters,
+  ellipsis if truncated) so same-author same-year studies are distinguishable
+  (e.g. `Acemoglu et al (2001) Colonial Origins...`).
+
 # replicateEverything 0.6.13
 
 ## Shiny Code tab

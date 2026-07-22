@@ -26,13 +26,16 @@ enrich_package_replication_meta <- function(meta, ctx) {
   ensure_replication_package(pkg, meta = meta, ctx = ctx)
   if (replication_package_usable(pkg)) {
     pkg_meta <- tryCatch(
-      get("replication_meta", envir = asNamespace(pkg))(),
+      read_package_replication_meta(pkg),
       error = function(e) NULL
     )
     if (!is.null(pkg_meta)) {
       meta$replications <- pkg_meta$replications %||% list()
       if (length(meta$prep %||% list()) == 0) {
         meta$prep <- pkg_meta$prep %||% list()
+      }
+      if (length(meta$steps %||% list()) == 0) {
+        meta$steps <- pkg_meta$steps %||% list()
       }
     }
   }
@@ -325,13 +328,13 @@ package_replication_entries <- function(meta) {
     return(list())
   }
   pkg_meta <- tryCatch(
-    get("replication_meta", envir = asNamespace(pkg))(),
+    read_package_replication_meta(pkg),
     error = function(e) NULL
   )
   if (is.null(pkg_meta)) {
     return(list())
   }
-  c(pkg_meta$prep %||% list(), pkg_meta$replications %||% list())
+  package_yaml_entries(pkg_meta)
 }
 
 #' Render a single replication
@@ -388,21 +391,34 @@ render_replication <- function(
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
     ensure_replication_package(pkg, meta = meta, ctx = ctx)
-    obj <- call_replication_package(pkg, "run_replication", what, install_deps = install_deps)
-    entries <- c(meta$prep %||% list(), meta$replications %||% list())
+    pkg_meta <- tryCatch(
+      read_package_replication_meta(pkg),
+      error = function(e) meta
+    )
+    obj <- run_package_replication(
+      pkg,
+      what,
+      meta = pkg_meta,
+      install_deps = install_deps
+    )
+    entries <- package_yaml_entries(pkg_meta)
+    if (length(entries) == 0L) {
+      entries <- package_yaml_entries(meta)
+    }
     rep_matches <- entries[vapply(entries, function(x) identical(x$id, what), logical(1))]
     rep <- if (length(rep_matches) > 0) {
       rep_matches[[1]]
     } else {
       list(id = what, type = "unknown", description = "Package-backed replication")
     }
+    has_fmt <- !is.null(rep$format) && nzchar(as.character(rep$format[[1]] %||% ""))
     return(structure(
       list(
         id = what,
         type = rep$type %||% "unknown",
         object = obj,
         format = infer_result_format(obj, rep$type %||% "unknown"),
-        has_format = TRUE,
+        has_format = has_fmt,
         meta = rep,
         source = "package"
       ),

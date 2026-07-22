@@ -1484,7 +1484,12 @@ nice_doi_choices <- function(index_df) {
       author <- format_author_label(row$authors[[1]])
       year <- row$year[[1]] %||% ""
       if (is.na(year)) year <- ""
-      paste0(author, if (nzchar(as.character(year))) paste0(" (", year, ")") else "")
+      title_snip <- truncate_label(row$title[[1]] %||% "", 16L)
+      paste0(
+        author,
+        if (nzchar(as.character(year))) paste0(" (", year, ")") else "",
+        if (nzchar(title_snip)) paste0(" ", title_snip) else ""
+      )
     }, character(1))
     values <- if ("doi" %in% names(idx) && any(nzchar(idx$doi))) {
       vapply(seq_len(nrow(idx)), function(i) {
@@ -3263,35 +3268,57 @@ contribute_tab_ui <- function() {
     "outputs/manifest.json"
   )
 
-  example_yaml <- paste0(
+  # Gold example: rep-template/replication.yml (faithful copy for Contribute display)
+  example_template_yaml <- paste0(
     "paper:\n",
-    "  doi: https://doi.org/10.1017/S0003055403000534\n",
-    "  title: Ethnicity, Insurgency, and Civil War\n",
+    "  study_handle: rep-template\n",
+    "  title: \"Minimal folder-backed template study\"\n",
+    "  year: 2026\n",
+    "  authors: ReplicateEverything Team\n",
+    "  abstract: >\n",
+    "    Unpublished template study for replicateEverything. Demonstrates a minimal\n",
+    "    folder-backed layout: CSV data, one estimatr table, HTML display output,\n",
+    "    and substantive tests. No journal article DOI.\n",
+    "  study_url: https://github.com/replicate-anything/rep-template\n",
     "  dependencies:\n",
-    "    - haven\n",
+    "    - estimatr\n",
     "    - modelsummary\n",
+    "    - kableExtra\n",
     "\n",
-    "repo: replicate-anything/rep-10.1017-S0003055403000534\n",
+    "maintainer:\n",
+    "  name: Macartan Humphreys\n",
+    "  email: macartan.humphreys@wzb.eu\n",
     "\n",
-    "maintainer:              # required — contact on the Studies tab\n",
-    "  name: Jane Maintainer\n",
-    "  email: maintainer@example.org\n",
+    "collections:\n",
+    "  - IPI\n",
     "\n",
-    "collections:             # optional tags for Studies tab filtering\n",
-    "  - APSR\n",
+    "repo: replicate-anything/rep-template\n",
     "\n",
     "languages:\n",
     "  - r\n",
     "\n",
-    "replications:\n",
+    "steps:\n",
     "  - id: tab_1\n",
     "    type: table\n",
-    "    label: Table 1\n",
-    "    data: data/repdata.dta\n",
+    "    label: Simple table showing from template repo\n",
+    "    description: OLS of Y on X with robust SEs (estimatr::lm_robust)\n",
+    "    engine: r\n",
+    "    data: data/data.csv\n",
+    "    inputs:\n",
+    "      - data/data.csv\n",
     "    code: code/tab_1.R\n",
     "    format: format_tab_1\n",
     "    outputs:\n",
-    "      - outputs/tab_1.html"
+    "      - outputs/tab_1.html\n",
+    "    dependencies:\n",
+    "      - estimatr\n",
+    "      - modelsummary\n",
+    "      - kableExtra\n",
+    "\n",
+    "  - id: tab_1_format\n",
+    "    type: format\n",
+    "    parent: tab_1\n",
+    "    code: code/tab_1.R"
   )
 
   example_make_format <- paste0(
@@ -3370,12 +3397,76 @@ contribute_tab_ui <- function() {
     "# writes index.csv with collections, maintainer_*, languages from stubs"
   )
 
-  example_package_api <- paste0(
-    "list_replications()\n",
-    "run_replication(\"fig_1\")\n",
-    "load_artifact(\"tab_1\")\n",
-    "get_code(\"fig_1\")\n",
-    "build_report()   # writes inst/report/artifacts/"
+  example_package_fns <- paste0(
+    "# Study package: export analysis helpers named in yaml only\n",
+    "make_tab_1 <- function(data) { ... }\n",
+    "format_tab_1 <- function(object) { ... }\n",
+    "\n",
+    "# Consumers call replicateEverything (these verbs are not in the study package):\n",
+    "library(replicateEverything)\n",
+    "check_replication(\".\")\n",
+    "run_replication(doi, \"tab_1\")\n",
+    "get_code(doi, \"tab_1\")\n",
+    "load_artifact(doi, \"tab_1\")\n",
+    "\n",
+    "build_report()   # optional study helper: writes inst/report/artifacts/"
+  )
+
+  example_shared_check <- paste0(
+    "library(replicateEverything)\n",
+    "\n",
+    "# Structure, outputs, optional live runs (works for folder or package studies):\n",
+    "check_replication(\".\", full_replication = FALSE)\n",
+    "\n",
+    "# Exercise the same APIs Shiny uses:\n",
+    "list_replications(\"local\")          # or the study DOI\n",
+    "run_replication(\"local\", \"tab_1\", format = TRUE)\n",
+    "get_code(\"local\", \"tab_1\")\n",
+    "load_artifact(\"local\", \"tab_1\")\n",
+    "\n",
+    "testthat::test_dir(\"tests/testthat\")\n",
+    "\n",
+    "# Preview in Shiny (Explore: study path, or blank when cwd is the repo):\n",
+    "configure_local_monorepo()\n",
+    "run_shiny_app()"
+  )
+
+  example_substantive <- paste0(
+    "# tests/substantive/tab_1.R  (published / known benchmarks)\n",
+    "substantive_check_tab_1 <- function(object, tolerance = 1e-5) {\n",
+    "  # compare coefficients / estimates on object from make_tab_1()\n",
+    "  ...\n",
+    "}\n",
+    "\n",
+    "# tests/testthat/test-tab_1.R sources it after a live run:\n",
+    "fit <- replicateEverything::run_replication(\"local\", \"tab_1\")\n",
+    "source(\"tests/substantive/tab_1.R\", local = TRUE)\n",
+    "substantive_check_tab_1(fit)"
+  )
+
+  example_maintainer_registry <- paste0(
+    "# Registry maintainer — after the study repo is ready:\n",
+    "library(replicateEverything)\n",
+    "options(replicateEverything.registry_root = \"../registry\")\n",
+    "\n",
+    "check_replication(\"../path/to/study\")\n",
+    "sync_study_to_registry(\"../path/to/study\")  # writes studies/<folder>.yml\n",
+    "refresh_registry(\"../registry\", audit = TRUE)  # rebuilds index.csv + audit\n",
+    "# commit registry: studies/<folder>.yml, index.csv"
+  )
+
+  example_contributor_pr <- paste0(
+    "# Contributor — before opening a registry PR:\n",
+    "library(replicateEverything)\n",
+    "options(replicateEverything.registry_root = \"../registry\")\n",
+    "\n",
+    "prepare_study_for_registry(\".\", build_artifacts = TRUE)\n",
+    "check_replication(\".\", full_replication = FALSE)\n",
+    "\n",
+    "# Sync a stub into your local registry checkout, rebuild index, then PR:\n",
+    "sync_study_to_registry(\".\")\n",
+    "build_registry_index(\"../registry\")\n",
+    "# open PR on replicate-anything/registry with studies/<folder>.yml + index.csv"
   )
 
   example_folder_build <- paste0(
@@ -3451,9 +3542,7 @@ contribute_tab_ui <- function() {
       class = "contribute-intro",
       "We invite contributions of replications to ",
       tags$strong("replicateEverything"),
-      ". Individual replications are saved in a dedicated folder or as a standalone R package, following a prespecified format. Once checked, they are included in the registry. Users can then use the ",
-      tags$strong("replicateEverything"),
-      " package and this Shiny app to inspect code and run replications live."
+      ". Once a study is checked and registered, users can inspect code and run replications live from this Shiny app and from the R package."
     ),
     contribute_prose(
       class = "text-muted mb-1",
@@ -3461,146 +3550,169 @@ contribute_tab_ui <- function() {
       tags$span(class = "contribute-hint-demo", "underlined terms"),
       " for copy-paste examples."
     ),
-    h4("How should replications be formatted?"),
-    contribute_prose("There are two approaches: a ", tags$strong("folder-backed study repository"), " or a ", tags$strong("package-backed"), " R package."),
 
     tags$div(
       class = "contribute-section",
-      h4("Folder-backed study repository"),
-      contribute_step_title("1. Create a study repository", "folder"),
+      h4("Start with replication.yml"),
       contribute_prose(
-        "Create a Git repository with three folders — ",
+        "The key to a compatible registry entry is a ",
+        contribute_hint(code("replication.yml"), example_template_yaml, "Template study yaml"),
+        " that maps the parts of a replication archive — paper metadata, maintainer, engines, and each step's code, data, and outputs. ",
+        tags$strong("replicateEverything"),
+        " reads that yaml and drives Display, Code, and Run; authors do not reimplement those verbs."
+      ),
+      tags$div(
+        class = "contribute-yaml-caption",
+        "Example from the gold template study ",
+        code("rep-template"),
+        ":"
+      ),
+      tags$pre(
+        class = "contribute-yaml-block",
+        htmltools::HTML(htmltools::htmlEscape(example_template_yaml))
+      )
+    ),
+
+    tags$div(
+      class = "contribute-section",
+      h4("Yaml and registry compatibility"),
+      contribute_prose(
+        "These fields and conventions live in the yaml (and the helpers it names). They apply to every study that joins the registry."
+      ),
+      tags$ul(
+        tags$li(
+          tags$strong("Maintainer. "),
+          "Every study must declare ",
+          code("maintainer:"),
+          " (name + email) — shown as ",
+          code("[maintainer]"),
+          " on the Studies tab."
+        ),
+        tags$li(
+          tags$strong("Collections. "),
+          "List one or more ",
+          code("collections:"),
+          " tags (e.g. ",
+          code("APSR"),
+          ", ",
+          code("PED"),
+          ", ",
+          code("World Bank"),
+          ", ",
+          code("IPI"),
+          ") so readers can filter the bibliography."
+        ),
+        tags$li(
+          tags$strong("Engines / languages. "),
+          "Declare top-level ",
+          code("languages:"),
+          " and per-step ",
+          code("engine:"),
+          " (",
+          code("r"),
+          ", ",
+          code("stata"),
+          ", and/or ",
+          code("python"),
+          "). Paired ids (e.g. ",
+          code("tab_1"),
+          " and ",
+          code("tab_1_stata"),
+          ") let both engines appear in Shiny."
+        ),
+        tags$li(
+          tags$strong("Steps. "),
+          "Each table, figure, or transform is one ",
+          code("steps:"),
+          " entry linking ",
+          code("code"),
+          ", ",
+          code("data"),
+          "/",
+          code("inputs"),
+          ", and ",
+          code("outputs"),
+          ". Prefer a ",
+          code("type: format"),
+          " child for display formatting."
+        ),
+        tags$li(
+          tags$strong("Analysis helpers. "),
+          "R steps define ",
+          contribute_hint(code("make_*() / format_*()"), example_make_format, "Analysis helpers"),
+          "; Stata/Python steps use the scripts named in yaml. Footers that call those helpers are optional."
+        ),
+        tags$li(
+          tags$strong("Substantive tests. "),
+          "When published or known benchmarks exist, add ",
+          contribute_hint(code("tests/substantive/<id>.R"), example_substantive, "Substantive benchmarks"),
+          " with a ",
+          code("substantive_check_<id>()"),
+          " and call it from ",
+          code("tests/testthat/"),
+          " after a live run. ",
+          code("check_replication()"),
+          " reports coverage of these checks."
+        ),
+        tags$li(
+          tags$strong("Validate via replicateEverything. "),
+          contribute_hint(code("check_replication()"), example_folder_check, "Validate a study"),
+          ", ",
+          contribute_hint(code("run_replication()"), example_folder_check, "Run one step"),
+          ", ",
+          code("list_replications()"),
+          ", ",
+          code("load_artifact()"),
+          ", and ",
+          code("get_code()"),
+          " live only in ",
+          tags$strong("replicateEverything"),
+          ". Checks exercise those APIs against your yaml and materials; do not put them in the study repo or study package."
+        )
+      )
+    ),
+
+    contribute_prose(
+      "There are then two approaches for ",
+      tags$strong("setting up"),
+      " the study materials: a ",
+      tags$strong("folder-backed study repository"),
+      " or a ",
+      tags$strong("package-backed"),
+      " R package. Checking and connecting with the registry are the same under both."
+    ),
+
+    tags$div(
+      class = "contribute-section",
+      h4("1a. Folder-backed study repository"),
+      contribute_prose(
+        tags$strong("Features. "),
+        "Dedicated Git repo with ",
         code("code/"),
         ", ",
         code("data/"),
         ", and ",
         code("outputs/"),
-        " — plus a ",
-        contribute_hint(code("replication.yml"), example_yaml),
-        " that tells replicateEverything how code, data, and outputs relate."
+        "; scripts on disk linked from yaml; R, Stata, and/or Python; good default for delivered archives and multi-engine papers."
       ),
       contribute_prose(
-        tags$strong("Maintainer and collections. "),
-        "Every study must name a ",
-        code("maintainer:"),
-        " (name + email) — shown as ",
-        code("[maintainer]"),
-        " on the Studies tab. List one or more ",
-        code("collections:"),
-        " tags (e.g. ",
-        code("APSR"),
-        ", ",
-        code("PED"),
-        ", ",
-        code("World Bank"),
-        ", ",
-        code("IPI"),
-        ") so readers can filter the bibliography. ",
-        code("prepare_study_for_registry()"),
-        " copies these fields into the registry stub and ",
-        code("index.csv"),
-        " row."
+        "Start from ",
+        code("rep-template"),
+        " or create a repo with ",
+        contribute_hint(code("code/ / data/ / outputs/"), example_folder_repo, "Study repo layout"),
+        " plus root ",
+        contribute_hint(code("replication.yml"), example_template_yaml, "Template study yaml"),
+        "."
       ),
       contribute_prose(
-        tags$strong("R, Stata, or both. "),
-        "Each table or figure is one entry in ",
-        code("replication.yml"),
-        ". Use ",
-        code("engine: stata"),
-        " and a ",
-        code(".do"),
-        " file for Stata; omit ",
-        code("engine"),
-        " (or use R scripts) for R. You may list paired entries (e.g. ",
-        code("tab_1"),
-        " and ",
-        code("tab_1_stata"),
-        ") so both engines appear in Shiny."
-      ),
-      contribute_prose(
-        tags$strong("Artifacts must be baked. "),
+        tags$strong("Bake display outputs. "),
         "Run ",
         contribute_hint(code("build_study_outputs()"), example_folder_build),
         " so ",
         code("outputs/"),
-        " contains precomputed HTML tables, figures, and ",
+        " holds precomputed HTML/figures and ",
         code("manifest.json"),
-        " for fast Display in Shiny."
-      ),
-
-      contribute_step_title("2. Check locally", "check"),
-      contribute_prose(
-        "Before contacting the registry maintainers, confirm your repo works with replicateEverything on your machine:"
-      ),
-      tags$ul(
-        tags$li(
-          contribute_hint(code("check_replication()"), example_folder_check, "Folder validation"),
-          " — structure, artifacts, and optional live runs."
-        ),
-        tags$li(
-          contribute_hint(code("run_replication()"), example_folder_check, "Run one replication"),
-          " — use ",
-          code('doi = "local"'),
-          " when your working directory is inside the study repo."
-        ),
-        tags$li(
-          "Launch ",
-          contribute_hint(code("run_shiny_app()"), example_local_dev, "Local Shiny + dev registry"),
-          " with ",
-          contribute_hint(code("configure_local_monorepo()"), example_local_dev, "Local monorepo"),
-          " or a development registry checkout. On the Explore tab, enter the path to your study repo (e.g. ",
-          code("c:/Users/you/my_repo/"),
-          " or ",
-          code("~/my_repo/"),
-          "), or leave the field blank when Shiny's working directory is inside the repo."
-        )
-      ),
-
-      contribute_step_title("3. Connect with the registry", "registry"),
-      contribute_prose("When local checks pass, add your study to the central registry:"),
-      tags$ul(
-        tags$li(
-          contribute_hint(code("prepare_study_for_registry()"), example_folder_build, "Prepare registry handoff"),
-          " — writes ",
-          code("registry/replication.yml"),
-          " and ",
-          code("registry/index.csv"),
-          " snippets inside your study repo."
-        ),
-        tags$li(
-          contribute_hint(code("sync_study_to_registry()"), example_sync_folder, "Maintainer — sync stub to registry"),
-          " — copies those stubs into your local ",
-          code("registry/"),
-          " checkout (or copy manually)."
-        ),
-        tags$li(
-          "Add a registry paper stub ",
-          code("studies/<folder>.yml"),
-          " with ",
-          contribute_hint(code("materials: folder"), example_folder_stub, "Registry stub fields"),
-          " pointing at your study repository (include ",
-          code("maintainer:"),
-          " and ",
-          code("collections:"),
-          ")."
-        ),
-        tags$li(
-          "Rebuild ",
-          code("index.csv"),
-          " with ",
-          contribute_hint(code("build_registry_index()"), example_build_registry_index, "Compile index from stubs"),
-          " so ",
-          code("collections"),
-          ", ",
-          code("maintainer_name"),
-          ", and ",
-          code("languages"),
-          " appear on the Studies tab."
-        ),
-        tags$li(
-          contribute_hint(code("add_folder_paper()"), example_registry_connect, "Register folder study"),
-          " — validates and opens a pull request (or follow your team's process)."
-        )
+        " for fast Display."
       ),
       p(
         class = "text-muted small",
@@ -3612,90 +3724,134 @@ contribute_tab_ui <- function() {
 
     tags$div(
       class = "contribute-section",
-      h4("Package-backed study"),
-      contribute_step_title("1. Create an R package", "package"),
+      h4("1b. Package-backed study"),
       contribute_prose(
-        "Scaffold manually or copy an existing study package. The package must export ",
-        contribute_hint(code("run_replication()"), example_package_api, "Required API"),
+        tags$strong("Features. "),
+        "Materials live in an R package (LazyData / ",
+        code("data/"),
+        ", functions in ",
+        code("R/"),
+        "); R only (Stata belongs in the folder-backed model); convenient when many tables/figures share packaged datasets."
+      ),
+      contribute_prose(
+        "Scaffold manually or copy an existing study package. Include ",
+        contribute_hint(code("replication.yml"), example_package_stub, "Package registry stub"),
+        " (and ",
+        code("inst/replication.yml"),
+        " for the installed package) with ",
+        code("paper.package"),
+        ", ",
+        code("maintainer:"),
+        ", and ",
+        code("collections:"),
+        ". Export only the ",
+        contribute_hint(code("make_*() / format_*()"), example_package_fns, "Study package helpers"),
+        " named in yaml — not ",
+        code("run_replication()"),
         ", ",
         code("list_replications()"),
         ", ",
         code("load_artifact()"),
-        ", and ",
+        ", or ",
         code("get_code()"),
-        ", and include ",
-        contribute_hint(code("replication.yml"), example_package_stub),
-        " describing each replication (include ",
-        code("maintainer:"),
-        " and ",
-        code("collections:"),
-        " at the top level)."
-      ),
-      contribute_prose(
-        tags$strong("R only. "),
-        "Package-backed studies use R. Stata replications belong in the folder-backed model."
+        "."
       ),
       contribute_prose(
         tags$strong("Bake display artifacts. "),
         "Run ",
         code("build_report()"),
-        " so ",
+        " (or ",
+        code("build_study_outputs()"),
+        ") so ",
         code("inst/report/artifacts/"),
         " holds PNG figures and HTML tables for Shiny Display."
-      ),
-
-      contribute_step_title("2. Check locally", "check"),
-      tags$ul(
-        tags$li(
-          code("tests/testthat/"),
-          " with replication smoke tests."
-        ),
-        tags$li(
-          contribute_hint(code("check_replication()"), example_package_check, "Package validation"),
-          " — structure, artifacts, and optional live ",
-          code("run_replication()"),
-          " calls."
-        ),
-        tags$li(
-          contribute_hint(code("run_shiny_app()"), example_local_dev, "Preview in Shiny"),
-          " after ",
-          contribute_hint(code("configure_local_monorepo()"), example_local_dev, "Dev registry"),
-          " and installing your package locally."
-        )
-      ),
-
-      contribute_step_title("3. Connect with the registry", "registry"),
-      tags$ul(
-        tags$li(
-          "Add ",
-          code("studies/<folder>.yml"),
-          " with ",
-          contribute_hint(code("materials: package"), example_package_stub, "Package registry stub"),
-          ", the package name, ",
-          code("maintainer:"),
-          ", and ",
-          code("collections:"),
-          "."
-        ),
-        tags$li(
-          "Rebuild ",
-          code("index.csv"),
-          " with ",
-          contribute_hint(code("build_registry_index()"), example_build_registry_index, "Compile index from stubs"),
-          " (or merge the row from ",
-          code("prepare_study_for_registry()"),
-          " for folder studies)."
-        ),
-        tags$li(
-          contribute_hint(code("add_paper()"), example_package_registry, "Register package study"),
-          " — validates the package against the registry and records it."
-        )
       ),
       p(
         class = "text-muted small",
         "See vignette ",
         code("package-replication-checklist"),
         "."
+      )
+    ),
+
+    tags$div(
+      class = "contribute-section",
+      contribute_step_title("2. Check locally", "check"),
+      contribute_prose(
+        "Same under both approaches: validate structure and exercise the ",
+        tags$strong("replicateEverything"),
+        " APIs against your study."
+      ),
+      tags$ul(
+        tags$li(
+          contribute_hint(code("check_replication()"), example_shared_check, "Validate a study"),
+          " — structure, outputs, substantive-check coverage, and optional live runs."
+        ),
+        tags$li(
+          contribute_hint(code("run_replication()"), example_shared_check, "Run one replication"),
+          " / ",
+          code("get_code()"),
+          " / ",
+          code("load_artifact()"),
+          " — use ",
+          code('doi = "local"'),
+          " when your working directory is inside the study (folder) or after the package is installed."
+        ),
+        tags$li(
+          code("tests/testthat/"),
+          " smoke tests, plus ",
+          contribute_hint(code("tests/substantive/"), example_substantive, "Substantive benchmarks"),
+          " when benchmarks exist."
+        ),
+        tags$li(
+          "Launch ",
+          contribute_hint(code("run_shiny_app()"), example_local_dev, "Local Shiny + dev registry"),
+          " with ",
+          contribute_hint(code("configure_local_monorepo()"), example_local_dev, "Local monorepo"),
+          "."
+        )
+      )
+    ),
+
+    tags$div(
+      class = "contribute-section",
+      contribute_step_title("3. Connect with the registry", "registry"),
+      contribute_prose(
+        "Same under both approaches. Choose one path:"
+      ),
+      tags$ul(
+        tags$li(
+          tags$strong("Contact the registry maintainer. "),
+          "Send the study repo (or package) once it passes local checks. The maintainer typically: re-validates with ",
+          code("check_replication()"),
+          ", runs ",
+          contribute_hint(code("sync_study_to_registry()"), example_maintainer_registry, "Maintainer sync"),
+          " to write ",
+          code("studies/<folder>.yml"),
+          " from your yaml, then ",
+          contribute_hint(code("refresh_registry()"), example_maintainer_registry, "Rebuild index + audit"),
+          " and deploys."
+        ),
+        tags$li(
+          tags$strong("Open a pull request on the registry. "),
+          "First sync a local registry checkout and confirm the stub + index look right: ",
+          contribute_hint(code("prepare_study_for_registry()"), example_contributor_pr, "Prepare then PR"),
+          ", ",
+          contribute_hint(code("sync_study_to_registry()"), example_contributor_pr, "Write stub"),
+          ", ",
+          contribute_hint(code("build_registry_index()"), example_build_registry_index, "Compile index"),
+          ". Then open a PR on ",
+          code("replicate-anything/registry"),
+          " with ",
+          code("studies/<folder>.yml"),
+          " and updated ",
+          code("index.csv"),
+          " (folder stubs use ",
+          contribute_hint(code("materials: folder"), example_folder_stub, "Folder stub"),
+          "; package stubs use ",
+          contribute_hint(code("materials: package"), example_package_stub, "Package stub"),
+          ")."
+        )
       )
     )
   )
@@ -4124,7 +4280,7 @@ code_setup_box_ui <- function(content) {
     class = "code-setup-step3",
     style = "white-space: pre-wrap;",
     content$step3 %||% content$one_liner %||%
-      "Prefer run_replication(doi, what)  (simplest)."
+      "Set your working directory to the study repository root, then run or paste the script below."
   )
   tags$details(
     class = "study-details-expand code-setup-expand mb-3",
@@ -4886,6 +5042,25 @@ ui <- tagList(
     }
     .contribute-intro { margin-bottom: 1rem; }
     .contribute-section { margin-bottom: 1.25rem; }
+    .contribute-yaml-caption {
+      font-size: 0.8rem;
+      color: #57606a;
+      margin: 0.25rem 0 0.4rem;
+    }
+    .contribute-yaml-block {
+      margin: 0 0 0.75rem;
+      max-height: 280px;
+      overflow: auto;
+      padding: 0.65rem 0.75rem;
+      background: #f6f8fa;
+      border: 1px solid #dce0e4;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: #24292f;
+      white-space: pre;
+    }
     .doi-input-field input::placeholder { color: #9aa0a6; }
     .replication-actions .btn {
       min-width: 3.25rem;

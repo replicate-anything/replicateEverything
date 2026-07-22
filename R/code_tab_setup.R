@@ -352,7 +352,7 @@ code_setup_box_content <- function(
   open_engines <- code_setup_open_engines(language, study_engines)
   open_names <- vapply(open_engines, engine_display_name, character(1))
 
-  # Shared tip with get_code() — yaml / run_replication(); no script-footer advice
+  # Shared tip with get_code() — how to use displayed code; no script-footer advice
   tip_engine <- tolower(as.character(language %||% "r")[[1]])
   tip_rep <- NULL
   tip_type <- NULL
@@ -395,25 +395,7 @@ code_setup_box_content <- function(
   } else {
     character(0)
   }
-  tip_args <- get_code_tip_call_args(doi_label, step_id)
-  prefer_one <- paste0(
-    "Prefer run_replication(", tip_args$doi, ", ", tip_args$what, ")  (simplest)."
-  )
-  one_liner <- if (length(advice)) {
-    hit <- grep("Prefer run_replication", advice, value = TRUE)[1L]
-    if (!is.na(hit) && nzchar(hit)) {
-      cleaned <- sub("^\\d+\\.\\s*", "", hit)
-      cleaned <- sub(",\\s*or:?\\s*$", ".", cleaned)
-      if (!grepl("\\.\\s*$", cleaned)) {
-        cleaned <- paste0(cleaned, ".")
-      }
-      cleaned
-    } else {
-      prefer_one
-    }
-  } else {
-    prefer_one
-  }
+  one_liner <- "Set your working directory to the study repository root, then run or paste the script below."
   step3 <- if (length(advice)) {
     paste(advice, collapse = "\n")
   } else if (length(open_names) == 1L) {
