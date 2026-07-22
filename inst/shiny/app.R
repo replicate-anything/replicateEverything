@@ -160,12 +160,12 @@ configure_registry_source <- function() {
   sibling_pkg <- file.path(sibling_root, "replicateEverything")
 
   if (dir.exists(sibling_registry) && file.exists(file.path(sibling_registry, "index.csv"))) {
+    # Point at the registry checkout only. Do not preload index.csv here —
+    # load_index() refreshes from studies/*.yml when collections are missing,
+    # which recovers after a thin Quarto rewrite of index.csv.
     options(
       replicateEverything.registry_root = sibling_registry,
-      replicateEverything.index = utils::read.csv(
-        file.path(sibling_registry, "index.csv"),
-        stringsAsFactors = FALSE
-      )
+      replicateEverything.index = NULL
     )
     message("Replicate Everything: using local registry at ", sibling_registry)
   } else {
