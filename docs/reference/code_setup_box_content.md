@@ -57,5 +57,5 @@ code_setup_box_content(
 
 ## Value
 
-List with `title`, `step1`, `step2`, `step2_prep`, `step3`, `repo_slug`,
-`repo_url`, and `zip_url`.
+List with `title`, `step1`, `step2`, `step2_prep`, `step3`, `one_liner`,
+`repo_slug`, `repo_url`, and `zip_url`.

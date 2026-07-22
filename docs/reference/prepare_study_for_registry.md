@@ -1,7 +1,11 @@
-# Prepare a study repository for registry handoff (contributor)
+# Validate a study repository before registry onboarding (contributor)
 
-Validates a folder- or package-backed study, then writes the short
-registry yaml and one-row `index.csv` into the study repository:
+Builds outputs (optional) and runs
+[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md).
+On success, the study is ready for a maintainer to register it with
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md),
+which writes the stub **only** into the central registry repository (not
+into the study repo).
 
 ## Usage
 
@@ -11,7 +15,8 @@ prepare_study_for_registry(
   build_artifacts = TRUE,
   install_deps = TRUE,
   full_replication = FALSE,
-  registry_root = NULL
+  registry_root = NULL,
+  write_handoff = FALSE
 )
 ```
 
@@ -37,30 +42,16 @@ prepare_study_for_registry(
 
   Optional registry checkout (passed to build/check helpers).
 
+- write_handoff:
+
+  If `TRUE`, also write a legacy study-local stub under `registry/` or
+  `inst/registry/` (not recommended; stubs belong in the registry repo).
+  Default `FALSE`.
+
 ## Value
 
-Invisibly, a checklist result with `registry_stub_path` and
-`registry_index_path` when successful.
-
-## Details
-
-- Folder studies: `registry/replication.yml` and `registry/index.csv`
-
-- Package studies: `inst/registry/replication.yml` and
-  `inst/registry/index.csv`
-
-This is the **contributor** step. A registry maintainer installs those
-files with
-[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
-and refreshes the central index with
-[`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md).
-
-Runs
-[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
-(optional), then
-[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
-and on success writes and validates the registry stub via
-[`write_study_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_study_registry_stub.md).
+Invisibly, a checklist result; when `write_handoff = TRUE` and checks
+pass, also includes `registry_stub_path` and `registry_index_path`.
 
 ## Examples
 

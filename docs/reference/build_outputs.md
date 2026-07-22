@@ -28,8 +28,9 @@ build_outputs(
 
 - doi:
 
-  Character DOI, or `"everywhere"` to build every registry study.
-  Ignored when `location` is set.
+  Character DOI, or `"everywhere"` to build every registry study that is
+  cloned locally in the monorepo (skips and lists studies without a
+  local checkout). Ignored when `location` is set.
 
 - what:
 
@@ -80,7 +81,8 @@ build_outputs(
 
 ## Value
 
-Invisibly `TRUE` on success.
+Invisibly `TRUE` on success for a single study, or (when
+`doi = "everywhere"`) a list with `built`, `skipped`, and `failures`.
 
 ## See also
 

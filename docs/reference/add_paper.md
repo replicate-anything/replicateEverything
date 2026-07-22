@@ -2,10 +2,11 @@
 
 Validates a study replication package with
 [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
-ensures registry handoff files exist (via
-[`write_study_registry_stub()`](https://replicate-anything.github.io/replicateEverything/reference/write_study_registry_stub.md)
-when missing), then installs the stub in a registry checkout via
+then installs a stub built from the study `replication.yml` into a
+registry checkout via
 [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md).
+Stub files are written only under the registry repository — not into the
+study package.
 
 ## Usage
 
@@ -55,8 +56,8 @@ with `stub_path` and `index_updated` when registration succeeds.
 
 Contributors should run
 [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-and open a pull request. Maintainers use this function from a local
-registry checkout.
+(validate / build). Maintainers use this function from a local registry
+checkout.
 
 Package-backed studies do **not** copy code, data, or artifacts into the
 registry. Those live in the study package (`inst/report/artifacts/` from

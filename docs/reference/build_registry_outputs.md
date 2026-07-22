@@ -38,4 +38,5 @@ build_registry_outputs(
 
 ## Value
 
-Invisibly `TRUE` if every build succeeds.
+Invisibly a list with `built`, `skipped`, and `failures` (character
+vectors of registry folder names / error strings).

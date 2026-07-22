@@ -207,11 +207,11 @@ display or artifact export.
 
 ### Pure definitions; yaml executes
 
-Authors write `make_*` / `format_*` only.
-[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.html)
-loads data from yaml, calls `make_*`, and applies `format_*` when requested.
-No interactive footer is required. For a copy-pasteable recipe, use
-`get_code(doi, what, mode = "run")` or prefer `run_replication(doi, what)`.
+Authors write `make_*` / `format_*` only. \[run_replication()\] loads
+data from yaml `data:` / `inputs:`, calls `make_*`, and applies
+`format_*` when requested. No interactive footer is required. For a
+copy-pasteable recipe, use `get_code(doi, what, mode = "run")` (appends
+the yaml-implied call) or prefer `run_replication(doi, what)` directly.
 
 ## Folder-backed replications
 

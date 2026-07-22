@@ -13,7 +13,7 @@ dispatch for registry-wide or single-study builds."><meta property="og:image" co
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,8 @@ dispatch for registry-wide or single-study builds.</p>
 
 <dl><dt id="arg-doi">doi<a class="anchor" aria-label="anchor" href="#arg-doi"></a></dt>
 <dd><p>Character DOI, or <code>"everywhere"</code> to build every registry
-study. Ignored when <code>location</code> is set.</p></dd>
+study that is cloned locally in the monorepo (skips and lists studies
+without a local checkout). Ignored when <code>location</code> is set.</p></dd>
 
 
 <dt id="arg-what">what<a class="anchor" aria-label="anchor" href="#arg-what"></a></dt>
@@ -117,7 +118,9 @@ artifacts already exist (see <code><a href="artifact_available.html">artifact_av
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly <code>TRUE</code> on success.</p>
+    <p>Invisibly <code>TRUE</code> on success for a single study, or (when
+<code>doi = "everywhere"</code>) a list with <code>built</code>, <code>skipped</code>, and
+<code>failures</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

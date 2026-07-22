@@ -26,7 +26,7 @@ replicateEverything::run_replication(
 ## Why bother?
 
 Computational replication has never been easier. But it is still a bit
-of a jungle. Archives are *ad hoc* in structure, paths differ,
+of a jungle. Archives are *ad hoc* in structure, paths shift,
 dependencies drift, and every new reader has to re-wrangle the
 collection of files they download from dataverse or osf. Plus there are
 no guarantees: Nobody runs a standing check that the archive still runs
@@ -127,7 +127,22 @@ You can pull the script any time:
 get_code("10.1017/S0003055403000534", "tab_1")
 ```
 
-## Wrinkles and features
+## Repo structures
+
+### The `yaml` is our big ask
+
+The main ask of repo contributors is that you provide a `yaml` file to
+accompany your repo.
+
+The `yaml` file is a simple text file that provides a map to making
+sense of your archive. Once `replicateEverything` has access to this
+file it knows what objects are produced, where the code is that makes
+them, where they fit in relation to each other, what their dependencies
+are, what languages they use, where their outputs get saved. From there
+it can put everything together, produce lovely output and expose code on
+demand. A basic `yaml` is easy to write and in the template rep we give
+a simple example in our
+[template](https://github.com/replicate-anything/rep-template/blob/main/replication.yml).
 
 ### Replication archives are DAGs
 
@@ -145,6 +160,8 @@ describe_study_dag("10.1017/S0003055403000534")
 See *Reanalysis and extension studies* for downstream repos that inherit
 upstream steps without duplicating code.
 
+## Wrinkles and features
+
 ### Reanalysis without redundancy
 
 You want to re-analyze a study with minimal alterations? Extension
@@ -158,9 +175,23 @@ Folder-backed studies may mix R, Stata, and Python. Pick the engine with
 `language =` when both exist. See
 [`vignette("stata-replications")`](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md).
 
+### Code exposure
+
+When you prepare a replication repository you have some discretion in
+how much code you expose and how much you tuck away out of view. Tucking
+things away can make code easier to read but also risks reducing
+transparency. `replicateEverything` uses two approaches to manage the
+trade off. First you can use the DAG structure to package separately
+discrete steps (like data preparation) that do not need to be rerun
+often but that users nevertheless might want to inspect and other steps
+where the most important action happens (analysis steps, perhaps).
+Second, when the `replicateEverything` shiny displays code that itself
+sources from other code files (`source(...)`) you can click on these
+sourcing lines to take you to nested code files.
+
 ### Collections
 
-Registry rows carry `collections` tags (`APSR`, `PED`, `IPI`,
+The registry rows carry `collections` tags (`APSR`, `PED`, `IPI`,
 `World Bank`, …) for filtering in the Shiny bibliography. To audit every
 study in a collection:
 

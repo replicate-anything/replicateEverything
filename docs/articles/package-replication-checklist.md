@@ -20,13 +20,13 @@ multi-table papers).
         make_figure_*.R             # analysis
         make_table_*.R
         format_*.R                  # display formatting
-        replication_api.R           # orchestration API (below)
+        build_report.R              # optional: bake Display artifacts
       inst/replication_code/        # synced copies for Code tab / get_code()
-      inst/registry/                 # handoff files (prepare_study_for_registry)
-        replication.yml
-        index.csv
       inst/report/artifacts/        # baked Display outputs (build_report())
       data/                         # analysis datasets (LazyData)
+      tests/
+        testthat/                   # smoke tests
+        substantive/                # optional published-value benchmarks
 
 ## Required `replication.yml` fields
 
@@ -79,7 +79,7 @@ replications:
 Rules:
 
 - `id` — short slug used by Shiny and
-  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  [`replicateEverything::run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
 - `type` — `figure` or `table`
 - `make` — exported function returning analysis output (`ggplot` or
   `data.frame` / `kableExtra`)
@@ -87,19 +87,22 @@ Rules:
   or HTML string)
 - `data` — package dataset name(s), not file paths
 
-## Required exported API
+## Study package surface
 
-Your package must export:
+Export the `make_*` / `format_*` helpers named in yaml (plus shared
+helpers and data). Optionally export `build_report()` to bake
+`inst/report/artifacts/`.
 
-| Function | Purpose |
-|----|----|
-| [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md) | Entries from `replication.yml` |
-| `replication_meta()` | Parsed yaml |
-| `run_replication(id)` | `make_*` then `format_*` |
-| `load_artifact(id)` | Display HTML or PNG path |
-| `artifact_file(id)` | Path to baked artifact file |
-| `get_code(id)` | Source for Code tab |
-| `build_report()` | Write `inst/report/artifacts/` |
+Do **not** put these in the study package — they live only in
+**replicateEverything**:
+
+| Function                   | Purpose                                |
+|----------------------------|----------------------------------------|
+| `list_replications(doi)`   | Entries from study yaml                |
+| `run_replication(doi, id)` | Calls package `make_*` then `format_*` |
+| `load_artifact(doi, id)`   | Display HTML or PNG path               |
+| `get_code(doi, id)`        | Source for Code tab                    |
+| `check_replication(".")`   | Validate package study                 |
 
 ## Artifacts (Display tab)
 
@@ -108,6 +111,7 @@ Run once before registering:
 ``` r
 
 build_report()
+# or: replicateEverything::build_study_outputs("rep1371journalpone0278337")
 ```
 
 This writes:
@@ -120,7 +124,7 @@ The registry stub does **not** store artifacts.
 
 ## Prepare and register
 
-### Contributor: validate and write handoff files
+### Contributor: validate
 
 ``` r
 
@@ -130,10 +134,8 @@ prepare_study_for_registry(
   "../rep-10.1371-journal.pone.0278337",
   build_artifacts = TRUE
 )
+check_replication("../rep-10.1371-journal.pone.0278337")
 ```
-
-Writes `inst/registry/replication.yml` and `inst/registry/index.csv` in
-the package source tree. Commit these with your study PR.
 
 ### Maintainer: sync into the central registry
 

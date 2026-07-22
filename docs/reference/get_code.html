@@ -21,7 +21,7 @@ and omitted for Stata."><meta property="og:image" content="https://replicate-any
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,6 +62,7 @@ and omitted for Stata.</p>
 <span>  <span class="va">what</span>,</span>
 <span>  language <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  style <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"inline"</span>, <span class="st">"source"</span><span class="op">)</span>,</span>
+<span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"definitions"</span>, <span class="st">"run"</span><span class="op">)</span>,</span>
 <span>  repo <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  folder <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -88,6 +89,12 @@ and omitted for Stata.</p>
 copy-paste) or <code>"source"</code> (raw runner only, for linked inspection in Shiny).</p></dd>
 
 
+<dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
+<dd><p><code>"definitions"</code> (default) returns the stored script (pure
+function definitions). <code>"run"</code> appends a yaml-implied execute recipe
+(load <code>data:</code>, call <code>make_*</code>, pipe <code>format_*</code> when applicable).</p></dd>
+
+
 <dt id="arg-repo">repo<a class="anchor" aria-label="anchor" href="#arg-repo"></a></dt>
 <dd><p>Optional repository slug.</p></dd>
 
@@ -102,7 +109,15 @@ copy-paste) or <code>"source"</code> (raw runner only, for linked inspection in 
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>For package-backed studies, reads <code>inst/replication_code/*.R</code> from the
+    <p>Scripts keep pure <code>make_*</code> / <code>format_*</code> definitions; the package
+orchestrates load \(\rightarrow\) make \(\rightarrow\) format via
+<code><a href="run_replication.html">run_replication()</a></code> using <code>replication.yml</code> as the single source of truth.
+Authors do not need an interactive <code><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">sys.nframe()</a></code> footer. Use
+<code>mode = "run"</code> when you want script text that appends a yaml-implied
+load \(\rightarrow\) make \(\rightarrow\) format expression so
+<code>eval(parse(text = ...))</code> can produce the object (working directory =
+study root).</p>
+<p>For package-backed studies, reads <code>inst/replication_code/*.R</code> from the
 study package GitHub repo when the package is not installed (same idea as
 reading <code>code/*.R</code> from the registry repo).</p>
     </div>
@@ -112,6 +127,7 @@ reading <code>code/*.R</code> from the registry repo).</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">get_code</span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">get_code</span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"tab_1"</span>, language <span class="op">=</span> <span class="st">"stata"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">get_code</span><span class="op">(</span><span class="st">"rep-template"</span>, <span class="st">"tab_1"</span>, mode <span class="op">=</span> <span class="st">"run"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

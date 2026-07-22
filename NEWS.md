@@ -1,3 +1,24 @@
+# replicateEverything 0.6.18
+
+## Shiny Contribute tab
+
+* Restructured Contribute into numbered prep / check / registry sections:
+  **1** Prep (`1.1` yaml elements only with click-to-open
+  `rep-template` modal; `1.2` folder- vs package-backed layout plus common
+  substantive-test guidance; `1.3` bake outputs via
+  [build_study_outputs()] only); **2** Check locally (`2.1` validate +
+  testthat; `2.2` API play-well checks); **3** Connect with the registry
+  (maintainer sync or contributor PR).
+* Contribute no longer recommends study-package `build_report()` (a thin
+  alias of [build_study_outputs()]) or `configure_local_monorepo()` for
+  external contributors. `build_report()` remains available in package
+  study repos for local/CI convenience. Missing-output Display hints now
+  also point at [build_study_outputs()] for package studies.
+* Package-backed Contribute copy now says study packages must not
+  **define or ship** `run_replication()` / `list_replications()` /
+  `load_artifact()` / `get_code()` (not merely "don't export" them);
+  export only yaml-named `make_*` / `format_*` and true study helpers.
+
 # replicateEverything 0.6.17
 
 ## Shiny Contribute tab

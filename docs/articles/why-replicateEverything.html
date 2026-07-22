@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,8 +103,8 @@ TL;DR — just do this
 <h2 id="why-bother">Why bother?<a class="anchor" aria-label="anchor" href="#why-bother"></a>
 </h2>
 <p>Computational replication has never been easier. But it is still a
-bit of a jungle. Archives are <em>ad hoc</em> in structure, paths
-differ, dependencies drift, and every new reader has to re-wrangle the
+bit of a jungle. Archives are <em>ad hoc</em> in structure, paths shift,
+dependencies drift, and every new reader has to re-wrangle the
 collection of files they download from dataverse or osf. Plus there are
 no guarantees: Nobody runs a standing check that the archive still runs
 today.</p>
@@ -186,8 +186,22 @@ plots; the default returns raw analysis objects (models,
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_code.html">get_code</a></span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"tab_1"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="wrinkles-and-features">Wrinkles and features<a class="anchor" aria-label="anchor" href="#wrinkles-and-features"></a>
+<h2 id="repo-structures">Repo structures<a class="anchor" aria-label="anchor" href="#repo-structures"></a>
 </h2>
+<div class="section level3">
+<h3 id="the-yaml-is-our-big-ask">The <code>yaml</code> is our big ask<a class="anchor" aria-label="anchor" href="#the-yaml-is-our-big-ask"></a>
+</h3>
+<p>The main ask of repo contributors is that you provide a
+<code>yaml</code> file to accompany your repo.</p>
+<p>The <code>yaml</code> file is a simple text file that provides a map
+to making sense of your archive. Once <code>replicateEverything</code>
+has access to this file it knows what objects are produced, where the
+code is that makes them, where they fit in relation to each other, what
+their dependencies are, what languages they use, where their outputs get
+saved. From there it can put everything together, produce lovely output
+and expose code on demand. A basic <code>yaml</code> is easy to write
+and in the template rep we give a simple example in our <a href="https://github.com/replicate-anything/rep-template/blob/main/replication.yml" class="external-link">template</a>.</p>
+</div>
 <div class="section level3">
 <h3 id="replication-archives-are-dags">Replication archives are DAGs<a class="anchor" aria-label="anchor" href="#replication-archives-are-dags"></a>
 </h3>
@@ -202,6 +216,10 @@ scratch.</p>
 <p>See <em>Reanalysis and extension studies</em> for downstream repos
 that inherit upstream steps without duplicating code.</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="wrinkles-and-features">Wrinkles and features<a class="anchor" aria-label="anchor" href="#wrinkles-and-features"></a>
+</h2>
 <div class="section level3">
 <h3 id="reanalysis-without-redundancy">Reanalysis without redundancy<a class="anchor" aria-label="anchor" href="#reanalysis-without-redundancy"></a>
 </h3>
@@ -219,12 +237,27 @@ with <code>language =</code> when both exist. See
 <code><a href="../articles/stata-replications.html">vignette("stata-replications")</a></code>.</p>
 </div>
 <div class="section level3">
+<h3 id="code-exposure">Code exposure<a class="anchor" aria-label="anchor" href="#code-exposure"></a>
+</h3>
+<p>When you prepare a replication repository you have some discretion in
+how much code you expose and how much you tuck away out of view. Tucking
+things away can make code easier to read but also risks reducing
+transparency. <code>replicateEverything</code> uses two approaches to
+manage the trade off. First you can use the DAG structure to package
+separately discrete steps (like data preparation) that do not need to be
+rerun often but that users nevertheless might want to inspect and other
+steps where the most important action happens (analysis steps, perhaps).
+Second, when the <code>replicateEverything</code> shiny displays code
+that itself sources from other code files (<code>source(...)</code>) you
+can click on these sourcing lines to take you to nested code files.</p>
+</div>
+<div class="section level3">
 <h3 id="collections">Collections<a class="anchor" aria-label="anchor" href="#collections"></a>
 </h3>
-<p>Registry rows carry <code>collections</code> tags (<code>APSR</code>,
-<code>PED</code>, <code>IPI</code>, <code>World Bank</code>, …) for
-filtering in the Shiny bibliography. To audit every study in a
-collection:</p>
+<p>The registry rows carry <code>collections</code> tags
+(<code>APSR</code>, <code>PED</code>, <code>IPI</code>,
+<code>World Bank</code>, …) for filtering in the Shiny bibliography. To
+audit every study in a collection:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span></code></pre></div>
 </div>

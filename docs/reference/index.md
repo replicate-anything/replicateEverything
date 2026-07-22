@@ -45,16 +45,14 @@ Browse studies and run replications interactively.
 
 Validate studies and prepare registry handoff files in the study repo.
 
-- [`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
-  [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
-  [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
-  : Build display outputs for a package-backed study
+- [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
+  : Build display outputs for a study repository
 - [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   : Validate a folder-backed replication study
 - [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-  : Prepare a study repository for registry handoff (contributor)
+  : Validate a study repository before registry onboarding (contributor)
 - [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md)
   : List bundled AI skills
 - [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md)
@@ -81,7 +79,7 @@ Probe and install study dependencies; sync studies into the registry.
 - [`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md)
   : Maintainer guidance when dependencies or executables are missing
 - [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
-  : Sync a prepared study into the registry repository (maintainer)
+  : Sync a study into the registry repository (maintainer)
 - [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
   : Compile registry index.csv from study stub yaml files
 - [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md)

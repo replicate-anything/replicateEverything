@@ -1,6 +1,7 @@
 # Candidate display artifact paths under `outputs/`
 
-Candidate display artifact paths under `outputs/`
+Prefers displayable paths from `outputs:` (html/png/rds/svg). The legacy
+`artifact:` field is accepted only as a deprecated fallback.
 
 ## Usage
 

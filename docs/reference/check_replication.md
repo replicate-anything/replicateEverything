@@ -67,10 +67,10 @@ A list with `ok` (logical), `checks` (data frame), and `study_path` or
 
 - `check_package_replication()`: Package-backed implementation.
 
-  Runs a transparent checklist: package layout, `replication.yml`,
-  exported API, baked artifacts, substantive (published-value) checks
-  under `tests/substantive/`, and (optionally) live execution of every
-  table and figure.
+  Runs a transparent checklist: package layout, `replication.yml`, study
+  `make_*` / `format_*` helpers, baked artifacts, substantive
+  (published-value) checks under `tests/substantive/`, and (optionally)
+  live execution of every table and figure via replicateEverything.
 
 ## Examples
 

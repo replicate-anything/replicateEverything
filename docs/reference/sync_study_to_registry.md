@@ -1,8 +1,10 @@
-# Sync a prepared study into the registry repository (maintainer)
+# Sync a study into the registry repository (maintainer)
 
-Reads the short registry yaml from the study repository (`registry/` or
-`inst/registry/`), copies it to `studies/<folder>.yml` in a registry
-checkout, and rebuilds `index.csv` via
+Builds a lightweight registry stub from the study's root
+`replication.yml` (via
+[`build_registry_stub_from_meta()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_stub_from_meta.md))
+and writes it to `studies/<folder>.yml` in a registry checkout, then
+rebuilds `index.csv` via
 [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md).
 
 ## Usage
@@ -58,11 +60,9 @@ optional `audit`.
 
 ## Details
 
-This is a **maintainer** function. Contributors should run
-[`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-and open a pull request; maintainers run this (or
-[`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md))
-from a local registry checkout.
+Stub and index files belong in the **registry** repository only — not in
+the study repo. Study-local `registry/` or `inst/registry/` handoff
+folders are not required.
 
 ## Examples
 

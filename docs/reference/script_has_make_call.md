@@ -1,7 +1,8 @@
 # Whether script lines call make\_() outside its definition
 
-Used to verify table/figure scripts expose an executable replication
-path (footer that builds and optionally formats the display object).
+Detects optional top-level / footer calls. Not required for Live Run —
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+loads definitions and calls `make_*` from yaml.
 
 ## Usage
 

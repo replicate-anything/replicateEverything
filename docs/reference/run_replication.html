@@ -11,7 +11,7 @@ steps; format children run only when format = TRUE).'><meta property="og:image" 
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,7 +47,7 @@ steps; format children run only when <code>format = TRUE</code>).</p>
 <span>  <span class="va">what</span>,</span>
 <span>  language <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  given <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  force <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  force <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  install_deps <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  format <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  repo <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -84,7 +84,11 @@ upstream DAG). May also be a character vector of step ids.</p></dd>
 
 
 <dt id="arg-force">force<a class="anchor" aria-label="anchor" href="#arg-force"></a></dt>
-<dd><p>Logical. Re-run steps even when outputs already exist.</p></dd>
+<dd><p>Logical. Re-run steps even when declared <code>outputs/</code> already
+exist. Defaults to <code>TRUE</code>: <code>run_replication()</code> is a live Run (unlike
+Display / <code><a href="load_artifact.html">load_artifact()</a></code>, which use precomputed files). Set
+<code>force = FALSE</code> to reuse existing upstream outputs when present; the
+target step still recomputes.</p></dd>
 
 
 <dt id="arg-install-deps">install_deps<a class="anchor" aria-label="anchor" href="#arg-install-deps"></a></dt>

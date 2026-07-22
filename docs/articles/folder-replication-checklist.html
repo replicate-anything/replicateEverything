@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -187,14 +187,16 @@ automatically when the study is loaded.</p>
 <span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="at">    </span><span class="fu">parent</span><span class="kw">:</span><span class="at"> fig_1</span></span>
 <span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/format_fig_1.R</span></span>
 <span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">outputs/fig_1_display.png</span><span class="kw">]</span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a></span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="at">    </span><span class="fu">parents</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">prep_data</span><span class="kw">]</span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">outputs/tab_1.html</span><span class="kw">]</span></span></code></pre></div>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">    # no label: — format children are sidebar-hidden wiring</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="at">    </span><span class="fu">parents</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">prep_data</span><span class="kw">]</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">outputs/tab_1.html</span><span class="kw">]</span></span></code></pre></div>
 <p>Format steps (<code>type: format</code>) run when
-<code>run_replication(..., format = TRUE)</code>.</p>
+<code>run_replication(..., format = TRUE)</code>. Omit
+<code>label:</code> on format children (unused in Display).</p>
 </div>
 <div class="section level2">
 <h2 id="workflow-from-the-study-repo">Workflow from the study repo<a class="anchor" aria-label="anchor" href="#workflow-from-the-study-repo"></a>

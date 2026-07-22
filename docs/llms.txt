@@ -152,7 +152,8 @@ replications:
     description: Example figure
     data: data/fig_1.csv
     code: code/fig_1.R
-    artifact: outputs/fig_1.png
+    outputs:
+      - outputs/fig_1.png
     dependencies:
       - ggplot2
 
@@ -163,7 +164,8 @@ replications:
     data: data/tab_1.csv
     code: code/tab_1.R
     format: format_tab_1
-    artifact: outputs/tab_1.html
+    outputs:
+      - outputs/tab_1.html
     dependencies:
       - dplyr
       - gt
@@ -203,21 +205,13 @@ When `replication.yml` lists a `format` field, the package passes the
 analysis output through the corresponding `format_*` function before
 display or artifact export.
 
-### Self-contained scripts
+### Pure definitions; yaml executes
 
-Scripts can also be run directly from the paper folder. Use
-[`self_run()`](https://replicate-anything.github.io/replicateEverything/reference/self_run.md)
-at the bottom of a script so the package can source only the function
-definitions:
-
-``` r
-
-if (sys.nframe() == 0) {
-  self_run(make_fig_1, "data/fig_1.csv")
-} else {
-  generate_figure <- make_fig_1
-}
-```
+Authors write `make_*` / `format_*` only. \[run_replication()\] loads
+data from yaml `data:` / `inputs:`, calls `make_*`, and applies
+`format_*` when requested. No interactive footer is required. For a
+copy-pasteable recipe, use `get_code(doi, what, mode = "run")` (appends
+the yaml-implied call) or prefer `run_replication(doi, what)` directly.
 
 ## Folder-backed replications
 
@@ -522,16 +516,14 @@ Browse studies and run replications interactively.
 
 Validate studies and prepare registry handoff files in the study repo.
 
-- [`build_package_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
-  [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
-  [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
-  : Build display outputs for a package-backed study
+- [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
+  : Build display outputs for a study repository
 - [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   : Validate a folder-backed replication study
 - [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-  : Prepare a study repository for registry handoff (contributor)
+  : Validate a study repository before registry onboarding (contributor)
 - [`ai_skills()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skills.md)
   : List bundled AI skills
 - [`ai_skill()`](https://replicate-anything.github.io/replicateEverything/reference/ai_skill.md)
@@ -558,7 +550,7 @@ Probe and install study dependencies; sync studies into the registry.
 - [`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md)
   : Maintainer guidance when dependencies or executables are missing
 - [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
-  : Sync a prepared study into the registry repository (maintainer)
+  : Sync a study into the registry repository (maintainer)
 - [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
   : Compile registry index.csv from study stub yaml files
 - [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md)

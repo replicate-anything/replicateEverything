@@ -1,6 +1,8 @@
-# Checklist: R table/figure scripts call make\_() (executable path)
+# Checklist: R table/figure scripts define make\_()
 
-Checklist: R table/figure scripts call make\_() (executable path)
+Footers / top-level calls are optional; yaml +
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+execute.
 
 ## Usage
 

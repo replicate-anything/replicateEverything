@@ -1,8 +1,11 @@
 # Load only function definitions from a replication script
 
-Skips the self-run footer so top-level execution (data load + pipe) does
-not run when the package sources the file. Also evaluates safe top-level
-constants referenced by sourced helper functions.
+Skips top-level execution (data load + pipe / legacy interactive
+footers) when the package sources the file. Also evaluates safe
+top-level constants referenced by sourced helper functions. Authors only
+need pure `make_*` / `format_*` definitions;
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+supplies the execute recipe from `replication.yml`.
 
 ## Usage
 

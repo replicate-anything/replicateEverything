@@ -1,5 +1,228 @@
 # Changelog
 
+## replicateEverything 0.6.18
+
+### Shiny Contribute tab
+
+- Restructured Contribute into numbered prep / check / registry
+  sections: **1** Prep (`1.1` yaml elements only with click-to-open
+  `rep-template` modal; `1.2` folder- vs package-backed layout plus
+  common substantive-test guidance; `1.3` bake outputs via
+  \[build_study_outputs()\] only); **2** Check locally (`2.1` validate +
+  testthat; `2.2` API play-well checks); **3** Connect with the registry
+  (maintainer sync or contributor PR).
+- Contribute no longer recommends study-package `build_report()` (a thin
+  alias of \[build_study_outputs()\]) or
+  [`configure_local_monorepo()`](https://replicate-anything.github.io/replicateEverything/reference/configure_local_monorepo.md)
+  for external contributors. `build_report()` remains available in
+  package study repos for local/CI convenience. Missing-output Display
+  hints now also point at \[build_study_outputs()\] for package studies.
+- Package-backed Contribute copy now says study packages must not
+  **define or ship**
+  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  /
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  /
+  [`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md)
+  /
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  (not merely “don’t export” them); export only yaml-named `make_*` /
+  `format_*` and true study helpers.
+
+## replicateEverything 0.6.17
+
+### Shiny Contribute tab
+
+- Restructured Contribute guidance: lead with `replication.yml`, then
+  yaml / registry compatibility (maintainer, collections, engines,
+  steps, analysis helpers, substantive tests, validate via
+  replicateEverything APIs), then the two setup approaches (folder vs
+  package), then shared check + shared registry connect (maintainer sync
+  or contributor PR).
+- Copy now states that
+  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  /
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  /
+  [`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md)
+  /
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  live only in replicateEverything and must not appear in study repos or
+  study packages.
+
+### Package-backed studies
+
+- Package runners no longer require study packages to export those
+  verbs.
+  [`run_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_package_replication.md)
+  calls study `make_*` / `format_*` from yaml (legacy wrappers still
+  work if present).
+- [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+  fails if a study package still exports the legacy verbs; recommends
+  `build_report()` and checks `make_*` / `format_*`.
+
+## replicateEverything 0.6.16
+
+### Shiny Contribute tab
+
+- Contribute copy now leads with `replication.yml` (gold example from
+  `rep-template`), then shared guidance (maintainer, collections,
+  engines, steps, validate via replicateEverything APIs), then the two
+  packaging approaches with their specific features.
+- Package-backed section no longer claims study packages must export
+  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  /
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  /
+  [`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md)
+  /
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  — those verbs live in replicateEverything; study packages supply yaml
+  plus `make_*` / `format_*` (and bake artifacts).
+
+## replicateEverything 0.6.15
+
+### Shiny Code tab / get_code guidance
+
+- Code-tab display annotations no longer append R `make_*` /
+  [`haven::read_dta`](https://haven.tidyverse.org/reference/read_dta.html)
+  footers to Stata or Python scripts. Those commented yaml-implied
+  recipes are R-only (defs without a top-level call).
+- \[get_code_run_advice()\] (shared by \[get_code()\] tips and Code tab
+  step 3) drops “Prefer run_replication” — that path does not use the
+  displayed script. Guidance now states the study-root working directory
+  once, then lists engine-appropriate options (do / python /
+  yaml-implied / paste).
+
+## replicateEverything 0.6.14
+
+### Shiny study selector
+
+- Dropdown labels append a short title snippet (first ~16 characters,
+  ellipsis if truncated) so same-author same-year studies are
+  distinguishable (e.g. `Acemoglu et al (2001) Colonial Origins...`).
+
+## replicateEverything 0.6.13
+
+### Shiny Code tab
+
+- **See here for guidance…** outer collapse is a distinct subtle box
+  (cool tint + left accent) so it stands apart from the code viewers.
+
+## replicateEverything 0.6.12
+
+### Single build entrypoint
+
+- Removed public/documented aliases `build_package_artifacts()` and
+  `build_study_artifacts()`. Use \[build_study_outputs()\] only; it
+  already dispatches to package- vs folder-backed implementations
+  (`build_package_outputs_impl` / `build_folder_outputs_impl`,
+  unexported).
+- \[build_study_outputs()\] creates `outputs/` when missing and wires
+  DAG parent `outputs:` into child `inputs:` / `data:` via
+  \[replication_data_paths()\].
+- \[build_outputs()\] with `doi = "everywhere"` builds only studies
+  cloned in the local monorepo; skipped studies are listed in the return
+  value and messages.
+
+### Shiny Code tab
+
+- Code tab order: One-line replication → **Full replication code**
+  subtitle → collapsed **See here for guidance…** (three nested
+  collapsed steps) → code viewer. Step 3 uses shared
+  \[get_code_run_advice()\] (no script-footer tip).
+
+## replicateEverything 0.6.11
+
+### Yaml is the execute recipe (no required script footers)
+
+- Authors write pure `make_*` / `format_*` (or Stata/Python
+  equivalents). Interactive `sys.nframe() == 0` footers are optional and
+  not required.
+- \[get_code()\] tips are engine- and yaml-aware numbered lists under
+  “To produce the table/figure/step:”: prefer \[run_replication()\]
+  first; R also shows the yaml-implied load → make → format call and
+  `eval(parse(text = get_code(..., mode = "run")))`; Stata/Python point
+  to `do` / `python` from the study root (no `eval(parse)` option).
+- \[get_code()\] `mode = "run"` always appends the yaml-implied recipe
+  (does not rely on ungating a footer).
+- Folder checks only require that R table/figure scripts *define*
+  `make_*`.
+- Shiny Code tab: expandable setup steps; always-visible one-liner tip;
+  step 3 uses the same \[get_code()\] run advice (no footer guidance).
+- Agent skills under `inst/ai/skills/` document minimal yaml, pure
+  helpers, and maintainer \[sync_study_to_registry()\] (no study-local
+  registry handoff).
+
+## replicateEverything 0.6.10
+
+### get_code modes and usage tip
+
+- \[get_code()\] gains `mode = c("definitions", "run")` (default
+  `"definitions"`). `"run"` appends a yaml-implied load → make → format
+  expression so `eval(parse(text = ...))` can produce the object (study
+  root as working directory).
+- Calling \[get_code()\] prints a short tip tailored by engine and step
+  type. Suppress with
+  `options(replicateEverything.quiet_get_code = TRUE)`.
+
+## replicateEverything 0.6.9
+
+### Live Run by default
+
+- \[run_replication()\] now defaults to **`force = TRUE`**: the
+  requested step always recomputes. Display / \[load_artifact()\] still
+  use precomputed `outputs/` files. Set `force = FALSE` to reuse
+  existing **upstream** outputs when present; the target step still runs
+  live.
+- \[execute_study_plan()\] never skips the target step as “Using
+  existing output” (that message is only for non-target ancestors when
+  `force = FALSE`).
+
+## replicateEverything 0.6.8
+
+### Display paths from `outputs:` only
+
+- Folder-backed (and package) studies declare display products under
+  **`outputs:`** only. The redundant **`artifact:`** field is no longer
+  documented; \[study_artifact_rel_path()\] prefers the first
+  displayable `outputs:` path (html/png/rds/svg) and treats `artifact:`
+  as a deprecated fallback for older yaml.
+- Skills, README, Shiny Contribute examples, and fixtures updated
+  accordingly.
+
+## replicateEverything 0.6.7
+
+### Registry stubs from study yaml (no study-local handoff)
+
+- \[sync_study_to_registry()\] builds the registry stub from the study
+  root `replication.yml` and writes **only** into the registry checkout
+  (`studies/<folder>.yml` + rebuilt `index.csv`). Study repos no longer
+  need a `registry/` or `inst/registry/` handoff folder.
+- \[prepare_study_for_registry()\] validates / optionally builds
+  outputs; does not write study-local stubs by default
+  (`write_handoff = TRUE` keeps the legacy path). \[add_folder_paper()\]
+  / \[add_paper()\] likewise sync without writing handoff into the
+  study.
+- Folder stubs include `study_handle` (and related fields) when the
+  study has no article DOI. Skill `include_study_in_registry.md`
+  updated.
+- \[check_replication()\] live Run for folder studies uses
+  `study_handle` when there is no article DOI (fixes length-zero DOI
+  lookup). Analysis objects are kept unformatted so substantive checks
+  receive models, not HTML.
+
+## replicateEverything 0.6.6
+
+### Shiny welcome modal reactive-context fix
+
+- Fixed crash on session start: `session$onFlushed` called
+  `invalidateLater()` and read `session$clientData` outside a reactive
+  consumer. Delay is armed with `isolate(welcome_defer_until(...))`;
+  `invalidateLater` and the modal run only inside `observe()`. Deep-link
+  queue writes use `isolate()`; one-shot flags are a plain environment
+  (safe from nested callbacks).
+
 ## replicateEverything 0.6.4
 
 ### Audit runtime categories and Shiny Run advice
@@ -114,7 +337,8 @@
   `validate_artifact()`, `validate_paper_artifacts()`,
   `validate_study_artifacts()`, and `validate_registry_artifacts()`. Use
   `doi = "everywhere"` and `what = "everything"` for registry-wide
-  checks. The kind-specific functions remain internal.
+  checks. Kind-specific check helpers remain internal; build helpers
+  were later folded into \[build_study_outputs()\] (0.6.12).
 - Removed deprecated exports: `list_replication_groups()`,
   [`list_prep_steps()`](https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.md),
   `prepare_folder_paper()`, and `sync_folder_paper()`.
@@ -256,7 +480,7 @@
   ftools/reghdfe/estout. Live Run probes only; `install_stata_deps.do`
   runs only when
   `options(replicateEverything.install_stata_deps = TRUE)`
-  (e.g. `build_study_artifacts(install_deps = TRUE)`).
+  (e.g. `build_study_outputs(install_deps = TRUE)`).
 - Stata dependency probe and study `install_stata_deps.do` load tests
   use `help reghdfe` instead of bare `reghdfe` where applicable (study
   probe script). Invoking `reghdfe` with no data returns r(301) even
@@ -363,9 +587,9 @@
 
 ### Folder-backed study workflow
 
-- [`build_study_artifacts()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
+- [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
   — run replications and write `outputs/` + `manifest.json` from a study
-  repo.
+  repo (formerly `build_study_artifacts()`).
 - [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
   — pre-merge checklist (layout, yaml, code/data paths, artifacts,
   tests).

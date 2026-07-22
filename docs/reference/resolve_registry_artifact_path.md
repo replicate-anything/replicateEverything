@@ -4,8 +4,9 @@ The artifact location comes from a single rule –
 [`study_artifact_rel_path()`](https://replicate-anything.github.io/replicateEverything/reference/study_artifact_rel_path.md)
 (first displayable path from `outputs:` in `replication.yml`, or the
 type-based default). Builds write to that same path, so lookup is
-deterministic: return the local file when present, otherwise the registry
-URL. Availability of the remote file is decided by the actual fetch in
+deterministic: return the local file when present, otherwise the
+registry URL. Availability of the remote file is decided by the actual
+fetch in
 [`load_artifact_file_path()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact_file_path.md),
 not by a separate existence probe.
 

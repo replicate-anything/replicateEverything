@@ -104,7 +104,8 @@ steps:
 ```
 
 Format steps (`type: format`) run when
-`run_replication(..., format = TRUE)`.
+`run_replication(..., format = TRUE)`. Omit `label:` on format children
+(unused in Display).
 
 ## Workflow from the study repo
 

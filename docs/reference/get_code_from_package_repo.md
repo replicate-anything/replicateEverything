@@ -5,7 +5,13 @@ Build get_code output for a package-backed study from remote source
 ## Usage
 
 ``` r
-get_code_from_package_repo(meta, ctx, what, package)
+get_code_from_package_repo(
+  meta,
+  ctx,
+  what,
+  package,
+  mode = c("definitions", "run")
+)
 ```
 
 ## Arguments
