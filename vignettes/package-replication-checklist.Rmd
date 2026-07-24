@@ -25,15 +25,14 @@ This checklist covers **package-backed** studies (recommended for multi-table pa
 ```
 rep_<doi-slug>/
   DESCRIPTION
-  replication.yml              # full metadata + replications list
+  replication.yml              # full metadata + steps: DAG
   inst/replication.yml         # copy for installed package
   R/
     make_figure_*.R             # analysis
     make_table_*.R
     format_*.R                  # display formatting
-    build_report.R              # optional: bake Display artifacts
   inst/replication_code/        # synced copies for Code tab / get_code()
-  inst/report/artifacts/        # baked Display outputs (build_report())
+  inst/report/artifacts/        # baked Display outputs (build_study_outputs())
   data/                         # analysis datasets (LazyData)
   tests/
     testthat/                   # smoke tests
@@ -69,34 +68,51 @@ languages:
   - r
 ```
 
-**Each figure or table**
+**Steps (required)** — package-backed studies use the same unified `steps:`
+DAG as folder-backed studies. `code:` names an **exported function** (not a
+file path); a `type: format` child names the display formatter:
 
 ```yaml
-replications:
+steps:
   - id: fig_1
     type: figure
-    make: make_figure_1
-    format: format_figure_1
+    label: Figure 1
+    code: make_figure_1
     data: my_dataset
+    outputs:
+      - inst/report/artifacts/fig_1.png
+
+  - id: fig_1_format
+    type: format
+    parent: fig_1
+    code: format_figure_1
+
   - id: tab_1
     type: table
-    make: make_table_1
-    format: format_table_1
+    label: Table 1
+    code: make_table_1
     data: my_dataset
+    outputs:
+      - inst/report/artifacts/tab_1.html
+
+  - id: tab_1_format
+    type: format
+    parent: tab_1
+    code: format_table_1
 ```
 
 Rules:
 
 - `id` — short slug used by Shiny and `replicateEverything::run_replication()`
-- `type` — `figure` or `table`
-- `make` — exported function returning analysis output (`ggplot` or `data.frame` / `kableExtra`)
-- `format` — exported function returning display-ready output (`ggplot` or HTML string)
+- `type` — `figure`, `table`, or `transform` (shared prep); `format` for display children
+- `code` — exported analysis function (figure/table) or format function (format child)
 - `data` — package dataset name(s), not file paths
+- `outputs` — declared artifact path(s) under `inst/report/`; the first displayable path is what Shiny **Display** reads
+- Legacy `replications:` with `make:` / `format:` entry fields is a hard error — use `steps:` + `code:` as above
 
 ## Study package surface
 
 Export the `make_*` / `format_*` helpers named in yaml (plus shared helpers and data).
-Optionally export `build_report()` to bake `inst/report/artifacts/`.
 
 Do **not** put these in the study package — they live only in **replicateEverything**:
 
@@ -110,11 +126,10 @@ Do **not** put these in the study package — they live only in **replicateEvery
 
 ## Artifacts (Display tab)
 
-Run once before registering:
+Run once before registering, with the same entrypoint as folder-backed studies:
 
 ```r
-build_report()
-# or: replicateEverything::build_study_outputs("rep1371journalpone0278337")
+replicateEverything::build_study_outputs(".", install_deps = TRUE)
 ```
 
 This writes:
@@ -122,7 +137,9 @@ This writes:
 - `inst/report/artifacts/<id>.png` for each figure
 - `inst/report/artifacts/<id>.html` for each table (must contain a `<table>`)
 
-The registry stub does **not** store artifacts.
+(`build_report()` still exists as a thin package-local convenience alias for
+CI/local use, but Contribute guidance and this checklist point at
+`build_study_outputs()`.) The registry stub does **not** store artifacts.
 
 ## Prepare and register
 
@@ -131,12 +148,16 @@ The registry stub does **not** store artifacts.
 ```{r, eval = FALSE}
 library(replicateEverything)
 
-prepare_study_for_registry(
+check_and_bake_study(
   "../rep-10.1371-journal.pone.0278337",
   build_artifacts = TRUE
 )
 check_replication("../rep-10.1371-journal.pone.0278337")
 ```
+
+`check_and_bake_study()` validates only — it never writes a registry stub or
+any file into the study package. A maintainer syncs directly from your
+`replication.yml` (next section).
 
 ### Maintainer: sync into the central registry
 

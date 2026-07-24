@@ -1,3 +1,28 @@
+# replicateEverything 0.7.1
+
+## Monorepo cleanup
+
+* Removed the last legacy-named internal aliases left over from the
+  `papers/` → `studies/` registry rename (`registry_paper_yaml_path()`,
+  `registry_paper_yaml_url()`); call sites and tests now use
+  `registry_study_yaml_path()` / `registry_study_yaml_url()` directly. No
+  user-facing change (both were `@keywords internal`, unexported).
+* Fixed two `test-package-replication.R` assertions that still checked the
+  legacy `replications:` field on a live GitHub fixture; they now check
+  `steps:` to match the 0.7 hard-cut.
+* Archived one-off registry migration scripts (`migrate_studies.R`,
+  `flatten_registry_stubs.R`, `migrate_code_format.R`,
+  `build_artifacts.R`, and other pre-0.7 onboarding/tooling scripts) to
+  `registry/scripts/archive/`; registry CI and guides now point at
+  `scripts/build_outputs.R` / `scripts/validate_outputs.R` only.
+* Rewrote the package `README.md` and the `meet-the-functions`,
+  `folder-replication-checklist`, `package-replication-checklist`, and
+  `maintainer-setup` vignettes around the 0.7 contract: `steps:` as a DAG,
+  `check_and_bake_study()` as the sole contributor entrypoint, and
+  `sync_study_to_registry()` / `register_study()` as the sole maintainer
+  entrypoint (no study-local `registry/` or `inst/registry/` handoff, ever).
+* No exported API changes.
+
 # replicateEverything 0.7.0
 
 ## Breaking: yaml contract and contributor API

@@ -1516,18 +1516,9 @@ registry_studies_dir <- function(registry_root) {
 
 #' Path to a registry study stub yaml file
 #'
-#' Prefers \code{studies/<folder>.yml}; falls back to legacy \code{papers/}
-#' layouts when present.
-#'
 #' @param registry_root Registry checkout root.
 #' @param folder Registry folder name.
-#' @return Character path (flat layout path under \code{studies/} when missing).
-#' @keywords internal
-registry_paper_yaml_path <- function(registry_root, folder) {
-  registry_study_yaml_path(registry_root, folder)
-}
-
-#' @rdname registry_paper_yaml_path
+#' @return Character path under \code{studies/<folder>.yml}.
 #' @keywords internal
 registry_study_yaml_path <- function(registry_root, folder) {
   file.path(registry_studies_dir(registry_root), paste0(folder, ".yml"))
@@ -1538,16 +1529,6 @@ registry_study_yaml_path <- function(registry_root, folder) {
 #' @param folder Registry folder name.
 #' @param registry_repo Registry repository slug.
 #' @param ref Git ref.
-#' @keywords internal
-registry_paper_yaml_url <- function(
-  folder,
-  registry_repo = DEFAULT_REGISTRY_REPO,
-  ref = "main"
-) {
-  registry_study_yaml_url(folder, registry_repo = registry_repo, ref = ref)
-}
-
-#' @rdname registry_paper_yaml_url
 #' @keywords internal
 registry_study_yaml_url <- function(
   folder,

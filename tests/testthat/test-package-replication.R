@@ -62,7 +62,7 @@ test_that("read_yaml_url loads vaccine study package replication.yml", {
   )
   meta <- read_yaml_url(url)
   skip_if(is.null(meta), "could not reach GitHub")
-  expect_gt(length(meta$replications %||% list()), 0)
+  expect_gt(length(meta$steps %||% list()), 0)
 })
 
 test_that("list_replications lists figures without installing study package", {
@@ -91,7 +91,7 @@ test_that("fetch_package_replication_yaml loads study metadata without install",
   ctx <- list(folder = "10.1371_journal.pone.0278337", repo = "replicate-anything/registry")
   pkg_meta <- fetch_package_replication_yaml(meta, ctx)
   skip_if(is.null(pkg_meta), "could not reach GitHub")
-  expect_gt(length(pkg_meta$replications %||% list()), 0)
+  expect_gt(length(pkg_meta$steps %||% list()), 0)
 })
 
 test_that("enrich_package_replication_meta merges remote package yaml", {

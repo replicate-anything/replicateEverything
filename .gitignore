@@ -15,3 +15,4 @@ translate_tab1.log
 .git-commit-msg.tmp
 
 tests/testthat/outputs/
+*.Rcheck/

@@ -142,14 +142,14 @@ test_that("registry_study_yaml_path prefers flat stub files", {
   )
 })
 
-test_that("registry_paper_yaml_path alias resolves studies stubs", {
+test_that("registry_study_yaml_path resolves studies stubs", {
   tmp <- withr::local_tempdir()
   studies <- file.path(tmp, "studies")
   dir.create(studies, recursive = TRUE)
   flat <- file.path(studies, "10.9999_example.yml")
   writeLines("paper:\n  doi: 10.9999/example", flat)
   expect_equal(
-    registry_paper_yaml_path(tmp, "10.9999_example"),
+    registry_study_yaml_path(tmp, "10.9999_example"),
     flat
   )
 })

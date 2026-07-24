@@ -73,7 +73,7 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     registry_root <- auto_detect_registry_root()
   }
   registry_stub_path <- if (!is.null(registry_root)) {
-    registry_paper_yaml_path(registry_root, folder)
+    registry_study_yaml_path(registry_root, folder)
   } else {
     NULL
   }

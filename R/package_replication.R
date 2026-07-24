@@ -606,7 +606,7 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
       stub_path
     )
   }
-  registry_raw <- registry_paper_yaml_url(ctx$folder)
+  registry_raw <- registry_study_yaml_url(ctx$folder)
   registry_sources[[length(registry_sources) + 1L]] <- source_entry(
     "registry stub (GitHub)",
     registry_raw

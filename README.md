@@ -14,14 +14,16 @@
 ## Key features
 
 - **Discovery** — search the registry, look up papers by DOI, and inspect available replications
+- **A DAG, not a file list** — `replication.yml` declares a `steps:` graph (`parents:` / `outputs:`); yaml is the sole authority for execution order, nothing is inferred
 - **One-line replication** — run a single figure or table, or reproduce an entire paper with `run_replication(doi, "everything")`
 - **Registry-backed materials** — fetch data and code from GitHub without manual downloads
 - **Folder-backed studies** — dedicated study repositories with `code/`, `data/`, and `outputs/`
-- **Package-backed studies** — standalone R packages linked from lightweight registry stubs
+- **Package-backed studies** — standalone R packages linked from lightweight registry stubs; same `steps:` yaml and build API as folder studies
 - **Artifacts** — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display
 - **Display pipeline** — optional `format_*` steps turn analysis objects into HTML tables and ggplot figures
 - **Shiny demo** — [live app](https://shiny2.wzb.eu/ipi/replicate/); `run_shiny_app()` locally; `save_local_shiny()` to deploy on Shiny Server
-- **Contributor tooling** — validate and register folder- or package-backed studies (`prepare_study_for_registry()`, `check_replication()`, `validate_outputs()`)
+- **Contributor tooling** — validate with `check_and_bake_study()`, then a maintainer registers with `sync_study_to_registry()` / `register_study()` — no study-local registry handoff
+- **Checks** — `check_replication()` and `audit_everything()` cover structure, precomputed outputs, and optional published-value substantive benchmarks
 - **Bundled AI skills** — markdown workflow guides for assistants (`ai_skills()`, `ai_skill()`)
 
 ## Project status
@@ -103,6 +105,11 @@ The `<folder>` name comes from the registry `index.csv` (for example `10.1177_00
 
 ### Example `replication.yml`
 
+`replication.yml` is a **DAG**: each entry is a node with `id`, `type`,
+`code`, its data/inputs, its `outputs`, and (for anything downstream of
+another step) `parents`. Yaml is the sole authority for what runs and in
+what order — nothing about the pipeline is inferred or guessed.
+
 ```yaml
 paper:
   title: My wonderful paper
@@ -112,7 +119,17 @@ paper:
   doi: 1.2.3.4
   journal: Sample journal
 
-replications:
+maintainer:
+  name: Jane Maintainer
+  email: maintainer@example.org
+
+collections:
+  - PED
+
+languages:
+  - r
+
+steps:
   - id: fig_1
     type: figure
     label: Figure 1
@@ -121,8 +138,6 @@ replications:
     code: code/fig_1.R
     outputs:
       - outputs/fig_1.png
-    dependencies:
-      - ggplot2
 
   - id: tab_1
     type: table
@@ -130,17 +145,23 @@ replications:
     description: Example table
     data: data/tab_1.csv
     code: code/tab_1.R
-    format: format_tab_1
     outputs:
       - outputs/tab_1.html
-    dependencies:
-      - dplyr
-      - gt
+
+  - id: tab_1_format
+    type: format
+    parent: tab_1
+    code: code/format_tab_1.R
 ```
+
+Root steps (nothing in-repo produces their inputs) omit `parents:` entirely
+— never write `parents: []`. A step that reads another step's `outputs:`
+declares `parents: [<upstream id>]`. See `rep-template/replication.yml` for
+a fully commented gold example.
 
 ## Writing replication scripts
 
-Replication scripts define an analysis function named `make_<id>()` (for example `make_fig_1()`). The legacy names `generate_figure()` and `generate_table()` are still supported.
+Replication scripts define an analysis function named `make_<id>()` (for example `make_fig_1()`) and, optionally, a `format_<id>()` for display. Scripts are pure definitions — no interactive footer, no `sys.nframe()` guard. Yaml (`steps:`) is what decides when and with what inputs each function runs.
 
 ### Figures
 
@@ -189,7 +210,7 @@ paper:
 repo: replicate-anything/rep-10.1177-00491241211036161
 ```
 
-The full `steps:` pipeline lives in the study repo's `replication.yml`. Display outputs live in `outputs/` (from `build_study_outputs()`).
+The full `steps:` pipeline lives in the study repo's `replication.yml`. Display outputs live in `outputs/` (from `build_study_outputs()`). There is **no study-local `registry/` folder** — a maintainer writes the stub above directly from this yaml.
 
 **From the study repository root:**
 
@@ -207,14 +228,14 @@ build_study_outputs(location = ".", install_deps = TRUE)
 # 2. Run tests
 testthat::test_dir("tests/testthat")
 
-# 3. Check + write registry/replication.yml and registry/index.csv
-prepare_study_for_registry(".", build_artifacts = FALSE, registry_root = "../registry")
+# 3. Contributor: validate (checklist only — writes nothing)
+check_and_bake_study(".", build_artifacts = FALSE, registry_root = "../registry")
 
-# 4. Sync stub into registry checkout
+# 4. Maintainer: write the stub into a local registry checkout
 sync_study_to_registry(".", registry_root = "../registry")
 
-# One-step alternative when registry is local:
-# add_folder_paper(".", registry_root = "../registry")
+# One-call alternative for a maintainer (check + sync):
+# register_study(".", registry_root = "../registry")
 ```
 
 See `vignette("folder-replication-checklist", package = "replicateEverything")` for the full workflow.
@@ -234,17 +255,20 @@ paper:
 repo: replicate-anything/rep-10.1371-journal.pone.0278337
 ```
 
-`replicateEverything` merges the full `replications:` list from the study package
+`replicateEverything` merges the full `steps:` DAG from the study package
 `replication.yml` when the registry stub omits it. Display artifacts live in the
-study package at `inst/report/artifacts/` (from `build_report()`).
+study package at `inst/report/artifacts/`, built with the same
+`build_study_outputs()` entrypoint used for folder-backed studies.
 
-Validate and register a package-backed study:
+Validate, then register a package-backed study (same APIs as folder-backed;
+no study-local registry handoff):
 
 ```r
 options(replicateEverything.registry_root = "/path/to/registry")
 
-check_replication("/path/to/rep_package")
-add_paper("/path/to/rep_package", full_replication = FALSE)
+check_and_bake_study("/path/to/rep_package", full_replication = FALSE)
+sync_study_to_registry("/path/to/rep_package")
+# or in one call: register_study("/path/to/rep_package")
 ```
 
 See `vignette("package-replication-checklist", package = "replicateEverything")` for requirements.
@@ -263,9 +287,11 @@ Optional overrides:
 - `paper.package_path` — absolute or relative path to the package root
 - `options(replicateEverything.replication_packages = list(pkgname = "/path"))`
 
-Linked study packages should export: `list_replications()`, `replication_meta()`,
-`run_replication(id)`, `load_artifact(id)`, `artifact_file(id)`, `get_code(id)`,
-and `build_report()`.
+Linked study packages export only pure `make_*()` / `format_*()` analysis
+helpers named in yaml (plus any true study helpers and packaged data). They
+must **not** define or ship `run_replication()`, `list_replications()`,
+`load_artifact()`, or `get_code()` — those verbs live only in
+**replicateEverything**, which calls them against the study.
 
 ## API overview
 
@@ -276,10 +302,11 @@ and `build_report()`.
 | View source code | `get_code()` |
 | Run one replication | `run_replication()` |
 | Replicate full paper | `run_replication(doi, "everything")` |
-| Build folder study outputs | `build_study_outputs()` |
-| Prepare folder study | `prepare_study_for_registry()` |
-| Sync folder study to registry | `sync_study_to_registry()` |
+| Build study outputs (folder or package) | `build_study_outputs()` |
+| Validate a study (+ optional bake) | `check_and_bake_study()` |
 | Validate study layout + tests | `check_replication()` |
+| Sync a study into the registry (maintainer) | `sync_study_to_registry()` |
+| Validate then sync in one call (maintainer) | `register_study()` |
 | Check precomputed outputs exist | `validate_outputs()` |
 | Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | List bundled AI skills | `ai_skills()`, `ai_skill()` |
@@ -294,7 +321,8 @@ This package ships AI-readable workflow guides under `inst/ai/skills/`. Use them
 
 ```r
 ai_skills()
-# [1] "dataverse_to_replicateEverything"
+# [1] "dataverse_to_replicateEverything" "folder_replication"
+# [3] "include_study_in_registry"
 
 cat(ai_skill("dataverse_to_replicateEverything"))
 ```
@@ -317,23 +345,17 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 ## Contributor workflow
 
 1. **Browse the registry** — `load_index()` or `search_papers("keyword")`
-2. **Set up a study repo** — follow `vignette("folder-replication-checklist")` or `vignette("package-replication-checklist")`
-3. **Add your data and code** — place processed data in `data/` and scripts in `code/`
-4. **Test locally** — run scripts in the R console or with `run_replication()`
-5. **Submit to the registry** — clone [replicate-anything/registry](https://github.com/replicate-anything/registry), move your paper folder into `studies/`, and open a pull request
+2. **Set up a study repo (or package)** — follow `vignette("folder-replication-checklist")` or `vignette("package-replication-checklist")`; write `steps:` as a DAG, tracing real author I/O
+3. **Add your data and code** — place processed data in `data/` and scripts in `code/` (or in the package's `R/` + `data/` for package-backed studies)
+4. **Bake and test locally** — `build_study_outputs(".")`, then `testthat::test_dir("tests/testthat")`
+5. **Validate** — `check_and_bake_study(".")`; this checks structure, yaml, outputs, and tests. It never writes into the study repo or a registry — it only reports pass/fail
+6. **Hand off to a maintainer** — send the study repo (or package) address; a maintainer with a local [registry](https://github.com/replicate-anything/registry) checkout runs `sync_study_to_registry(path)` (or `register_study(path)` to validate + sync in one call), which writes `studies/<folder>.yml` and rebuilds `index.csv` directly from your `replication.yml` — **no study-local `registry/` handoff, ever**
 
-For **folder-backed** studies, run `prepare_study_for_registry()` to build outputs, validate, and write `registry/replication.yml` + `registry/index.csv` in the study repo; then `sync_study_to_registry()` (or `refresh_registry()` on the registry checkout).
-
-For **package-backed** studies, use `add_paper()` after `check_replication()` passes instead of copying code and data into the registry.
-
-```bash
-git clone https://github.com/replicate-anything/registry
-mv 10.1177_00491241211036161 registry/studies/
-cd registry
-git add .
-git commit -m "Add replication for 10.1177/00491241211036161"
-git push
-```
+There is exactly **one** registry entrypoint for both layouts:
+`sync_study_to_registry()` / `register_study()`. Full study materials
+(`code/`, `data/`, `outputs/`, package source) are never copied into the
+registry repository — only the lightweight stub and `index.csv` row live
+there.
 
 ## Developer workflow
 
