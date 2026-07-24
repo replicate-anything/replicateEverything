@@ -12,6 +12,7 @@ who clones or installs replicateEverything gets the current guidance.
 | `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 1b DAG from original repo**; Step 4a dependency search + Step 4b `steps:` yaml |
 | `dataverse_to_replicateEverything.md` | `dataverse-to-replicate-everything` | Harvard Dataverse deposits → folder-backed study repo |
 | `include_study_in_registry.md` | `include-study-in-registry` | Contributor prepare + maintainer sync into central registry |
+| `check_study_submission.md` | `check-study-submission` | Review / audit a submission: Shiny "no steps", yaml hard errors, lean materials, missing outputs |
 
 Each file is a self-contained Cursor Agent Skill (YAML frontmatter with
 `name:` + `description:`, then the body).
