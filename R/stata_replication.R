@@ -291,6 +291,58 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   system2(stata, batch_args, wait = TRUE, stdout = "", stderr = "")
 }
 
+#' Build the do-file lines for the package's generated Stata batch runner
+#'
+#' Always wraps the actual step do-file in \code{capture noisily do ...}
+#' (never a bare \code{do ...}). On Windows, an uncaught runtime error during
+#' a batch run (\code{/e do ...}) - anywhere in the step's do-file or in any
+#' do-file it calls, however deeply nested - otherwise pops a modal "<file>.do
+#' has been interrupted. Would you like the batch job to continue?" dialog
+#' that blocks headless/unattended runs indefinitely (confirmed on Stata
+#' 10-19; happens with both \code{/e} and \code{/b} - \code{/e} only
+#' suppresses the separate "job finished, click OK" dialog on success).
+#' \code{capture} absorbs an error at the level it is applied regardless of
+#' how many nested \code{do} calls sit between it and the failing command, so
+#' wrapping only this outermost, package-generated call protects every study
+#' - individual study runners do not need their own \code{capture}.
+#' \code{noisily} keeps the usual output and the \code{r(###);} line in the
+#' log so \code{stata_log_error()} still detects the failure - only the
+#' do-file-aborting side effect (and the Windows dialog it can trigger) is
+#' swallowed.
+#'
+#' @param do_in_do Do-file path already escaped/formatted for use inside a
+#'   Stata do-file (see \code{stata_path_in_do()}).
+#' @param wd_in_do Working directory, same formatting.
+#' @param staging_dir Optional writable directory for \code{$result} output.
+#' @return Character vector of do-file lines.
+#' @keywords internal
+stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL) {
+  runner_lines <- c(
+    "version 17",
+    "clear all",
+    "set more off, permanently",
+    sprintf("local root \"%s\"", wd_in_do),
+    "cd \"`root'\""
+  )
+  if (!is.null(staging_dir) && nzchar(staging_dir)) {
+    staging_dir <- normalizePath(staging_dir, winslash = "/", mustWork = FALSE)
+    dir.create(staging_dir, recursive = TRUE, showWarnings = FALSE)
+    staging_in_do <- stata_path_in_do(staging_dir)
+    runner_lines <- c(
+      runner_lines,
+      sprintf("global REPLICATE_STATA_RESULT \"%s\"", staging_in_do),
+      sprintf("cap mkdir \"%s\"", staging_in_do)
+    )
+  }
+  c(
+    runner_lines,
+    sprintf("capture noisily do \"%s\"", do_in_do),
+    "if _rc != 0 {",
+    "    display as error \"replicateEverything: step do-file ended with error r(\" _rc \");  see log above for the failing command.\"",
+    "}"
+  )
+}
+
 #' Run a Stata do-file non-interactively
 #'
 #' @param do_path Path to the do-file.
@@ -321,24 +373,7 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL,
   do_in_do <- stata_path_in_do(do_path)
   wd_in_do <- stata_path_in_do(workdir)
 
-  runner_lines <- c(
-    "version 17",
-    "clear all",
-    "set more off, permanently",
-    sprintf("local root \"%s\"", wd_in_do),
-    "cd \"`root'\""
-  )
-  if (!is.null(staging_dir) && nzchar(staging_dir)) {
-    staging_dir <- normalizePath(staging_dir, winslash = "/", mustWork = FALSE)
-    dir.create(staging_dir, recursive = TRUE, showWarnings = FALSE)
-    staging_in_do <- stata_path_in_do(staging_dir)
-    runner_lines <- c(
-      runner_lines,
-      sprintf("global REPLICATE_STATA_RESULT \"%s\"", staging_in_do),
-      sprintf("cap mkdir \"%s\"", staging_in_do)
-    )
-  }
-  runner_lines <- c(runner_lines, sprintf("do \"%s\"", do_in_do))
+  runner_lines <- stata_runner_lines(do_in_do, wd_in_do, staging_dir = staging_dir)
 
   writeLines(runner_lines, runner, useBytes = TRUE)
 
@@ -720,15 +755,17 @@ stata_reghdfe_stack_install_lines <- function() {
     "}",
     'di as txt "Installing ftools from SSC..."',
     "cap which ftools",
-    "if _rc ssc install ftools, replace",
+    # `cap ... ssc install` throughout (not bare): a network hiccup or SSC
+    # outage must not leave Stata "interrupted" - see stata_runner_lines().
+    "if _rc cap noisily ssc install ftools, replace",
     "cap noisily ftools, compile",
     "cap mata: mata mlib index",
     'di as txt "Installing reghdfe from SSC..."',
     "cap which reghdfe",
-    "if _rc ssc install reghdfe, replace",
+    "if _rc cap noisily ssc install reghdfe, replace",
     'di as txt "Installing require from SSC (reghdfe 6.x dependency)..."',
     "cap which require",
-    "if _rc ssc install require, replace",
+    "if _rc cap noisily ssc install require, replace",
     "cap help reghdfe",
     "if _rc {",
     '    di as err "reghdfe failed to load after SSC install."',
@@ -768,7 +805,11 @@ stata_deps_install_lines_from_packages <- function(packages) {
       sprintf("cap which %s", cmd),
       "if _rc {",
       sprintf('    di as txt "Installing %s from SSC..."', pkg),
-      sprintf("    ssc install %s, replace", pkg),
+      # `capture noisily` (not bare `ssc install`): a network hiccup or SSC
+      # outage here must not leave Stata "interrupted" and popping the
+      # Windows batch-continue dialog - see stata_runner_lines() above for
+      # the full explanation. Still visible/logged via `noisily`.
+      sprintf("    capture noisily ssc install %s, replace", pkg),
       "}"
     )
   }

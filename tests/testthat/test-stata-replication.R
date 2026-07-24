@@ -1,3 +1,39 @@
+test_that("stata_runner_lines wraps the step do-file in capture noisily, not a bare do", {
+  # Regression guard: a bare `do "<step>.do"` here means any uncaught runtime
+  # error deep in a study's do-file chain pops a modal "Would you like the
+  # batch job to continue?" dialog on Windows and hangs unattended/CI runs.
+  lines <- replicateEverything:::stata_runner_lines("C:/study/code/tab_1.do", "C:/study")
+  expect_true(any(grepl(
+    'capture noisily do "C:/study/code/tab_1.do"', lines, fixed = TRUE
+  )))
+  expect_false(any(grepl(
+    '^do "C:/study/code/tab_1.do"$', lines
+  )))
+  # The error must still surface in the log for stata_log_error() to find.
+  expect_true(any(grepl("if _rc != 0", lines, fixed = TRUE)))
+  expect_true(any(grepl("display as error", lines, fixed = TRUE)))
+})
+
+test_that("stata_runner_lines still wires up staging dir globals", {
+  staging <- tempfile("staging-")
+  on.exit(unlink(staging, recursive = TRUE), add = TRUE)
+  lines <- replicateEverything:::stata_runner_lines(
+    "C:/study/code/tab_1.do", "C:/study",
+    staging_dir = staging
+  )
+  expect_true(any(grepl("REPLICATE_STATA_RESULT", lines, fixed = TRUE)))
+  expect_true(any(grepl('capture noisily do "C:/study/code/tab_1.do"', lines, fixed = TRUE)))
+})
+
+test_that("stata_deps_install_lines_from_packages never emits a bare ssc install", {
+  # Same dialog risk as stata_runner_lines() but for maintainer-only install
+  # scripts: a network hiccup mid-install must not leave Stata "interrupted".
+  lines <- replicateEverything:::stata_deps_install_lines_from_packages(c("reghdfe", "estout"))
+  bare_installs <- grep("(^|\\s)ssc install", lines, value = TRUE)
+  bare_installs <- bare_installs[!grepl("cap(ture)?\\s+(noisily\\s+)?ssc install", bare_installs)]
+  expect_length(bare_installs, 0)
+})
+
 test_that("get_replication_meta merges stata_packages for folder-backed stub", {
   with_fixture_stata_opts({
     meta <- get_replication_meta(fixture_stata_doi())

@@ -1,3 +1,58 @@
+# replicateEverything 0.7.5
+
+## Stata batch runs are now fully non-interactive (no more "would you like the batch job to continue?" dialogs)
+
+* **Bug fix:** `run_stata_do()`'s generated batch runner now wraps the actual
+  step do-file in `capture noisily do "..."` instead of a bare `do "..."`. On
+  Windows, an uncaught runtime error anywhere in a study's do-file - or in any
+  do-file it calls, however deeply nested - previously left the batch Stata
+  process (`/e do ...`) in an "interrupted" state that pops a modal "<file>.do
+  has been interrupted. Would you like the batch job to continue?" dialog,
+  hanging unattended/CI runs until someone clicks through it by hand
+  (confirmed on Stata 10-19; happens with both `/e` and `/b` - `/e` only
+  suppresses the separate "job finished, click OK" dialog on success).
+  `capture` absorbs an error at the level it is applied regardless of nesting
+  depth, so wrapping only this one, package-generated call protects every
+  Stata study; individual study runners do not need their own `capture`.
+  `noisily` keeps the error visible in the log so `stata_log_error()` still
+  detects and reports the failure exactly as before - only the do-file-
+  aborting side effect (and the dialog it can trigger) is suppressed. The
+  same fix was applied to the maintainer-only SSC install scripts generated
+  by `stata_deps_install_lines_from_packages()` (a network hiccup during
+  `ssc install` had the same failure mode). New `stata_runner_lines()`
+  helper factored out for direct unit testing.
+
+# replicateEverything 0.7.4
+
+## Discoverability of `doi = "local"` (cwd study root)
+
+* **Docs:** [list_replications()], [run_replication()], [get_code()], and
+  [describe_study_dag()] now document and demonstrate `doi = "local"` /
+  `meta = "local"` with `\dontrun` examples — `setwd()` into a checked-out
+  study repo (or open its RStudio project), then call the verb directly with
+  `"local"`; no registry lookup or DOI is required. [check_replication()],
+  [check_and_bake_study()], and [build_study_outputs()] now cross-reference
+  the same working-directory study via their `location = "."` default and
+  show a manual smoke-check snippet (`list_replications("local")`,
+  `describe_study_dag("local")`, `run_replication("local", "<id>")`) ahead of
+  the full checklist.
+* **Vignettes / skills:** `folder-replication-checklist`,
+  `package-replication-checklist`, and `meet-the-functions` vignettes, plus
+  `inst/ai/skills/folder_replication.md` and
+  `inst/ai/skills/include_study_in_registry.md`, add the same manual
+  local smoke-check block before `check_and_bake_study()`. Root `AI.md`'s
+  contribute-flow summary was expanded to spell out the smoke-check calls.
+* **Shiny app:** the study picker dropdown now pins an explicit
+  "Local study (this folder)" choice (value `"local"`) at the top when the
+  app's working directory resolves to a study repo (same lookup `doi =
+  "local"` uses), and the DOI/path text field's placeholder and inline help
+  text spell out that typing or selecting `local` loads that study directly
+  — no DOI or registry lookup needed. When no local study is detected (the
+  normal production deployment), the extra choice is simply absent and
+  remote registry / DOI search is unaffected. New `local_study_select_choice()`
+  helper in `inst/shiny/app.R`, covered by two new `testthat` cases in
+  `test-shiny-app.R`.
+
 # replicateEverything 0.7.3
 
 ## API consolidation: install_dependencies()
