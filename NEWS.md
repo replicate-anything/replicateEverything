@@ -1,3 +1,30 @@
+# replicateEverything 0.7.6
+
+## Clear messaging for steps that cannot be created (`incomplete:` / `blocked_reason:`)
+
+* **New:** a step in `replication.yml` may declare `incomplete: true` plus a
+  free-text `blocked_reason: "..."` explaining why it cannot be produced in
+  this environment (missing proprietary engine such as Mathematica/MATLAB,
+  a data file absent from the deposit, etc.). `incomplete:` already existed
+  and already excluded a step from [build_study_outputs()] / baking and from
+  [audit_everything()]; `blocked_reason:` is new and is now surfaced to
+  users instead of the step just silently disappearing:
+  * [run_replication()] now stops immediately with
+    `"This object cannot be created because of: <reason>"` when asked to run
+    a blocked step directly, and *skips* (with a `message()`, not an error)
+    blocked steps encountered during `what = "everything"`, so one blocked
+    leaf no longer aborts the rest of the DAG.
+  * [list_replications()] still lists blocked steps (it always has - they
+    are still real tables/figures, just not creatable here) so users can see
+    what exists even when it cannot be built.
+  * The bundled Shiny app now shows blocked table/figure/data-step pills
+    greyed out with a disabled Display/Run button and an "Unavailable"
+    badge; hovering (or the button title) surfaces the `blocked_reason`
+    text.
+* No schema aliases: `incomplete`/`blocked_reason` are the only supported
+  field names (no `unavailable:` synonym) to keep `replication.yml` parsing
+  simple.
+
 # replicateEverything 0.7.5
 
 ## Stata batch runs are now fully non-interactive (no more "would you like the batch job to continue?" dialogs)

@@ -95,6 +95,37 @@ run_replication <- function(
   )
 }
 
+#' Human-readable reason a step is unavailable, or NULL when it is runnable
+#'
+#' Reads the \code{incomplete:} / \code{blocked_reason:} fields declared on a
+#' step in \code{replication.yml}. \code{incomplete: true} with no
+#' \code{blocked_reason} still blocks the step, using a generic message.
+#' @keywords internal
+step_blocked_reason <- function(meta, what) {
+  entry <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+  if (is.null(entry) || !isTRUE(entry$incomplete %||% FALSE)) {
+    return(NULL)
+  }
+  reason <- as.character(entry$blocked_reason %||% "")
+  if (!nzchar(reason)) {
+    reason <- "marked incomplete in replication.yml (no reason given)"
+  }
+  reason
+}
+
+#' Stop with a clear, informative message when a step cannot be created
+#' @keywords internal
+stop_if_step_blocked <- function(meta, what) {
+  reason <- step_blocked_reason(meta, what)
+  if (is.null(reason)) {
+    return(invisible(NULL))
+  }
+  stop(
+    "This object cannot be created because of: ", reason,
+    call. = FALSE
+  )
+}
+
 #' @keywords internal
 run_replication_one <- function(
   doi,
@@ -108,6 +139,7 @@ run_replication_one <- function(
   folder = NULL
 ) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  stop_if_step_blocked(meta, what)
   if (is_package_replication(meta)) {
     result <- render_replication(
       doi,
@@ -243,6 +275,15 @@ run_all_replications <- function(
 
   results <- list()
   for (step_id in step_ids) {
+    reason <- step_blocked_reason(meta, step_id)
+    if (!is.null(reason)) {
+      message("Skipping ", step_id, ": this object cannot be created because of: ", reason)
+      results[[step_id]] <- structure(
+        list(id = step_id, blocked_reason = reason),
+        class = "replication_step_blocked"
+      )
+      next
+    }
     message("Running: ", step_id)
     results[[step_id]] <- run_replication_one(
       doi_key,

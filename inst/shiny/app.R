@@ -2184,6 +2184,8 @@ prep_to_df <- function(prep_steps) {
       label_full = label_full,
       engine = entry_engine(x),
       type = "transform",
+      incomplete = isTRUE(x$incomplete %||% FALSE),
+      blocked_reason = as.character(x$blocked_reason %||% ""),
       stringsAsFactors = FALSE
     )
   })
@@ -2239,6 +2241,8 @@ replications_to_df <- function(reps) {
         if (nzchar(desc)) desc else replication_display_label(primary)
       },
       type = as.character(primary$type),
+      incomplete = isTRUE(primary$incomplete %||% FALSE),
+      blocked_reason = as.character(primary$blocked_reason %||% ""),
       stringsAsFactors = FALSE
     )
   })
@@ -4700,6 +4704,27 @@ ui <- tagList(
       line-height: 0;
       opacity: 0.95;
     }
+    .replication-row.is-blocked {
+      opacity: 0.55;
+    }
+    .replication-row.is-blocked .replication-label {
+      text-decoration: line-through;
+      text-decoration-color: rgba(108, 117, 125, 0.6);
+    }
+    .blocked-reason-badge {
+      font-size: 0.72rem;
+      color: #b02a37;
+      background: rgba(176, 42, 55, 0.08);
+      border: 1px solid rgba(176, 42, 55, 0.25);
+      border-radius: 999px;
+      padding: 0.05rem 0.5rem;
+      margin-right: 0.35rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 11rem;
+      cursor: help;
+    }
     .study-list-header,
     .study-citation {
       display: grid;
@@ -5849,14 +5874,50 @@ server <- function(input, output, session) {
     label_full <- row$label_full[[1]] %||% label
     safe_group <- gsub("[^a-zA-Z0-9]", "_", group)
     resolved_id <- resolve_group_replication_id(row, engine)
+    is_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
+    blocked_reason <- as.character(row$blocked_reason[[1]] %||% "")
+    if (!nzchar(blocked_reason)) {
+      blocked_reason <- "This object cannot be created for this study - see the study notes."
+    }
     row_class <- paste(
       "replication-row d-flex align-items-center rounded",
       if (!is.null(active_id) && (identical(group, active_id) || identical(resolved_id, active_id))) {
         "bg-light border border-primary"
       } else {
         ""
-      }
+      },
+      if (is_blocked) "is-blocked" else ""
     )
+    if (is_blocked) {
+      return(tags$div(
+        class = row_class,
+        tags$span(label, class = "replication-label", title = label_full),
+        tags$div(
+          class = "replication-actions",
+          tags$span(
+            class = "blocked-reason-badge",
+            title = blocked_reason,
+            "Unavailable"
+          ),
+          actionButton(
+            paste0("display_", safe_group),
+            "Display",
+            class = "btn-outline-secondary btn-sm",
+            disabled = "disabled",
+            title = blocked_reason
+          ),
+          if (shiny_live_run_enabled()) {
+            actionButton(
+              paste0("replicate_", safe_group),
+              "Run",
+              class = "btn-primary btn-sm",
+              disabled = "disabled",
+              title = blocked_reason
+            )
+          }
+        )
+      ))
+    }
     engine_pick_btn <- function(eng) {
       active <- identical(engine, eng)
       btn_class <- paste(
@@ -5998,6 +6059,11 @@ server <- function(input, output, session) {
               python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
               tags$span(class = "engine-badge", title = "R", engine_icon_r())
             )
+            step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
+            step_blocked_reason <- as.character(row$blocked_reason[[1]] %||% "")
+            if (!nzchar(step_blocked_reason)) {
+              step_blocked_reason <- "This step cannot be run for this study - see the study notes."
+            }
             tags$div(
               class = paste(
                 "replication-row d-flex align-items-center rounded",
@@ -6005,22 +6071,34 @@ server <- function(input, output, session) {
                   "bg-light border border-primary"
                 } else {
                   ""
-                }
+                },
+                if (step_blocked) "is-blocked" else ""
               ),
               engine_badge,
               tags$span(row$label[[1]], class = "replication-label", title = row$label_full[[1]]),
               tags$div(
                 class = "replication-actions",
+                if (step_blocked) {
+                  tags$span(
+                    class = "blocked-reason-badge",
+                    title = step_blocked_reason,
+                    "Unavailable"
+                  )
+                },
                 actionButton(
                   paste0("data_display_", safe_id),
                   "Display",
                   class = "btn-outline-secondary btn-sm",
-                  onclick = sprintf(
-                    "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
-                    step_id
-                  )
+                  disabled = if (step_blocked) "disabled" else NULL,
+                  title = if (step_blocked) step_blocked_reason else NULL,
+                  onclick = if (!step_blocked) {
+                    sprintf(
+                      "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
+                      step_id
+                    )
+                  }
                 ),
-                if (shiny_live_run_enabled()) {
+                if (shiny_live_run_enabled() && !step_blocked) {
                   step_run_title <- "Run live replication"
                   step_rt <- tryCatch(
                     replicate_fn(
@@ -6044,6 +6122,14 @@ server <- function(input, output, session) {
                       "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
                       step_id
                     )
+                  )
+                } else if (shiny_live_run_enabled() && step_blocked) {
+                  actionButton(
+                    paste0("data_run_", safe_id),
+                    "Run",
+                    class = "btn-outline-primary btn-sm",
+                    disabled = "disabled",
+                    title = step_blocked_reason
                   )
                 }
               )
