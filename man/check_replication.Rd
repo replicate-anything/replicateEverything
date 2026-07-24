@@ -24,7 +24,10 @@ check_replication(
 \arguments{
 \item{location}{Local study path, GitHub address, or installed package path.
 Defaults to the current working directory when it contains
-\code{replication.yml} or \code{DESCRIPTION}.}
+\code{replication.yml} or \code{DESCRIPTION}. This is the \code{location} analog of
+\code{doi = "local"} used by \code{\link[=list_replications]{list_replications()}}, \code{\link[=run_replication]{run_replication()}}, and
+\code{\link[=get_code]{get_code()}} — both mean "the study checked out in the current working
+directory"; no registry lookup is required.}
 
 \item{full_replication}{If \code{TRUE}, also run every table and figure via
 \code{\link[=run_replication]{run_replication()}} and require success.}
@@ -68,6 +71,14 @@ live execution of every table and figure via replicateEverything.
 }}
 \examples{
 \dontrun{
+# setwd() to the study repo (or open its RStudio project) first, then:
+setwd("path/to/rep-my-study")
+
+# Quick manual smoke check before the full checklist:
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "tab_1")  # one light step
+
 check_replication(".")
 check_replication(".", full_replication = TRUE)
 check_replication("../rep-10.1371-journal.pone.0278337")

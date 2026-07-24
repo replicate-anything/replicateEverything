@@ -13,7 +13,7 @@ package-backed studies (inst/report/outputs/ or inst/report/artifacts/)."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,8 @@ package-backed studies (<code>inst/report/outputs/</code> or <code>inst/report/a
 <dl><dt id="arg-location">location<a class="anchor" aria-label="anchor" href="#arg-location"></a></dt>
 <dd><p>Local study path, GitHub address, or installed package
 name. Defaults to <code>"."</code> when the working directory contains
-<code>replication.yml</code> or <code>DESCRIPTION</code>.</p></dd>
+<code>replication.yml</code> or <code>DESCRIPTION</code> — the same study that <code>doi = "local"</code>
+resolves to for <code><a href="list_replications.html">list_replications()</a></code> / <code><a href="run_replication.html">run_replication()</a></code> / <code><a href="get_code.html">get_code()</a></code>.</p></dd>
 
 
 <dt id="arg-install-deps">install_deps<a class="anchor" aria-label="anchor" href="#arg-install-deps"></a></dt>
@@ -107,6 +108,9 @@ already exist (see <code><a href="artifact_available.html">artifact_available()<
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
+<span class="r-in"><span><span class="co"># setwd() to the study repo (or open its RStudio project), then:</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"path/to/rep-my-study"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span>  <span class="co"># sanity-check before baking</span></span></span>
 <span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"."</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"rep1371journalpone0278337"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"."</span>, only_missing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>

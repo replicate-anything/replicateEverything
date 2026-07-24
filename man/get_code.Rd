@@ -15,7 +15,10 @@ get_code(
 )
 }
 \arguments{
-\item{doi}{Character. DOI of the paper.}
+\item{doi}{Character. DOI of the paper, registry handle, or local study
+path. Pass \code{"local"} to read code from the study in the current
+working directory — no registry lookup is needed; see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}.}
 
 \item{what}{Character. Replication identifier (logical id).}
 
@@ -64,6 +67,10 @@ reading \code{code/*.R} from the registry repo).
 head(get_code("10.1177/00491241211036161", "fig_1"))
 get_code("10.1017/S0003055403000534", "tab_1", language = "stata")
 get_code("rep-template", "tab_1", mode = "run")
+
+# setwd() to a checked-out study repo (or open its RStudio project):
+setwd("path/to/rep-my-study")
+head(get_code("local", "tab_1"))
 }
 
 }

@@ -26,7 +26,12 @@ build_study_outputs(
 
   Local study path, GitHub address, or installed package name. Defaults
   to `"."` when the working directory contains `replication.yml` or
-  `DESCRIPTION`.
+  `DESCRIPTION` — the same study that `doi = "local"` resolves to for
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  /
+  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  /
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md).
 
 - install_deps:
 
@@ -71,6 +76,9 @@ for registry-wide or DOI-scoped builds.
 
 ``` r
 if (FALSE) { # \dontrun{
+# setwd() to the study repo (or open its RStudio project), then:
+setwd("path/to/rep-my-study")
+list_replications("local")  # sanity-check before baking
 build_study_outputs(".", install_deps = TRUE)
 build_study_outputs("rep1371journalpone0278337", install_deps = TRUE)
 build_study_outputs(".", only_missing = TRUE)

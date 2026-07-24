@@ -31,7 +31,14 @@ check_replication(
 
   Local study path, GitHub address, or installed package path. Defaults
   to the current working directory when it contains `replication.yml` or
-  `DESCRIPTION`.
+  `DESCRIPTION`. This is the `location` analog of `doi = "local"` used
+  by
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md),
+  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md),
+  and
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  — both mean "the study checked out in the current working directory";
+  no registry lookup is required.
 
 - full_replication:
 
@@ -76,6 +83,14 @@ A list with `ok` (logical), `checks` (data frame), and `study_path` or
 
 ``` r
 if (FALSE) { # \dontrun{
+# setwd() to the study repo (or open its RStudio project) first, then:
+setwd("path/to/rep-my-study")
+
+# Quick manual smoke check before the full checklist:
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "tab_1")  # one light step
+
 check_replication(".")
 check_replication(".", full_replication = TRUE)
 check_replication("../rep-10.1371-journal.pone.0278337")

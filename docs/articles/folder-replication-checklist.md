@@ -161,6 +161,22 @@ testthat::test_dir("tests/testthat")
 
 ### 3. Validate (contributor)
 
+Before running the full checklist, a quick **manual smoke check** from
+the study repo root confirms the study resolves and runs without any
+registry setup — pass `"local"` (the working-directory study) instead of
+a DOI:
+
+``` r
+
+library(replicateEverything)
+
+list_replications("local")        # what does this study expose?
+describe_study_dag("local")       # sanity-check the parsed step DAG
+run_replication("local", "tab_1") # one light step end-to-end
+```
+
+Then run the full contributor checklist:
+
 ``` r
 
 check_and_bake_study(

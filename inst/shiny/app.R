@@ -1530,6 +1530,31 @@ nice_doi_choices <- function(index_df) {
   )
 }
 
+#' Pinned dropdown choice for a study detected in the current working
+#' directory (dev / monorepo checkouts, or the app launched from inside a
+#' study repo). Returns \code{character(0)} in production deployments where
+#' no local study is found, so the registry dropdown and remote DOI search
+#' are unaffected.
+#'
+#' @return Named length-one character vector (\code{name} = display label,
+#'   \code{value} = \code{"local"}), or \code{character(0)}.
+local_study_select_choice <- function() {
+  local_root <- tryCatch(replicate_fn("find_local_study_root"), error = function(e) NULL)
+  if (is.null(local_root) || !length(local_root) || !dir.exists(local_root)) {
+    return(character(0))
+  }
+  meta <- tryCatch(
+    replicate_fn("read_study_replication_yaml", local_root),
+    error = function(e) NULL
+  )
+  title <- NULL
+  if (!is.null(meta) && !is.null(meta$paper)) {
+    title <- trimws(as.character(meta$paper$title %||% meta$paper$study_handle %||% "")[[1]])
+  }
+  suffix <- if (!is.null(title) && nzchar(title)) truncate_label(title, 40L) else basename(local_root)
+  stats::setNames("local", paste0("\U0001f4c2 Local study (this folder): ", suffix))
+}
+
 truncate_label <- function(text, max_chars = 40L) {
   text <- trimws(as.character(text))
   if (length(text) != 1L || !nzchar(text) || nchar(text) <= max_chars) {
@@ -5043,18 +5068,32 @@ ui <- tagList(
         selectInput(
           "study_select",
           label = NULL,
-          choices = c("Choose a study…" = "", nice_doi_choices(registry_index))
+          choices = c(
+            "Choose a study…" = "",
+            local_study_select_choice(),
+            nice_doi_choices(registry_index)
+          )
         ),
         tags$div(
           class = "doi-input-row",
           tags$div(
             class = "doi-input-field",
-            textInput("study_doi", label = NULL, placeholder = "Enter DOI or path to repo")
+            textInput(
+              "study_doi",
+              label = NULL,
+              placeholder = "DOI, path to repo, or \"local\" for this folder"
+            )
           ),
           tags$div(
             class = "doi-go-wrap",
             actionButton("doi_go", "Go", class = "btn-primary btn-sm")
           )
+        ),
+        tags$div(
+          class = "doi-input-help text-muted",
+          style = "font-size: 0.78rem; margin-top: 0.15rem;",
+          "Tip: type or select ", tags$code("local"),
+          " to use the study checked out in the app's current working directory (no DOI or registry lookup needed)."
         ),
         tags$hr(style = "margin: 0.5rem 0;"),
         tags$h4(class = "mb-1", "2. Tables & figures"),
@@ -5151,7 +5190,11 @@ server <- function(input, output, session) {
   updateSelectInput(
     session,
     "study_select",
-    choices = c("Choose a study…" = "", nice_doi_choices(registry_index))
+    choices = c(
+      "Choose a study…" = "",
+      local_study_select_choice(),
+      nice_doi_choices(registry_index)
+    )
   )
   updateSelectInput(
     session,

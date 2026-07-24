@@ -5,7 +5,9 @@
 #' register it with [sync_study_to_registry()] (stub written only into the
 #' central registry repository).
 #'
-#' @param location Study repo path or GitHub address. Defaults to `"."`.
+#' @param location Study repo path or GitHub address. Defaults to `"."` — the
+#'   current working directory, i.e. the same study `doi = "local"` resolves
+#'   to for [list_replications()] / [run_replication()] / [get_code()].
 #' @param build_artifacts If `TRUE`, build precomputed outputs first.
 #' @param install_deps Passed to the build function.
 #' @param full_replication If `TRUE`, also run every table and figure live.
@@ -15,6 +17,15 @@
 #'
 #' @examples
 #' \dontrun{
+#' # setwd() to the study repo (or open its RStudio project) first.
+#' setwd("path/to/rep-my-study")
+#'
+#' # Manual smoke check before the full contributor checklist — no
+#' # registry required:
+#' list_replications("local")
+#' describe_study_dag("local")
+#' run_replication("local", "tab_1")  # one light step
+#'
 #' check_and_bake_study(".")
 #' }
 #'

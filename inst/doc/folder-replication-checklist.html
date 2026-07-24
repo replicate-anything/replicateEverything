@@ -507,10 +507,20 @@ child step exists</li>
 </div>
 <div id="validate-contributor" class="section level3">
 <h3>3. Validate (contributor)</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">check_and_bake_study</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">location =</span> <span class="st">&quot;.&quot;</span>,</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">build_artifacts =</span> <span class="cn">FALSE</span>   <span class="co"># already built above</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>)</span></code></pre></div>
+<p>Before running the full checklist, a quick <strong>manual smoke
+check</strong> from the study repo root confirms the study resolves and
+runs without any registry setup — pass <code>&quot;local&quot;</code> (the
+working-directory study) instead of a DOI:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">library</span>(replicateEverything)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;local&quot;</span>)        <span class="co"># what does this study expose?</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">describe_study_dag</span>(<span class="st">&quot;local&quot;</span>)       <span class="co"># sanity-check the parsed step DAG</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;local&quot;</span>, <span class="st">&quot;tab_1&quot;</span>) <span class="co"># one light step end-to-end</span></span></code></pre></div>
+<p>Then run the full contributor checklist:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">check_and_bake_study</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">location =</span> <span class="st">&quot;.&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">build_artifacts =</span> <span class="cn">FALSE</span>   <span class="co"># already built above</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>)</span></code></pre></div>
 <p>This runs [check_replication()] against your study root
 <code>replication.yml</code>. It <strong>validates only</strong> — it
 does not write a registry stub or any handoff file into the study repo.
@@ -522,12 +532,12 @@ Commit your study once checks pass; a registry
 <h3>4. Sync to the central registry (maintainer)</h3>
 <p>Maintainers work from a local <a href="https://github.com/replicate-anything/registry">registry</a>
 checkout:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">registry_root =</span> <span class="st">&quot;../registry&quot;</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">registry_root =</span> <span class="st">&quot;../registry&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>)</span></code></pre></div>
 <p>This builds a lightweight stub straight from the study repo’s root
 <code>replication.yml</code> (<code>maintainer</code>,
 <code>collections</code>, <code>languages</code>, and repo pointers —
@@ -539,11 +549,11 @@ never the full <code>steps:</code> list), writes it to
 <code>sync_study_to_registry()</code> in one call.</p>
 <p>After syncing several studies, refresh the whole registry and rerun
 the audit:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">refresh_registry</span>(<span class="st">&quot;../registry&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>, <span class="at">patience =</span> <span class="dv">20</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">refresh_registry</span>(<span class="st">&quot;../registry&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>, <span class="at">patience =</span> <span class="dv">20</span>)</span></code></pre></div>
 </div>
 <div id="tests-recommended-before-syncing" class="section level3">
 <h3>5. Tests (recommended before syncing)</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_dir</span>(<span class="st">&quot;tests/testthat&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_dir</span>(<span class="st">&quot;tests/testthat&quot;</span>)</span></code></pre></div>
 <p>Run tests before <code>check_and_bake_study()</code> so the checklist
 reflects a merge-ready study.</p>
 </div>
@@ -558,10 +568,10 @@ replicated estimates to <strong>numbers in the published table</strong>
 figure where you can quote benchmarks from the paper. Reference
 implementation: <a href="https://github.com/replicate-anything/rep-10.1017-S0003055403000534/blob/main/tests/substantive/tab_1.R">Fearon
 &amp; Laitin <code>tab_1</code></a>.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># tests/substantive/tab_1.R — see Fearon &amp; Laitin reference implementation</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>substantive_check_tab_1 <span class="ot">&lt;-</span> <span class="cf">function</span>(object) {</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="fu">check_glm_table_benchmark</span>(object, <span class="fu">tab_1_prior_war_benchmark</span>())</span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>}</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># tests/substantive/tab_1.R — see Fearon &amp; Laitin reference implementation</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>substantive_check_tab_1 <span class="ot">&lt;-</span> <span class="cf">function</span>(object) {</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="fu">check_glm_table_benchmark</span>(object, <span class="fu">tab_1_prior_war_benchmark</span>())</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>}</span></code></pre></div>
 <p><code>check_glm_table_benchmark()</code> is injected when the package
 loads substantive check scripts (via [audit_everything()] or
 [check_replication()]). Study-specific benchmark values belong in the
@@ -578,8 +588,8 @@ Use <code>full_replication = TRUE</code> to run defined checks.
 </div>
 <div id="maintainer-shortcut" class="section level3">
 <h3>Maintainer shortcut</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(<span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(<span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 </div>
 </div>
 <div id="reference-implementations" class="section level2">

@@ -378,6 +378,15 @@ authors, study repo).</p>
 registered table and figure, including engine (<code>r</code> /
 <code>stata</code>) when declared.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>)</span></code></pre></div>
+<p><strong>Working on a study repo you have checked out
+locally?</strong> Every consumer verb (<code>list_replications()</code>,
+<code>run_replication()</code>, <code>get_code()</code>,
+<code>describe_study_dag()</code>) accepts <code>doi = &quot;local&quot;</code> in
+place of a DOI. <code>setwd()</code> into the study repo (or open its
+RStudio project) and use <code>&quot;local&quot;</code> — no registry lookup or
+DOI is needed:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;path/to/rep-my-study&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;local&quot;</span>)</span></code></pre></div>
 <p>Example output (abbreviated):</p>
 <pre><code>#&gt; [[1]]
 #&gt; $id
@@ -387,10 +396,10 @@ registered table and figure, including engine (<code>r</code> /
 <p><code>list_replications(..., grouped = TRUE)</code> returns
 <strong>one entry per logical group</strong>. When both R and Stata
 exist for the same table, the default is R.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;10.1257/aer.91.5.1369&quot;</span>, <span class="at">grouped =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;10.1257/aer.91.5.1369&quot;</span>, <span class="at">grouped =</span> <span class="cn">TRUE</span>, <span class="at">language =</span> <span class="st">&quot;stata&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;10.1257/aer.91.5.1369&quot;</span>, <span class="at">grouped =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;10.1257/aer.91.5.1369&quot;</span>, <span class="at">grouped =</span> <span class="cn">TRUE</span>, <span class="at">language =</span> <span class="st">&quot;stata&quot;</span>)</span></code></pre></div>
 <p>Pipeline steps (transforms) are listed separately:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;10.1017/s0003055426101749&quot;</span>, <span class="at">include =</span> <span class="st">&quot;pipeline&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;10.1017/s0003055426101749&quot;</span>, <span class="at">include =</span> <span class="st">&quot;pipeline&quot;</span>)</span></code></pre></div>
 </div>
 <div id="run-a-replication" class="section level3">
 <h3>Run a replication</h3>
@@ -400,16 +409,16 @@ exist for the same table, the default is R.</p>
 <strong>analysis object</strong> — a <code>ggplot</code>, model, or
 <code>data.frame</code>. Pass <code>format = TRUE</code> for
 display-ready HTML or a formatted plot.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="st">&quot;fig_1&quot;</span>)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1017/S0003055403000534&quot;</span>, <span class="st">&quot;tab_1&quot;</span>, <span class="at">format =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co"># Stata engine when both exist:</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1257/aer.91.5.1369&quot;</span>, <span class="st">&quot;tab_1&quot;</span>, <span class="at">language =</span> <span class="st">&quot;stata&quot;</span>, <span class="at">format =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="st">&quot;fig_1&quot;</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1017/S0003055403000534&quot;</span>, <span class="st">&quot;tab_1&quot;</span>, <span class="at">format =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co"># Stata engine when both exist:</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1257/aer.91.5.1369&quot;</span>, <span class="st">&quot;tab_1&quot;</span>, <span class="at">language =</span> <span class="st">&quot;stata&quot;</span>, <span class="at">format =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>To reproduce an entire paper, set <code>what = &quot;everything&quot;</code>.
 The function runs every logical replication group (R by default where
 both engines exist).</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="st">&quot;everything&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="st">&quot;everything&quot;</span>)</span></code></pre></div>
 </div>
 <div id="view-the-replication-code" class="section level3">
 <h3>View the replication code</h3>
@@ -417,7 +426,7 @@ both engines exist).</p>
 source or merged Stata <code>.do</code> files. Use it when you want to
 see <em>how</em> a result was produced, not only the output. The bundled
 Shiny app shows the same text on its Code tab.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">get_code</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="st">&quot;fig_1&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">get_code</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="st">&quot;fig_1&quot;</span>), <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
 </div>
 <div id="browse-interactively-in-shiny" class="section level3">
 <h3>Browse interactively in Shiny</h3>
@@ -426,11 +435,11 @@ switch between tables and figures, run replications, and copy the
 <code>run_replication()</code> call.</p>
 <p><code>run_shiny_app()</code> launches the bundled app from the
 installed package.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">run_shiny_app</span>()</span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">run_shiny_app</span>()</span></code></pre></div>
 <p><code>save_local_shiny()</code> copies <code>app.R</code> and assets
 into a directory for Shiny Server (it never overwrites an existing
 <code>local.R</code>).</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">save_local_shiny</span>(<span class="st">&quot;/srv/shiny/replicate&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">save_local_shiny</span>(<span class="st">&quot;/srv/shiny/replicate&quot;</span>)</span></code></pre></div>
 <p>See
 <code>vignette(&quot;shiny-app&quot;, package = &quot;replicateEverything&quot;)</code> for
 deployment details. A live demo runs at <a href="https://shiny2.wzb.eu/ipi/replicate/">shiny2.wzb.eu/ipi/replicate/</a>.</p>
@@ -444,20 +453,20 @@ operators syncing stubs and auditing the fleet).</p>
 <p>When you work inside a monorepo checkout (sibling
 <code>registry/</code> and <code>rep-*</code> study folders), point the
 package at local paths before calling discovery or run functions:</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">options</span>(</span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>  <span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;/path/to/replicate_everything/registry&quot;</span>,</span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>  <span class="at">replicateEverything.study_folders_root =</span> <span class="st">&quot;/path/to/replicate_everything&quot;</span>,</span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">replicateEverything.use_sibling_packages =</span> <span class="cn">TRUE</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">options</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;/path/to/replicate_everything/registry&quot;</span>,</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">replicateEverything.study_folders_root =</span> <span class="st">&quot;/path/to/replicate_everything&quot;</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">replicateEverything.use_sibling_packages =</span> <span class="cn">TRUE</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>)</span></code></pre></div>
 <p>Without these options the package reads the public registry from
 GitHub and clones study materials on demand.</p>
 <div id="maintainer-setup-dependencies" class="section level3">
 <h3>Maintainer setup (dependencies)</h3>
 <p>Live Run and Shiny <strong>probe</strong> dependencies only.
 Maintainers install once with:</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">check_study_compatibility</span>(<span class="st">&quot;10.1017/S0003055426101749&quot;</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">install_dependencies</span>(<span class="st">&quot;10.1017/S0003055426101749&quot;</span>)  <span class="co"># folder or package DOI</span></span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="fu">install_dependencies</span>(<span class="st">&quot;everywhere&quot;</span>)                  <span class="co"># every study in the registry</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">check_study_compatibility</span>(<span class="st">&quot;10.1017/S0003055426101749&quot;</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">install_dependencies</span>(<span class="st">&quot;10.1017/S0003055426101749&quot;</span>)  <span class="co"># folder or package DOI</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="fu">install_dependencies</span>(<span class="st">&quot;everywhere&quot;</span>)                  <span class="co"># every study in the registry</span></span></code></pre></div>
 <p>Build display outputs with [build_study_outputs()]. Full details:
 <code>vignette(&quot;maintainer-setup&quot;)</code>.</p>
 </div>
@@ -469,28 +478,35 @@ Maintainers install once with:</p>
 <p>[build_study_outputs()] runs every replication and writes display
 files under <code>outputs/</code> plus
 <code>outputs/manifest.json</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">build_study_outputs</span>(<span class="st">&quot;.&quot;</span>, <span class="at">install_deps =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">build_study_outputs</span>(<span class="st">&quot;.&quot;</span>, <span class="at">install_deps =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>[check_replication()] runs a transparent checklist: layout, yaml,
 outputs, tests, and optional live runs.</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;.&quot;</span>, <span class="at">full_replication =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;.&quot;</span>, <span class="at">full_replication =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 <p><code>check_and_bake_study()</code> runs the same checklist and
 (optionally) bakes <code>outputs/</code> first — the single contributor
 entrypoint. It writes nothing into the study repo or a registry; it only
 validates.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">check_and_bake_study</span>(<span class="st">&quot;.&quot;</span>, <span class="at">build_artifacts =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p>Before running the full checklist, a manual smoke check with
+<code>&quot;local&quot;</code> is a fast way to confirm the study resolves and
+runs — no registry required:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;local&quot;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">describe_study_dag</span>(<span class="st">&quot;local&quot;</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;local&quot;</span>, <span class="st">&quot;tab_1&quot;</span>)  <span class="co"># one light step</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="fu">check_and_bake_study</span>(<span class="st">&quot;.&quot;</span>, <span class="at">build_artifacts =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 </div>
 <div id="registry-sync-maintainer" class="section level3">
 <h3>Registry sync (maintainer)</h3>
 <p>There is <strong>no study-local registry handoff</strong>. A
 maintainer with a local registry checkout writes the stub directly from
 the study’s <code>replication.yml</code>:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
-<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(<span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>)</span>
-<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="fu">refresh_registry</span>(<span class="st">&quot;../registry&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(<span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a><span class="fu">refresh_registry</span>(<span class="st">&quot;../registry&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p><code>register_study()</code> runs
 <code>check_and_bake_study()</code> then
 <code>sync_study_to_registry()</code> in one call:</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">register_study</span>(<span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>, <span class="at">registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">register_study</span>(<span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>, <span class="at">registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span></code></pre></div>
 <p>See <code>vignette(&quot;maintainer-setup&quot;)</code> for the full maintainer
 workflow.</p>
 </div>
@@ -499,10 +515,10 @@ workflow.</p>
 <p>[validate_outputs()] checks that declared table and figure files
 exist on disk (for Shiny <strong>Display</strong>). It does not run live
 replications.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">validate_outputs</span>(<span class="at">location =</span> <span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a><span class="fu">validate_outputs</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="at">what =</span> <span class="st">&quot;everything&quot;</span>)</span>
-<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
-<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a><span class="fu">validate_outputs</span>(<span class="at">doi =</span> <span class="st">&quot;everywhere&quot;</span>, <span class="at">what =</span> <span class="st">&quot;everything&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">validate_outputs</span>(<span class="at">location =</span> <span class="st">&quot;../rep-10.1177-00491241211036161&quot;</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a><span class="fu">validate_outputs</span>(<span class="st">&quot;10.1177/00491241211036161&quot;</span>, <span class="at">what =</span> <span class="st">&quot;everything&quot;</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="fu">validate_outputs</span>(<span class="at">doi =</span> <span class="st">&quot;everywhere&quot;</span>, <span class="at">what =</span> <span class="st">&quot;everything&quot;</span>)</span></code></pre></div>
 </div>
 <div id="package-backed-studies-contributor" class="section level3">
 <h3>Package-backed studies (contributor)</h3>
@@ -515,8 +531,8 @@ named in yaml. Validate with [check_replication()] (or
 [check_and_bake_study()]), then a maintainer syncs the stub with
 <code>sync_study_to_registry()</code> — no <code>inst/registry/</code>
 handoff files.</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>)</span>
-<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>, <span class="at">full_replication =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>, <span class="at">full_replication =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 <p>See <code>vignette(&quot;package-replication-checklist&quot;)</code> for layout
 and API requirements.</p>
 </div>
@@ -526,9 +542,9 @@ and API requirements.</p>
 the registry (all engines), with a per-object time limit. Use it to
 check registry health after changes. Restrict with <code>dois =</code>
 or <code>collections =</code> (e.g. <code>&quot;APSR&quot;</code>).</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>audit <span class="ot">&lt;-</span> <span class="fu">audit_everything</span>(<span class="at">patience =</span> <span class="dv">20</span>, <span class="at">dois =</span> <span class="st">&quot;10.1177/00491241211036161&quot;</span>)</span>
-<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a><span class="co"># audit &lt;- audit_everything(patience = 20, collections = &quot;APSR&quot;)</span></span>
-<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a><span class="fu">print</span>(audit)</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>audit <span class="ot">&lt;-</span> <span class="fu">audit_everything</span>(<span class="at">patience =</span> <span class="dv">20</span>, <span class="at">dois =</span> <span class="st">&quot;10.1177/00491241211036161&quot;</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a><span class="co"># audit &lt;- audit_everything(patience = 20, collections = &quot;APSR&quot;)</span></span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a><span class="fu">print</span>(audit)</span></code></pre></div>
 <p>Example summary line:</p>
 <pre><code>#&gt; Studies: 1 | Runs: 4 | OK: 4 | Failed: 0 | Timed out: 0</code></pre>
 <p>See <code>vignette(&quot;audit&quot;)</code> for the latest snapshot table
@@ -554,87 +570,92 @@ shipped with the package.</p>
 <td></td>
 </tr>
 <tr class="even">
+<td>Use the study in the cwd (no registry)</td>
+<td><code>doi = &quot;local&quot;</code>
+(e.g. <code>list_replications(&quot;local&quot;)</code>)</td>
+</tr>
+<tr class="odd">
 <td>Browse registry</td>
 <td><code>load_index()</code>, <code>search_papers()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>What can I replicate?</td>
 <td><code>list_replications()</code>,
 <code>list_replications(..., grouped = TRUE)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Run one result</td>
 <td><code>run_replication()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Run whole paper</td>
 <td><code>run_replication(doi, &quot;everything&quot;)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>View code</td>
 <td><code>get_code()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Interactive browser</td>
 <td><code>run_shiny_app()</code>, <code>save_local_shiny()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>Contributor</strong></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Check machine vs study yaml</td>
 <td><code>check_study_compatibility()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Install deps (one study)</td>
 <td><code>install_dependencies()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Install deps (all studies)</td>
 <td><code>install_dependencies(&quot;everywhere&quot;)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Build study outputs</td>
 <td><code>build_study_outputs()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Validate (+ optional bake)</td>
 <td><code>check_and_bake_study()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Validate study (checklist only)</td>
 <td><code>check_replication()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Check precomputed outputs</td>
 <td><code>validate_outputs()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>Maintainer</strong></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Validate then sync in one call</td>
 <td><code>register_study()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Sync study into registry</td>
 <td><code>sync_study_to_registry()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Rebuild index + audit all</td>
 <td><code>refresh_registry()</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Rebuild index only</td>
 <td><code>build_registry_index()</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Registry output check</td>
 <td><code>validate_outputs(doi = &quot;everywhere&quot;, what = &quot;everything&quot;)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Registry health check</td>
 <td><code>audit_everything()</code></td>
 </tr>

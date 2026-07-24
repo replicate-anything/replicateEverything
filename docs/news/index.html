@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,18 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.4" id="replicateeverything-074">replicateEverything 0.7.4<a class="anchor" aria-label="anchor" href="#replicateeverything-074"></a></h2>
+<div class="section level3">
+<h3 id="discoverability-of-doi--local-cwd-study-root-0-7-4">Discoverability of <code>doi = "local"</code> (cwd study root)<a class="anchor" aria-label="anchor" href="#discoverability-of-doi--local-cwd-study-root-0-7-4"></a></h3>
+<ul><li>
+<strong>Docs:</strong> [list_replications()], [run_replication()], [get_code()], and [describe_study_dag()] now document and demonstrate <code>doi = "local"</code> / <code>meta = "local"</code> with <code>\dontrun</code> examples — <code><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd()</a></code> into a checked-out study repo (or open its RStudio project), then call the verb directly with <code>"local"</code>; no registry lookup or DOI is required. [check_replication()], [check_and_bake_study()], and [build_study_outputs()] now cross-reference the same working-directory study via their <code>location = "."</code> default and show a manual smoke-check snippet (<code>list_replications("local")</code>, <code>describe_study_dag("local")</code>, <code>run_replication("local", "&lt;id&gt;")</code>) ahead of the full checklist.</li>
+<li>
+<strong>Vignettes / skills:</strong> <code>folder-replication-checklist</code>, <code>package-replication-checklist</code>, and <code>meet-the-functions</code> vignettes, plus <code>inst/ai/skills/folder_replication.md</code> and <code>inst/ai/skills/include_study_in_registry.md</code>, add the same manual local smoke-check block before <code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code>. Root <code>AI.md</code>’s contribute-flow summary was expanded to spell out the smoke-check calls.</li>
+<li>
+<strong>Shiny app:</strong> the study picker dropdown now pins an explicit “Local study (this folder)” choice (value <code>"local"</code>) at the top when the app’s working directory resolves to a study repo (same lookup <code>doi = "local"</code> uses), and the DOI/path text field’s placeholder and inline help text spell out that typing or selecting <code>local</code> loads that study directly — no DOI or registry lookup needed. When no local study is detected (the normal production deployment), the extra choice is simply absent and remote registry / DOI search is unaffected. New <code>local_study_select_choice()</code> helper in <code>inst/shiny/app.R</code>, covered by two new <code>testthat</code> cases in <code>test-shiny-app.R</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.3" id="replicateeverything-073">replicateEverything 0.7.3<a class="anchor" aria-label="anchor" href="#replicateeverything-073"></a></h2>
 <div class="section level3">

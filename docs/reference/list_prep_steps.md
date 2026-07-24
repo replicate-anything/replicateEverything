@@ -14,7 +14,10 @@ list_prep_steps(doi, repo = NULL, folder = NULL)
 
 - doi:
 
-  Character. DOI, registry handle, or local study path.
+  Character. DOI, registry handle, or local study path. Pass `"local"`
+  (or `""` / `"."`) to use the study in the current working directory —
+  no registry lookup is needed; see
+  [`resolve_doi_input()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_doi_input.md).
 
 - repo:
 

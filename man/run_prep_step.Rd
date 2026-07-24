@@ -15,7 +15,8 @@ run_prep_step(
 }
 \arguments{
 \item{doi}{Character. DOI, registry handle, or local study path (see
-\code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}). Pass \code{"local"} to run against the study in
+the current working directory — no registry lookup is needed.}
 
 \item{what}{Prep step id (e.g. \code{"construct_analysis_dataset"}).}
 

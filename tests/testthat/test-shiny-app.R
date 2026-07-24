@@ -178,6 +178,62 @@ test_that("app.R onFlushed callbacks do not call invalidateLater", {
   }
 })
 
+test_that("app.R surfaces a local-study choice and hint text in the DOI picker", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  lines <- readLines(file.path(src, "app.R"), warn = FALSE)
+  text <- paste(lines, collapse = "\n")
+
+  # Pinned dropdown choice helper is defined ...
+  expect_match(text, "local_study_select_choice\\s*<-\\s*function")
+  # ... and referenced in both the initial UI and the server-side choices
+  # refresh, so a local study checkout is discoverable in the dropdown, not
+  # only by typing "local" from memory.
+  expect_gte(sum(grepl("local_study_select_choice()", lines, fixed = TRUE)), 2L)
+
+  # DOI/path free-text field and inline help both mention "local" explicitly.
+  expect_true(any(grepl('placeholder', lines, fixed = TRUE) &
+    grepl("local", lines, fixed = TRUE)))
+  expect_true(any(grepl("type or select", lines, fixed = TRUE) &
+    grepl("local", lines, fixed = TRUE)))
+
+  # resolve_study_doi_input already treats blank / "local" input as the
+  # working-directory study for both dropdown and free-text submission paths.
+  expect_true(any(grepl('doi_input <- "local"', lines, fixed = TRUE)))
+})
+
+test_that("local_study_select_choice falls back to character(0) when no local study is found", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  # Extract just the helper (avoids sourcing the rest of app.R, which runs
+  # top-level Shiny startup / registry configuration side effects).
+  lines <- readLines(file.path(src, "app.R"), warn = FALSE)
+  start <- grep("^local_study_select_choice <- function", lines)
+  skip_if(length(start) == 0L, "local_study_select_choice not found in app.R")
+  depth <- 0L
+  end <- start
+  for (i in seq(start, length(lines))) {
+    depth <- depth + nchar(gsub("[^{]", "", lines[[i]])) - nchar(gsub("[^}]", "", lines[[i]]))
+    if (depth <= 0L && i > start) {
+      end <- i
+      break
+    }
+  }
+  fn_env <- new.env(parent = globalenv())
+  fn_env$`%||%` <- function(a, b) if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
+  fn_env$truncate_label <- function(text, max_chars = 40L) as.character(text)[[1]]
+  fn_env$replicate_fn <- function(name, ...) {
+    if (identical(name, "find_local_study_root")) {
+      return(NULL)
+    }
+    NULL
+  }
+  eval(parse(text = lines[start:end]), envir = fn_env)
+  expect_identical(fn_env$local_study_select_choice(), character(0))
+})
+
 test_that("app.R isolates clientData reads when arming welcome from onFlushed", {
   src <- shiny_app_dir()
   skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")

@@ -1,5 +1,40 @@
 # Changelog
 
+## replicateEverything 0.7.4
+
+### Discoverability of `doi = "local"` (cwd study root)
+
+- **Docs:** \[list_replications()\], \[run_replication()\],
+  \[get_code()\], and \[describe_study_dag()\] now document and
+  demonstrate `doi = "local"` / `meta = "local"` with `\dontrun`
+  examples — [`setwd()`](https://rdrr.io/r/base/getwd.html) into a
+  checked-out study repo (or open its RStudio project), then call the
+  verb directly with `"local"`; no registry lookup or DOI is required.
+  \[check_replication()\], \[check_and_bake_study()\], and
+  \[build_study_outputs()\] now cross-reference the same
+  working-directory study via their `location = "."` default and show a
+  manual smoke-check snippet (`list_replications("local")`,
+  `describe_study_dag("local")`, `run_replication("local", "<id>")`)
+  ahead of the full checklist.
+- **Vignettes / skills:** `folder-replication-checklist`,
+  `package-replication-checklist`, and `meet-the-functions` vignettes,
+  plus `inst/ai/skills/folder_replication.md` and
+  `inst/ai/skills/include_study_in_registry.md`, add the same manual
+  local smoke-check block before
+  [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md).
+  Root `AI.md`’s contribute-flow summary was expanded to spell out the
+  smoke-check calls.
+- **Shiny app:** the study picker dropdown now pins an explicit “Local
+  study (this folder)” choice (value `"local"`) at the top when the
+  app’s working directory resolves to a study repo (same lookup
+  `doi = "local"` uses), and the DOI/path text field’s placeholder and
+  inline help text spell out that typing or selecting `local` loads that
+  study directly — no DOI or registry lookup needed. When no local study
+  is detected (the normal production deployment), the extra choice is
+  simply absent and remote registry / DOI search is unaffected. New
+  `local_study_select_choice()` helper in `inst/shiny/app.R`, covered by
+  two new `testthat` cases in `test-shiny-app.R`.
+
 ## replicateEverything 0.7.3
 
 ### API consolidation: install_dependencies()

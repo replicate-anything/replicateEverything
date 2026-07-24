@@ -7,7 +7,8 @@
 #'
 #' @param location Local study path, GitHub address, or installed package
 #'   name. Defaults to `"."` when the working directory contains
-#'   `replication.yml` or `DESCRIPTION`.
+#'   `replication.yml` or `DESCRIPTION` — the same study that `doi = "local"`
+#'   resolves to for [list_replications()] / [run_replication()] / [get_code()].
 #' @param install_deps Logical. Install missing CRAN, pip, and Stata dependencies
 #'   when `TRUE`.
 #' @param ids Optional character vector of replication ids to build. When
@@ -25,6 +26,9 @@
 #'
 #' @examples
 #' \dontrun{
+#' # setwd() to the study repo (or open its RStudio project), then:
+#' setwd("path/to/rep-my-study")
+#' list_replications("local")  # sanity-check before baking
 #' build_study_outputs(".", install_deps = TRUE)
 #' build_study_outputs("rep1371journalpone0278337", install_deps = TRUE)
 #' build_study_outputs(".", only_missing = TRUE)

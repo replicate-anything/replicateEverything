@@ -369,6 +369,20 @@ study packages), copy <code>inst/shiny/local.R.example</code> to
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;/path/to/registry&quot;</span>,</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">replicate_shiny.auto_update_replicate_everything =</span> <span class="cn">FALSE</span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>)</span></code></pre></div>
+<div id="loading-the-local-study-in-the-sidebar" class="section level3">
+<h3>Loading the “local” study in the sidebar</h3>
+<p>When the app’s working directory resolves to a study repo (walking up
+for <code>replication.yml</code> — the same lookup
+<code>doi = &quot;local&quot;</code> uses in the R API), the study picker dropdown
+pins an extra choice at the top: <strong>“📂 Local study (this folder):
+&lt;title&gt;”</strong>. Selecting it, or typing <code>local</code> into
+the DOI/path field and clicking <strong>Go</strong>, loads that study
+directly — no registry lookup or DOI required. Leaving the DOI/path
+field blank and clicking <strong>Go</strong> does the same thing
+(defaults to <code>&quot;local&quot;</code>). In production deployments with no
+local study checkout, the extra choice is simply absent and registry/DOI
+search is unaffected.</p>
+</div>
 </div>
 <div id="option-2-copy-for-shiny-server" class="section level2">
 <h2>Option 2: Copy for Shiny Server</h2>

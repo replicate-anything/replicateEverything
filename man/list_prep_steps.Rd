@@ -7,7 +7,10 @@
 list_prep_steps(doi, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{doi}{Character. DOI, registry handle, or local study path.}
+\item{doi}{Character. DOI, registry handle, or local study path. Pass
+\code{"local"} (or \code{""} / \code{"."}) to use the study in the
+current working directory — no registry lookup is needed; see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}.}
 
 \item{repo}{Optional repository slug.}
 

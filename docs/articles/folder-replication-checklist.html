@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -246,7 +246,18 @@ child step exists</li>
 <div class="section level3">
 <h3 id="validate-contributor">3. Validate (contributor)<a class="anchor" aria-label="anchor" href="#validate-contributor"></a>
 </h3>
+<p>Before running the full checklist, a quick <strong>manual smoke
+check</strong> from the study repo root confirms the study resolves and
+runs without any registry setup — pass <code>"local"</code> (the
+working-directory study) instead of a DOI:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span>        <span class="co"># what does this study expose?</span></span>
+<span><span class="fu"><a href="../reference/describe_study_dag.html">describe_study_dag</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span>       <span class="co"># sanity-check the parsed step DAG</span></span>
+<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"local"</span>, <span class="st">"tab_1"</span><span class="op">)</span> <span class="co"># one light step end-to-end</span></span></code></pre></div>
+<p>Then run the full contributor checklist:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span></span>
 <span>  location <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  build_artifacts <span class="op">=</span> <span class="cn">FALSE</span>   <span class="co"># already built above</span></span>
@@ -263,7 +274,7 @@ Commit your study once checks pass; a registry
 </h3>
 <p>Maintainers work from a local <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a>
 checkout:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span></span>
@@ -281,13 +292,13 @@ never the full <code>steps:</code> list), writes it to
 <code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> in one call.</p>
 <p>After syncing several studies, refresh the whole registry and rerun
 the audit:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="tests-recommended-before-syncing">5. Tests (recommended before syncing)<a class="anchor" aria-label="anchor" href="#tests-recommended-before-syncing"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_dir.html" class="external-link">test_dir</a></span><span class="op">(</span><span class="st">"tests/testthat"</span><span class="op">)</span></span></code></pre></div>
 <p>Run tests before <code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> so the checklist
 reflects a merge-ready study.</p>
@@ -304,7 +315,7 @@ replicated estimates to <strong>numbers in the published table</strong>
 figure where you can quote benchmarks from the paper. Reference
 implementation: <a href="https://github.com/replicate-anything/rep-10.1017-S0003055403000534/blob/main/tests/substantive/tab_1.R" class="external-link">Fearon
 &amp; Laitin <code>tab_1</code></a>.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># tests/substantive/tab_1.R — see Fearon &amp; Laitin reference implementation</span></span>
 <span><span class="va">substantive_check_tab_1</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">object</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/check_glm_table_benchmark.html">check_glm_table_benchmark</a></span><span class="op">(</span><span class="va">object</span>, <span class="fu">tab_1_prior_war_benchmark</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -326,7 +337,7 @@ Use <code>full_replication = TRUE</code> to run defined checks.
 <div class="section level3">
 <h3 id="maintainer-shortcut">Maintainer shortcut<a class="anchor" aria-label="anchor" href="#maintainer-shortcut"></a>
 </h3>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span><span class="st">"../rep-10.1177-00491241211036161"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>

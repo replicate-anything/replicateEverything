@@ -40,6 +40,7 @@ The full contract stays at repo root: `replication.yml` (folder) or
 - [ ] 1. Full `replication.yml` uses `steps:` DAG
 - [ ] 2. `maintainer:` (name + email) and `collections:` declared
 - [ ] 3. Build outputs: `build_study_outputs()`
+- [ ] 3b. Manual smoke check: `list_replications("local")`, `describe_study_dag("local")`, `run_replication("local", "<id>")`
 - [ ] 4. Validate: `check_replication()` (includes substantive-check coverage)
 - [ ] 4b. Add `tests/substantive/<step_id>.R` for published benchmarks where possible
 - [ ] 5. Prepare / validate: `check_and_bake_study(".")`
@@ -47,8 +48,16 @@ The full contract stays at repo root: `replication.yml` (folder) or
 - [ ] 7. Open PR on study repo; notify registry maintainer
 ```
 
+From the study repo root (`setwd()` there, or open its RStudio project),
+every consumer verb accepts `doi = "local"` for the working-directory study
+— no registry lookup needed:
+
 ```r
 library(replicateEverything)
+
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "<id>")  # one light step
 
 # Folder or package study — bake + validate; stub is written later by the maintainer
 check_and_bake_study(".", build_artifacts = TRUE)

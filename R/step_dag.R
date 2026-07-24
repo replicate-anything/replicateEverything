@@ -515,7 +515,9 @@ resolve_study_meta_input <- function(meta, repo = NULL, folder = NULL) {
 }
 
 #' Step display data for Shiny (components of paths of id / label / description)
-#' @param meta Parsed replication metadata, or a DOI / registry handle.
+#' @param meta Parsed replication metadata, or a DOI / registry handle. Pass
+#'   \code{"local"} to describe the study in the current working directory
+#'   (no registry lookup needed; see [resolve_doi_input()]).
 #' @param repo Optional repository slug when `meta` is a DOI or handle.
 #' @param folder Optional registry folder when `meta` is a DOI or handle.
 #' @return A list of components; each component is a list of paths; each path is a
@@ -642,6 +644,17 @@ study_dag_for_step <- function(meta, step_id, repo = NULL, folder = NULL) {
 #' Text representation of the study DAG for Shiny / CLI
 #' @inheritParams study_dag_display
 #' @return Character vector of component strings.
+#'
+#' @examples
+#' \dontrun{
+#' describe_study_dag("10.1177/00491241211036161")
+#'
+#' # setwd() to a checked-out study repo (or open its RStudio project) and
+#' # sanity-check the parsed DAG without any registry — no DOI needed.
+#' setwd("path/to/rep-my-study")
+#' describe_study_dag("local")
+#' }
+#'
 #' @export
 describe_study_dag <- function(meta, repo = NULL, folder = NULL) {
   meta <- resolve_study_meta_input(meta, repo = repo, folder = folder)

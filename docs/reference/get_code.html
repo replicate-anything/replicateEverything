@@ -21,7 +21,7 @@ and omitted for Stata."><meta property="og:image" content="https://replicate-any
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,7 +73,10 @@ and omitted for Stata.</p>
 
 
 <dl><dt id="arg-doi">doi<a class="anchor" aria-label="anchor" href="#arg-doi"></a></dt>
-<dd><p>Character. DOI of the paper.</p></dd>
+<dd><p>Character. DOI of the paper, registry handle, or local study
+path. Pass <code>"local"</code> to read code from the study in the current
+working directory — no registry lookup is needed; see
+<code><a href="resolve_doi_input.html">resolve_doi_input()</a></code>.</p></dd>
 
 
 <dt id="arg-what">what<a class="anchor" aria-label="anchor" href="#arg-what"></a></dt>
@@ -128,6 +131,10 @@ reading <code>code/*.R</code> from the registry repo).</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">get_code</span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">get_code</span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"tab_1"</span>, language <span class="op">=</span> <span class="st">"stata"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">get_code</span><span class="op">(</span><span class="st">"rep-template"</span>, <span class="st">"tab_1"</span>, mode <span class="op">=</span> <span class="st">"run"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># setwd() to a checked-out study repo (or open its RStudio project):</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"path/to/rep-my-study"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">get_code</span><span class="op">(</span><span class="st">"local"</span>, <span class="st">"tab_1"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

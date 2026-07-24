@@ -8,7 +8,10 @@
 #'
 #' @param location Local study path, GitHub address, or installed package path.
 #'   Defaults to the current working directory when it contains
-#'   `replication.yml` or `DESCRIPTION`.
+#'   `replication.yml` or `DESCRIPTION`. This is the `location` analog of
+#'   `doi = "local"` used by [list_replications()], [run_replication()], and
+#'   [get_code()] — both mean "the study checked out in the current working
+#'   directory"; no registry lookup is required.
 #' @param full_replication If `TRUE`, also run every table and figure via
 #'   [run_replication()] and require success.
 #' @param registry_root Optional path to the registry checkout (folder studies
@@ -19,6 +22,14 @@
 #'
 #' @examples
 #' \dontrun{
+#' # setwd() to the study repo (or open its RStudio project) first, then:
+#' setwd("path/to/rep-my-study")
+#'
+#' # Quick manual smoke check before the full checklist:
+#' list_replications("local")
+#' describe_study_dag("local")
+#' run_replication("local", "tab_1")  # one light step
+#'
 #' check_replication(".")
 #' check_replication(".", full_replication = TRUE)
 #' check_replication("../rep-10.1371-journal.pone.0278337")

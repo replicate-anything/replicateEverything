@@ -65,6 +65,23 @@ lists every registered table and figure, including engine (`r` /
 list_replications("10.1177/00491241211036161")
 ```
 
+**Working on a study repo you have checked out locally?** Every consumer
+verb
+([`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md),
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md),
+[`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md),
+[`describe_study_dag()`](https://replicate-anything.github.io/replicateEverything/reference/describe_study_dag.md))
+accepts `doi = "local"` in place of a DOI.
+[`setwd()`](https://rdrr.io/r/base/getwd.html) into the study repo (or
+open its RStudio project) and use `"local"` — no registry lookup or DOI
+is needed:
+
+``` r
+
+setwd("path/to/rep-my-study")
+list_replications("local")
+```
+
 Example output (abbreviated):
 
     #> [[1]]
@@ -222,7 +239,15 @@ runs the same checklist and (optionally) bakes `outputs/` first — the
 single contributor entrypoint. It writes nothing into the study repo or
 a registry; it only validates.
 
+Before running the full checklist, a manual smoke check with `"local"`
+is a fast way to confirm the study resolves and runs — no registry
+required:
+
 ``` r
+
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "tab_1")  # one light step
 
 check_and_bake_study(".", build_artifacts = TRUE)
 ```
@@ -321,6 +346,7 @@ for the latest snapshot table shipped with the package.
 | Task | Function |
 |----|----|
 | **Consumer** |  |
+| Use the study in the cwd (no registry) | `doi = "local"` (e.g. `list_replications("local")`) |
 | Browse registry | [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md), [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md) |
 | What can I replicate? | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), `list_replications(..., grouped = TRUE)` |
 | Run one result | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |

@@ -26,6 +26,8 @@ run_replication(
 
   Character. DOI, registry handle, or local study path (see
   [`resolve_doi_input()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_doi_input.md)).
+  Pass `"local"` to run against the study in the current working
+  directory — no registry lookup is needed.
 
 - what:
 
@@ -96,5 +98,11 @@ run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 run_replication("10.1177/00491241211036161", "everything")
+
+# setwd() to a checked-out study repo (or open its RStudio project) and
+# run a step against it directly — no DOI or registry lookup required.
+setwd("path/to/rep-my-study")
+run_replication("local", "tab_1")
+run_replication("local", "fig_1", format = TRUE)
 } # }
 ```

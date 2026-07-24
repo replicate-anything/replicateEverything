@@ -13,7 +13,10 @@ study_dag_display(meta, repo = NULL, folder = NULL)
 
 - meta:
 
-  Parsed replication metadata, or a DOI / registry handle.
+  Parsed replication metadata, or a DOI / registry handle. Pass
+  `"local"` to describe the study in the current working directory (no
+  registry lookup needed; see
+  [`resolve_doi_input()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_doi_input.md)).
 
 - repo:
 

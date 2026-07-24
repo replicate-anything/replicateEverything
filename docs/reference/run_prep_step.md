@@ -23,6 +23,8 @@ run_prep_step(
 
   Character. DOI, registry handle, or local study path (see
   [`resolve_doi_input()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_doi_input.md)).
+  Pass `"local"` to run against the study in the current working
+  directory — no registry lookup is needed.
 
 - what:
 

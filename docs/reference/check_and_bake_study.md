@@ -24,7 +24,13 @@ check_and_bake_study(
 
 - location:
 
-  Study repo path or GitHub address. Defaults to `"."`.
+  Study repo path or GitHub address. Defaults to `"."` — the current
+  working directory, i.e. the same study `doi = "local"` resolves to for
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  /
+  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  /
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md).
 
 - build_artifacts:
 
@@ -51,6 +57,15 @@ Invisibly, a checklist result (`folder_replication_check` or
 
 ``` r
 if (FALSE) { # \dontrun{
+# setwd() to the study repo (or open its RStudio project) first.
+setwd("path/to/rep-my-study")
+
+# Manual smoke check before the full contributor checklist — no
+# registry required:
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "tab_1")  # one light step
+
 check_and_bake_study(".")
 } # }
 ```

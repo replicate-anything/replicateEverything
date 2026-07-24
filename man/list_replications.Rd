@@ -14,7 +14,10 @@ list_replications(
 )
 }
 \arguments{
-\item{doi}{Character. DOI, registry handle, or local study path.}
+\item{doi}{Character. DOI, registry handle, or local study path. Pass
+\code{"local"} (or \code{""} / \code{"."}) to use the study in the
+current working directory — no registry lookup is needed; see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}.}
 
 \item{repo}{Optional repository slug.}
 
@@ -45,6 +48,13 @@ list_replications("10.1177/00491241211036161")
 list_replications("10.1257/aer.91.5.1369", grouped = TRUE)
 list_replications("10.1257/aer.91.5.1369", grouped = TRUE, language = "stata")
 list_replications("10.1017/s0003055426101749", include = "pipeline")
+
+# Working on a study repo checked out locally: setwd() to the study repo
+# root (or open its RStudio project), then use "local" — no registry or
+# DOI lookup required.
+setwd("path/to/rep-my-study")
+list_replications("local")
+list_replications("local", grouped = TRUE)
 }
 
 }

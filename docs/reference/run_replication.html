@@ -11,7 +11,7 @@ steps; format children run only when format = TRUE).'><meta property="og:image" 
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,8 @@ steps; format children run only when <code>format = TRUE</code>).</p>
 
 <dl><dt id="arg-doi">doi<a class="anchor" aria-label="anchor" href="#arg-doi"></a></dt>
 <dd><p>Character. DOI, registry handle, or local study path (see
-<code><a href="resolve_doi_input.html">resolve_doi_input()</a></code>).</p></dd>
+<code><a href="resolve_doi_input.html">resolve_doi_input()</a></code>). Pass <code>"local"</code> to run against the study in
+the current working directory — no registry lookup is needed.</p></dd>
 
 
 <dt id="arg-what">what<a class="anchor" aria-label="anchor" href="#arg-what"></a></dt>
@@ -132,6 +133,12 @@ registered <code>format_*</code> step when <code>replication.yml</code> defines 
 <span class="r-in"><span><span class="fu">run_replication</span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"tab_1"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">run_replication</span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"tab_1"</span>, language <span class="op">=</span> <span class="st">"stata"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">run_replication</span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"everything"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># setwd() to a checked-out study repo (or open its RStudio project) and</span></span></span>
+<span class="r-in"><span><span class="co"># run a step against it directly — no DOI or registry lookup required.</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"path/to/rep-my-study"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">run_replication</span><span class="op">(</span><span class="st">"local"</span>, <span class="st">"tab_1"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">run_replication</span><span class="op">(</span><span class="st">"local"</span>, <span class="st">"fig_1"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

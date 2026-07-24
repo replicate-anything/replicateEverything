@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -95,6 +95,21 @@ study packages), copy <code>inst/shiny/local.R.example</code> to
 <span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/registry"</span>,</span>
 <span>  replicate_shiny.auto_update_replicate_everything <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="loading-the-local-study-in-the-sidebar">Loading the “local” study in the sidebar<a class="anchor" aria-label="anchor" href="#loading-the-local-study-in-the-sidebar"></a>
+</h3>
+<p>When the app’s working directory resolves to a study repo (walking up
+for <code>replication.yml</code> — the same lookup
+<code>doi = "local"</code> uses in the R API), the study picker dropdown
+pins an extra choice at the top: <strong>“📂 Local study (this folder):
+&lt;title&gt;”</strong>. Selecting it, or typing <code>local</code> into
+the DOI/path field and clicking <strong>Go</strong>, loads that study
+directly — no registry lookup or DOI required. Leaving the DOI/path
+field blank and clicking <strong>Go</strong> does the same thing
+(defaults to <code>"local"</code>). In production deployments with no
+local study checkout, the extra choice is simply absent and registry/DOI
+search is unaffected.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="option-2-copy-for-shiny-server">Option 2: Copy for Shiny Server<a class="anchor" aria-label="anchor" href="#option-2-copy-for-shiny-server"></a>

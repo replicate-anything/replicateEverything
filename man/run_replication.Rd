@@ -18,7 +18,8 @@ run_replication(
 }
 \arguments{
 \item{doi}{Character. DOI, registry handle, or local study path (see
-\code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}). Pass \code{"local"} to run against the study in
+the current working directory — no registry lookup is needed.}
 
 \item{what}{Character. Step or replication identifier (e.g. \code{"tab_1"}),
 or \code{"everything"} to run all non-format steps in the study DAG.}
@@ -73,6 +74,12 @@ run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
 run_replication("10.1177/00491241211036161", "everything")
+
+# setwd() to a checked-out study repo (or open its RStudio project) and
+# run a step against it directly — no DOI or registry lookup required.
+setwd("path/to/rep-my-study")
+run_replication("local", "tab_1")
+run_replication("local", "fig_1", format = TRUE)
 }
 
 }

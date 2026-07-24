@@ -22,7 +22,10 @@
 #' study package GitHub repo when the package is not installed (same idea as
 #' reading \code{code/*.R} from the registry repo).
 #'
-#' @param doi Character. DOI of the paper.
+#' @param doi Character. DOI of the paper, registry handle, or local study
+#'   path. Pass \code{"local"} to read code from the study in the current
+#'   working directory — no registry lookup is needed; see
+#'   [resolve_doi_input()].
 #' @param what Character. Replication identifier (logical id).
 #' @param language Optional \code{"R"} or \code{"stata"}.
 #' @param style Display style: \code{"inline"} (default, inlines Stata sources for
@@ -39,6 +42,10 @@
 #' head(get_code("10.1177/00491241211036161", "fig_1"))
 #' get_code("10.1017/S0003055403000534", "tab_1", language = "stata")
 #' get_code("rep-template", "tab_1", mode = "run")
+#'
+#' # setwd() to a checked-out study repo (or open its RStudio project):
+#' setwd("path/to/rep-my-study")
+#' head(get_code("local", "tab_1"))
 #' }
 #'
 #' @export

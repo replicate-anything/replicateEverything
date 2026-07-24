@@ -47,6 +47,18 @@ options(
 )
 ```
 
+### Loading the “local” study in the sidebar
+
+When the app’s working directory resolves to a study repo (walking up
+for `replication.yml` — the same lookup `doi = "local"` uses in the R
+API), the study picker dropdown pins an extra choice at the top: **“📂
+Local study (this folder): \<title\>”**. Selecting it, or typing `local`
+into the DOI/path field and clicking **Go**, loads that study directly —
+no registry lookup or DOI required. Leaving the DOI/path field blank and
+clicking **Go** does the same thing (defaults to `"local"`). In
+production deployments with no local study checkout, the extra choice is
+simply absent and registry/DOI search is unaffected.
+
 ## Option 2: Copy for Shiny Server
 
 Many servers expect a directory with `app.R` (for example

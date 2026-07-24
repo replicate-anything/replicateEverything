@@ -15,7 +15,9 @@ register_study(
 )
 }
 \arguments{
-\item{location}{Study repo path or GitHub address. Defaults to \code{"."}.}
+\item{location}{Study repo path or GitHub address. Defaults to \code{"."} — the
+current working directory, i.e. the same study \code{doi = "local"} resolves
+to for \code{\link[=list_replications]{list_replications()}} / \code{\link[=run_replication]{run_replication()}} / \code{\link[=get_code]{get_code()}}.}
 
 \item{build_artifacts}{If \code{TRUE}, build precomputed outputs first.}
 

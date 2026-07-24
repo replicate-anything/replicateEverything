@@ -7,7 +7,9 @@
 study_dag_display(meta, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{meta}{Parsed replication metadata, or a DOI / registry handle.}
+\item{meta}{Parsed replication metadata, or a DOI / registry handle. Pass
+\code{"local"} to describe the study in the current working directory
+(no registry lookup needed; see \code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
 
 \item{repo}{Optional repository slug when \code{meta} is a DOI or handle.}
 

@@ -25,7 +25,13 @@ register_study(
 
 - location:
 
-  Study repo path or GitHub address. Defaults to `"."`.
+  Study repo path or GitHub address. Defaults to `"."` — the current
+  working directory, i.e. the same study `doi = "local"` resolves to for
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  /
+  [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  /
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md).
 
 - build_artifacts:
 

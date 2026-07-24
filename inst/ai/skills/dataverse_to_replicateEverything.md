@@ -181,7 +181,8 @@ Use `ds$files` (or the Dataverse web UI) to inventory:
 
 `get_dataset()` returns enough to name the study repo (`paper.doi` from citation
 metadata), infer **`collections:`** (APSR only when journal metadata cites *American
-Political Science Review*), and plan `access_data` fetches â€” without committing
+Political Science Review*; AER when it cites *American Economic Review* or another
+AEA journal, incl. OpenICPSR-hosted AEA deposits), and plan `access_data` fetches â€” without committing
 large binaries to git.
 
 Map paper DOI â†” Dataverse DOI via readme, Cambridge SI link, or

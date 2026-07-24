@@ -532,41 +532,49 @@ stub does <strong>not</strong> store artifacts.</p>
 <h2>Prepare and register</h2>
 <div id="contributor-validate" class="section level3">
 <h3>Contributor: validate</h3>
+<p>A quick <strong>manual smoke check</strong> first — from the package
+source directory, <code>&quot;local&quot;</code> resolves to the working-directory
+study without any registry setup:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(replicateEverything)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">check_and_bake_study</span>(</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">build_artifacts =</span> <span class="cn">TRUE</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>)</span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>)</span></code></pre></div>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>)  <span class="co"># or open its RStudio project</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">list_replications</span>(<span class="st">&quot;local&quot;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">describe_study_dag</span>(<span class="st">&quot;local&quot;</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="fu">run_replication</span>(<span class="st">&quot;local&quot;</span>, <span class="st">&quot;tab_1&quot;</span>)             <span class="co"># one light step</span></span></code></pre></div>
+<p>Then run the full checklist (path-based, works from anywhere):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">check_and_bake_study</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">build_artifacts =</span> <span class="cn">TRUE</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="fu">check_replication</span>(<span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>)</span></code></pre></div>
 <p><code>check_and_bake_study()</code> validates only — it never writes
 a registry stub or any file into the study package. A maintainer syncs
 directly from your <code>replication.yml</code> (next section).</p>
 </div>
 <div id="maintainer-sync-into-the-central-registry" class="section level3">
 <h3>Maintainer: sync into the central registry</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">registry_root =</span> <span class="st">&quot;../registry&quot;</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">audit =</span> <span class="cn">TRUE</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>)</span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co"># After several syncs:</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">refresh_registry</span>(<span class="st">&quot;../registry&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">replicateEverything.registry_root =</span> <span class="st">&quot;../registry&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">sync_study_to_registry</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">registry_root =</span> <span class="st">&quot;../registry&quot;</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">audit =</span> <span class="cn">TRUE</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co"># After several syncs:</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="fu">refresh_registry</span>(<span class="st">&quot;../registry&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 </div>
 <div id="checks-only" class="section level3">
 <h3>Checks only</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">check_replication</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">full_replication =</span> <span class="cn">FALSE</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>)</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">check_replication</span>(</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>  <span class="at">full_replication =</span> <span class="cn">TRUE</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">check_replication</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">full_replication =</span> <span class="cn">FALSE</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">check_replication</span>(</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  <span class="st">&quot;../rep-10.1371-journal.pone.0278337&quot;</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">full_replication =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 </div>
 <div id="substantive-published-value-checks" class="section level2">

@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -104,6 +104,16 @@ registered table and figure, including engine (<code>r</code> /
 <code>stata</code>) when declared.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Working on a study repo you have checked out
+locally?</strong> Every consumer verb (<code><a href="../reference/list_replications.html">list_replications()</a></code>,
+<code><a href="../reference/run_replication.html">run_replication()</a></code>, <code><a href="../reference/get_code.html">get_code()</a></code>,
+<code><a href="../reference/describe_study_dag.html">describe_study_dag()</a></code>) accepts <code>doi = "local"</code> in
+place of a DOI. <code><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd()</a></code> into the study repo (or open its
+RStudio project) and use <code>"local"</code> — no registry lookup or
+DOI is needed:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"path/to/rep-my-study"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span></code></pre></div>
 <p>Example output (abbreviated):</p>
 <pre><code><span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; $id</span></span>
@@ -113,11 +123,11 @@ registered table and figure, including engine (<code>r</code> /
 <p><code>list_replications(..., grouped = TRUE)</code> returns
 <strong>one entry per logical group</strong>. When both R and Stata
 exist for the same table, the default is R.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, grouped <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1257/aer.91.5.1369"</span>, grouped <span class="op">=</span> <span class="cn">TRUE</span>, language <span class="op">=</span> <span class="st">"stata"</span><span class="op">)</span></span></code></pre></div>
 <p>Pipeline steps (transforms) are listed separately:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1017/s0003055426101749"</span>, include <span class="op">=</span> <span class="st">"pipeline"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -129,7 +139,7 @@ exist for the same table, the default is R.</p>
 <strong>analysis object</strong> — a <code>ggplot</code>, model, or
 <code>data.frame</code>. Pass <code>format = TRUE</code> for
 display-ready HTML or a formatted plot.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"tab_1"</span>, format <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -139,7 +149,7 @@ display-ready HTML or a formatted plot.</p>
 <p>To reproduce an entire paper, set <code>what = "everything"</code>.
 The function runs every logical replication group (R by default where
 both engines exist).</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -149,7 +159,7 @@ both engines exist).</p>
 source or merged Stata <code>.do</code> files. Use it when you want to
 see <em>how</em> a result was produced, not only the output. The bundled
 Shiny app shows the same text on its Code tab.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="../reference/get_code.html">get_code</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, <span class="st">"fig_1"</span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -160,12 +170,12 @@ switch between tables and figures, run replications, and copy the
 <code><a href="../reference/run_replication.html">run_replication()</a></code> call.</p>
 <p><code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code> launches the bundled app from the
 installed package.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/run_shiny_app.html">run_shiny_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code> copies <code>app.R</code> and assets
 into a directory for Shiny Server (it never overwrites an existing
 <code>local.R</code>).</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/srv/shiny/replicate"</span><span class="op">)</span></span></code></pre></div>
 <p>See
 <code><a href="../articles/shiny-app.html">vignette("shiny-app", package = "replicateEverything")</a></code> for
@@ -181,7 +191,7 @@ operators syncing stubs and auditing the fleet).</p>
 <p>When you work inside a monorepo checkout (sibling
 <code>registry/</code> and <code>rep-*</code> study folders), point the
 package at local paths before calling discovery or run functions:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything/registry"</span>,</span>
 <span>  replicateEverything.study_folders_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything"</span>,</span>
@@ -194,7 +204,7 @@ GitHub and clones study materials on demand.</p>
 </h3>
 <p>Live Run and Shiny <strong>probe</strong> dependencies only.
 Maintainers install once with:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_study_compatibility.html">check_study_compatibility</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span>  <span class="co"># folder or package DOI</span></span>
 <span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"everywhere"</span><span class="op">)</span>                  <span class="co"># every study in the registry</span></span></code></pre></div>
@@ -210,18 +220,25 @@ Maintainers install once with:</p>
 <p>[build_study_outputs()] runs every replication and writes display
 files under <code>outputs/</code> plus
 <code>outputs/manifest.json</code>.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/build_study_outputs.html">build_study_outputs</a></span><span class="op">(</span><span class="st">"."</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>[check_replication()] runs a transparent checklist: layout, yaml,
 outputs, tests, and optional live runs.</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_replication.html">check_replication</a></span><span class="op">(</span><span class="st">"."</span>, full_replication <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> runs the same checklist and
 (optionally) bakes <code>outputs/</code> first — the single contributor
 entrypoint. It writes nothing into the study repo or a registry; it only
 validates.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Before running the full checklist, a manual smoke check with
+<code>"local"</code> is a fast way to confirm the study resolves and
+runs — no registry required:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/describe_study_dag.html">describe_study_dag</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"local"</span>, <span class="st">"tab_1"</span><span class="op">)</span>  <span class="co"># one light step</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="registry-sync-maintainer">Registry sync (maintainer)<a class="anchor" aria-label="anchor" href="#registry-sync-maintainer"></a>
@@ -229,14 +246,14 @@ validates.</p>
 <p>There is <strong>no study-local registry handoff</strong>. A
 maintainer with a local registry checkout writes the stub directly from
 the study’s <code>replication.yml</code>:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span><span class="st">"../rep-10.1177-00491241211036161"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/register_study.html">register_study()</a></code> runs
 <code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> then
 <code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> in one call:</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/register_study.html">register_study</a></span><span class="op">(</span><span class="st">"../rep-10.1177-00491241211036161"</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span></code></pre></div>
 <p>See <code><a href="../articles/maintainer-setup.html">vignette("maintainer-setup")</a></code> for the full maintainer
 workflow.</p>
@@ -247,7 +264,7 @@ workflow.</p>
 <p>[validate_outputs()] checks that declared table and figure files
 exist on disk (for Shiny <strong>Display</strong>). It does not run live
 replications.</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>location <span class="op">=</span> <span class="st">"../rep-10.1177-00491241211036161"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, what <span class="op">=</span> <span class="st">"everything"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
@@ -265,7 +282,7 @@ named in yaml. Validate with [check_replication()] (or
 [check_and_bake_study()]), then a maintainer syncs the stub with
 <code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> — no <code>inst/registry/</code>
 handoff files.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_replication.html">check_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371-journal.pone.0278337"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/check_replication.html">check_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371-journal.pone.0278337"</span>, full_replication <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>See <code><a href="../articles/package-replication-checklist.html">vignette("package-replication-checklist")</a></code> for layout
@@ -278,7 +295,7 @@ and API requirements.</p>
 the registry (all engines), with a per-object time limit. Use it to
 check registry health after changes. Restrict with <code>dois =</code>
 or <code>collections =</code> (e.g. <code>"APSR"</code>).</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, dois <span class="op">=</span> <span class="st">"10.1177/00491241211036161"</span><span class="op">)</span></span>
 <span><span class="co"># audit &lt;- audit_everything(patience = 20, collections = "APSR")</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit</span><span class="op">)</span></span></code></pre></div>
@@ -306,93 +323,99 @@ shipped with the package.</p>
 <td></td>
 </tr>
 <tr class="even">
+<td>Use the study in the cwd (no registry)</td>
+<td>
+<code>doi = "local"</code>
+(e.g. <code>list_replications("local")</code>)</td>
+</tr>
+<tr class="odd">
 <td>Browse registry</td>
 <td>
 <code><a href="../reference/load_index.html">load_index()</a></code>, <code><a href="../reference/search_papers.html">search_papers()</a></code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>What can I replicate?</td>
 <td>
 <code><a href="../reference/list_replications.html">list_replications()</a></code>,
 <code>list_replications(..., grouped = TRUE)</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Run one result</td>
 <td><code><a href="../reference/run_replication.html">run_replication()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Run whole paper</td>
 <td><code>run_replication(doi, "everything")</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>View code</td>
 <td><code><a href="../reference/get_code.html">get_code()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Interactive browser</td>
 <td>
 <code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code>, <code><a href="../reference/save_local_shiny.html">save_local_shiny()</a></code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>Contributor</strong></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Check machine vs study yaml</td>
 <td><code><a href="../reference/check_study_compatibility.html">check_study_compatibility()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Install deps (one study)</td>
 <td><code><a href="../reference/install_dependencies.html">install_dependencies()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Install deps (all studies)</td>
 <td><code>install_dependencies("everywhere")</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Build study outputs</td>
 <td><code><a href="../reference/build_study_outputs.html">build_study_outputs()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Validate (+ optional bake)</td>
 <td><code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Validate study (checklist only)</td>
 <td><code><a href="../reference/check_replication.html">check_replication()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Check precomputed outputs</td>
 <td><code><a href="../reference/validate_outputs.html">validate_outputs()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>Maintainer</strong></td>
 <td></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Validate then sync in one call</td>
 <td><code><a href="../reference/register_study.html">register_study()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Sync study into registry</td>
 <td><code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Rebuild index + audit all</td>
 <td><code><a href="../reference/refresh_registry.html">refresh_registry()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Rebuild index only</td>
 <td><code><a href="../reference/build_registry_index.html">build_registry_index()</a></code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Registry output check</td>
 <td><code>validate_outputs(doi = "everywhere", what = "everything")</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Registry health check</td>
 <td><code><a href="../reference/audit_everything.html">audit_everything()</a></code></td>
 </tr>

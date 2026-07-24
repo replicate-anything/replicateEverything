@@ -66,7 +66,7 @@ registry/studies/<folder>.yml   # lightweight stub (DOI, title, study_repo link)
 
 Copy and track progress:
 
-**Every study repo must declare `maintainer:` (name + email) and should declare `collections:` (APSR, PED, World Bank, IPI, …) in root `replication.yml`.** These fields copy into the registry stub and `index.csv` (via `build_registry_index()`) for the Studies tab filter and maintainer link.
+**Every study repo must declare `maintainer:` (name + email) and should declare `collections:` (APSR, PED, World Bank, IPI, AER, …) in root `replication.yml`.** These fields copy into the registry stub and `index.csv` (via `build_registry_index()`) for the Studies tab filter and maintainer link.
 
 ```
 - [ ] 1. Inventory delivered materials (scripts, data, outputs)
@@ -389,6 +389,10 @@ replicateEverything::check_study_compatibility("<doi>")
 replicateEverything::install_dependencies("<doi>")
 ```
 
+From the study repo root, `describe_study_dag("local")` /
+`list_replications("local")` work the same way without a parsed `meta`
+object or any registry — no DOI required.
+
 ### Step 4c — replicateEverything conventions (no package hardcoding)
 
 The **replicateEverything** package reads study metadata only — it does not embed study-specific package names or install commands. Every folder-backed study must declare what the package needs in **replication.yml** and helper scripts under **code/helpers/**.
@@ -693,6 +697,16 @@ Run in order; stop on failure.
 | Registry stub | `is_folder_study_replication(meta)` TRUE |
 | Shiny | load study; Display + Code tabs |
 | build_artifacts skip | folder paper skipped in registry script |
+
+**Manual smoke check (no registry needed):** from the study repo root, every
+consumer verb accepts `doi = "local"` for the working-directory study — use
+it for a fast sanity check before the full checklist / `check_and_bake_study()`:
+
+```r
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "<id>")  # one light step
+```
 
 ```r
 replicateEverything::validate_outputs(doi, "fig_1", folder = "<registry-folder>")

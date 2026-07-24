@@ -61,6 +61,17 @@ For one paper, `list_replications()` lists every registered table and figure, in
 list_replications("10.1177/00491241211036161")
 ```
 
+**Working on a study repo you have checked out locally?** Every consumer
+verb (`list_replications()`, `run_replication()`, `get_code()`,
+`describe_study_dag()`) accepts `doi = "local"` in place of a DOI. `setwd()`
+into the study repo (or open its RStudio project) and use `"local"` — no
+registry lookup or DOI is needed:
+
+```{r, eval = FALSE}
+setwd("path/to/rep-my-study")
+list_replications("local")
+```
+
 Example output (abbreviated):
 
 ```
@@ -177,7 +188,14 @@ check_replication(".", full_replication = FALSE)
 `outputs/` first — the single contributor entrypoint. It writes nothing into
 the study repo or a registry; it only validates.
 
-```{r}
+Before running the full checklist, a manual smoke check with `"local"` is a
+fast way to confirm the study resolves and runs — no registry required:
+
+```{r, eval = FALSE}
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "tab_1")  # one light step
+
 check_and_bake_study(".", build_artifacts = TRUE)
 ```
 
@@ -251,6 +269,7 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | Task | Function |
 |------|----------|
 | **Consumer** | |
+| Use the study in the cwd (no registry) | `doi = "local"` (e.g. `list_replications("local")`) |
 | Browse registry | `load_index()`, `search_papers()` |
 | What can I replicate? | `list_replications()`, `list_replications(..., grouped = TRUE)` |
 | Run one result | `run_replication()` |

@@ -145,9 +145,22 @@ CI/local use, but Contribute guidance and this checklist point at
 
 ### Contributor: validate
 
+A quick **manual smoke check** first — from the package source directory,
+`"local"` resolves to the working-directory study without any registry
+setup:
+
 ```{r, eval = FALSE}
 library(replicateEverything)
 
+setwd("../rep-10.1371-journal.pone.0278337")  # or open its RStudio project
+list_replications("local")
+describe_study_dag("local")
+run_replication("local", "tab_1")             # one light step
+```
+
+Then run the full checklist (path-based, works from anywhere):
+
+```{r, eval = FALSE}
 check_and_bake_study(
   "../rep-10.1371-journal.pone.0278337",
   build_artifacts = TRUE

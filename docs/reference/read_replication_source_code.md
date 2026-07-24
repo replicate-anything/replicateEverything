@@ -18,7 +18,10 @@ read_replication_source_code(
 
 - doi:
 
-  Character. DOI of the paper.
+  Character. DOI of the paper, registry handle, or local study path.
+  Pass `"local"` to read code from the study in the current working
+  directory — no registry lookup is needed; see
+  [`resolve_doi_input()`](https://replicate-anything.github.io/replicateEverything/reference/resolve_doi_input.md).
 
 - what:
 
