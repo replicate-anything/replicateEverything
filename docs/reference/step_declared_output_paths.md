@@ -1,6 +1,6 @@
-# Relative output paths declared for a step
+# Relative output paths declared for a step (`outputs:` only)
 
-Relative output paths declared for a step
+Relative output paths declared for a step (`outputs:` only)
 
 ## Usage
 

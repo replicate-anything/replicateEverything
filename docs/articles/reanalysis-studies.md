@@ -30,7 +30,8 @@ Both analysis engines read `outputs/prep_data/repdata.rds` or `.dta`.
 
 The reanalysis repository holds only new material. When the display
 format matches the base study, inherit the format child step; when it
-differs (as here), inherit with a override pointing at local R scripts:
+differs (as here), inherit with a `code:` override pointing at local R
+scripts:
 
 ``` yaml
 steps:
@@ -46,13 +47,14 @@ steps:
   - inherit: tab_1_format
 ```
 
-`inherit: tab_1_format` is enough when the extension repo has its own at
-the same path as the base format step: replicateEverything sources that
-file locally so uses the reanalysis models. Only add a override when the
-extension formatter lives at a different path.
+`inherit: tab_1_format` is enough when the extension repo has its own
+`code/tab_1.R` at the same path as the base format step:
+replicateEverything sources that file locally so `format_tab_1` uses the
+reanalysis models. Only add a `code:` override when the extension
+formatter lives at a different path.
 
-In the base Fearon & Laitin study, Stata table steps read directly; R
-steps use the shared output.
+In the base Fearon & Laitin study, Stata table steps read
+`data/repdata.dta` directly; R steps use the shared `prep_data` output.
 
 ## Execution semantics
 

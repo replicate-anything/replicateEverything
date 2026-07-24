@@ -1,7 +1,7 @@
 # Languages declared in replication.yml
 
 Prefer top-level `languages:` or `paper.languages:`. When omitted,
-infers from `engine:` on prep/replication entries.
+infers from `engine:` on `steps:` entries.
 
 ## Usage
 

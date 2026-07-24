@@ -1,6 +1,8 @@
-# Collect replication entries from parsed metadata
+# Collect step entries from parsed metadata
 
-Collect replication entries from parsed metadata
+Registry stubs omit `steps:`. For package-backed stubs, load steps from
+the installed study package. Otherwise require a non-empty `steps:`
+block.
 
 ## Usage
 
@@ -16,4 +18,4 @@ collect_replication_entries(meta)
 
 ## Value
 
-List of replication entries.
+List of non-format step entries.

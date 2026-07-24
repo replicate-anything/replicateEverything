@@ -1,13 +1,10 @@
 # Path to a registry study stub yaml file
 
-Prefers `studies/<folder>.yml`; falls back to legacy `papers/` layouts
-when present.
+Path to a registry study stub yaml file
 
 ## Usage
 
 ``` r
-registry_paper_yaml_path(registry_root, folder)
-
 registry_study_yaml_path(registry_root, folder)
 ```
 
@@ -23,4 +20,4 @@ registry_study_yaml_path(registry_root, folder)
 
 ## Value
 
-Character path (flat layout path under `studies/` when missing).
+Character path under `studies/<folder>.yml`.

@@ -1,3 +1,24 @@
+# replicateEverything 0.7.2
+
+## pkgdown reference audit
+
+* Re-audited the full exported surface (29 functions) against `NAMESPACE`,
+  `DESCRIPTION`, and the live pkgdown reference. Confirmed no legacy or
+  duplicate exports remain from the 0.7.0/0.7.1 hard-cut — `build_outputs()`
+  vs `build_study_outputs()` and `validate_outputs()` vs `check_replication()`
+  are deliberately distinct (registry/DOI-scoped dispatch vs local-checkout
+  operations), not aliases.
+* Fixed a stale `_pkgdown.yml` reference to the removed
+  `prepare_study_for_registry()` (now `check_and_bake_study()`) and added the
+  missing `register_study()` entry.
+* Regrouped the pkgdown reference index into a clearer map: Discovery; Run &
+  inspect; Contribute (build & check); Maintainer (registry ops); Maintainer
+  (setup & diagnostics); Shiny app; AI skills.
+* Synced `inst/ai/skills/*.md` and monorepo `AI.md` with 0.7 reality (no
+  content drift found beyond the pkgdown reference; both already matched the
+  `steps:`-only, no-handoff, `build_study_outputs()` contract).
+* No exported API changes.
+
 # replicateEverything 0.7.1
 
 ## Monorepo cleanup

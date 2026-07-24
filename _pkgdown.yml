@@ -21,51 +21,55 @@ reference:
   contents:
   - replicateEverything-package
 - title: Discovery
-  desc: Find papers and inspect replication metadata.
+  desc: Find studies and inspect replication metadata.
   contents:
   - load_index
   - search_papers
   - list_replications
   - paper_article_url
-- title: Run replications
-  desc: Run tables and figures from registry scripts.
+- title: Run & inspect
+  desc: Run tables and figures and read the code behind them.
   contents:
   - run_replication
-  - describe_study_dag
   - get_code
-- title: Shiny demo
-  desc: Browse studies and run replications interactively.
-  contents:
-  - run_shiny_app
-  - save_local_shiny
-- title: Contribute
-  desc: Validate studies and prepare registry handoff files in the study repo.
+  - describe_study_dag
+- title: 'Contribute: build & check'
+  desc: Bake precomputed outputs and validate a study repo before registration.
   contents:
   - build_study_outputs
   - check_replication
-  - prepare_study_for_registry
-  - ai_skills
-  - ai_skill
-  - ai_skill_path
-- title: Maintainer setup
-  desc: Probe and install study dependencies; sync studies into the registry.
+  - check_and_bake_study
+- title: 'Maintainer: registry ops'
+  desc: Register studies, sync stubs, rebuild the index, and audit the registry.
+  contents:
+  - register_study
+  - sync_study_to_registry
+  - refresh_registry
+  - build_registry_index
+  - audit_everything
+- title: 'Maintainer: setup & diagnostics'
+  desc: Probe and install study dependencies; local monorepo and deploy diagnostics.
   contents:
   - configure_local_monorepo
-  - package_build_info
-  - package_deploy_diagnostics
   - check_study_compatibility
   - install_study_dependencies
   - install_registry_dependencies
   - maintainer_dependency_hint
-  - sync_study_to_registry
-  - build_registry_index
+  - package_build_info
+  - package_deploy_diagnostics
   - build_outputs
   - validate_outputs
-- title: Registry audit
-  desc: Run all registry replications and inspect results.
+- title: Shiny app
+  desc: Launch the bundled Shiny demo locally.
   contents:
-  - refresh_registry
-  - audit_everything
+  - run_shiny_app
+  - save_local_shiny
+- title: AI skills
+  desc: Read bundled AI agent skill files (onboarding, Dataverse, registry include).
+  contents:
+  - ai_skills
+  - ai_skill
+  - ai_skill_path
 build:
   readme: yes
 articles:

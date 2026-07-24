@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="favicon.ico">
 <link rel="manifest" href="site.webmanifest">
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="replicateEverything">
 <meta name="description" content="Discover, run, and contribute computational replications — with a bundled Shiny demo and live app at shiny2.wzb.eu/ipi/replicate/">
@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,6 +68,8 @@
 <li>
 <strong>Discovery</strong> — search the registry, look up papers by DOI, and inspect available replications</li>
 <li>
+<strong>A DAG, not a file list</strong> — <code>replication.yml</code> declares a <code>steps:</code> graph (<code>parents:</code> / <code>outputs:</code>); yaml is the sole authority for execution order, nothing is inferred</li>
+<li>
 <strong>One-line replication</strong> — run a single figure or table, or reproduce an entire paper with <code>run_replication(doi, "everything")</code>
 </li>
 <li>
@@ -76,7 +78,7 @@
 <strong>Folder-backed studies</strong> — dedicated study repositories with <code>code/</code>, <code>data/</code>, and <code>outputs/</code>
 </li>
 <li>
-<strong>Package-backed studies</strong> — standalone R packages linked from lightweight registry stubs</li>
+<strong>Package-backed studies</strong> — standalone R packages linked from lightweight registry stubs; same <code>steps:</code> yaml and build API as folder studies</li>
 <li>
 <strong>Artifacts</strong> — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display</li>
 <li>
@@ -84,7 +86,9 @@
 <li>
 <strong>Shiny demo</strong> — <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">live app</a>; <code><a href="reference/run_shiny_app.html">run_shiny_app()</a></code> locally; <code><a href="reference/save_local_shiny.html">save_local_shiny()</a></code> to deploy on Shiny Server</li>
 <li>
-<strong>Contributor tooling</strong> — validate and register folder- or package-backed studies (<code><a href="reference/prepare_study_for_registry.html">prepare_study_for_registry()</a></code>, <code><a href="reference/check_replication.html">check_replication()</a></code>, <code><a href="reference/validate_outputs.html">validate_outputs()</a></code>)</li>
+<strong>Contributor tooling</strong> — validate with <code><a href="reference/check_and_bake_study.html">check_and_bake_study()</a></code>, then a maintainer registers with <code><a href="reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> / <code><a href="reference/register_study.html">register_study()</a></code> — no study-local registry handoff</li>
+<li>
+<strong>Checks</strong> — <code><a href="reference/check_replication.html">check_replication()</a></code> and <code><a href="reference/audit_everything.html">audit_everything()</a></code> cover structure, precomputed outputs, and optional published-value substantive benchmarks</li>
 <li>
 <strong>Bundled AI skills</strong> — markdown workflow guides for assistants (<code><a href="reference/ai_skills.html">ai_skills()</a></code>, <code><a href="reference/ai_skill.html">ai_skill()</a></code>)</li>
 </ul>
@@ -101,7 +105,7 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"replicate-anything/replicateEverything"</span><span class="op">)</span></span>
 <span><span class="co"># or</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"replicate-anything/replicateEverything"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"replicate-anything/replicateEverything"</span><span class="op">)</span></span></code></pre></div>
 <p>Requires R (&gt;= 4.1.0).</p>
 </div>
 <div class="section level2">
@@ -157,6 +161,7 @@ tests/testthat/</code></pre>
 <h3 id="example-replicationyml">Example <code>replication.yml</code>
 <a class="anchor" aria-label="anchor" href="#example-replicationyml"></a>
 </h3>
+<p><code>replication.yml</code> is a <strong>DAG</strong>: each entry is a node with <code>id</code>, <code>type</code>, <code>code</code>, its data/inputs, its <code>outputs</code>, and (for anything downstream of another step) <code>parents</code>. Yaml is the sole authority for what runs and in what order — nothing about the pipeline is inferred or guessed.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">paper</span><span class="kw">:</span></span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="at">  </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My wonderful paper</span></span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="at">  </span><span class="fu">authors</span><span class="kw">:</span></span>
@@ -165,36 +170,46 @@ tests/testthat/</code></pre>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> </span><span class="fl">1.2.3.4</span></span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="at">  </span><span class="fu">journal</span><span class="kw">:</span><span class="at"> Sample journal</span></span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">replications</span><span class="kw">:</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Figure 1</span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example figure</span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/fig_1.csv</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/fig_1.R</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/fig_1.png</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="at">    </span><span class="fu">dependencies</span><span class="kw">:</span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> ggplot2</span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Table 1</span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example table</span></span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/tab_1.csv</span></span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_tab_1</span></span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/tab_1.html</span></span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="at">    </span><span class="fu">dependencies</span><span class="kw">:</span></span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> dplyr</span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> gt</span></span></code></pre></div>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">maintainer</span><span class="kw">:</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Jane Maintainer</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="at">  </span><span class="fu">email</span><span class="kw">:</span><span class="at"> maintainer@example.org</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="fu">collections</span><span class="kw">:</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> PED</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="fu">languages</span><span class="kw">:</span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> r</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Figure 1</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example figure</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/fig_1.csv</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/fig_1.R</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/fig_1.png</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Table 1</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example table</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/tab_1.csv</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/tab_1.html</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1_format</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> format</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="at">    </span><span class="fu">parent</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/format_tab_1.R</span></span></code></pre></div>
+<p>Root steps (nothing in-repo produces their inputs) omit <code>parents:</code> entirely — never write <code>parents: []</code>. A step that reads another step’s <code>outputs:</code> declares <code>parents: [&lt;upstream id&gt;]</code>. See <code>rep-template/replication.yml</code> for a fully commented gold example.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="writing-replication-scripts">Writing replication scripts<a class="anchor" aria-label="anchor" href="#writing-replication-scripts"></a>
 </h2>
-<p>Replication scripts define an analysis function named <code>make_&lt;id&gt;()</code> (for example <code>make_fig_1()</code>). The legacy names <code>generate_figure()</code> and <code>generate_table()</code> are still supported.</p>
+<p>Replication scripts define an analysis function named <code>make_&lt;id&gt;()</code> (for example <code>make_fig_1()</code>) and, optionally, a <code>format_&lt;id&gt;()</code> for display. Scripts are pure definitions — no interactive footer, no <code><a href="https://rdrr.io/r/base/sys.parent.html" class="external-link">sys.nframe()</a></code> guard. Yaml (<code>steps:</code>) is what decides when and with what inputs each function runs.</p>
 <div class="section level3">
 <h3 id="figures">Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
 </h3>
@@ -236,7 +251,7 @@ tests/testthat/</code></pre>
 <span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="at">  </span><span class="fu">study_folder</span><span class="kw">:</span><span class="at"> rep-10.1177-00491241211036161</span></span>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="at">  </span><span class="fu">study_ref</span><span class="kw">:</span><span class="at"> main</span></span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1177-00491241211036161</span></span></code></pre></div>
-<p>The full <code>steps:</code> pipeline lives in the study repo’s <code>replication.yml</code>. Display outputs live in <code>outputs/</code> (from <code><a href="reference/build_study_outputs.html">build_study_outputs()</a></code>).</p>
+<p>The full <code>steps:</code> pipeline lives in the study repo’s <code>replication.yml</code>. Display outputs live in <code>outputs/</code> (from <code><a href="reference/build_study_outputs.html">build_study_outputs()</a></code>). There is <strong>no study-local <code>registry/</code> folder</strong> — a maintainer writes the stub above directly from this yaml.</p>
 <p><strong>From the study repository root:</strong></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
@@ -252,14 +267,14 @@ tests/testthat/</code></pre>
 <span><span class="co"># 2. Run tests</span></span>
 <span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_dir.html" class="external-link">test_dir</a></span><span class="op">(</span><span class="st">"tests/testthat"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3. Check + write registry/replication.yml and registry/index.csv</span></span>
-<span><span class="fu"><a href="reference/prepare_study_for_registry.html">prepare_study_for_registry</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">FALSE</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
+<span><span class="co"># 3. Contributor: validate (checklist only — writes nothing)</span></span>
+<span><span class="fu"><a href="reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">FALSE</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 4. Sync stub into registry checkout</span></span>
+<span><span class="co"># 4. Maintainer: write the stub into a local registry checkout</span></span>
 <span><span class="fu"><a href="reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span><span class="st">"."</span>, registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># One-step alternative when registry is local:</span></span>
-<span><span class="co"># add_folder_paper(".", registry_root = "../registry")</span></span></code></pre></div>
+<span><span class="co"># One-call alternative for a maintainer (check + sync):</span></span>
+<span><span class="co"># register_study(".", registry_root = "../registry")</span></span></code></pre></div>
 <p>See <code><a href="articles/folder-replication-checklist.html">vignette("folder-replication-checklist", package = "replicateEverything")</a></code> for the full workflow.</p>
 </div>
 <div class="section level2">
@@ -274,13 +289,14 @@ tests/testthat/</code></pre>
 <span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="at">  </span><span class="fu">package_repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1371-journal.pone.0278337</span></span>
 <span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="at">  </span><span class="fu">package_ref</span><span class="kw">:</span><span class="at"> main</span></span>
 <span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="fu">repo</span><span class="kw">:</span><span class="at"> replicate-anything/rep-10.1371-journal.pone.0278337</span></span></code></pre></div>
-<p><code>replicateEverything</code> merges the full <code>replications:</code> list from the study package <code>replication.yml</code> when the registry stub omits it. Display artifacts live in the study package at <code>inst/report/artifacts/</code> (from <code>build_report()</code>).</p>
-<p>Validate and register a package-backed study:</p>
+<p><code>replicateEverything</code> merges the full <code>steps:</code> DAG from the study package <code>replication.yml</code> when the registry stub omits it. Display artifacts live in the study package at <code>inst/report/artifacts/</code>, built with the same <code><a href="reference/build_study_outputs.html">build_study_outputs()</a></code> entrypoint used for folder-backed studies.</p>
+<p>Validate, then register a package-backed study (same APIs as folder-backed; no study-local registry handoff):</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/registry"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="reference/check_replication.html">check_replication</a></span><span class="op">(</span><span class="st">"/path/to/rep_package"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/add_paper.html">add_paper</a></span><span class="op">(</span><span class="st">"/path/to/rep_package"</span>, full_replication <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span><span class="st">"/path/to/rep_package"</span>, full_replication <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span><span class="st">"/path/to/rep_package"</span><span class="op">)</span></span>
+<span><span class="co"># or in one call: register_study("/path/to/rep_package")</span></span></code></pre></div>
 <p>See <code><a href="articles/package-replication-checklist.html">vignette("package-replication-checklist", package = "replicateEverything")</a></code> for requirements.</p>
 <p><strong>Local development (monorepo):</strong> place the study package as a sibling folder next to <code>registry/</code>. Enable sibling resolution with:</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
@@ -293,7 +309,7 @@ tests/testthat/</code></pre>
 <code>paper.package_path</code> — absolute or relative path to the package root</li>
 <li><code>options(replicateEverything.replication_packages = list(pkgname = "/path"))</code></li>
 </ul>
-<p>Linked study packages should export: <code><a href="reference/list_replications.html">list_replications()</a></code>, <code>replication_meta()</code>, <code>run_replication(id)</code>, <code>load_artifact(id)</code>, <code>artifact_file(id)</code>, <code>get_code(id)</code>, and <code>build_report()</code>.</p>
+<p>Linked study packages export only pure <code>make_*()</code> / <code>format_*()</code> analysis helpers named in yaml (plus any true study helpers and packaged data). They must <strong>not</strong> define or ship <code><a href="reference/run_replication.html">run_replication()</a></code>, <code><a href="reference/list_replications.html">list_replications()</a></code>, <code><a href="reference/load_artifact.html">load_artifact()</a></code>, or <code><a href="reference/get_code.html">get_code()</a></code> — those verbs live only in <strong>replicateEverything</strong>, which calls them against the study.</p>
 </div>
 <div class="section level2">
 <h2 id="api-overview">API overview<a class="anchor" aria-label="anchor" href="#api-overview"></a>
@@ -333,20 +349,24 @@ tests/testthat/</code></pre>
 <td><code>run_replication(doi, "everything")</code></td>
 </tr>
 <tr>
-<td>Build folder study outputs</td>
+<td>Build study outputs (folder or package)</td>
 <td><code><a href="reference/build_study_outputs.html">build_study_outputs()</a></code></td>
 </tr>
 <tr>
-<td>Prepare folder study</td>
-<td><code><a href="reference/prepare_study_for_registry.html">prepare_study_for_registry()</a></code></td>
-</tr>
-<tr>
-<td>Sync folder study to registry</td>
-<td><code><a href="reference/sync_study_to_registry.html">sync_study_to_registry()</a></code></td>
+<td>Validate a study (+ optional bake)</td>
+<td><code><a href="reference/check_and_bake_study.html">check_and_bake_study()</a></code></td>
 </tr>
 <tr>
 <td>Validate study layout + tests</td>
 <td><code><a href="reference/check_replication.html">check_replication()</a></code></td>
+</tr>
+<tr>
+<td>Sync a study into the registry (maintainer)</td>
+<td><code><a href="reference/sync_study_to_registry.html">sync_study_to_registry()</a></code></td>
+</tr>
+<tr>
+<td>Validate then sync in one call (maintainer)</td>
+<td><code><a href="reference/register_study.html">register_study()</a></code></td>
 </tr>
 <tr>
 <td>Check precomputed outputs exist</td>
@@ -381,7 +401,8 @@ tests/testthat/</code></pre>
 <p>This package ships AI-readable workflow guides under <code>inst/ai/skills/</code>. Use them with ChatGPT, Claude, Cursor, Copilot, or other assistants.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/ai_skills.html">ai_skills</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co"># [1] "dataverse_to_replicateEverything"</span></span>
+<span><span class="co"># [1] "dataverse_to_replicateEverything" "folder_replication"</span></span>
+<span><span class="co"># [3] "include_study_in_registry"</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="reference/ai_skill.html">ai_skill</a></span><span class="op">(</span><span class="st">"dataverse_to_replicateEverything"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Installed path:</p>
@@ -405,32 +426,26 @@ tests/testthat/</code></pre>
 <strong>Browse the registry</strong> — <code><a href="reference/load_index.html">load_index()</a></code> or <code>search_papers("keyword")</code>
 </li>
 <li>
-<strong>Set up a study repo</strong> — follow <code><a href="articles/folder-replication-checklist.html">vignette("folder-replication-checklist")</a></code> or <code><a href="articles/package-replication-checklist.html">vignette("package-replication-checklist")</a></code>
+<strong>Set up a study repo (or package)</strong> — follow <code><a href="articles/folder-replication-checklist.html">vignette("folder-replication-checklist")</a></code> or <code><a href="articles/package-replication-checklist.html">vignette("package-replication-checklist")</a></code>; write <code>steps:</code> as a DAG, tracing real author I/O</li>
+<li>
+<strong>Add your data and code</strong> — place processed data in <code>data/</code> and scripts in <code>code/</code> (or in the package’s <code>R/</code> + <code>data/</code> for package-backed studies)</li>
+<li>
+<strong>Bake and test locally</strong> — <code>build_study_outputs(".")</code>, then <code>testthat::test_dir("tests/testthat")</code>
 </li>
 <li>
-<strong>Add your data and code</strong> — place processed data in <code>data/</code> and scripts in <code>code/</code>
-</li>
+<strong>Validate</strong> — <code>check_and_bake_study(".")</code>; this checks structure, yaml, outputs, and tests. It never writes into the study repo or a registry — it only reports pass/fail</li>
 <li>
-<strong>Test locally</strong> — run scripts in the R console or with <code><a href="reference/run_replication.html">run_replication()</a></code>
+<strong>Hand off to a maintainer</strong> — send the study repo (or package) address; a maintainer with a local <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a> checkout runs <code>sync_study_to_registry(path)</code> (or <code>register_study(path)</code> to validate + sync in one call), which writes <code>studies/&lt;folder&gt;.yml</code> and rebuilds <code>index.csv</code> directly from your <code>replication.yml</code> — <strong>no study-local <code>registry/</code> handoff, ever</strong>
 </li>
-<li>
-<strong>Submit to the registry</strong> — clone <a href="https://github.com/replicate-anything/registry" class="external-link">replicate-anything/registry</a>, move your paper folder into <code>studies/</code>, and open a pull request</li>
 </ol>
-<p>For <strong>folder-backed</strong> studies, run <code><a href="reference/prepare_study_for_registry.html">prepare_study_for_registry()</a></code> to build outputs, validate, and write <code>registry/replication.yml</code> + <code>registry/index.csv</code> in the study repo; then <code><a href="reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> (or <code><a href="reference/refresh_registry.html">refresh_registry()</a></code> on the registry checkout).</p>
-<p>For <strong>package-backed</strong> studies, use <code><a href="reference/add_paper.html">add_paper()</a></code> after <code><a href="reference/check_replication.html">check_replication()</a></code> passes instead of copying code and data into the registry.</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/registry</span>
-<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">mv</span> 10.1177_00491241211036161 registry/studies/</span>
-<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="bu">cd</span> registry</span>
-<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="fu">git</span> add .</span>
-<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">"Add replication for 10.1177/00491241211036161"</span></span>
-<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="fu">git</span> push</span></code></pre></div>
+<p>There is exactly <strong>one</strong> registry entrypoint for both layouts: <code><a href="reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> / <code><a href="reference/register_study.html">register_study()</a></code>. Full study materials (<code>code/</code>, <code>data/</code>, <code>outputs/</code>, package source) are never copied into the registry repository — only the lightweight stub and <code>index.csv</code> row live there.</p>
 </div>
 <div class="section level2">
 <h2 id="developer-workflow">Developer workflow<a class="anchor" aria-label="anchor" href="#developer-workflow"></a>
 </h2>
-<div class="sourceCode" id="cb18"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/replicateEverything</span>
-<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="bu">cd</span> replicateEverything</span></code></pre></div>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/replicate-anything/replicateEverything</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="bu">cd</span> replicateEverything</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">test</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/check.html" class="external-link">check</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
@@ -440,7 +455,7 @@ tests/testthat/</code></pre>
 <h2 id="shiny-demo-app">Shiny demo app<a class="anchor" aria-label="anchor" href="#shiny-demo-app"></a>
 </h2>
 <p>Try the <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">live demo</a> at WZB, or run the bundled app from an installed package:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/run_shiny_app.html">run_shiny_app</a></span><span class="op">(</span><span class="op">)</span>                              <span class="co"># run from installed package</span></span>
 <span><span class="fu"><a href="reference/save_local_shiny.html">save_local_shiny</a></span><span class="op">(</span><span class="st">"/path/to/shiny/replicate"</span><span class="op">)</span> <span class="co"># materialize app.R + www/ for serving</span></span></code></pre></div>

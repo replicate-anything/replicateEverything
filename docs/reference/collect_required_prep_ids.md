@@ -1,6 +1,6 @@
-# Collect prep step ids required by replication entries (transitive)
+# Collect upstream transform step ids required by display steps
 
-Collect prep step ids required by replication entries (transitive)
+Collect upstream transform step ids required by display steps
 
 ## Usage
 
@@ -16,8 +16,8 @@ collect_required_prep_ids(meta, replications)
 
 - replications:
 
-  List of replication entries.
+  List of display step entries.
 
 ## Value
 
-Character vector of prep ids in `prep:` block order.
+Character vector of ancestor step ids in DAG order.

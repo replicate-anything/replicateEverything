@@ -1,5 +1,89 @@
 # Changelog
 
+## replicateEverything 0.7.2
+
+### pkgdown reference audit
+
+- Re-audited the full exported surface (29 functions) against
+  `NAMESPACE`, `DESCRIPTION`, and the live pkgdown reference. Confirmed
+  no legacy or duplicate exports remain from the 0.7.0/0.7.1 hard-cut —
+  [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md)
+  vs
+  [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
+  and
+  [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md)
+  vs
+  [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+  are deliberately distinct (registry/DOI-scoped dispatch vs
+  local-checkout operations), not aliases.
+- Fixed a stale `_pkgdown.yml` reference to the removed
+  `prepare_study_for_registry()` (now
+  [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md))
+  and added the missing
+  [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md)
+  entry.
+- Regrouped the pkgdown reference index into a clearer map: Discovery;
+  Run & inspect; Contribute (build & check); Maintainer (registry ops);
+  Maintainer (setup & diagnostics); Shiny app; AI skills.
+- Synced `inst/ai/skills/*.md` and monorepo `AI.md` with 0.7 reality (no
+  content drift found beyond the pkgdown reference; both already matched
+  the `steps:`-only, no-handoff,
+  [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
+  contract).
+- No exported API changes.
+
+## replicateEverything 0.7.1
+
+### Monorepo cleanup
+
+- Removed the last legacy-named internal aliases left over from the
+  `papers/` → `studies/` registry rename (`registry_paper_yaml_path()`,
+  `registry_paper_yaml_url()`); call sites and tests now use
+  [`registry_study_yaml_path()`](https://replicate-anything.github.io/replicateEverything/reference/registry_study_yaml_path.md)
+  /
+  [`registry_study_yaml_url()`](https://replicate-anything.github.io/replicateEverything/reference/registry_study_yaml_url.md)
+  directly. No user-facing change (both were `@keywords internal`,
+  unexported).
+- Fixed two `test-package-replication.R` assertions that still checked
+  the legacy `replications:` field on a live GitHub fixture; they now
+  check `steps:` to match the 0.7 hard-cut.
+- Archived one-off registry migration scripts (`migrate_studies.R`,
+  `flatten_registry_stubs.R`, `migrate_code_format.R`,
+  `build_artifacts.R`, and other pre-0.7 onboarding/tooling scripts) to
+  `registry/scripts/archive/`; registry CI and guides now point at
+  `scripts/build_outputs.R` / `scripts/validate_outputs.R` only.
+- Rewrote the package `README.md` and the `meet-the-functions`,
+  `folder-replication-checklist`, `package-replication-checklist`, and
+  `maintainer-setup` vignettes around the 0.7 contract: `steps:` as a
+  DAG,
+  [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
+  as the sole contributor entrypoint, and
+  [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+  /
+  [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md)
+  as the sole maintainer entrypoint (no study-local `registry/` or
+  `inst/registry/` handoff, ever).
+- No exported API changes.
+
+## replicateEverything 0.7.0
+
+### Breaking: yaml contract and contributor API
+
+- Contributor entrypoint is now \[check_and_bake_study()\] (replaces
+  `prepare_study_for_registry()`). Maintainer one-shot is
+  \[register_study()\] (replaces internal `add_paper()` /
+  `add_folder_paper()`). Study-local registry handoff (`write_handoff` /
+  `write_study_registry_stub`) is gone.
+- `replication.yml` must declare a non-empty `steps:` DAG. Legacy
+  `prep:` / `replications:` blocks error. Step edges use `parents:`
+  only; products use `outputs:` only (`requires` / `depends_on` /
+  `artifact` / `output` / `stata_output` rejected).
+- Metadata resolution is deterministic: local study root → configured
+  registry stub → remote `studies/<folder>.yml`. No silent GitHub
+  scavenges or `papers/` fallbacks.
+- Package checks no longer require a study-local `build_report()`
+  helper; bake via \[build_study_outputs()\].
+
 ## replicateEverything 0.6.18
 
 ### Shiny Contribute tab
@@ -597,8 +681,8 @@
   `registry/replication.yml` + `registry/index.csv` in study repo.
 - `sync_folder_paper()` — copy prepared stub files into a registry
   checkout.
-- [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
-  — validate and register a folder-backed study stub in the registry.
+- `add_folder_paper()` — validate and register a folder-backed study
+  stub in the registry.
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
   — registry-wide audit (Quarto report: `audit_everything.qmd` in the
   registry repo).

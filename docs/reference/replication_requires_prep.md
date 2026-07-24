@@ -1,6 +1,6 @@
-# Required prep step ids for a replication entry
+# Parent ids for a step (`parents:` only)
 
-Required prep step ids for a replication entry
+Parent ids for a step (`parents:` only)
 
 ## Usage
 
@@ -12,4 +12,4 @@ replication_requires_prep(rep)
 
 - rep:
 
-  Replication entry.
+  Step entry.

@@ -26,7 +26,7 @@ Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `re
 - User gives a **Dataverse dataset DOI** (`doi:10.7910/DVN/…`) or a downloaded zip/folder
 - Deposit includes author readme + replication code (Stata `.do`, R `.R` / `.Rmd`, Python `.ipynb`)
 - Common sources: APSR / Cambridge Core (`10.1017/S…`), but any journal on Harvard Dataverse
-- Goal is Shiny display + `run_replication()` / `run_prep_step()`, not an R package
+- Goal is Shiny display + `run_replication()` (works for `transform` steps too — it is the one verb for every step id), not an R package
 
 ## Naming
 
@@ -551,10 +551,13 @@ stata_packages:
   - require
   - estout
 
-replications:
+steps:
   - id: fig_2
+    type: figure
     engine: python
     code: code/figures/fig_2.py
+    outputs:
+      - outputs/fig_2.png
     # Prefer study-wide python_dependencies:; per-entry dependencies only if unique to one figure
 ```
 
@@ -836,7 +839,7 @@ Update `outputs/manifest.json`:
 |------|---------|
 | System deps | `check_study_compatibility(doi)` — probe only; same API for folder and package registry studies |
 | Install deps | `install_study_dependencies(doi)` — maintainer setup; not run on Shiny live Run |
-| Prep | `run_prep_step(doi, "construct_analysis_dataset")` |
+| Prep | `run_replication(doi, "construct_analysis_dataset")` (transform steps run through the same verb) |
 | Table | `run_replication(doi, "tab_1", language = "stata", format = TRUE)` |
 | Python fig | `run_replication(doi, "fig_2", language = "python")` |
 | R fig | `run_replication(doi, "fig_5", format = TRUE)` |
@@ -871,7 +874,7 @@ Shiny UI order: **Tables → Figures → Pipeline steps** (steps below).
 | Stata names in R `dependencies` | Only CRAN packages in `paper.dependencies` / R entry `dependencies` — not `reghdfe`, `estout` |
 | `format_tab_N not found` for Stata tables | Use `format: code/helpers/format_stata.R` (shared formatter); replicateEverything falls back to `format_tab_N_stata` |
 | Figure missing displayable `outputs:` path | Add `outputs: [outputs/fig_N.png]` (or `.html`) for Display |
-| Using `prep:`/`replications:` on new studies | Use unified `steps:` + `outputs/` (0.6+) |
+| Using `prep:`/`replications:` | Hard error since 0.7 — use unified `steps:` + `outputs/` only |
 | Python fig prints `[1] "…/fig_2.png"` during build | Fixed in replicateEverything ≥0.5: PNG paths must copy, not `print()` — deploy current package |
 | Python fig shows as engine `r` in audit | Set `engine: python`; audit must pass `language` to `render_replication()` |
 | Shiny "not available for language r" on `fig_2` | Resolve engine-specific id (`fig_2` + `python`) before Run/Display |

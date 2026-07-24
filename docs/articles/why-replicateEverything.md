@@ -226,9 +226,9 @@ Practical tips without an agent:
 2.  **One script per step**; declare inputs, outputs, and parents in
     `steps:`.
 3.  **Run**
-    [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
-    and
-    [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
+    [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
+    (which calls
+    [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md))
     before opening a registry PR.
 4.  **Add substantive tests** under `tests/substantive/` when you have
     published benchmarks (see Fearon & Laitin `tab_1`).

@@ -1,7 +1,7 @@
-# Prep steps to run before building display artifacts
+# Prep / transform steps to run before building display artifacts
 
-When `display_reps` is `NULL`, returns every entry in `prep:`. Otherwise
-returns only prep steps required by the given replications.
+When `display_reps` is `NULL`, returns every transform step. Otherwise
+returns only ancestors required by the given display steps.
 
 ## Usage
 

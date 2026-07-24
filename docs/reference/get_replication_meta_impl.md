@@ -1,6 +1,14 @@
 # Fetch replication metadata for a paper
 
-Fetch replication metadata for a paper
+Deterministic resolution order (first hit wins; no silent URL
+scavenges):
+
+1.  Local study root (`ctx$local_root` or configured study folders /
+    monorepo)
+
+2.  Configured registry stub (`registry_root/studies/<folder>.yml`)
+
+3.  Remote registry stub URL for the configured registry repo
 
 ## Usage
 

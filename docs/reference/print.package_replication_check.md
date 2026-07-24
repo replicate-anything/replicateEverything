@@ -21,9 +21,9 @@ print(x, ...)
 
   Result from
   [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
-  [`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md),
+  [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md),
   or
-  [`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md).
+  [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md).
 
 - ...:
 

@@ -61,8 +61,7 @@ optional `audit`.
 ## Details
 
 Stub and index files belong in the **registry** repository only — not in
-the study repo. Study-local `registry/` or `inst/registry/` handoff
-folders are not required.
+the study repo.
 
 ## Examples
 

@@ -116,15 +116,13 @@ maintainer registry workflows.
 
 ## Register studies in the central registry (maintainer)
 
-Contributors validate their study and write **handoff files** inside the
-study repository with \[prepare_study_for_registry()\]. Maintainers
-install those files in the [registry
-repository](https://github.com/replicate-anything/registry).
-
-| Layout | Handoff location in study repo |
-|----|----|
-| Folder-backed | `registry/replication.yml` + `registry/index.csv` |
-| Package-backed | `inst/registry/replication.yml` + `inst/registry/index.csv` |
+There is **no study-local registry handoff** — not `registry/` in a
+folder-backed repo, not `inst/registry/` in a package. Contributors
+validate with \[check_and_bake_study()\]; a maintainer with a local
+checkout of the [registry
+repository](https://github.com/replicate-anything/registry) writes the
+stub **directly from the study’s own `replication.yml`** with
+\[sync_study_to_registry()\] — nothing is copied from the study repo.
 
 Point R at your monorepo checkout:
 
@@ -133,8 +131,8 @@ Point R at your monorepo checkout:
 options(replicateEverything.registry_root = "../registry")
 ```
 
-**Sync one study** — copy the handoff stub to
-`registry/studies/<folder>.yml` and rebuild `index.csv`:
+**Sync one study** — build `registry/studies/<folder>.yml` from the
+study’s root yaml and rebuild `index.csv`:
 
 ``` r
 
@@ -164,11 +162,20 @@ sync_study_to_registry(
 refresh_registry("../registry", audit = TRUE, patience = 20)
 ```
 
-Internal shortcuts (check + sync in one call):
-[`add_folder_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_folder_paper.md)
-for folder studies,
-[`add_paper()`](https://replicate-anything.github.io/replicateEverything/reference/add_paper.md)
-for package studies.
+**One call, check + sync:** \[register_study()\] runs
+[`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
+then
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+for both folder- and package-backed studies:
+
+``` r
+
+register_study(
+  "../rep-10.1177-00491241211036161",
+  registry_root = "../registry",
+  audit = TRUE
+)
+```
 
 ## Check precomputed outputs
 
@@ -204,8 +211,9 @@ Or from the registry repo: `Rscript scripts/validate_outputs.R`.
 | Check precomputed outputs | `validate_outputs(location)` or `validate_outputs(doi, what = "everything")` |
 | Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
-| **Contributor:** prepare handoff in study repo | `prepare_study_for_registry(path)` |
+| **Contributor:** validate (+ optional bake) | `check_and_bake_study(path)` |
 | **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |
+| **Maintainer:** validate then sync in one call | `register_study(path, registry_root = ...)` |
 | **Maintainer:** rebuild index + audit all | `refresh_registry(registry_root, audit = TRUE)` |
 | Rebuild index only | `build_registry_index(registry_root)` |
 

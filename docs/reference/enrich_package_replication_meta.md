@@ -1,7 +1,8 @@
-# Merge replication entries from the study package into registry stub metadata
+# Merge full study package steps into a lightweight registry stub
 
-Merge replication entries from the study package into registry stub
-metadata
+Registry stubs omit the DAG. When the stub points at a package-backed
+study, load `steps:` from the study package yaml (local install or
+configured path).
 
 ## Usage
 

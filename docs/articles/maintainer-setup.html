@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Maintainer setup">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -185,43 +185,19 @@ for contributor vs maintainer registry workflows.</p>
 <div class="section level2">
 <h2 id="register-studies-in-the-central-registry-maintainer">Register studies in the central registry (maintainer)<a class="anchor" aria-label="anchor" href="#register-studies-in-the-central-registry-maintainer"></a>
 </h2>
-<p>Contributors validate their study and write <strong>handoff
-files</strong> inside the study repository with
-[prepare_study_for_registry()]. Maintainers install those files in the
-<a href="https://github.com/replicate-anything/registry" class="external-link">registry
-repository</a>.</p>
-<table class="table">
-<colgroup>
-<col width="20%">
-<col width="79%">
-</colgroup>
-<thead><tr class="header">
-<th>Layout</th>
-<th>Handoff location in study repo</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>Folder-backed</td>
-<td>
-<code>registry/replication.yml</code> +
-<code>registry/index.csv</code>
-</td>
-</tr>
-<tr class="even">
-<td>Package-backed</td>
-<td>
-<code>inst/registry/replication.yml</code> +
-<code>inst/registry/index.csv</code>
-</td>
-</tr>
-</tbody>
-</table>
+<p>There is <strong>no study-local registry handoff</strong> — not
+<code>registry/</code> in a folder-backed repo, not
+<code>inst/registry/</code> in a package. Contributors validate with
+[check_and_bake_study()]; a maintainer with a local checkout of the <a href="https://github.com/replicate-anything/registry" class="external-link">registry
+repository</a> writes the stub <strong>directly from the study’s own
+<code>replication.yml</code></strong> with [sync_study_to_registry()] —
+nothing is copied from the study repo.</p>
 <p>Point R at your monorepo checkout:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Sync one study</strong> — copy the handoff stub to
-<code>registry/studies/&lt;folder&gt;.yml</code> and rebuild
-<code>index.csv</code>:</p>
+<p><strong>Sync one study</strong> — build
+<code>registry/studies/&lt;folder&gt;.yml</code> from the study’s root
+yaml and rebuild <code>index.csv</code>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span></span>
 <span>  <span class="st">"../rep-10.1177-00491241211036161"</span>,</span>
@@ -240,9 +216,16 @@ recompile <code>index.csv</code> from all stubs and rerun
 [audit_everything()]:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
-<p>Internal shortcuts (check + sync in one call):
-<code><a href="../reference/add_folder_paper.html">add_folder_paper()</a></code> for folder studies,
-<code><a href="../reference/add_paper.html">add_paper()</a></code> for package studies.</p>
+<p><strong>One call, check + sync:</strong> [register_study()] runs
+<code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> then
+<code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> for both folder- and
+package-backed studies:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/register_study.html">register_study</a></span><span class="op">(</span></span>
+<span>  <span class="st">"../rep-10.1177-00491241211036161"</span>,</span>
+<span>  registry_root <span class="op">=</span> <span class="st">"../registry"</span>,</span>
+<span>  audit <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="check-precomputed-outputs">Check precomputed outputs<a class="anchor" aria-label="anchor" href="#check-precomputed-outputs"></a>
@@ -250,11 +233,11 @@ recompile <code>index.csv</code> from all stubs and rerun
 <p>After building display files, confirm every declared table and figure
 exists on disk (Shiny <strong>Display</strong> mode). This does
 <strong>not</strong> run live replications.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>location <span class="op">=</span> <span class="st">"../rep-10.1177-00491241211036161"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span><span class="st">"10.1177/00491241211036161"</span>, what <span class="op">=</span> <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
 <p>Registry-wide check from a monorepo checkout:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>doi <span class="op">=</span> <span class="st">"everywhere"</span>, what <span class="op">=</span> <span class="st">"everything"</span><span class="op">)</span></span></code></pre></div>
 <p>Or from the registry repo:
@@ -310,8 +293,8 @@ exists on disk (Shiny <strong>Display</strong> mode). This does
 </tr>
 <tr class="odd">
 <td>
-<strong>Contributor:</strong> prepare handoff in study repo</td>
-<td><code>prepare_study_for_registry(path)</code></td>
+<strong>Contributor:</strong> validate (+ optional bake)</td>
+<td><code>check_and_bake_study(path)</code></td>
 </tr>
 <tr class="even">
 <td>
@@ -320,10 +303,15 @@ exists on disk (Shiny <strong>Display</strong> mode). This does
 </tr>
 <tr class="odd">
 <td>
+<strong>Maintainer:</strong> validate then sync in one call</td>
+<td><code>register_study(path, registry_root = ...)</code></td>
+</tr>
+<tr class="even">
+<td>
 <strong>Maintainer:</strong> rebuild index + audit all</td>
 <td><code>refresh_registry(registry_root, audit = TRUE)</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Rebuild index only</td>
 <td><code>build_registry_index(registry_root)</code></td>
 </tr>
@@ -336,9 +324,9 @@ exists on disk (Shiny <strong>Display</strong> mode). This does
 <p>The site is served from <strong><code>docs/</code> on
 <code>main</code></strong> (GitHub Pages → <code>/docs</code>). CI does
 <strong>not</strong> build or deploy it.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># from replicateEverything/</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>Rscript scripts<span class="sc">/</span>build_pkgdown.R</span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co"># then: git add docs/ &amp;&amp; git commit &amp;&amp; git push</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># from replicateEverything/</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>Rscript scripts<span class="sc">/</span>build_pkgdown.R</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co"># then: git add docs/ &amp;&amp; git commit &amp;&amp; git push</span></span></code></pre></div>
 <p>Commit the <strong>entire</strong> <code>docs/</code> tree
 (<code>deps/</code>, <code>articles/</code>, <code>reference/</code>,
 …). Pushing only <code>index.html</code> breaks Bootstrap styling on

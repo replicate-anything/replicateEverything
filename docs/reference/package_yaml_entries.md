@@ -1,6 +1,6 @@
-# Package yaml entries (prep + replications + steps)
+# Package yaml step entries
 
-Package yaml entries (prep + replications + steps)
+Package yaml step entries
 
 ## Usage
 

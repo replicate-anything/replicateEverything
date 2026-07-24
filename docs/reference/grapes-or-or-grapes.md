@@ -1,6 +1,6 @@
-# Null-coalescing infix
+# Null-coalescing infix (also treats scalar NA as missing)
 
-Null-coalescing infix
+Null-coalescing infix (also treats scalar NA as missing)
 
 ## Usage
 

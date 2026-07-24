@@ -33,7 +33,7 @@ A typical workflow using the package is:
 7.  Contribute a study with
     [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md),
     [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
-    [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md),
+    [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md),
     and
     [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
     (maintainer).

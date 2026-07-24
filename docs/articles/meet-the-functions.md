@@ -217,24 +217,39 @@ outputs, tests, and optional live runs.
 check_replication(".", full_replication = FALSE)
 ```
 
-[`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-validates and writes `registry/replication.yml` + `registry/index.csv`
-**in the study repo** (contributor handoff).
+[`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
+runs the same checklist and (optionally) bakes `outputs/` first — the
+single contributor entrypoint. It writes nothing into the study repo or
+a registry; it only validates.
 
 ``` r
 
-prepare_study_for_registry(".", build_artifacts = FALSE)
+check_and_bake_study(".", build_artifacts = TRUE)
 ```
 
 ### Registry sync (maintainer)
 
-Maintainers copy handoff files into the central registry checkout:
+There is **no study-local registry handoff**. A maintainer with a local
+registry checkout writes the stub directly from the study’s
+`replication.yml`:
 
 ``` r
 
 options(replicateEverything.registry_root = "../registry")
 sync_study_to_registry("../rep-10.1177-00491241211036161")
 refresh_registry("../registry", audit = TRUE)
+```
+
+[`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md)
+runs
+[`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
+then
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+in one call:
+
+``` r
+
+register_study("../rep-10.1177-00491241211036161", registry_root = "../registry")
 ```
 
 See
@@ -256,13 +271,18 @@ validate_outputs(doi = "everywhere", what = "everything")
 
 ### Package-backed studies (contributor)
 
-Package-backed studies export
+Package-backed studies must **not** define or ship
 [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md),
-[`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md),
-and related helpers from the study package itself. Validate with
-\[check_replication()\], then
-[`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md)
-for handoff files under `inst/registry/`.
+[`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md),
+[`load_artifact()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact.md),
+or
+[`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+— those verbs live only in **replicateEverything**. Study packages
+export pure `make_*()` / `format_*()` analysis helpers named in yaml.
+Validate with \[check_replication()\] (or \[check_and_bake_study()\]),
+then a maintainer syncs the stub with
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+— no `inst/registry/` handoff files.
 
 ``` r
 
@@ -312,10 +332,11 @@ for the latest snapshot table shipped with the package.
 | Install deps (one study) | [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md) |
 | Install deps (all studies) | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
 | Build study outputs | [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
-| Validate study | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
+| Validate (+ optional bake) | [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md) |
+| Validate study (checklist only) | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
 | Check precomputed outputs | [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md) |
-| Prepare registry handoff | [`prepare_study_for_registry()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_study_for_registry.md) |
 | **Maintainer** |  |
+| Validate then sync in one call | [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md) |
 | Sync study into registry | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
 | Rebuild index + audit all | [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md) |
 | Rebuild index only | [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md) |

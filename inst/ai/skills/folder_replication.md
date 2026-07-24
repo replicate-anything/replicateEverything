@@ -42,8 +42,10 @@ rep-<doi-with-hyphens>/
       test-<id>.R
 ```
 
-Legacy repos may still use `prep:` + `replications:` and `artifacts/`; new work
-uses **`steps:`** and **`outputs/`** only (replicateEverything 0.6+).
+`replication.yml` must declare a non-empty **`steps:`** block and write products
+under **`outputs/`**. `prep:` / `replications:` (and `requires:` / `depends_on:` /
+`artifact:` / `output:` / `stata_output:`) are a **hard error** as of
+replicateEverything 0.7 — there is no legacy fallback.
 
 Registry keeps **stub only**:
 
@@ -149,8 +151,7 @@ Reference repos: `rep-10.1017-S0003055403000534`, `rep-10.1017-s0003055426101749
 
 **Format children** need `type: format` + `parent:` in unified `steps:` yaml (not auto-inferred
 from `make_*`/`format_*` alone). Omit `label:` on format steps — they are hidden from the
-sidebar and labels are unused there. Legacy `prep:`/`replications:` with `format:` still
-auto-creates `<id>_format`.
+sidebar and labels are unused there.
 
 **Common step fields**
 
@@ -169,7 +170,7 @@ auto-creates `<id>_format`.
 | `dependencies` | Step-level R packages (unioned with `paper.dependencies`) |
 | `languages` (root) | Study engines for registry / system checks |
 
-**Edges:** `parents: [step_a, step_b]` (legacy `requires:` still parsed). Raw files are not parents — list them under `inputs:`.
+**Edges:** `parents: [step_a, step_b]` only — `requires:` / `depends_on:` are a hard error. Raw files are not parents — list them under `inputs:`.
 
 **Running:**
 
@@ -352,8 +353,9 @@ steps:
 
 **Gold minimal R table:** copy field comments and layout from `rep-template/replication.yml` (root step omits `parents:`; `outputs:` only; format child without `label:`).
 
-Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
-`compile_steps_from_legacy()` but **new studies must use `steps:` + `outputs/`**.
+There is no legacy loader — `prep:` + `replications:` + `artifacts/` yaml raises a
+hard error (`normalize_study_steps()`). Every study must ship a `steps:` DAG and
+write products under `outputs/`.
 
 **Construction rules:**
 
@@ -367,7 +369,7 @@ Legacy layout (`prep:` + `replications:` + `artifacts/`) still loads via
 | `maintainer:` | **Required** — name + email |
 | `collections:` | Tags copied to registry `index.csv` |
 | `steps[].parents` | Immediate upstream steps (omit when none — do not write `parents: []`) |
-| `steps[].outputs` | Files this step produces under `outputs/` (first displayable html/png/rds/svg is what Shiny Display reads). Prefer `outputs:` over deprecated `artifact:`. |
+| `steps[].outputs` | Files this step produces under `outputs/` (first displayable html/png/rds/svg is what Shiny Display reads). `outputs:` only — `artifact:` / `output:` / `stata_output:` hard-error. |
 | `steps[].description` | Longer caption: Shiny hover + Display title |
 | `steps[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
 | `steps[].dependencies` | **R only** — extra CRAN packages for that step |
@@ -723,9 +725,9 @@ git push origin main
 
 1. Copy `replication.yml`, `code/`, `data/`, `outputs/` from legacy `registry/papers/<folder>/` (or a materialized study folder) to new study repo
 2. Ensure study `replication.yml` is the **full** copy with **`steps:`** DAG, not the registry stub
-3. Migrate legacy `prep:`/`replications:` to `steps:` with `migrate_legacy_steps_yaml()` if needed
-3. Download any gitignored/large data from GitHub raw if missing locally
-4. Follow steps 6–9 above
+3. Hand-convert any surviving `prep:`/`replications:` blocks to `steps:` — there is no automated migrator; `normalize_study_steps()` hard-errors on the legacy fields
+4. Download any gitignored/large data from GitHub raw if missing locally
+5. Follow steps 6–9 above
 
 **Examples:** `rep-10.1017-S0003055403000534` (Fearon & Laitin), `rep-10.1177-00491241211036161` (Bounding Causes).
 
@@ -762,7 +764,7 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 - Putting the **stub** yaml in the study repo (must be **full** yaml with `steps:`)
 - Committing study-local `registry/` handoff — use maintainer `sync_study_to_registry()` instead
 - Writing empty `parents: []` — omit the field on root steps
-- Using deprecated `artifact:` instead of `outputs:`
+- Using `artifact:` / `output:` / `stata_output:` / `requires:` / `depends_on:` — all hard-error; use `outputs:` and `parents:` only
 - Adding unused `label:` on `type: format` children
 - Forgetting to update `index.csv` `repo` column (sync/refresh handles this)
 - Extension study listing every base step — only `inherit:` / local steps belong in the extension yaml

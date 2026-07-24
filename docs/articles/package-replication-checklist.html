@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Package replication checklist">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,15 +100,14 @@
 </h2>
 <pre><code>rep_&lt;doi-slug&gt;/
   DESCRIPTION
-  replication.yml              # full metadata + replications list
+  replication.yml              # full metadata + steps: DAG
   inst/replication.yml         # copy for installed package
   R/
     make_figure_*.R             # analysis
     make_table_*.R
     format_*.R                  # display formatting
-    build_report.R              # optional: bake Display artifacts
   inst/replication_code/        # synced copies for Code tab / get_code()
-  inst/report/artifacts/        # baked Display outputs (build_report())
+  inst/report/artifacts/        # baked Display outputs (build_study_outputs())
   data/                         # analysis datasets (LazyData)
   tests/
     testthat/                   # smoke tests
@@ -158,18 +157,37 @@ contact shown as <code>[maintainer]</code> on the Studies tab</li>
 <span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">languages</span><span class="kw">:</span></span>
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> r</span></span></code></pre></div>
-<p><strong>Each figure or table</strong></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">replications</span><span class="kw">:</span></span>
+<p><strong>Steps (required)</strong> — package-backed studies use the
+same unified <code>steps:</code> DAG as folder-backed studies.
+<code>code:</code> names an <strong>exported function</strong> (not a
+file path); a <code>type: format</code> child names the display
+formatter:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="at">    </span><span class="fu">make</span><span class="kw">:</span><span class="at"> make_figure_1</span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_figure_1</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Figure 1</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> make_figure_1</span></span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> my_dataset</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="at">    </span><span class="fu">make</span><span class="kw">:</span><span class="at"> make_table_1</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_table_1</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> my_dataset</span></span></code></pre></div>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> inst/report/artifacts/fig_1.png</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1_format</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> format</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="at">    </span><span class="fu">parent</span><span class="kw">:</span><span class="at"> fig_1</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> format_figure_1</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Table 1</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> make_table_1</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> my_dataset</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> inst/report/artifacts/tab_1.html</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1_format</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> format</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="at">    </span><span class="fu">parent</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> format_table_1</span></span></code></pre></div>
 <p>Rules:</p>
 <ul>
 <li>
@@ -177,26 +195,28 @@ contact shown as <code>[maintainer]</code> on the Studies tab</li>
 <code><a href="../reference/run_replication.html">replicateEverything::run_replication()</a></code>
 </li>
 <li>
-<code>type</code> — <code>figure</code> or <code>table</code>
-</li>
+<code>type</code> — <code>figure</code>, <code>table</code>, or
+<code>transform</code> (shared prep); <code>format</code> for display
+children</li>
 <li>
-<code>make</code> — exported function returning analysis output
-(<code>ggplot</code> or <code>data.frame</code> /
-<code>kableExtra</code>)</li>
-<li>
-<code>format</code> — exported function returning display-ready
-output (<code>ggplot</code> or HTML string)</li>
+<code>code</code> — exported analysis function (figure/table) or
+format function (format child)</li>
 <li>
 <code>data</code> — package dataset name(s), not file paths</li>
+<li>
+<code>outputs</code> — declared artifact path(s) under
+<code>inst/report/</code>; the first displayable path is what Shiny
+<strong>Display</strong> reads</li>
+<li>Legacy <code>replications:</code> with <code>make:</code> /
+<code>format:</code> entry fields is a hard error — use
+<code>steps:</code> + <code>code:</code> as above</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="study-package-surface">Study package surface<a class="anchor" aria-label="anchor" href="#study-package-surface"></a>
 </h2>
 <p>Export the <code>make_*</code> / <code>format_*</code> helpers named
-in yaml (plus shared helpers and data). Optionally export
-<code>build_report()</code> to bake
-<code>inst/report/artifacts/</code>.</p>
+in yaml (plus shared helpers and data).</p>
 <p>Do <strong>not</strong> put these in the study package — they live
 only in <strong>replicateEverything</strong>:</p>
 <table class="table">
@@ -232,10 +252,10 @@ only in <strong>replicateEverything</strong>:</p>
 <div class="section level2">
 <h2 id="artifacts-display-tab">Artifacts (Display tab)<a class="anchor" aria-label="anchor" href="#artifacts-display-tab"></a>
 </h2>
-<p>Run once before registering:</p>
+<p>Run once before registering, with the same entrypoint as
+folder-backed studies:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">build_report</span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co"># or: replicateEverything::build_study_outputs("rep1371journalpone0278337")</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">replicateEverything</span><span class="fu">::</span><span class="fu"><a href="../reference/build_study_outputs.html">build_study_outputs</a></span><span class="op">(</span><span class="st">"."</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>This writes:</p>
 <ul>
 <li>
@@ -245,7 +265,10 @@ figure</li>
 <code>inst/report/artifacts/&lt;id&gt;.html</code> for each table
 (must contain a <code>&lt;table&gt;</code>)</li>
 </ul>
-<p>The registry stub does <strong>not</strong> store artifacts.</p>
+<p>(<code>build_report()</code> still exists as a thin package-local
+convenience alias for CI/local use, but Contribute guidance and this
+checklist point at <code><a href="../reference/build_study_outputs.html">build_study_outputs()</a></code>.) The registry
+stub does <strong>not</strong> store artifacts.</p>
 </div>
 <div class="section level2">
 <h2 id="prepare-and-register">Prepare and register<a class="anchor" aria-label="anchor" href="#prepare-and-register"></a>
@@ -256,11 +279,14 @@ figure</li>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/prepare_study_for_registry.html">prepare_study_for_registry</a></span><span class="op">(</span></span>
+<span><span class="fu"><a href="../reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span></span>
 <span>  <span class="st">"../rep-10.1371-journal.pone.0278337"</span>,</span>
 <span>  build_artifacts <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/check_replication.html">check_replication</a></span><span class="op">(</span><span class="st">"../rep-10.1371-journal.pone.0278337"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> validates only — it never writes
+a registry stub or any file into the study package. A maintainer syncs
+directly from your <code>replication.yml</code> (next section).</p>
 </div>
 <div class="section level3">
 <h3 id="maintainer-sync-into-the-central-registry">Maintainer: sync into the central registry<a class="anchor" aria-label="anchor" href="#maintainer-sync-into-the-central-registry"></a>

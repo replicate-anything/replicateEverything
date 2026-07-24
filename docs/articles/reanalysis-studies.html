@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Reanalysis and extension studies">
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script>
@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.18</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,8 +97,8 @@ read <code>outputs/prep_data/repdata.rds</code> or
 </h2>
 <p>The reanalysis repository holds only new material. When the display
 format matches the base study, inherit the format child step; when it
-differs (as here), inherit with a override pointing at local R
-scripts:</p>
+differs (as here), inherit with a <code>code:</code> override pointing
+at local R scripts:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">inherit</span><span class="kw">:</span><span class="at"> prep_data</span></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
@@ -111,12 +111,14 @@ scripts:</p>
 <span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
 <span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">inherit</span><span class="kw">:</span><span class="at"> tab_1_format</span></span></code></pre></div>
 <p><code>inherit: tab_1_format</code> is enough when the extension repo
-has its own at the same path as the base format step:
-replicateEverything sources that file locally so uses the reanalysis
-models. Only add a override when the extension formatter lives at a
+has its own <code>code/tab_1.R</code> at the same path as the base
+format step: replicateEverything sources that file locally so
+<code>format_tab_1</code> uses the reanalysis models. Only add a
+<code>code:</code> override when the extension formatter lives at a
 different path.</p>
 <p>In the base Fearon &amp; Laitin study, Stata table steps read
-directly; R steps use the shared output.</p>
+<code>data/repdata.dta</code> directly; R steps use the shared
+<code>prep_data</code> output.</p>
 </div>
 <div class="section level2">
 <h2 id="execution-semantics">Execution semantics<a class="anchor" aria-label="anchor" href="#execution-semantics"></a>

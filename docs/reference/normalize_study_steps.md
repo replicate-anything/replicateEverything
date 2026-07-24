@@ -1,6 +1,6 @@
-# Return normalized study steps (unified steps block or legacy compile)
+# Return normalized study steps from the required `steps:` block
 
-Return normalized study steps (unified steps block or legacy compile)
+Return normalized study steps from the required `steps:` block
 
 ## Usage
 
