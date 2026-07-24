@@ -17,6 +17,11 @@ get_replication_meta_impl(doi, repo = NULL, folder = NULL)
 Parsed \code{replication.yml} contents.
 }
 \description{
-Fetch replication metadata for a paper
+Deterministic resolution order (first hit wins; no silent URL scavenges):
+\enumerate{
+\item Local study root (\code{ctx$local_root} or configured study folders / monorepo)
+\item Configured registry stub (\verb{registry_root/studies/<folder>.yml})
+\item Remote registry stub URL for the configured registry repo
+}
 }
 \keyword{internal}

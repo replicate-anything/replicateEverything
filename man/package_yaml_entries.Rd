@@ -2,11 +2,11 @@
 % Please edit documentation in R/package_replication.R
 \name{package_yaml_entries}
 \alias{package_yaml_entries}
-\title{Package yaml entries (prep + replications + steps)}
+\title{Package yaml step entries}
 \usage{
 package_yaml_entries(meta)
 }
 \description{
-Package yaml entries (prep + replications + steps)
+Package yaml step entries
 }
 \keyword{internal}

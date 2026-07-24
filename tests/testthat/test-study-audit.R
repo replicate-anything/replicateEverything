@@ -1,7 +1,7 @@
 test_that("study_declared_languages prefers yaml languages field", {
   meta <- list(
     languages = c("r", "stata"),
-    replications = list(
+    steps = list(
       list(id = "fig_1", engine = "python", code = "code/fig_1.py")
     )
   )
@@ -14,12 +14,10 @@ test_that("study_declared_languages prefers yaml languages field", {
 test_that("study_declared_languages infers from entries when yaml omits languages", {
   meta <- list(
     paper = list(),
-    replications = list(
-      list(id = "tab_1", code = "code/tab_1.do"),
-      list(id = "fig_1", code = "code/fig_1.R")
-    ),
-    prep = list(
-      list(id = "step_1", engine = "python", code = "code/step.py")
+    steps = list(
+      list(id = "tab_1", engine = "stata", code = "code/tab_1.do"),
+      list(id = "fig_1", engine = "r", code = "code/fig_1.R"),
+      list(id = "step_1", type = "transform", engine = "python", code = "code/step.py")
     )
   )
   engines <- replicateEverything:::study_declared_languages(meta)
@@ -39,7 +37,7 @@ test_that("study_declared_r_packages reads paper.dependencies", {
 test_that("study_declared_python_packages prefers python_dependencies", {
   meta <- list(
     python_dependencies = c("pandas", "numpy"),
-    replications = list(
+    steps = list(
       list(id = "s1", engine = "python", dependencies = c("jupyter"))
     )
   )

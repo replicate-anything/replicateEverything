@@ -2,11 +2,11 @@
 % Please edit documentation in R/study_steps.R
 \name{step_parent_ids}
 \alias{step_parent_ids}
-\title{Parent ids declared on a step entry}
+\title{Parent ids declared on a step entry (\verb{parents:} only)}
 \usage{
 step_parent_ids(step)
 }
 \description{
-Parent ids declared on a step entry
+Parent ids declared on a step entry (\verb{parents:} only)
 }
 \keyword{internal}

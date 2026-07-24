@@ -1,34 +1,30 @@
-#' Validate a study repository before registry onboarding (contributor)
+#' Build outputs and validate a study (contributor)
 #'
-#' Builds outputs (optional) and runs [check_replication()]. On success, the
-#' study is ready for a maintainer to register it with
-#' [sync_study_to_registry()], which writes the stub **only** into the central
-#' registry repository (not into the study repo).
+#' Optionally bakes display artifacts with [build_study_outputs()], then runs
+#' [check_replication()]. On success the study is ready for a maintainer to
+#' register it with [sync_study_to_registry()] (stub written only into the
+#' central registry repository).
 #'
 #' @param location Study repo path or GitHub address. Defaults to `"."`.
 #' @param build_artifacts If `TRUE`, build precomputed outputs first.
 #' @param install_deps Passed to the build function.
 #' @param full_replication If `TRUE`, also run every table and figure live.
 #' @param registry_root Optional registry checkout (passed to build/check helpers).
-#' @param write_handoff If `TRUE`, also write a legacy study-local stub under
-#'   `registry/` or `inst/registry/` (not recommended; stubs belong in the
-#'   registry repo). Default `FALSE`.
-#' @return Invisibly, a checklist result; when `write_handoff = TRUE` and checks
-#'   pass, also includes `registry_stub_path` and `registry_index_path`.
+#' @return Invisibly, a checklist result (`folder_replication_check` or
+#'   `package_replication_check`).
 #'
 #' @examples
 #' \dontrun{
-#' prepare_study_for_registry(".")
+#' check_and_bake_study(".")
 #' }
 #'
 #' @export
-prepare_study_for_registry <- function(
+check_and_bake_study <- function(
   location = ".",
   build_artifacts = TRUE,
   install_deps = TRUE,
   full_replication = FALSE,
-  registry_root = NULL,
-  write_handoff = FALSE
+  registry_root = NULL
 ) {
   study_root <- resolve_study_root(location)
   kind <- detect_study_kind_from_root(study_root)
@@ -71,18 +67,9 @@ prepare_study_for_registry <- function(
     "(stub is written only into the registry repository)."
   )
 
-  if (isTRUE(write_handoff)) {
-    written <- write_study_registry_stub(study_root)
-    message("Legacy study-local handoff written under ", written$stub_dir)
-    result$registry_stub_path <- written$stub_path
-    result$registry_index_path <- written$index_path
-    result$folder <- written$folder
-  } else {
-    result$folder <- registry_folder_from_paper(
-      read_study_meta_from_root(study_root, kind = kind)$paper
-    )
-  }
-
+  result$folder <- registry_folder_from_paper(
+    read_study_meta_from_root(study_root, kind = kind)$paper
+  )
   result$study_kind <- kind
   cls <- if (identical(kind, "package")) {
     c("package_replication_check", "replication_check", "list")
@@ -100,8 +87,7 @@ prepare_study_for_registry <- function(
 #' via [build_registry_index()].
 #'
 #' Stub and index files belong in the **registry** repository only — not in the
-#' study repo. Study-local `registry/` or `inst/registry/` handoff folders are
-#' not required.
+#' study repo.
 #'
 #' @param location Study repo path or GitHub address. Defaults to `"."`.
 #' @param registry_root Path to the registry repository root. Defaults to
@@ -199,6 +185,56 @@ sync_study_to_registry <- function(
     kind = kind,
     audit = audit_out
   ))
+}
+
+#' Validate then sync a study into the registry (maintainer)
+#'
+#' Runs [check_and_bake_study()] then [sync_study_to_registry()]. Use when a
+#' maintainer has a study checkout and a local registry checkout.
+#'
+#' @inheritParams check_and_bake_study
+#' @param dry_run If `TRUE`, run checks only; do not write registry files.
+#' @param audit If `TRUE`, run [audit_everything()] for this study after sync.
+#' @return Invisibly, the checklist result; when registration succeeds, also
+#'   includes `stub_path` and `index_updated`.
+#' @export
+register_study <- function(
+  location = ".",
+  build_artifacts = FALSE,
+  install_deps = TRUE,
+  full_replication = FALSE,
+  registry_root = NULL,
+  dry_run = FALSE,
+  audit = FALSE
+) {
+  result <- check_and_bake_study(
+    location = location,
+    build_artifacts = build_artifacts,
+    install_deps = install_deps,
+    full_replication = full_replication,
+    registry_root = registry_root
+  )
+
+  if (!isTRUE(result$ok)) {
+    return(invisible(result))
+  }
+
+  if (isTRUE(dry_run)) {
+    message("dry_run = TRUE: registry not modified.")
+    return(invisible(result))
+  }
+
+  study_root <- result$study_path %||% result$package_path
+  synced <- sync_study_to_registry(
+    study_root,
+    registry_root = registry_root,
+    audit = audit
+  )
+
+  result$stub_path <- synced$stub_path
+  result$index_updated <- synced$index_updated
+  result$folder <- synced$folder
+  invisible(result)
 }
 
 #' Refresh the registry index and optionally rerun the full audit (maintainer)

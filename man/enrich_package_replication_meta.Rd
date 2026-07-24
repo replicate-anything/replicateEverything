@@ -2,7 +2,7 @@
 % Please edit documentation in R/render_replication.R
 \name{enrich_package_replication_meta}
 \alias{enrich_package_replication_meta}
-\title{Merge replication entries from the study package into registry stub metadata}
+\title{Merge full study package steps into a lightweight registry stub}
 \usage{
 enrich_package_replication_meta(meta, ctx)
 }
@@ -15,6 +15,7 @@ enrich_package_replication_meta(meta, ctx)
 Updated metadata list.
 }
 \description{
-Merge replication entries from the study package into registry stub metadata
+Registry stubs omit the DAG. When the stub points at a package-backed study,
+load \verb{steps:} from the study package yaml (local install or configured path).
 }
 \keyword{internal}

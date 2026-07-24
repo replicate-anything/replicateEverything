@@ -2,7 +2,7 @@
 % Please edit documentation in R/replication_resolve.R
 \name{collect_replication_entries}
 \alias{collect_replication_entries}
-\title{Collect replication entries from parsed metadata}
+\title{Collect step entries from parsed metadata}
 \usage{
 collect_replication_entries(meta)
 }
@@ -10,9 +10,10 @@ collect_replication_entries(meta)
 \item{meta}{Parsed replication metadata.}
 }
 \value{
-List of replication entries.
+List of non-format step entries.
 }
 \description{
-Collect replication entries from parsed metadata
+Registry stubs omit \verb{steps:}. For package-backed stubs, load steps from the
+installed study package. Otherwise require a non-empty \verb{steps:} block.
 }
 \keyword{internal}

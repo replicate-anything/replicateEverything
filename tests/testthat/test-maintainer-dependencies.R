@@ -134,7 +134,7 @@ test_that("check_study_compatibility wraps study audit", {
 test_that("assert_study_ready_for_replication stops with hint when R deps missing", {
   meta <- list(
     paper = list(dependencies = list("__not_a_real_pkg_xyz__")),
-    replications = list(list(id = "tab_1", engine = "r", type = "table")),
+    steps = list(list(id = "tab_1", engine = "r", type = "table")),
     languages = "r"
   )
   expect_error(

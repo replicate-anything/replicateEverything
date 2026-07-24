@@ -1,10 +1,10 @@
 #' @importFrom utils read.csv write.csv download.file
 NULL
 
-#' Null-coalescing infix
+#' Null-coalescing infix (also treats scalar NA as missing)
 #' @keywords internal
 `%||%` <- function(a, b) {
-  if (is.null(a)) b else a
+  if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
 }
 
 #' Report progress to UIs (Shiny) and the R console

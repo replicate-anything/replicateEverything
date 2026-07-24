@@ -214,12 +214,6 @@ merge_extended_study_meta <- function(meta, ctx = NULL) {
   steps <- merge_extended_study_steps(meta, base_meta, extends)
 
   meta$steps <- steps
-  if (length(meta$replications %||% list()) == 0L) {
-    meta$replications <- base_meta$replications %||% list()
-  }
-  if (length(meta$prep %||% list()) == 0L) {
-    meta$prep <- base_meta$prep %||% list()
-  }
 
   for (field in c(
     "languages",

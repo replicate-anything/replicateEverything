@@ -14,7 +14,7 @@ test_that("check_replication validates vaccine package structure", {
   art_dir <- file.path(pkg_dir, "inst", "report", "artifacts")
   skip_if_not(
     dir.exists(art_dir) && length(list.files(art_dir)) > 0,
-    "run build_report() in study package first"
+    "run build_study_outputs() in study package first"
   )
 
   result <- check_replication(pkg_dir, full_replication = FALSE)
@@ -53,9 +53,10 @@ test_that("registry_stub_from_package_meta omits replications", {
       package_repo = "org/pkgtest"
     ),
     repo = "org/pkgtest",
-    replications = list(list(id = "fig_1"))
+    steps = list(list(id = "fig_1"))
   )
   stub <- registry_stub_from_package_meta(meta, package_folder = "pkgtest")
+  expect_null(stub$steps)
   expect_null(stub$replications)
   expect_equal(stub$paper$package, "pkgtest")
 })

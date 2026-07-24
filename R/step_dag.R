@@ -669,18 +669,3 @@ study_step_labels <- function(meta) {
     types = graph$types
   )
 }
-
-#' Migrate legacy prep/replications yaml to a unified steps block (character yaml)
-#' @param meta Parsed replication metadata or path to replication.yml.
-#' @return Character scalar containing a \code{steps:} yaml block.
-#' @keywords internal
-migrate_legacy_steps_yaml <- function(meta) {
-  if (is.character(meta) && length(meta) == 1L && file.exists(meta)) {
-    meta <- yaml::read_yaml(meta)
-  }
-  steps <- compile_steps_from_legacy(meta)
-  if (length(steps) == 0L) {
-    return("steps: []\n")
-  }
-  yaml::as_yaml(list(steps = steps), line_sep = "\n")
-}

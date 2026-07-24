@@ -105,8 +105,8 @@ test_that("enrich_package_replication_meta merges remote package yaml", {
   )
   ctx <- list(folder = "10.1371_journal.pone.0278337", repo = "replicate-anything/registry")
   enriched <- enrich_package_replication_meta(stub, ctx)
-  skip_if(length(enriched$replications %||% list()) == 0, "could not reach GitHub")
-  expect_true(any(vapply(enriched$replications, function(x) identical(x$id, "fig_1"), logical(1))))
+  skip_if(length(enriched$steps %||% list()) == 0, "could not reach GitHub / package yaml")
+  expect_true(any(vapply(enriched$steps, function(x) identical(x$id, "fig_1"), logical(1))))
 })
 
 test_that("load_artifact reads package html when study package is loaded", {
@@ -125,7 +125,7 @@ test_that("load_artifact reads package html when study package is loaded", {
   )
 
   tab <- file.path(pkg_dir, "inst", "report", "artifacts", "tab_1.html")
-  skip_if_not(file.exists(tab), "package tab_1 artifact missing; run build_report()")
+  skip_if_not(file.exists(tab), "package tab_1 artifact missing; run build_study_outputs()")
 
   withr::with_options(
     list(
@@ -164,6 +164,17 @@ test_that("format_for_display passes through package-backed output", {
       replicateEverything.use_sibling_packages = TRUE
     ),
     {
+      ready <- tryCatch(
+        {
+          replicateEverything:::assert_study_ready_for_replication(
+            "10.1371/journal.pone.0278337",
+            folder = "10.1371_journal.pone.0278337"
+          )
+          TRUE
+        },
+        error = function(e) FALSE
+      )
+      skip_if_not(isTRUE(ready), "study package / deps not ready for live run")
       result <- render_replication(
         "10.1371/journal.pone.0278337",
         "fig_2",

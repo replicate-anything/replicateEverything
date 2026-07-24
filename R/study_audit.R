@@ -13,7 +13,7 @@ yaml_string_list <- function(...) {
 #' Languages declared in replication.yml
 #'
 #' Prefer top-level \code{languages:} or \code{paper.languages:}. When omitted,
-#' infers from \code{engine:} on prep/replication entries.
+#' infers from \code{engine:} on \code{steps:} entries.
 #'
 #' @param meta Parsed replication metadata.
 #' @return Character vector of \code{r}, \code{stata}, and/or \code{python}.
@@ -30,7 +30,7 @@ study_declared_languages <- function(meta) {
     return(raw)
   }
 
-  entries <- c(meta$replications %||% list(), meta$prep %||% list())
+  entries <- tryCatch(collect_study_step_entries(meta), error = function(e) list())
   if (length(entries) == 0L) {
     return(character(0))
   }
@@ -72,7 +72,7 @@ study_declared_python_packages <- function(meta) {
     return(declared)
   }
   deps <- character(0)
-  entries <- c(meta$replications %||% list(), meta$prep %||% list())
+  entries <- tryCatch(collect_study_step_entries(meta), error = function(e) list())
   for (entry in entries) {
     if (identical(replication_engine(entry, meta$paper), "python")) {
       deps <- c(deps, unlist(entry$dependencies %||% list(), use.names = FALSE))

@@ -11,8 +11,7 @@ is_prep_entry <- function(rep) {
   if (type %in% c("step", "prep", "pipeline", "transform")) {
     return(TRUE)
   }
-  has_outputs <- (!is.null(rep$outputs) && length(rep$outputs) > 0L) ||
-    (!is.null(rep$output) && nzchar(as.character(rep$output %||% "")))
+  has_outputs <- (!is.null(rep$outputs) && length(rep$outputs) > 0L)
   has_outputs && is.null(rep$type)
 }
 
@@ -67,12 +66,6 @@ find_prep_entry <- function(meta, step_id) {
   matches <- pipeline[vapply(pipeline, function(x) {
     identical(as.character(x$id), step_id)
   }, logical(1))]
-  if (length(matches) == 0L) {
-    steps <- meta$prep %||% list()
-    matches <- steps[vapply(steps, function(x) {
-      identical(as.character(x$id), step_id)
-    }, logical(1))]
-  }
   if (length(matches) == 0L) {
     stop("Prep step ", step_id, " not found in metadata", call. = FALSE)
   }
@@ -257,68 +250,61 @@ replicate_fn_result_object <- function(result) {
   result
 }
 
-#' Required prep step ids for a replication entry
+#' Parent ids for a step (`parents:` only)
 #'
-#' @param rep Replication entry.
+#' @param rep Step entry.
 #' @keywords internal
 replication_requires_prep <- function(rep) {
-  req <- rep$requires %||% rep$depends_on %||% list()
-  if (length(req) == 0L) {
-    return(character(0))
+  if (!is.null(rep$requires) || !is.null(rep$depends_on)) {
+    stop(
+      "Step '", as.character(rep$id %||% "?"),
+      "' uses requires:/depends_on:; use parents: only.",
+      call. = FALSE
+    )
   }
-  vapply(req, function(x) as.character(x), character(1))
+  step_parent_ids(rep)
 }
 
-#' Collect prep step ids required by replication entries (transitive)
+#' Collect upstream transform step ids required by display steps
 #'
 #' @param meta Parsed replication metadata.
-#' @param replications List of replication entries.
-#' @return Character vector of prep ids in \code{prep:} block order.
+#' @param replications List of display step entries.
+#' @return Character vector of ancestor step ids in DAG order.
 #' @keywords internal
 collect_required_prep_ids <- function(meta, replications) {
   if (length(replications) == 0L) {
     return(character(0))
   }
-  prep_ids <- character(0)
-  queue <- unique(unlist(lapply(replications, replication_requires_prep), use.names = FALSE))
-  while (length(queue) > 0L) {
-    id <- queue[[1L]]
-    queue <- queue[-1L]
-    if (id %in% prep_ids) {
-      next
+  steps <- normalize_study_steps(meta)
+  graph <- study_step_graph(steps)
+  needed <- character(0)
+  for (rep in replications) {
+    tid <- as.character(rep$id %||% "")
+    if (nzchar(tid) && tid %in% graph$ids) {
+      needed <- union(needed, step_ancestors(tid, graph))
     }
-    prep <- tryCatch(find_prep_entry(meta, id), error = function(e) NULL)
-    if (is.null(prep)) {
-      next
-    }
-    prep_ids <- c(prep_ids, id)
-    queue <- unique(c(replication_requires_prep(prep), queue))
   }
-  all_prep <- meta$prep %||% list()
-  if (length(all_prep) == 0L) {
-    return(prep_ids)
-  }
-  yaml_order <- vapply(all_prep, function(x) as.character(x$id), character(1))
-  ordered <- prep_ids[prep_ids %in% yaml_order]
-  ordered[order(match(ordered, yaml_order))]
+  pipeline <- steps[vapply(steps, function(x) {
+    is_pipeline_step_type(x$type %||% "")
+  }, logical(1))]
+  pipeline_ids <- vapply(pipeline, function(x) as.character(x$id), character(1))
+  ordered <- needed[needed %in% pipeline_ids]
+  ordered[order(match(ordered, pipeline_ids))]
 }
 
-#' Prep steps to run before building display artifacts
+#' Prep / transform steps to run before building display artifacts
 #'
-#' When \code{display_reps} is \code{NULL}, returns every entry in \code{prep:}.
-#' Otherwise returns only prep steps required by the given replications.
+#' When \code{display_reps} is \code{NULL}, returns every transform step.
+#' Otherwise returns only ancestors required by the given display steps.
 #'
 #' @param meta Parsed replication metadata.
 #' @param display_reps Optional list of table/figure entries being built.
 #' @keywords internal
 prep_steps_for_build <- function(meta, display_reps = NULL) {
-  all_prep <- meta$prep %||% list()
-  if (length(all_prep) == 0L) {
-    steps <- tryCatch(normalize_study_steps(meta), error = function(e) list())
-    all_prep <- steps[vapply(steps, function(x) {
-      is_pipeline_step_type(x$type %||% "")
-    }, logical(1))]
-  }
+  steps <- tryCatch(normalize_study_steps(meta), error = function(e) list())
+  all_prep <- steps[vapply(steps, function(x) {
+    is_pipeline_step_type(x$type %||% "")
+  }, logical(1))]
   if (length(all_prep) == 0L) {
     return(list())
   }
@@ -326,21 +312,6 @@ prep_steps_for_build <- function(meta, display_reps = NULL) {
     return(all_prep)
   }
   required_ids <- collect_required_prep_ids(meta, display_reps)
-  # Unified steps: use parents: / DAG ancestors when legacy requires: is empty
-  if (length(required_ids) == 0L) {
-    steps <- tryCatch(normalize_study_steps(meta), error = function(e) list())
-    if (length(steps) > 0L && length(display_reps) > 0L) {
-      graph <- study_step_graph(steps)
-      needed <- character(0)
-      for (rep in display_reps) {
-        tid <- as.character(rep$id %||% "")
-        if (nzchar(tid) && tid %in% graph$ids) {
-          needed <- union(needed, step_ancestors(tid, graph))
-        }
-      }
-      required_ids <- needed
-    }
-  }
   if (length(required_ids) == 0L) {
     return(list())
   }

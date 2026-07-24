@@ -1,4 +1,7 @@
-#' Merge replication entries from the study package into registry stub metadata
+#' Merge full study package steps into a lightweight registry stub
+#'
+#' Registry stubs omit the DAG. When the stub points at a package-backed study,
+#' load `steps:` from the study package yaml (local install or configured path).
 #'
 #' @param meta Parsed replication metadata.
 #' @param ctx Paper context from \code{paper_context()}.
@@ -8,17 +11,14 @@ enrich_package_replication_meta <- function(meta, ctx) {
   if (!is_package_replication(meta)) {
     return(meta)
   }
-  reps <- meta$replications %||% list()
-  if (length(reps) > 0) {
+  steps <- meta$steps %||% list()
+  if (length(steps) > 0L) {
     return(meta)
   }
 
   pkg_meta <- fetch_package_replication_yaml(meta, ctx)
-  if (!is.null(pkg_meta)) {
-    meta$replications <- pkg_meta$replications %||% list()
-    if (length(meta$prep %||% list()) == 0) {
-      meta$prep <- pkg_meta$prep %||% list()
-    }
+  if (!is.null(pkg_meta) && length(pkg_meta$steps %||% list()) > 0L) {
+    meta$steps <- pkg_meta$steps
     return(meta)
   }
 
@@ -29,20 +29,19 @@ enrich_package_replication_meta <- function(meta, ctx) {
       read_package_replication_meta(pkg),
       error = function(e) NULL
     )
-    if (!is.null(pkg_meta)) {
-      meta$replications <- pkg_meta$replications %||% list()
-      if (length(meta$prep %||% list()) == 0) {
-        meta$prep <- pkg_meta$prep %||% list()
-      }
-      if (length(meta$steps %||% list()) == 0) {
-        meta$steps <- pkg_meta$steps %||% list()
-      }
+    if (!is.null(pkg_meta) && length(pkg_meta$steps %||% list()) > 0L) {
+      meta$steps <- pkg_meta$steps
     }
   }
   meta
 }
 
 #' Fetch replication metadata for a paper
+#'
+#' Deterministic resolution order (first hit wins; no silent URL scavenges):
+#' 1. Local study root (`ctx$local_root` or configured study folders / monorepo)
+#' 2. Configured registry stub (`registry_root/studies/<folder>.yml`)
+#' 3. Remote registry stub URL for the configured registry repo
 #'
 #' @param doi Character. DOI of the paper.
 #' @param repo Optional repository slug.
@@ -54,107 +53,73 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   doi <- prepare_doi_for_replication(doi)
   ctx <- paper_context(doi, repo = repo, folder = folder)
   meta <- NULL
+  source_used <- NULL
 
-  registry_root <- getOption("replicateEverything.registry_root", NULL)
-  if (is.null(registry_root) || !dir.exists(registry_root)) {
-    registry_root <- auto_detect_registry_root()
+  # 1. Local study root
+  local_roots <- character(0)
+  if (!is.null(ctx$local_root) && nzchar(as.character(ctx$local_root))) {
+    local_roots <- c(local_roots, as.character(ctx$local_root))
   }
-
-  stub_path <- ctx$registry_stub_path %||% NULL
-  if (is.null(stub_path) && !is.null(registry_root)) {
-    stub_path <- registry_paper_yaml_path(registry_root, ctx$folder)
+  resolved <- tryCatch(resolve_local_study_folder(doi), error = function(e) NULL)
+  if (!is.null(resolved)) {
+    local_roots <- c(local_roots, resolved)
   }
-  if (!is.null(stub_path) && file.exists(stub_path)) {
-    meta <- tryCatch(yaml::read_yaml(stub_path), error = function(e) NULL)
-  }
-
-  if (is.null(meta)) {
-    meta <- read_yaml_url(registry_paper_yaml_url(ctx$folder))
-  }
-  if (is.null(meta)) {
-    legacy_url <- sprintf(
-      "https://raw.githubusercontent.com/%s/main/studies/%s/replication.yml",
-      DEFAULT_REGISTRY_REPO,
-      ctx$folder
-    )
-    meta <- read_yaml_url(legacy_url)
-  }
-
-  if (is.null(meta) && isTRUE(ctx$is_folder_study)) {
-    meta <- fetch_folder_study_replication_yaml(
-      list(repo = ctx$materials_repo),
-      ctx
-    )
-  }
-
-  if (is.null(meta) && !is.null(ctx$local_root)) {
-    local_yml <- file.path(ctx$local_root, "replication.yml")
-    if (file.exists(local_yml)) {
-      meta <- yaml::read_yaml(local_yml)
+  for (root in unique(local_roots)) {
+    for (rel in c("replication.yml", "inst/replication.yml")) {
+      local_yml <- file.path(root, rel)
+      if (file.exists(local_yml)) {
+        meta <- yaml::read_yaml(local_yml)
+        source_used <- local_yml
+        if (is.null(ctx$local_root)) {
+          ctx$local_root <- root
+        }
+        break
+      }
+    }
+    if (!is.null(meta)) {
+      break
     }
   }
 
-  if (is.null(meta) && grepl("^rep[-_]", doi)) {
-    local_root <- resolve_local_study_folder(doi)
-    if (!is.null(local_root)) {
-      local_yml <- file.path(local_root, "replication.yml")
-      if (file.exists(local_yml)) {
-        meta <- yaml::read_yaml(local_yml)
-        if (is.null(ctx$local_root)) {
-          ctx$local_root <- local_root
+  # 2. Configured registry stub
+  if (is.null(meta)) {
+    registry_root <- getOption("replicateEverything.registry_root", NULL)
+    if (!is.null(registry_root) && dir.exists(registry_root)) {
+      stub_path <- ctx$registry_stub_path %||%
+        registry_study_yaml_path(registry_root, ctx$folder)
+      if (!is.null(stub_path) && file.exists(stub_path)) {
+        meta <- tryCatch(yaml::read_yaml(stub_path), error = function(e) NULL)
+        if (!is.null(meta)) {
+          source_used <- stub_path
         }
       }
     }
   }
 
+  # 3. Remote registry stub (flat studies/<folder>.yml only)
   if (is.null(meta)) {
-    monorepo <- sibling_monorepo_root()
-    if (!is.null(monorepo)) {
-      study_dir <- file.path(monorepo, study_folder_from_doi(doi))
-      local_yml <- file.path(study_dir, "replication.yml")
-      if (file.exists(local_yml)) {
-        meta <- yaml::read_yaml(local_yml)
-      }
-    }
-  }
-
-  if (is.null(meta)) {
-    study_dir <- resolve_local_study_folder(doi)
-    if (!is.null(study_dir)) {
-      local_yml <- file.path(study_dir, "replication.yml")
-      if (file.exists(local_yml)) {
-        meta <- yaml::read_yaml(local_yml)
-      }
-    }
-  }
-
-  if (is.null(meta)) {
-    urls <- unique(c(
-      paste0(ctx$base_url, "replication.yml"),
-      paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/replication.yml"),
-      paste0("https://raw.githubusercontent.com/", ctx$repo, "/main/inst/replication.yml")
-    ))
-    for (meta_url in urls) {
-      meta <- read_yaml_url(meta_url)
-      if (!is.null(meta)) {
-        break
-      }
+    remote_url <- registry_study_yaml_url(ctx$folder)
+    meta <- read_yaml_url(remote_url)
+    if (!is.null(meta)) {
+      source_used <- remote_url
     }
   }
 
   if (is.null(meta)) {
     stop(
       "Could not load replication.yml for ", doi, ".\n",
-      "This study is not on the remote registry yet. From your monorepo run:\n",
-      "  devtools::load_all(\"replicateEverything\")\n",
-      "  replicateEverything::configure_local_monorepo()\n",
-      "Or set options(replicateEverything.registry_root = ..., ",
-      "replicateEverything.study_folders_root = ..., ",
-      "replicateEverything.use_sibling_packages = TRUE).",
+      "Tried, in order:\n",
+      "  1. Local study root (replication.yml / inst/replication.yml)\n",
+      "  2. Configured registry stub under options(replicateEverything.registry_root)\n",
+      "  3. Remote registry stub at ", registry_study_yaml_url(ctx$folder), "\n",
+      "Set options(replicateEverything.registry_root = ..., ",
+      "replicateEverything.study_folders_root = ...) or run ",
+      "configure_local_monorepo() from a monorepo checkout.",
       call. = FALSE
     )
   }
 
+  attr(meta, "replication_meta_source") <- source_used
   meta <- enrich_package_replication_meta(meta, ctx)
   meta <- enrich_folder_study_replication_meta(meta, ctx)
   if (is_folder_study_replication(meta, ctx)) {
@@ -970,7 +935,3 @@ save_artifact <- function(
   paste0("<thead><tr>", headers, "</tr></thead><tbody>", paste(rows, collapse = ""), "</tbody>")
 }
 
-#' @keywords internal
-`%||%` <- function(a, b) {
-  if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
-}

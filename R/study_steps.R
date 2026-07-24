@@ -18,10 +18,17 @@ is_pipeline_step_type <- function(type) {
   type %in% c("step", "prep", "pipeline", "transform")
 }
 
-#' Parent ids declared on a step entry
+#' Parent ids declared on a step entry (`parents:` only)
 #' @keywords internal
 step_parent_ids <- function(step) {
-  parents <- step$parents %||% step$requires %||% step$depends_on %||% list()
+  if (!is.null(step$requires) || !is.null(step$depends_on)) {
+    stop(
+      "Step '", as.character(step$id %||% "?"),
+      "' uses requires:/depends_on:; use parents: only.",
+      call. = FALSE
+    )
+  }
+  parents <- step$parents %||% list()
   if (length(parents) == 0L) {
     return(character(0))
   }
@@ -33,6 +40,15 @@ step_parent_ids <- function(step) {
 normalize_step_entry <- function(step) {
   if (is.null(step$id) || !nzchar(as.character(step$id))) {
     stop("Every step must have a non-empty id.", call. = FALSE)
+  }
+  forbidden <- intersect(names(step), c("artifact", "output", "stata_output"))
+  if (length(forbidden) > 0L) {
+    stop(
+      "Step '", as.character(step$id),
+      "' uses ", paste0(forbidden, collapse = "/"),
+      ":; use outputs: only.",
+      call. = FALSE
+    )
   }
   id <- as.character(step$id)
   type <- tolower(as.character(step$type %||% "step"))
@@ -47,64 +63,27 @@ normalize_step_entry <- function(step) {
   out
 }
 
-#' Compile unified steps from legacy prep + replications blocks
-#' @keywords internal
-compile_steps_from_legacy <- function(meta) {
-  steps <- list()
-  prep <- meta$prep %||% list()
-  reps <- meta$replications %||% list()
-
-  for (prep_entry in prep) {
-    step <- normalize_step_entry(prep_entry)
-    step$type <- "transform"
-    steps[[step$id]] <- step
-  }
-
-  for (rep in reps) {
-    step <- normalize_step_entry(rep)
-    if (!is_display_step_type(step$type) && !is_pipeline_step_type(step$type)) {
-      has_outputs <- (!is.null(step$outputs) && length(step$outputs) > 0L) ||
-        !is.null(step$output)
-      if (!has_outputs) {
-        step$type <- "transform"
-      }
-    }
-    steps[[step$id]] <- step
-
-    if (format_specified(rep)) {
-      fmt_id <- paste0(step$id, "_format")
-      fmt <- list(
-        id = fmt_id,
-        type = "format",
-        label = paste0(step$label %||% step$id, " (format)"),
-        parent = step$id,
-        parents = list(),
-        format = rep$format,
-        code = if (is.character(rep$format)) rep$format else NULL
-      )
-      steps[[fmt_id]] <- normalize_step_entry(fmt)
-    }
-  }
-
-  unname(steps)
-}
-
-#' Return normalized study steps (unified steps block or legacy compile)
+#' Return normalized study steps from the required `steps:` block
+#'
 #' @param meta Parsed replication metadata.
 #' @return List of step entries.
 #' @keywords internal
 normalize_study_steps <- function(meta) {
-  raw <- meta$steps %||% NULL
-  if (!is.null(raw) && length(raw) > 0L) {
-    steps <- lapply(raw, normalize_step_entry)
-    for (step in steps) {
-      if (identical(step$type, "format") && !is.null(step$parent)) {
-        step$parents <- list()
-      }
-    }
-    return(steps)
+  if (!is.null(meta$prep) || !is.null(meta$replications)) {
+    stop(
+      "replication.yml must use a unified steps: DAG. ",
+      "Legacy prep: / replications: blocks are not supported.",
+      call. = FALSE
+    )
   }
-  compile_steps_from_legacy(meta)
+  raw <- meta$steps %||% NULL
+  if (is.null(raw) || length(raw) == 0L) {
+    stop(
+      "replication.yml must declare a non-empty steps: block.",
+      call. = FALSE
+    )
+  }
+  lapply(raw, normalize_step_entry)
 }
 
 #' Collect runnable step entries (excludes format children from flat list)
@@ -224,21 +203,12 @@ study_step_entries <- function(meta) {
   collect_study_step_entries(meta)
 }
 
-#' Relative output paths declared for a step
+#' Relative output paths declared for a step (`outputs:` only)
 #' @keywords internal
 step_declared_output_paths <- function(step) {
   outs <- step$outputs %||% NULL
   if (!is.null(outs) && length(outs) > 0L) {
     return(vapply(outs, function(x) as.character(x), character(1)))
-  }
-  single <- step$output %||% NULL
-  if (!is.null(single) && nzchar(as.character(single[[1]] %||% single))) {
-    return(as.character(single[[1]] %||% single))
-  }
-  # Deprecated fallback for older yaml that used artifact: instead of outputs:
-  legacy <- step$artifact %||% NULL
-  if (!is.null(legacy) && nzchar(as.character(legacy[[1]] %||% legacy))) {
-    return(as.character(legacy[[1]] %||% legacy))
   }
   id <- as.character(step$id)
   type <- tolower(as.character(step$type %||% ""))
@@ -258,18 +228,6 @@ step_declared_output_paths <- function(step) {
 #' Primary declared output paths for readiness checks (files and dirs)
 #' @keywords internal
 step_primary_declared_output_rels <- function(step) {
-  outs <- step$outputs %||% NULL
-  if (!is.null(outs) && length(outs) > 0L) {
-    return(vapply(outs, function(x) as.character(x), character(1)))
-  }
-  single <- step$output %||% step$stata_output %||% NULL
-  if (!is.null(single) && nzchar(as.character(single[[1]] %||% single))) {
-    return(as.character(single[[1]] %||% single))
-  }
-  legacy <- step$artifact %||% NULL
-  if (!is.null(legacy) && nzchar(as.character(legacy[[1]] %||% legacy))) {
-    return(as.character(legacy[[1]] %||% legacy))
-  }
   step_declared_output_paths(step)
 }
 

@@ -168,7 +168,7 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
 
   studies_dir <- registry_studies_dir(registry_root)
   study_folders <- if (!is.null(folders)) {
-    sub("^studies/", "", sub("^papers/", "", sub("\\.yml$", "", basename(folders))))
+    sub("^studies/", "", sub("\\.yml$", "", basename(folders)))
   } else {
     yml_files <- list.files(studies_dir, pattern = "\\.yml$", full.names = FALSE)
     sub("\\.yml$", "", yml_files)

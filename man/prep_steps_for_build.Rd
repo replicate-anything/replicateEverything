@@ -2,7 +2,7 @@
 % Please edit documentation in R/prep_replication.R
 \name{prep_steps_for_build}
 \alias{prep_steps_for_build}
-\title{Prep steps to run before building display artifacts}
+\title{Prep / transform steps to run before building display artifacts}
 \usage{
 prep_steps_for_build(meta, display_reps = NULL)
 }
@@ -12,7 +12,7 @@ prep_steps_for_build(meta, display_reps = NULL)
 \item{display_reps}{Optional list of table/figure entries being built.}
 }
 \description{
-When \code{display_reps} is \code{NULL}, returns every entry in \code{prep:}.
-Otherwise returns only prep steps required by the given replications.
+When \code{display_reps} is \code{NULL}, returns every transform step.
+Otherwise returns only ancestors required by the given display steps.
 }
 \keyword{internal}

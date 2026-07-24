@@ -11,7 +11,7 @@ test_that("resolve_replication_language picks sole engine", {
 test_that("resolve_replication_language leaves NULL when multiple engines", {
   meta <- list(
     paper = list(doi = "10.5555/test"),
-    replications = list(
+    steps = list(
       list(id = "tab_1", type = "table", group = "tab_1", code = "code/tab_1.R"),
       list(id = "tab_1_stata", type = "table", group = "tab_1", code = "code/tab_1.do", engine = "stata")
     )

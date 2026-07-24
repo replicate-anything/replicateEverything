@@ -670,7 +670,7 @@ like:
 In code/tables/tab_1.R line 12: cannot resolve source('../helpers/foo.R') → expected code/helpers/foo.R
 ```
 
-Fix broken links before `prepare_study_for_registry()`. The code viewer / live Run
+Fix broken links before `check_and_bake_study()`. The code viewer / live Run
 uses the same resolution logic, so broken links fail both submission checks and Shiny
 navigation.
 
@@ -747,7 +747,7 @@ When merging a study row into [registry/index.csv](https://github.com/replicate-
 | `maintainer_name`, `maintainer_email` | stub `maintainer:` block |
 | `languages` | Semicolon-separated engines from stub `languages:` |
 
-`prepare_study_for_registry()` / `sync_study_to_registry()` copy these fields into
+`check_and_bake_study()` / `sync_study_to_registry()` copy these fields into
 `registry/studies/<folder>.yml`. **Every new contribution must name a maintainer** —
 do not leave these blank. Do not write study-local `registry/` handoff folders.
 

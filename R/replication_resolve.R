@@ -69,34 +69,24 @@ replication_logical_id <- function(rep) {
   as.character(rep$id %||% "")
 }
 
-#' Collect replication entries from parsed metadata
+#' Collect step entries from parsed metadata
+#'
+#' Registry stubs omit `steps:`. For package-backed stubs, load steps from the
+#' installed study package. Otherwise require a non-empty `steps:` block.
 #'
 #' @param meta Parsed replication metadata.
-#' @return List of replication entries.
+#' @return List of non-format step entries.
 #' @keywords internal
 collect_replication_entries <- function(meta) {
-  if (!is.null(meta$steps) && length(meta$steps) > 0L) {
-    steps <- normalize_study_steps(meta)
-    return(steps[vapply(steps, function(x) {
-      !identical(as.character(x$type), "format")
-    }, logical(1))])
+  if (length(meta$steps %||% list()) == 0L && is_package_replication(meta)) {
+    pkg_entries <- package_replication_entries(meta)
+    if (length(pkg_entries) > 0L) {
+      return(pkg_entries[vapply(pkg_entries, function(x) {
+        !identical(as.character(x$type %||% ""), "format")
+      }, logical(1))])
+    }
   }
-  entries <- c(meta$prep %||% list(), meta$replications %||% list())
-  if (length(entries) > 0L || !is_folder_study_replication(meta)) {
-    return(entries)
-  }
-  ctx <- list(
-    repo = study_repo_slug(meta, NULL),
-    folder = meta$paper$study_folder %||% NULL
-  )
-  study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
-  if (is.null(study_meta)) {
-    return(entries)
-  }
-  if (!is.null(study_meta$steps) && length(study_meta$steps) > 0L) {
-    return(normalize_study_steps(study_meta))
-  }
-  c(study_meta$prep %||% list(), study_meta$replications %||% list())
+  collect_study_step_entries(meta)
 }
 
 #' Default engine when multiple entries share a logical id

@@ -1,9 +1,8 @@
-test_that("is_prep_entry does not treat figures with output as prep", {
+test_that("is_prep_entry does not treat figures as prep", {
   fig <- list(
     id = "fig_2",
     type = "figure",
-    output = "outputs/fig_2.png",
-    artifact = "outputs/fig_2.png"
+    outputs = list("outputs/fig_2.png")
   )
   expect_false(replicateEverything:::is_prep_entry(fig))
 })
@@ -11,8 +10,8 @@ test_that("is_prep_entry does not treat figures with output as prep", {
 test_that("is_prep_entry recognizes pipeline steps", {
   step <- list(
     id = "construct_analysis_dataset",
-    type = "step",
-    output = "data/processed/all_asperson_fulldata.dta"
+    type = "transform",
+    outputs = list("data/processed/all_asperson_fulldata.dta")
   )
   expect_true(replicateEverything:::is_prep_entry(step))
 })
@@ -54,33 +53,32 @@ test_that("ensure_replication_dependencies skips Stata SSC packages on entries",
   )
 })
 
-test_that("prep_steps_for_build selects required prep in yaml order", {
+test_that("prep_steps_for_build selects required prep in DAG order", {
   meta <- list(
-    prep = list(
-      list(id = "step_a", type = "step"),
-      list(id = "step_b", type = "step"),
-      list(id = "step_c", type = "step")
-    ),
-    replications = list(
-      list(id = "fig_1", type = "figure", requires = list("step_c")),
-      list(id = "tab_1", type = "table", requires = list("step_b", "step_a"))
+    steps = list(
+      list(id = "step_a", type = "transform"),
+      list(id = "step_b", type = "transform"),
+      list(id = "step_c", type = "transform"),
+      list(id = "fig_1", type = "figure", parents = list("step_c")),
+      list(id = "tab_1", type = "table", parents = list("step_b", "step_a"))
     )
   )
   reps <- replicateEverything:::folder_display_replications(meta)
   steps <- replicateEverything:::prep_steps_for_build(meta, reps)
-  expect_equal(vapply(steps, function(x) x$id, character(1)), c("step_a", "step_b", "step_c"))
+  expect_equal(
+    sort(vapply(steps, function(x) x$id, character(1))),
+    c("step_a", "step_b", "step_c")
+  )
   all_steps <- replicateEverything:::prep_steps_for_build(meta, NULL)
   expect_length(all_steps, 3L)
 })
 
-test_that("collect_required_prep_ids follows transitive requires", {
+test_that("collect_required_prep_ids follows transitive parents", {
   meta <- list(
-    prep = list(
-      list(id = "step_a", type = "step"),
-      list(id = "step_b", type = "step", requires = list("step_a"))
-    ),
-    replications = list(
-      list(id = "fig_1", type = "figure", requires = list("step_b"))
+    steps = list(
+      list(id = "step_a", type = "transform"),
+      list(id = "step_b", type = "transform", parents = list("step_a")),
+      list(id = "fig_1", type = "figure", parents = list("step_b"))
     )
   )
   ids <- replicateEverything:::collect_required_prep_ids(

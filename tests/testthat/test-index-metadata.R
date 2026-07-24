@@ -119,7 +119,7 @@ test_that("folder_registry_index_row exports maintainer collections languages", 
     ),
     collections = c("IPI"),
     languages = list("r"),
-    replications = list(
+    steps = list(
       list(id = "fig_1", engine = "r", code = "code/fig_1.R")
     )
   )

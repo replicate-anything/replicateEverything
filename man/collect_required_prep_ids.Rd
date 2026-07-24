@@ -2,19 +2,19 @@
 % Please edit documentation in R/prep_replication.R
 \name{collect_required_prep_ids}
 \alias{collect_required_prep_ids}
-\title{Collect prep step ids required by replication entries (transitive)}
+\title{Collect upstream transform step ids required by display steps}
 \usage{
 collect_required_prep_ids(meta, replications)
 }
 \arguments{
 \item{meta}{Parsed replication metadata.}
 
-\item{replications}{List of replication entries.}
+\item{replications}{List of display step entries.}
 }
 \value{
-Character vector of prep ids in \code{prep:} block order.
+Character vector of ancestor step ids in DAG order.
 }
 \description{
-Collect prep step ids required by replication entries (transitive)
+Collect upstream transform step ids required by display steps
 }
 \keyword{internal}

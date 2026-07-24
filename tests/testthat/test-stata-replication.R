@@ -6,7 +6,7 @@ test_that("get_replication_meta merges stata_packages for folder-backed stub", {
       "estout"
     )
     expect_equal(meta$languages[[1]], "stata")
-    expect_true(length(meta$replications %||% list()) > 0L)
+    expect_true(length(meta$steps %||% list()) > 0L)
   })
 })
 
@@ -27,7 +27,7 @@ test_that("auto_detect_monorepo_root finds sibling registry", {
 test_that("get_replication_meta finds local Stata study from fixture registry", {
   with_fixture_stata_opts({
     meta <- get_replication_meta(fixture_stata_doi())
-    reps <- meta$replications %||% list()
+    reps <- folder_display_replications(meta)
     expect_true(length(reps) > 0L)
     tab1 <- reps[vapply(reps, function(x) identical(x$id, "tab_1"), logical(1))]
     expect_length(tab1, 1L)

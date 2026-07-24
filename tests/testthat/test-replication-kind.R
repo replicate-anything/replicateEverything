@@ -41,7 +41,7 @@ test_that("study_output_dir resolves folder studies with explicit study_path", {
 test_that("probe_study_engine_dependencies reads paper.dependencies", {
   meta <- list(
     paper = list(dependencies = c("stats")),
-    replications = list(list(id = "tab_1", engine = "r", type = "table"))
+    steps = list(list(id = "tab_1", engine = "r", type = "table"))
   )
   probe <- replicateEverything:::probe_study_engine_dependencies(meta)
   expect_true(isTRUE(probe$dependencies$r$ok))
@@ -53,7 +53,7 @@ test_that("study_system_compatibility probes CRAN deps for package stub meta", {
       package = "__not_installed_pkg__",
       dependencies = c("stats")
     ),
-    replications = list(list(id = "tab_1", engine = "r", type = "table"))
+    steps = list(list(id = "tab_1", engine = "r", type = "table"))
   )
   probe <- replicateEverything:::probe_study_engine_dependencies(meta)
   expect_true(isTRUE(probe$dependencies$r$ok))

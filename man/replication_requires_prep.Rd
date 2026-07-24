@@ -2,14 +2,14 @@
 % Please edit documentation in R/prep_replication.R
 \name{replication_requires_prep}
 \alias{replication_requires_prep}
-\title{Required prep step ids for a replication entry}
+\title{Parent ids for a step (\verb{parents:} only)}
 \usage{
 replication_requires_prep(rep)
 }
 \arguments{
-\item{rep}{Replication entry.}
+\item{rep}{Step entry.}
 }
 \description{
-Required prep step ids for a replication entry
+Parent ids for a step (\verb{parents:} only)
 }
 \keyword{internal}

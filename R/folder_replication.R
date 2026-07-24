@@ -873,12 +873,6 @@ merge_folder_study_meta_fields <- function(meta, study_meta) {
   if (length(meta$steps %||% list()) == 0L) {
     meta$steps <- study_meta$steps %||% list()
   }
-  if (length(meta$replications %||% list()) == 0L) {
-    meta$replications <- study_meta$replications %||% list()
-  }
-  if (length(meta$prep %||% list()) == 0L) {
-    meta$prep <- study_meta$prep %||% list()
-  }
   if (is.null(meta$paper)) {
     meta$paper <- list()
   }
@@ -1513,12 +1507,6 @@ registry_studies_subdir <- function() {
   "studies"
 }
 
-#' Legacy registry subdirectory (pre-rename)
-#' @keywords internal
-registry_papers_subdir_legacy <- function() {
-  "papers"
-}
-
 #' Absolute path to \code{registry/studies/}
 #' @param registry_root Registry checkout root.
 #' @keywords internal
@@ -1542,16 +1530,6 @@ registry_paper_yaml_path <- function(registry_root, folder) {
 #' @rdname registry_paper_yaml_path
 #' @keywords internal
 registry_study_yaml_path <- function(registry_root, folder) {
-  for (sub in c(registry_studies_subdir(), registry_papers_subdir_legacy())) {
-    flat <- file.path(registry_root, sub, paste0(folder, ".yml"))
-    if (file.exists(flat)) {
-      return(flat)
-    }
-    legacy <- file.path(registry_root, sub, folder, "replication.yml")
-    if (file.exists(legacy)) {
-      return(legacy)
-    }
-  }
   file.path(registry_studies_dir(registry_root), paste0(folder, ".yml"))
 }
 
@@ -1585,38 +1563,6 @@ registry_study_yaml_url <- function(
   )
 }
 
-#' Legacy GitHub raw URLs for registry study stubs
-#' @keywords internal
-registry_study_yaml_url_legacy <- function(
-  folder,
-  registry_repo = DEFAULT_REGISTRY_REPO,
-  ref = "main"
-) {
-  c(
-    sprintf(
-      "https://raw.githubusercontent.com/%s/%s/%s/%s.yml",
-      registry_repo,
-      ref,
-      registry_papers_subdir_legacy(),
-      folder
-    ),
-    sprintf(
-      "https://raw.githubusercontent.com/%s/%s/%s/%s/replication.yml",
-      registry_repo,
-      ref,
-      registry_papers_subdir_legacy(),
-      folder
-    ),
-    sprintf(
-      "https://raw.githubusercontent.com/%s/%s/%s/%s/replication.yml",
-      registry_repo,
-      ref,
-      registry_studies_subdir(),
-      folder
-    )
-  )
-}
-
 #' Read the registry stub yaml for a paper folder
 #'
 #' @param folder Registry folder name.
@@ -1626,30 +1572,13 @@ read_registry_stub_yaml <- function(folder, registry_root = NULL) {
   if (is.null(registry_root)) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
   }
-  if (is.null(registry_root) || !dir.exists(registry_root)) {
-    registry_root <- auto_detect_registry_root()
-  }
-  if (!is.null(registry_root)) {
-    path <- registry_paper_yaml_path(registry_root, folder)
+  if (!is.null(registry_root) && dir.exists(registry_root)) {
+    path <- registry_study_yaml_path(registry_root, folder)
     if (file.exists(path)) {
       return(tryCatch(yaml::read_yaml(path), error = function(e) NULL))
     }
-    draft_path <- file.path(registry_root, "drafts", paste0(folder, ".yml"))
-    if (file.exists(draft_path)) {
-      return(tryCatch(yaml::read_yaml(draft_path), error = function(e) NULL))
-    }
   }
-  meta <- read_yaml_url(registry_study_yaml_url(folder))
-  if (!is.null(meta)) {
-    return(meta)
-  }
-  for (legacy_url in registry_study_yaml_url_legacy(folder)) {
-    meta <- read_yaml_url(legacy_url)
-    if (!is.null(meta)) {
-      return(meta)
-    }
-  }
-  NULL
+  read_yaml_url(registry_study_yaml_url(folder))
 }
 
 #' Build a minimal folder-study stub when the registry yaml is missing

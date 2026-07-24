@@ -10,7 +10,7 @@ study_artifact_rel_candidates(rep)
 \item{rep}{A single replication entry from \code{replication.yml}.}
 }
 \description{
-Prefers displayable paths from \code{outputs:} (html/png/rds/svg). The
-legacy \code{artifact:} field is accepted only as a deprecated fallback.
+Uses displayable paths from \code{outputs:} (html/png/rds/svg), then
+type-based defaults under \code{outputs/}.
 }
 \keyword{internal}

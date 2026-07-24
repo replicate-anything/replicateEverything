@@ -3425,7 +3425,7 @@ contribute_tab_ui <- function() {
     "library(replicateEverything)\n",
     "options(replicateEverything.registry_root = \"../registry\")\n",
     "\n",
-    "prepare_study_for_registry(\".\", build_artifacts = TRUE)\n",
+    "check_and_bake_study(\".\", build_artifacts = TRUE)\n",
     "check_replication(\".\", full_replication = FALSE)\n",
     "\n",
     "# Sync a stub into your local registry checkout, rebuild index, then PR:\n",
@@ -3712,7 +3712,7 @@ contribute_tab_ui <- function() {
         tags$li(
           tags$strong("Open a pull request on the registry. "),
           "First sync a local copy of the registry, then use: ",
-          contribute_hint(code("prepare_study_for_registry()"), example_contributor_pr, "Prepare then PR"),
+          contribute_hint(code("check_and_bake_study()"), example_contributor_pr, "Prepare then PR"),
           ", ",
           contribute_hint(code("sync_study_to_registry()"), example_contributor_pr, "Write stub"),
           ", ",

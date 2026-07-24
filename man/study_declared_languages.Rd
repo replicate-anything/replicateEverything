@@ -14,6 +14,6 @@ Character vector of \code{r}, \code{stata}, and/or \code{python}.
 }
 \description{
 Prefer top-level \code{languages:} or \code{paper.languages:}. When omitted,
-infers from \code{engine:} on prep/replication entries.
+infers from \code{engine:} on \code{steps:} entries.
 }
 \keyword{internal}

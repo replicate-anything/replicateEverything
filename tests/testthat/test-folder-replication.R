@@ -37,13 +37,14 @@ test_that("registry_stub_from_folder_meta includes summary fields", {
     ),
     collections = c("IPI"),
     languages = list("r"),
-    replications = list(list(id = "fig_1"))
+    steps = list(list(id = "fig_1", type = "figure", code = "code/fig_1.R"))
   )
   stub <- registry_stub_from_folder_meta(
     meta,
     study_folder = "rep-study",
     study_root = "/tmp/rep-study"
   )
+  expect_null(stub$steps)
   expect_null(stub$replications)
   expect_equal(stub$paper$materials, "folder")
   expect_equal(stub$maintainer$email, "macartan.humphreys@wzb.eu")
@@ -75,10 +76,16 @@ test_that("build_registry_index compiles index from study stubs", {
   expect_equal(index$collections[[1]], "APSR")
 })
 
-test_that("write_folder_registry_stub creates registry sync files", {
-  tmp <- file.path(tempdir(), "rep-10.1177-00491241211036161")
-  dir.create(tmp, showWarnings = FALSE)
-  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+test_that("sync_study_to_registry writes stub into registry checkout", {
+  tmp <- withr::local_tempdir()
+  study <- file.path(tmp, "rep-10.1177-00491241211036161")
+  reg <- file.path(tmp, "registry")
+  dir.create(study, recursive = TRUE)
+  dir.create(file.path(reg, "studies"), recursive = TRUE)
+  writeLines(
+    "folder,doi,title,journal,year,authors,repo",
+    file.path(reg, "index.csv")
+  )
   meta <- list(
     paper = list(
       doi = "https://doi.org/10.1177/00491241211036161",
@@ -87,19 +94,25 @@ test_that("write_folder_registry_stub creates registry sync files", {
       year = 2022,
       authors = "A Author"
     ),
-    replications = list(list(id = "fig_1", type = "figure", code = "code/fig_1.R"))
+    maintainer = list(name = "Test", email = "t@example.org"),
+    collections = list("IPI"),
+    languages = list("r"),
+    repo = "org/study",
+    steps = list(list(
+      id = "fig_1",
+      type = "figure",
+      code = "code/fig_1.R",
+      outputs = list("outputs/fig_1.png")
+    ))
   )
-  yaml::write_yaml(meta, file.path(tmp, "replication.yml"))
-  dir.create(file.path(tmp, "registry"), showWarnings = FALSE)
+  yaml::write_yaml(meta, file.path(study, "replication.yml"))
 
-  written <- write_folder_registry_stub(tmp)
-  expect_true(file.exists(written$stub_path))
-  expect_true(file.exists(written$index_path))
-  stub <- yaml::read_yaml(written$stub_path)
-  expect_null(stub$replications)
+  synced <- sync_study_to_registry(study, registry_root = reg)
+  expect_true(file.exists(synced$stub_path))
+  expect_false(dir.exists(file.path(study, "registry")))
+  stub <- yaml::read_yaml(synced$stub_path)
+  expect_null(stub$steps)
   expect_equal(stub$paper$materials, "folder")
-  index <- utils::read.csv(written$index_path, stringsAsFactors = FALSE)
-  expect_equal(nrow(index), 1L)
 })
 
 test_that("enrich_folder_study_replication_meta merges stata fields from study repo", {
@@ -110,7 +123,7 @@ test_that("enrich_folder_study_replication_meta merges stata fields from study r
   )
   ctx <- list(local_root = fixture_stata_study_root())
   enriched <- replicateEverything:::enrich_folder_study_replication_meta(stub, ctx)
-  expect_true(length(enriched$replications %||% list()) > 0L)
+  expect_true(length(enriched$steps %||% list()) > 0L)
   expect_equal(
     as.character(enriched$stata_packages[[1]]),
     "estout"
@@ -164,7 +177,7 @@ test_that("resolve_doi_input finds local replication.yml", {
       doi = "https://doi.org/10.9999/localtest",
       title = "Local test"
     ),
-    replications = list(list(id = "tab_1", type = "table", code = "code/tab_1.R"))
+    steps = list(list(id = "tab_1", type = "table", code = "code/tab_1.R"))
   )
   yaml::write_yaml(meta, file.path(tmp, "replication.yml"))
   withr::with_dir(tmp, {
@@ -189,7 +202,7 @@ test_that("resolve_doi_input accepts an explicit study path", {
       doi = "https://doi.org/10.9999/pathtest",
       title = "Path test"
     ),
-    replications = list(list(id = "tab_1", type = "table", code = "code/tab_1.R"))
+    steps = list(list(id = "tab_1", type = "table", code = "code/tab_1.R"))
   )
   yaml::write_yaml(meta, file.path(tmp, "replication.yml"))
   out <- resolve_doi_input(tmp)

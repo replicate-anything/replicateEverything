@@ -90,7 +90,7 @@ test_that("check_replication_script_entries passes when make_* is defined withou
     file.path(tmp, "code", "tab_1.R")
   )
   meta <- list(
-    replications = list(
+    steps = list(
       list(
         id = "tab_1",
         type = "table",
@@ -112,7 +112,7 @@ test_that("check_replication_script_entries fails when make_* is missing", {
     file.path(tmp, "code", "tab_1.R")
   )
   meta <- list(
-    replications = list(
+    steps = list(
       list(
         id = "tab_1",
         type = "table",

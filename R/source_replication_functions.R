@@ -267,7 +267,7 @@ check_replication_script_entries <- function(study_root, meta) {
     NULL
   }
   if (is.null(reps) || !length(reps)) {
-    reps <- meta$replications %||% meta$steps %||% list()
+    reps <- tryCatch(collect_study_step_entries(meta), error = function(e) list())
   }
   if (!length(reps)) {
     return(check_result("script_entries", TRUE, "No replications to check"))

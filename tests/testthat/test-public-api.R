@@ -145,7 +145,7 @@ test_that("build_study_outputs writes manifest for fixture study", {
   })
 })
 
-test_that("prepare_study_for_registry validates without writing study handoff", {
+test_that("check_and_bake_study validates without writing study handoff", {
   with_fixture_opts({
     study_dir <- file.path(
       getOption("replicateEverything.study_folders_root"),
@@ -162,7 +162,7 @@ test_that("prepare_study_for_registry validates without writing study handoff", 
       file.path(copy_root, "outputs", "manifest.json")
     )
 
-    result <- prepare_study_for_registry(
+    result <- check_and_bake_study(
       copy_root,
       build_artifacts = FALSE,
       registry_root = getOption("replicateEverything.registry_root")
@@ -202,7 +202,7 @@ test_that("sync_study_to_registry builds stub from study yaml into registry", {
 test_that("run_replication language parameter resolves dual-engine entries", {
   meta <- list(
     paper = list(doi = "https://doi.org/10.1257/aer.91.5.1369", title = "Test"),
-    replications = list(
+    steps = list(
       list(id = "tab_1", group = "tab_1", engine = "r", type = "table", code = "x.R"),
       list(id = "tab_1_stata", group = "tab_1", engine = "stata", type = "table", code = "x.do")
     )
@@ -211,6 +211,28 @@ test_that("run_replication language parameter resolves dual-engine entries", {
   stata_entry <- find_replication_entry(meta, "tab_1", language = "stata")
   expect_equal(r_entry$id, "tab_1")
   expect_equal(stata_entry$id, "tab_1_stata")
+})
+
+test_that("normalize_study_steps rejects legacy prep/replications", {
+  expect_error(
+    normalize_study_steps(list(prep = list(list(id = "a")), replications = list())),
+    "steps:"
+  )
+  expect_error(
+    normalize_study_steps(list(steps = list())),
+    "non-empty steps"
+  )
+})
+
+test_that("normalize_step_entry rejects synonym parent/output fields", {
+  expect_error(
+    normalize_step_entry(list(id = "a", type = "table", requires = list("b"))),
+    "parents"
+  )
+  expect_error(
+    normalize_step_entry(list(id = "a", type = "table", artifact = "outputs/a.html")),
+    "outputs"
+  )
 })
 
 test_that("save_local_shiny materializes app files", {

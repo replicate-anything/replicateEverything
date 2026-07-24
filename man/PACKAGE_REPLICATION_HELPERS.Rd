@@ -2,11 +2,11 @@
 % Please edit documentation in R/package_requirements.R
 \name{PACKAGE_REPLICATION_HELPERS}
 \alias{PACKAGE_REPLICATION_HELPERS}
-\title{Recommended study-package helpers (not the replicateEverything verbs)}
+\title{Recommended study-package helpers (none required; bake via build_study_outputs)}
 \usage{
 PACKAGE_REPLICATION_HELPERS
 }
 \description{
-Recommended study-package helpers (not the replicateEverything verbs)
+Recommended study-package helpers (none required; bake via build_study_outputs)
 }
 \keyword{internal}

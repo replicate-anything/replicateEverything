@@ -39,8 +39,7 @@ via \code{\link[=build_registry_index]{build_registry_index()}}.
 }
 \details{
 Stub and index files belong in the \strong{registry} repository only — not in the
-study repo. Study-local \verb{registry/} or \verb{inst/registry/} handoff folders are
-not required.
+study repo.
 }
 \examples{
 \dontrun{

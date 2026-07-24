@@ -1,3 +1,21 @@
+# replicateEverything 0.7.0
+
+## Breaking: yaml contract and contributor API
+
+* Contributor entrypoint is now [check_and_bake_study()] (replaces
+  `prepare_study_for_registry()`). Maintainer one-shot is [register_study()]
+  (replaces internal `add_paper()` / `add_folder_paper()`). Study-local
+  registry handoff (`write_handoff` / `write_study_registry_stub`) is gone.
+* `replication.yml` must declare a non-empty `steps:` DAG. Legacy `prep:` /
+  `replications:` blocks error. Step edges use `parents:` only; products use
+  `outputs:` only (`requires` / `depends_on` / `artifact` / `output` /
+  `stata_output` rejected).
+* Metadata resolution is deterministic: local study root → configured registry
+  stub → remote `studies/<folder>.yml`. No silent GitHub scavenges or `papers/`
+  fallbacks.
+* Package checks no longer require a study-local `build_report()` helper; bake
+  via [build_study_outputs()].
+
 # replicateEverything 0.6.18
 
 ## Shiny Contribute tab

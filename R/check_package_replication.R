@@ -130,15 +130,23 @@ check_package_replication <- function(location, full_replication = FALSE) {
     )
   }
 
-  reps <- meta$replications %||% list()
-  display_reps <- reps[vapply(reps, function(x) {
-    identical(as.character(x$type %||% ""), "figure") ||
-      identical(as.character(x$type %||% ""), "table")
-  }, logical(1))]
+  paper <- meta$paper %||% list()
+  doi_ok <- !is.null(paper$doi) && nzchar(as.character(paper$doi[[1]]))
+
+  display_reps <- tryCatch(
+    folder_display_replications(meta),
+    error = function(e) {
+      checks <<- bind_check_results(
+        checks,
+        check_result("steps", FALSE, conditionMessage(e))
+      )
+      list()
+    }
+  )
   if (length(display_reps) == 0) {
     checks <- bind_check_results(
       checks,
-      check_result("replications_list", FALSE, "No figure/table entries in replications:")
+      check_result("replications_list", FALSE, "No figure/table entries in steps:")
     )
   } else {
     checks <- bind_check_results(
@@ -149,13 +157,17 @@ check_package_replication <- function(location, full_replication = FALSE) {
 
   for (rep in display_reps) {
     rid <- rep$id
+    code_val <- as.character(rep$code[[1]] %||% rep$code %||% "")
+    fmt_child <- format_child_step(meta, rid)
+    format_val <- as.character(
+      rep$format[[1]] %||% rep$format %||%
+        fmt_child$format[[1]] %||% fmt_child$code[[1]] %||% ""
+    )
     missing <- character(0)
-    for (field in c("id", "type", "make", "format")) {
-      val <- rep[[field]] %||% NULL
-      if (is.null(val) || !nzchar(as.character(val[[1]]))) {
-        missing <- c(missing, field)
-      }
-    }
+    if (!nzchar(as.character(rid %||% ""))) missing <- c(missing, "id")
+    if (!nzchar(as.character(rep$type %||% ""))) missing <- c(missing, "type")
+    if (!nzchar(code_val)) missing <- c(missing, "code")
+    if (!nzchar(format_val)) missing <- c(missing, "format")
     if (length(missing)) {
       checks <- bind_check_results(
         checks,
@@ -169,7 +181,7 @@ check_package_replication <- function(location, full_replication = FALSE) {
     }
     checks <- bind_check_results(
       checks,
-      check_result(paste0("replication_", rid, "_meta"), TRUE, rep$make)
+      check_result(paste0("replication_", rid, "_meta"), TRUE, code_val)
     )
   }
 
@@ -221,22 +233,18 @@ check_package_replication <- function(location, full_replication = FALSE) {
     }
   }
 
-  for (fn in PACKAGE_REPLICATION_HELPERS) {
-    exists_fn <- exists(fn, envir = ns, inherits = FALSE)
-    checks <- bind_check_results(
-      checks,
-      check_result(
-        paste0("helper_", fn),
-        exists_fn,
-        if (exists_fn) "found" else paste0("recommended helper missing: ", fn, "()")
-      )
-    )
-  }
-
   for (rep in display_reps) {
-    rid <- rep$id
-    for (fn_name in c(rep$make, rep$format)) {
-      fn_name <- as.character(fn_name[[1]])
+    rid <- as.character(rep$id[[1]] %||% rep$id)
+    code_val <- as.character(rep$code[[1]] %||% rep$code %||% "")
+    fmt_child <- format_child_step(meta, rid)
+    format_val <- as.character(
+      rep$format[[1]] %||% rep$format %||%
+        fmt_child$format[[1]] %||% fmt_child$code[[1]] %||% ""
+    )
+    for (fn_name in unique(c(code_val, format_val))) {
+      if (!nzchar(fn_name) || grepl("[/\\\\]|\\.R$", fn_name, ignore.case = TRUE)) {
+        next
+      }
       has_fn <- exists(fn_name, envir = ns, inherits = FALSE, mode = "function")
       checks <- bind_check_results(
         checks,
@@ -256,7 +264,7 @@ check_package_replication <- function(location, full_replication = FALSE) {
       check_result(
         "artifact_directory",
         FALSE,
-        "Missing inst/report/artifacts/ (run build_report() or build_study_outputs())"
+        "Missing inst/report/artifacts/ (run build_study_outputs())"
       )
     )
   } else {

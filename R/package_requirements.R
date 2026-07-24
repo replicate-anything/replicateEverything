@@ -11,9 +11,9 @@ PACKAGE_REPLICATION_LEGACY_API <- c(
   "get_code"
 )
 
-#' Recommended study-package helpers (not the replicateEverything verbs)
+#' Recommended study-package helpers (none required; bake via build_study_outputs)
 #' @keywords internal
-PACKAGE_REPLICATION_HELPERS <- c("build_report")
+PACKAGE_REPLICATION_HELPERS <- character(0)
 
 #' Display replication types validated for artifacts
 #' @keywords internal
@@ -95,7 +95,7 @@ resolve_package_location <- function(location) {
   if (!nzchar(git)) {
     stop(
       "Git is required to clone ", slug,
-      ". Clone the repository locally and pass the package path to add_paper().",
+      ". Clone the repository locally and pass the package path to register_study() or sync_study_to_registry().",
       call. = FALSE
     )
   }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/study_steps.R
 \name{normalize_study_steps}
 \alias{normalize_study_steps}
-\title{Return normalized study steps (unified steps block or legacy compile)}
+\title{Return normalized study steps from the required \verb{steps:} block}
 \usage{
 normalize_study_steps(meta)
 }
@@ -13,6 +13,6 @@ normalize_study_steps(meta)
 List of step entries.
 }
 \description{
-Return normalized study steps (unified steps block or legacy compile)
+Return normalized study steps from the required \verb{steps:} block
 }
 \keyword{internal}

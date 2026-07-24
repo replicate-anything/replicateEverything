@@ -13,7 +13,7 @@ languages:
 stata_packages:
   - estout
 
-replications:
+steps:
   - id: tab_1
     type: table
     label: Table 1
@@ -32,3 +32,8 @@ replications:
     format: code/helpers/format_stata.R
     outputs:
       - outputs/tab_2.html
+
+  - id: tab_2_format
+    type: format
+    parent: tab_2
+    code: code/helpers/format_stata.R

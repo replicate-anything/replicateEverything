@@ -66,7 +66,7 @@ test_that("resolve_registry_artifact_path prefers the local declared artifact", 
   png_path <- file.path(tmp, "outputs", "fig_2.png")
   writeBin(as.raw(0), png_path)
 
-  rep <- list(id = "fig_2", type = "figure", artifact = "outputs/fig_2.png")
+  rep <- list(id = "fig_2", type = "figure", outputs = list("outputs/fig_2.png"))
   ctx <- list(local_root = tmp, base_url = "https://example.com/main")
 
   resolved <- resolve_registry_artifact_path("fig_2", ctx, rep)
@@ -78,7 +78,7 @@ test_that("resolve_registry_artifact_path prefers the local declared artifact", 
 
 test_that("resolve_registry_artifact_path returns the registry URL when no local file", {
   ctx <- list(local_root = NULL, base_url = "https://example.com/main")
-  rep <- list(id = "fig_2", type = "figure", artifact = "outputs/fig_2.png")
+  rep <- list(id = "fig_2", type = "figure", outputs = list("outputs/fig_2.png"))
   expect_equal(
     resolve_registry_artifact_path("fig_2", ctx, rep),
     "https://example.com/main/outputs/fig_2.png"

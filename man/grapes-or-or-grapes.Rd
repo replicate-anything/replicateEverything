@@ -2,11 +2,11 @@
 % Please edit documentation in R/utils.R
 \name{\%||\%}
 \alias{\%||\%}
-\title{Null-coalescing infix}
+\title{Null-coalescing infix (also treats scalar NA as missing)}
 \usage{
 a \%||\% b
 }
 \description{
-Null-coalescing infix
+Null-coalescing infix (also treats scalar NA as missing)
 }
 \keyword{internal}

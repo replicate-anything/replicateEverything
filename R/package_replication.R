@@ -184,14 +184,10 @@ get_study_package_object <- function(name, package) {
   eval(call("::", package, name), envir = parent.frame())
 }
 
-#' Package yaml entries (prep + replications + steps)
+#' Package yaml step entries
 #' @keywords internal
 package_yaml_entries <- function(meta) {
-  c(
-    meta$prep %||% list(),
-    meta$replications %||% list(),
-    meta$steps %||% list()
-  )
+  collect_study_step_entries(meta)
 }
 
 #' Find a prep/replication entry by id in package yaml
@@ -252,11 +248,11 @@ run_package_replication <- function(package, id, meta = NULL, install_deps = FAL
   }
   entry <- find_package_yaml_entry(meta, id)
 
-  make_name <- entry$make %||% entry$code
-  if (is.null(make_name) || !nzchar(as.character(make_name[[1]]))) {
-    stop("Replication ", id, " has no make/code entry.", call. = FALSE)
+  make_name <- entry$code
+  if (is.null(make_name) || !nzchar(as.character(make_name[[1]] %||% make_name))) {
+    stop("Step '", entry$id %||% id, "' must declare code: (analysis function name).", call. = FALSE)
   }
-  make_name <- as.character(make_name[[1]])
+  make_name <- as.character(make_name[[1]] %||% make_name)
   if (!exists(make_name, envir = ns, inherits = FALSE, mode = "function")) {
     stop(
       "Function ", make_name, " not found in package ", package, ".",
@@ -319,9 +315,9 @@ get_code_from_package_repo <- function(
 ) {
   mode <- match.arg(mode)
   entry <- find_replication_entry(meta, what)
-  source_name <- entry$make %||% entry$code
-  if (is.null(source_name) || !nzchar(source_name)) {
-    stop("Replication ", what, " has no make/code entry.", call. = FALSE)
+  source_name <- as.character(entry$code[[1]] %||% entry$code %||% "")
+  if (!nzchar(source_name)) {
+    stop("Step '", what, "' must declare code:.", call. = FALSE)
   }
 
   repo <- package_repo_slug(meta, ctx)
@@ -381,7 +377,7 @@ get_code_from_package_repo <- function(
     } else if (length(data_names) == 1L) {
       data_lines <- c(paste0("# data: ", data_names[[1]]), "")
     } else {
-      arg_names <- if (identical(entry$make, "make_table_2")) {
+      arg_names <- if (identical(as.character(entry$code[[1]] %||% entry$code), "make_table_2")) {
         c("survey", "labels")
       } else {
         as.character(data_names)
@@ -396,7 +392,10 @@ get_code_from_package_repo <- function(
     }
   }
 
-  make_fn <- entry$make %||% entry$code
+  make_fn <- as.character(entry$code[[1]] %||% entry$code %||% "")
+  if (!nzchar(make_fn)) {
+    stop("Step must declare code:.", call. = FALSE)
+  }
   fmt <- entry$format %||% NULL
   call_line <- if (is.null(data_names)) {
     paste0(make_fn, "()")
@@ -651,7 +650,7 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
     }
     pkg_meta <- fetch_package_replication_yaml(stub, ctx)
     if (!is.null(pkg_meta)) {
-      replications_found <- length(pkg_meta$replications %||% list())
+      replications_found <- length(folder_display_replications(pkg_meta))
     }
   } else if (is_folder_study) {
     study_repo <- study_repo_slug(stub, ctx)
@@ -664,12 +663,12 @@ replication_index_diagnostics <- function(doi, repo = NULL, folder = NULL) {
     }
     study_meta <- fetch_folder_study_replication_yaml(stub, ctx)
     if (!is.null(study_meta)) {
-      replications_found <- length(study_meta$replications %||% list())
+      replications_found <- length(folder_display_replications(study_meta))
     } else if (!is.null(stub)) {
-      replications_found <- length(stub$replications %||% list())
+      replications_found <- length(folder_display_replications(stub))
     }
   } else if (!is.null(stub)) {
-    replications_found <- length(stub$replications %||% list())
+    replications_found <- length(folder_display_replications(stub))
   }
 
   list(

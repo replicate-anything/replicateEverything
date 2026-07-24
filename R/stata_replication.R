@@ -1465,10 +1465,6 @@ normalize_stata_result_object <- function(object) {
 stata_output_path <- function(rep, study_root) {
   rels <- step_output_rel_candidates(rep)
   if (length(rels) == 0L) {
-    rel <- rep$output %||% rep$stata_output %||% NULL
-    if (!is.null(rel) && length(rel) > 0L && nzchar(as.character(rel[[1]]))) {
-      return(file.path(study_root, as.character(rel[[1]])))
-    }
     return(file.path(study_root, "outputs", "staging", paste0(rep$id, ".smcl")))
   }
   file.path(study_root, rels[[1]])

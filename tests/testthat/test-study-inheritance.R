@@ -15,7 +15,7 @@ test_that("merge_extended_study_steps pulls inherited analysis_data step", {
         type = "table",
         label = "Table 1",
         parents = list("analysis_data"),
-        artifact = "outputs/tab_1.html"
+        outputs = list("outputs/tab_1.html")
       ),
       list(
         id = "tab_1_stata",
@@ -23,7 +23,7 @@ test_that("merge_extended_study_steps pulls inherited analysis_data step", {
         label = "Table 1 Stata",
         parents = list(),
         engine = "stata",
-        artifact = "outputs/tab_1_stata.html"
+        outputs = list("outputs/tab_1_stata.html")
       )
     )
   )
@@ -42,7 +42,7 @@ test_that("merge_extended_study_steps pulls inherited analysis_data step", {
         label = "Reanalysis",
         parents = list("analysis_data"),
         code = "code/tab_1.R",
-        artifact = "outputs/tab_1.html"
+        outputs = list("outputs/tab_1.html")
       )
     )
   )

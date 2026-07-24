@@ -2,11 +2,11 @@
 % Please edit documentation in R/study_steps.R
 \name{step_declared_output_paths}
 \alias{step_declared_output_paths}
-\title{Relative output paths declared for a step}
+\title{Relative output paths declared for a step (\verb{outputs:} only)}
 \usage{
 step_declared_output_paths(step)
 }
 \description{
-Relative output paths declared for a step
+Relative output paths declared for a step (\verb{outputs:} only)
 }
 \keyword{internal}

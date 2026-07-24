@@ -66,8 +66,7 @@ list_replications <- function(
     ctx <- paper_context(doi, repo = repo, folder = folder)
     pkg_meta <- fetch_package_replication_yaml(meta, ctx)
     if (!is.null(pkg_meta)) {
-      legacy <- c(pkg_meta$prep %||% list(), pkg_meta$replications %||% list())
-      return(wrap(filter_replication_entries(list(steps = legacy), include = include)))
+      return(wrap(filter_replication_entries(pkg_meta, include = include)))
     }
     pkg <- as.character(meta$paper$package[[1]])
     ensure_replication_package(pkg, meta = meta, ctx = ctx)
@@ -77,13 +76,7 @@ list_replications <- function(
         error = function(e) NULL
       )
       if (!is.null(pkg_meta)) {
-        legacy <- package_yaml_entries(pkg_meta)
-        return(wrap(filter_replication_entries(list(steps = legacy), include = include)))
-      }
-      ns <- asNamespace(pkg)
-      if (exists("list_replications", envir = ns, inherits = FALSE)) {
-        out <- call_replication_package(pkg, "list_replications")
-        return(wrap(out))
+        return(wrap(filter_replication_entries(pkg_meta, include = include)))
       }
     }
   }
@@ -91,8 +84,7 @@ list_replications <- function(
     ctx <- paper_context(doi, repo = repo, folder = folder)
     study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
     if (!is.null(study_meta)) {
-      legacy <- c(study_meta$prep %||% list(), study_meta$replications %||% list())
-      return(wrap(filter_replication_entries(list(steps = legacy), include = include)))
+      return(wrap(filter_replication_entries(study_meta, include = include)))
     }
   }
   wrap(reps)
