@@ -92,10 +92,10 @@ head(load_index()[, c("doi", "title", "year")])
 Example output:
 
 ```
-#>                              doi                                    title year
-#> 1 10.1177/00491241211036161   Bounding Causes of Effects ...          2022
-#> 2 10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War    2003 
-#> 3 10.1017/s0003055426101749   ...                                     2026 
+#>  doi                         title                                   year
+#>  10.1177/00491241211036161   Bounding Causes of Effects ...          2022
+#>  10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War    2003 
+#>  10.1017/s0003055426101749   ...                                     2026 
 ```
 Each study in the registry has a designated maintainer; right now that is us, but we hope that others will start adding and commit to maintaining.  
 
@@ -106,17 +106,22 @@ Pass a DOI and a step id (`fig_1`, `tab_1`, …):
 ```{r basic-run, eval=FALSE}
 library(replicateEverything)
 
+# Replicate table 1 assuming any parent steps have already been run
 run_replication(
   doi = "10.1017/S0003055403000534",
   what = "tab_1"
 )
 
-# Stata when both engines exist:
+# Replicate table 1 assuming no parent steps have been run 
 run_replication(
-  doi = "10.1257/aer.91.5.1369",
-  what = "tab_2",
-  language = "stata"
-)
+  doi = "10.1017/S0003055403000534",
+  what = "tab_1", 
+  given = "nothing"
+ )
+
+# Running step: analysis_data
+# Running step: tab_1
+
 ```
 
 `list_replications()` shows what you can run from a given study:
@@ -176,6 +181,15 @@ You want to re-analyze a study with minimal alterations? Extension studies set `
 
 Folder-backed studies may mix R, Stata, and Python. Pick the engine with `language =` when both exist. See `vignette("stata-replications")`.
 
+```{r, eval = FALSE}
+# Stata when both engines exist:
+run_replication(
+  doi = "10.1257/aer.91.5.1369",
+  what = "tab_2",
+  language = "stata"
+)
+```
+
 ### Code exposure
 
 When you prepare a replication repository you have some discretion in how much code you expose and how much you tuck away out of view. Tucking things away can make code easier to read but also risks reducing transparency. `replicateEverything` uses two approaches to manage the trade off. First you can use the DAG structure to package separately discrete steps (like data preparation) that do not need to be rerun often but that users nevertheless might want to inspect and other steps where the most important action happens (analysis steps, perhaps). Second, when the `replicateEverything` shiny displays code that itself sources from other code files (`source(...)`) you can click on these sourcing lines to take you to nested code files.  
@@ -187,6 +201,8 @@ The registry rows carry `collections` tags (`APSR`, `PED`, `IPI`, `World Bank`, 
 ```{r audit-collection, eval=FALSE}
 audit_everything(patience = 20, collections = "APSR")
 ```
+
+As a researcher you could have a collection of all your own studies. As a journal you could have a collection of yours only. You can run an instance of the shiny app restricted to studies in your collection only.
 
 ## Using AI to prep your archive
 

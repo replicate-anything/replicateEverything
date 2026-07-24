@@ -1,3 +1,39 @@
+# replicateEverything 0.7.3
+
+## API consolidation: install_dependencies()
+
+* Added `install_dependencies(what = ...)`, a single maintainer entry point
+  for dependency setup that mirrors the `build_outputs()` /
+  `validate_outputs()` scope pattern: pass a study DOI/handle/path (default
+  `"."`) to install for one study, or `what = "everywhere"` to install for
+  every study in the registry index.
+* Removed the `install_study_dependencies()` and
+  `install_registry_dependencies()` exports (net API shrink: 29 → 28 exported
+  functions). Both still exist as unexported internals that
+  `install_dependencies()` dispatches to — no behavior change, only the
+  public entry point moved. No legacy alias was kept.
+* Updated all call sites, hint text (`maintainer_dependency_hint()`, Stata/
+  code-tab setup messages, Shiny "Missing dependencies" copy), tests,
+  `README.md`, the `maintainer-setup` and `meet-the-functions` vignettes,
+  `inst/ai/skills/*.md`, and root `AI.md`.
+* Reviewed and confirmed (no change needed) three other export-surface
+  questions raised in the same audit:
+  - `build_study_outputs()` / `check_replication()` / `check_and_bake_study()`
+    remain three distinct, justified verbs (bake only; validate only; compose
+    both for one-shot contributor onboarding).
+    `check_folder_replication()` / `check_package_replication()` are
+    `@describeIn check_replication` internals merged into `check_replication`'s
+    single Rd topic — never separate exports or reference-index entries.
+  - `register_study()` (check + sync in one call) and
+    `sync_study_to_registry()` (sync primitive) are kept as a deliberate
+    primitive + one-shot-composer pair, the same pattern as
+    `check_and_bake_study()` over `build_study_outputs()` +
+    `check_replication()` — not duplication.
+  - `build_outputs()` (DOI/registry-scoped maintainer dispatcher, mirrors
+    `validate_outputs()`) and `build_study_outputs()` (core one-study baker,
+    used directly by contributors and internally by `build_outputs()`) serve
+    different personas and are not duplicates.
+
 # replicateEverything 0.7.2
 
 ## pkgdown reference audit

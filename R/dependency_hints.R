@@ -37,8 +37,7 @@ executable_renviron_lines <- function() {
 #' @param missing_r Character vector of missing CRAN packages.
 #' @param include_path_hints Include \code{.Renviron} lines for Python/Stata.
 #' @return Character scalar (multi-line).
-#' @seealso [install_study_dependencies()], [install_registry_dependencies()],
-#'   [check_study_compatibility()]
+#' @seealso [install_dependencies()], [check_study_compatibility()]
 #'
 #' @examples
 #' \dontrun{
@@ -98,16 +97,16 @@ maintainer_dependency_hint <- function(
   if (!is.null(doi) && nzchar(as.character(doi))) {
     lines <- c(
       lines,
-      paste0("  install_study_dependencies(", hint_quote_study(doi), ")")
+      paste0("  install_dependencies(", hint_quote_study(doi), ")")
     )
   } else {
-    lines <- c(lines, "  install_study_dependencies(<doi-or-study-path>)")
+    lines <- c(lines, "  install_dependencies(<doi-or-study-path>)")
   }
   lines <- c(
     lines,
     "",
     "Install for every study in the registry:",
-    "  install_registry_dependencies()",
+    "  install_dependencies(\"everywhere\")",
     "",
     "Build display artifacts after dependencies are satisfied:",
     if (identical(kind, "package") && !is.null(package)) {

@@ -317,7 +317,7 @@ study_input_error_message <- function(
       },
       ".\n",
       "Blank or \"local\" input means \"study in getwd()\" and is not used for ",
-      "install_registry_dependencies().\n",
+      "install_dependencies(\"everywhere\").\n",
       "Expected a DOI, handle, or registry folder slug from index.csv; ",
       "metadata is loaded from the registry stub and study GitHub repo.\n\n",
       doi_hint
@@ -594,7 +594,8 @@ find_local_study_root <- function(location = getwd()) {
 #' @param doi Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.
 #' @param location Directory to search for a local study (default \code{getwd()}).
 #' @param allow_local When \code{FALSE}, never treat blank/\code{local}/\code{.}
-#'   as a working-directory study (used by [install_registry_dependencies()]).
+#'   as a working-directory study (used by the registry scope of
+#'   [install_dependencies()]).
 #' @return A list with \code{doi}, \code{local_root}, and \code{is_local}.
 #' @keywords internal
 resolve_doi_input <- function(

@@ -358,6 +358,12 @@ collected in a data frame.</li>
 <li><strong>Report fields</strong> — study, object id, engine, success,
 elapsed seconds, timed-out flag, and a short error snippet on
 failure.</li>
+<li><strong>Substantive checks</strong> (default
+<code>substantive = TRUE</code>) — when a study defines
+<code>tests/substantive/&lt;step_id&gt;.R</code>, the audit compares
+replicated estimates to published benchmarks (see Fearon &amp; Laitin
+<code>tab_1</code>). Failures appear as <code>[substantive]</code> in
+the printed summary.</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(replicateEverything)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
@@ -370,13 +376,18 @@ failure.</li>
 <span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>audit <span class="ot">&lt;-</span> <span class="fu">audit_everything</span>(<span class="at">patience =</span> <span class="dv">20</span>)</span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">print</span>(audit)</span></code></pre></div>
-<p>You can restrict to specific DOIs or render the Quarto report in the
-<a href="https://github.com/replicate-anything/registry">registry
+<p>You can restrict to specific DOIs, a <strong>collection</strong> tag,
+or render the Quarto report in the <a href="https://github.com/replicate-anything/registry">registry
 repository</a>:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>audit <span class="ot">&lt;-</span> <span class="fu">audit_everything</span>(<span class="at">patience =</span> <span class="dv">30</span>, <span class="at">dois =</span> <span class="st">&quot;10.1257/aer.91.5.1369&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># Quarto report lives in the registry repo (sibling registry/ in a monorepo)</span></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>quarto<span class="sc">::</span><span class="fu">quarto_render</span>(<span class="fu">audit_everything_qmd</span>(), <span class="at">execute_params =</span> <span class="fu">list</span>(<span class="at">patience =</span> <span class="dv">20</span>))</span></code></pre></div>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>audit <span class="ot">&lt;-</span> <span class="fu">audit_everything</span>(<span class="at">patience =</span> <span class="dv">20</span>, <span class="at">collections =</span> <span class="st">&quot;APSR&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># Quarto report lives in the registry repo (sibling registry/ in a monorepo)</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>quarto<span class="sc">::</span><span class="fu">quarto_render</span>(<span class="fu">audit_everything_qmd</span>(), <span class="at">execute_params =</span> <span class="fu">list</span>(<span class="at">patience =</span> <span class="dv">20</span>))</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>quarto<span class="sc">::</span><span class="fu">quarto_render</span>(</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="fu">audit_everything_qmd</span>(),</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">execute_params =</span> <span class="fu">list</span>(<span class="at">patience =</span> <span class="dv">20</span>, <span class="at">collections =</span> <span class="st">&quot;APSR&quot;</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 <div id="latest-audit-results" class="section level2">
 <h2>Latest audit results</h2>
@@ -432,19 +443,19 @@ only when you intend to refresh that snapshot.</p>
 <tbody>
 <tr class="odd">
 <td align="left">Patience (seconds per object)</td>
-<td align="right">20</td>
+<td align="right">120</td>
 </tr>
 <tr class="even">
 <td align="left">Studies audited</td>
-<td align="right">1</td>
+<td align="right">11</td>
 </tr>
 <tr class="odd">
 <td align="left">Replication runs</td>
-<td align="right">1</td>
+<td align="right">79</td>
 </tr>
 <tr class="even">
 <td align="left">Successful</td>
-<td align="right">1</td>
+<td align="right">79</td>
 </tr>
 <tr class="odd">
 <td align="left">Failed</td>
@@ -456,11 +467,11 @@ only when you intend to refresh that snapshot.</p>
 </tr>
 <tr class="odd">
 <td align="left">Audit started</td>
-<td align="right">2026-07-01 12:00</td>
+<td align="right">2026-07-15 21:41</td>
 </tr>
 <tr class="even">
 <td align="left">Audit finished</td>
-<td align="right">2026-07-01 12:05</td>
+<td align="right">2026-07-15 21:45</td>
 </tr>
 </tbody>
 </table>
@@ -488,8 +499,42 @@ only when you intend to refresh that snapshot.</p>
 <span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>  <span class="fu">names</span>(show) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Object&quot;</span>, <span class="st">&quot;ID&quot;</span>, <span class="st">&quot;Engine&quot;</span>, <span class="st">&quot;Status&quot;</span>, <span class="st">&quot;Seconds&quot;</span>, <span class="st">&quot;Error&quot;</span>)</span>
 <span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  <span class="fu">print</span>(knitr<span class="sc">::</span><span class="fu">kable</span>(show, <span class="at">row.names =</span> <span class="cn">FALSE</span>))</span>
 <span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>}</span></code></pre></div>
-<div id="example-study" class="section level4">
-<h4>Example study</h4>
+<div id="beyond-belief-change-the-persuasive-returns-of-targeting-attitude-relevant-beliefs" class="section level4">
+<h4>Beyond Belief Change: The Persuasive Returns of Targeting
+Attitude-Relevant Beliefs</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">18.82</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 3</td>
+<td align="left">tab_3</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">4.91</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="bounding-causes-of-effects-with-mediators" class="section level4">
+<h4>Bounding Causes of Effects With Mediators</h4>
 <table>
 <thead>
 <tr class="header">
@@ -507,7 +552,802 @@ only when you intend to refresh that snapshot.</p>
 <td align="left">fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">1.2</td>
+<td align="right">0.22</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="covid-19-vaccine-acceptance-and-hesitancy-in-low--and-middle-income-countries" class="section level4">
+<h4>COVID-19 vaccine acceptance and hesitancy in low- and middle-income
+countries</h4>
+<table>
+<colgroup>
+<col width="59%" />
+<col width="8%" />
+<col width="8%" />
+<col width="8%" />
+<col width="9%" />
+<col width="6%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Acceptance Rates (disaggregated by group)</td>
+<td align="left">fig_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">1.03</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Robustness check using leave-m-out approach</td>
+<td align="left">fig_2</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.25</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Reason not to take vaccine</td>
+<td align="left">fig_3</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.36</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Trust</td>
+<td align="left">fig_4</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">9.13</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Trust by acceptance</td>
+<td align="left">fig_5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">9.81</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Trust by gender</td>
+<td align="left">fig_6</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">10.07</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Vaccine Data from WGM, WHO</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.32</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Summary of Studies’ Sampling</td>
+<td align="left">tab_2</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.16</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Differences in Means</td>
+<td align="left">tab_3</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">1.24</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Difference in Means (by study)</td>
+<td align="left">tab_4</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">2.54</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Differences between groups within studies
+(Summary)</td>
+<td align="left">tab_5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">2.39</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Reason to take</td>
+<td align="left">tab_6</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">2.25</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Reason to take the vaccine. All categories.</td>
+<td align="left">tab_7</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">4.74</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Reason to take the vaccine: by age.</td>
+<td align="left">tab_8</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">2.72</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Reason not to take the vaccine</td>
+<td align="left">tab_9</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">4.89</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Vaccination Decision-making: most trusted source.</td>
+<td align="left">tab_10</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">10.31</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Summary Stats</td>
+<td align="left">tab_11</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">8.31</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="ethnicity-insurgency-and-civil-war" class="section level4">
+<h4>Ethnicity, Insurgency, and Civil War</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.89</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 1</td>
+<td align="left">tab_1_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.80</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="illustration-of-re-analysis-repo" class="section level4">
+<h4>Illustration of re-analysis repo</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.25</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="migration-families-and-counterfactual-families" class="section level4">
+<h4>Migration, Families, and Counterfactual Families</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">20.47</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 1</td>
+<td align="left">fig_1</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">14.42</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="portraits-of-power-facial-appearance-and-the-tacit-domain-of-political-selection-in-china" class="section level4">
+<h4>Portraits of Power: Facial Appearance and the Tacit Domain of
+Political Selection in China</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">7.42</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 2</td>
+<td align="left">tab_2</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">7.47</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 3</td>
+<td align="left">tab_3</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">6.97</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 2</td>
+<td align="left">fig_2</td>
+<td align="left">python</td>
+<td align="left">OK</td>
+<td align="right">30.04</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 4</td>
+<td align="left">fig_4</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">3.45</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 5</td>
+<td align="left">fig_5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">2.58</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="preventing-rebel-resurgence-after-civil-war-a-field-experiment-in-security-and-justice-provision-in-rural-colombia" class="section level4">
+<h4>Preventing Rebel Resurgence after Civil War: A Field Experiment in
+Security and Justice Provision in Rural Colombia</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">3.69</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="public-support-for-global-vaccine-sharing-in-the-covid-19-pandemic-evidence-from-germany" class="section level4">
+<h4>Public support for global vaccine sharing in the COVID-19 pandemic:
+Evidence from Germany</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Figure 1</td>
+<td align="left">fig_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">6.23</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 2</td>
+<td align="left">fig_2</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">9.16</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 3</td>
+<td align="left">fig_3</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">1.57</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 4</td>
+<td align="left">fig_4</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">1.48</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 5</td>
+<td align="left">fig_5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">2.07</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 6</td>
+<td align="left">fig_6</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">2.95</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 7</td>
+<td align="left">fig_7</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">4.87</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 8</td>
+<td align="left">fig_8</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">5.31</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 2</td>
+<td align="left">tab_2</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">4.96</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">3.98</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="selection-and-incentives-in-local-service-provision-theory-and-evidence-from-sierra-leone" class="section level4">
+<h4>Selection and Incentives in Local Service Provision: Theory and
+Evidence from Sierra Leone</h4>
+<table>
+<colgroup>
+<col width="72%" />
+<col width="5%" />
+<col width="5%" />
+<col width="5%" />
+<col width="6%" />
+<col width="4%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Components of performance outcome variable</td>
+<td align="left">fig_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.45</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Components of quality / surveillance outcome
+variable</td>
+<td align="left">fig_2</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.25</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Results Service Provider Quality Period 2 (post)</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.18</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Results Service Provider Quality Period 1 (pre)</td>
+<td align="left">tab_2</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.17</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Results Service Provider Quality (Average)</td>
+<td align="left">tab_3</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.16</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Results Service Provider Performance (Effort, Period
+2)</td>
+<td align="left">tab_4</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.17</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Results Service Provider Performance (Effort, Period
+1)</td>
+<td align="left">tab_5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.16</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Results Service Provider Performance (Effort,
+Average)</td>
+<td align="left">tab_6</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.17</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Structural Model: Posterior Distributions on Model
+parameters</td>
+<td align="left">fig_3</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.21</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Experiments: Expected CAHW Effort</td>
+<td align="left">fig_4</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.20</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Experiments: Posterior Probability that Bureaucratic
+Package Outperforms Community Package</td>
+<td align="left">fig_5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.19</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Model-Based Estimates of Treatment Effects</td>
+<td align="left">fig_6</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.21</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Appendix: Performance Index components (without
+standardization)</td>
+<td align="left">fig_7</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.20</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Appendix: Variable Description and Summary
+Information</td>
+<td align="left">tab_a5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.11</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Appendix: Manipulation checks</td>
+<td align="left">tab_a6</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.19</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Appendix: Manipulation checks, frequency reward
+CAHW</td>
+<td align="left">tab_8</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.11</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Appendix: Manipulation checks, frequency motivation
+CAHW</td>
+<td align="left">tab_9</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.10</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Appendix: Timeline</td>
+<td align="left">tab_10</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.13</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Appendix: Balance table</td>
+<td align="left">tab_11</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.14</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Appendix: Distribution CAHW Performance Index by
+Treatment Arm</td>
+<td align="left">fig_8</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.25</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Appendix: Results by CAHW Performance Index’s
+Subcomponents</td>
+<td align="left">tab_13</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.16</td>
+<td align="left"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="the-colonial-origins-of-comparative-development" class="section level4">
+<h4>The Colonial Origins of Comparative Development</h4>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.91</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 1</td>
+<td align="left">tab_1_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">1.11</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 2</td>
+<td align="left">tab_2</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.17</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 2</td>
+<td align="left">tab_2_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">1.98</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 3</td>
+<td align="left">tab_3</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.16</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 3</td>
+<td align="left">tab_3_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">2.09</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 4</td>
+<td align="left">tab_4</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.27</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 4</td>
+<td align="left">tab_4_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">2.21</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 5</td>
+<td align="left">tab_5</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.20</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 5</td>
+<td align="left">tab_5_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">2.22</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 6</td>
+<td align="left">tab_6</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.23</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 6</td>
+<td align="left">tab_6_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">2.27</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 7</td>
+<td align="left">tab_7</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.24</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 7</td>
+<td align="left">tab_7_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">2.33</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 8</td>
+<td align="left">tab_8</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.38</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 8</td>
+<td align="left">tab_8_stata</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">2.78</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -559,6 +1399,10 @@ data files downloaded on first run.</li>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">saveRDS</span>(audit, <span class="st">&quot;inst/vignette-data/audit_latest.rds&quot;</span>)</span>
 <span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a></span>
 <span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co"># Full HTML report: quarto render audit_everything.qmd (in the registry repo)</span></span></code></pre></div>
+<p>After adding or updating registry stubs, maintainers typically run
+[refresh_registry()] so <code>index.csv</code> and the audit stay in
+sync:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">refresh_registry</span>(<span class="st">&quot;../registry&quot;</span>, <span class="at">audit =</span> <span class="cn">TRUE</span>, <span class="at">patience =</span> <span class="dv">20</span>)</span></code></pre></div>
 </div>
 
 

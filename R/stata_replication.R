@@ -492,13 +492,13 @@ stata_study_dependency_guidance <- function(study_root, meta = NULL) {
     )
     lines <- c(
       lines,
-      "  Maintainer: install_study_dependencies(<doi>) or run the install script once on this machine."
+      "  Maintainer: install_dependencies(<doi>) or run the install script once on this machine."
     )
   } else if (length(pkgs)) {
     lines <- c(
       lines,
       paste0("  Declared stata_packages: ", paste(pkgs, collapse = ", ")),
-      "  Maintainer: install_study_dependencies(<doi>) installs SSC packages from this list."
+      "  Maintainer: install_dependencies(<doi>) installs SSC packages from this list."
     )
   }
   if (length(probe)) {

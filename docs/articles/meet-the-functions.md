@@ -188,8 +188,8 @@ with:
 ``` r
 
 check_study_compatibility("10.1017/S0003055426101749")
-install_study_dependencies("10.1017/S0003055426101749")  # folder or package DOI
-install_registry_dependencies()
+install_dependencies("10.1017/S0003055426101749")  # folder or package DOI
+install_dependencies("everywhere")                  # every study in the registry
 ```
 
 Build display outputs with \[build_study_outputs()\]. Full details:
@@ -329,8 +329,8 @@ for the latest snapshot table shipped with the package.
 | Interactive browser | [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md), [`save_local_shiny()`](https://replicate-anything.github.io/replicateEverything/reference/save_local_shiny.md) |
 | **Contributor** |  |
 | Check machine vs study yaml | [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md) |
-| Install deps (one study) | [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md) |
-| Install deps (all studies) | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
+| Install deps (one study) | [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md) |
+| Install deps (all studies) | `install_dependencies("everywhere")` |
 | Build study outputs | [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
 | Validate (+ optional bake) | [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md) |
 | Validate study (checklist only) | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |

@@ -70,10 +70,8 @@ diagnostics.
   : Configure options for a local replicate-anything monorepo
 - [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
   : Check yaml-declared dependencies against this machine (no installs)
-- [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)
-  : Install dependencies for one folder-backed or registry study
-- [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)
-  : Install dependencies for every study in the registry index
+- [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md)
+  : Install declared dependencies for a study, or for the whole registry
 - [`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md)
   : Maintainer guidance when dependencies or executables are missing
 - [`package_build_info()`](https://replicate-anything.github.io/replicateEverything/reference/package_build_info.md)

@@ -14,7 +14,7 @@ Character DOI, handle, or folder slug.
 }
 \description{
 Rows without a DOI (handle-only stubs) must not pass an empty string to
-\code{\link[=install_study_dependencies]{install_study_dependencies()}}, because blank input means "local study in
+\code{\link[=install_dependencies]{install_dependencies()}}, because blank input means "local study in
 getwd()".
 }
 \keyword{internal}

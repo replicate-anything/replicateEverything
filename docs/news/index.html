@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,23 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.3" id="replicateeverything-073">replicateEverything 0.7.3<a class="anchor" aria-label="anchor" href="#replicateeverything-073"></a></h2>
+<div class="section level3">
+<h3 id="api-consolidation-install_dependencies-0-7-3">API consolidation: install_dependencies()<a class="anchor" aria-label="anchor" href="#api-consolidation-install_dependencies-0-7-3"></a></h3>
+<ul><li>Added <code>install_dependencies(what = ...)</code>, a single maintainer entry point for dependency setup that mirrors the <code><a href="../reference/build_outputs.html">build_outputs()</a></code> / <code><a href="../reference/validate_outputs.html">validate_outputs()</a></code> scope pattern: pass a study DOI/handle/path (default <code>"."</code>) to install for one study, or <code>what = "everywhere"</code> to install for every study in the registry index.</li>
+<li>Removed the <code><a href="../reference/install_study_dependencies.html">install_study_dependencies()</a></code> and <code><a href="../reference/install_registry_dependencies.html">install_registry_dependencies()</a></code> exports (net API shrink: 29 → 28 exported functions). Both still exist as unexported internals that <code><a href="../reference/install_dependencies.html">install_dependencies()</a></code> dispatches to — no behavior change, only the public entry point moved. No legacy alias was kept.</li>
+<li>Updated all call sites, hint text (<code><a href="../reference/maintainer_dependency_hint.html">maintainer_dependency_hint()</a></code>, Stata/ code-tab setup messages, Shiny “Missing dependencies” copy), tests, <code>README.md</code>, the <code>maintainer-setup</code> and <code>meet-the-functions</code> vignettes, <code>inst/ai/skills/*.md</code>, and root <code>AI.md</code>.</li>
+<li>Reviewed and confirmed (no change needed) three other export-surface questions raised in the same audit:
+<ul><li>
+<code><a href="../reference/build_study_outputs.html">build_study_outputs()</a></code> / <code><a href="../reference/check_replication.html">check_replication()</a></code> / <code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> remain three distinct, justified verbs (bake only; validate only; compose both for one-shot contributor onboarding). <code><a href="../reference/check_replication.html">check_folder_replication()</a></code> / <code><a href="../reference/check_replication.html">check_package_replication()</a></code> are <code>@describeIn check_replication</code> internals merged into <code>check_replication</code>’s single Rd topic — never separate exports or reference-index entries.</li>
+<li>
+<code><a href="../reference/register_study.html">register_study()</a></code> (check + sync in one call) and <code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> (sync primitive) are kept as a deliberate primitive + one-shot-composer pair, the same pattern as <code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> over <code><a href="../reference/build_study_outputs.html">build_study_outputs()</a></code> + <code><a href="../reference/check_replication.html">check_replication()</a></code> — not duplication.</li>
+<li>
+<code><a href="../reference/build_outputs.html">build_outputs()</a></code> (DOI/registry-scoped maintainer dispatcher, mirrors <code><a href="../reference/validate_outputs.html">validate_outputs()</a></code>) and <code><a href="../reference/build_study_outputs.html">build_study_outputs()</a></code> (core one-study baker, used directly by contributors and internally by <code><a href="../reference/build_outputs.html">build_outputs()</a></code>) serve different personas and are not duplicates.</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.2" id="replicateeverything-072">replicateEverything 0.7.2<a class="anchor" aria-label="anchor" href="#replicateeverything-072"></a></h2>
 <div class="section level3">

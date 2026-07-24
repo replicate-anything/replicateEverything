@@ -42,5 +42,5 @@ check_study_compatibility("10.1017/S0003055426101749")
 
 }
 \seealso{
-\code{\link[=install_study_dependencies]{install_study_dependencies()}}, \code{\link[=maintainer_dependency_hint]{maintainer_dependency_hint()}}
+\code{\link[=install_dependencies]{install_dependencies()}}, \code{\link[=maintainer_dependency_hint]{maintainer_dependency_hint()}}
 }

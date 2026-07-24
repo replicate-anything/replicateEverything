@@ -1,5 +1,66 @@
 # Changelog
 
+## replicateEverything 0.7.3
+
+### API consolidation: install_dependencies()
+
+- Added `install_dependencies(what = ...)`, a single maintainer entry
+  point for dependency setup that mirrors the
+  [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md)
+  /
+  [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md)
+  scope pattern: pass a study DOI/handle/path (default `"."`) to install
+  for one study, or `what = "everywhere"` to install for every study in
+  the registry index.
+- Removed the
+  [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)
+  and
+  [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)
+  exports (net API shrink: 29 → 28 exported functions). Both still exist
+  as unexported internals that
+  [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md)
+  dispatches to — no behavior change, only the public entry point moved.
+  No legacy alias was kept.
+- Updated all call sites, hint text
+  ([`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md),
+  Stata/ code-tab setup messages, Shiny “Missing dependencies” copy),
+  tests, `README.md`, the `maintainer-setup` and `meet-the-functions`
+  vignettes, `inst/ai/skills/*.md`, and root `AI.md`.
+- Reviewed and confirmed (no change needed) three other export-surface
+  questions raised in the same audit:
+  - [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
+    /
+    [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+    /
+    [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
+    remain three distinct, justified verbs (bake only; validate only;
+    compose both for one-shot contributor onboarding).
+    [`check_folder_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+    /
+    [`check_package_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+    are `@describeIn check_replication` internals merged into
+    `check_replication`’s single Rd topic — never separate exports or
+    reference-index entries.
+  - [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md)
+    (check + sync in one call) and
+    [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+    (sync primitive) are kept as a deliberate primitive +
+    one-shot-composer pair, the same pattern as
+    [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
+    over
+    [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) +
+    [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+    — not duplication.
+  - [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md)
+    (DOI/registry-scoped maintainer dispatcher, mirrors
+    [`validate_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/validate_outputs.md))
+    and
+    [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
+    (core one-study baker, used directly by contributors and internally
+    by
+    [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md))
+    serve different personas and are not duplicates.
+
 ## replicateEverything 0.7.2
 
 ### pkgdown reference audit

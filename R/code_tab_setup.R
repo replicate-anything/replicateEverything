@@ -342,7 +342,7 @@ code_setup_box_content <- function(
     req_lines <- c(
       req_lines,
       paste0(
-        "Or install declared dependencies: install_study_dependencies(",
+        "Or install declared dependencies: install_dependencies(",
         shQuote(doi_label, type = "sh"),
         ")."
       )

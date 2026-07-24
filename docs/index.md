@@ -379,7 +379,10 @@ against the study.
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Replicate full paper | `run_replication(doi, "everything")` |
+| Check machine vs. declared dependencies | [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md) |
+| Install dependencies (one study or `"everywhere"`) | [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md) |
 | Build study outputs (folder or package) | [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
+| Build outputs by DOI/scope (registry-wide with `doi = "everywhere"`) | [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md) |
 | Validate a study (+ optional bake) | [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md) |
 | Validate study layout + tests | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
 | Sync a study into the registry (maintainer) | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |

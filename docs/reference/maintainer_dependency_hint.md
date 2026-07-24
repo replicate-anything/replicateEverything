@@ -50,8 +50,7 @@ Character scalar (multi-line).
 
 ## See also
 
-[`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md),
-[`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md),
+[`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md),
 [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
 
 ## Examples

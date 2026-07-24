@@ -60,10 +60,10 @@ head(load_index()[, c("doi", "title", "year")])
 
 Example output:
 
-    #>                              doi                                    title year
-    #> 1 10.1177/00491241211036161   Bounding Causes of Effects ...          2022
-    #> 2 10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War    2003 
-    #> 3 10.1017/s0003055426101749   ...                                     2026 
+    #>  doi                         title                                   year
+    #>  10.1177/00491241211036161   Bounding Causes of Effects ...          2022
+    #>  10.1017/S0003055403000534   Ethnicity, Insurgency, and Civil War    2003 
+    #>  10.1017/s0003055426101749   ...                                     2026 
 
 Each study in the registry has a designated maintainer; right now that
 is us, but we hope that others will start adding and commit to
@@ -77,17 +77,21 @@ Pass a DOI and a step id (`fig_1`, `tab_1`, …):
 
 library(replicateEverything)
 
+# Replicate table 1 assuming any parent steps have already been run
 run_replication(
   doi = "10.1017/S0003055403000534",
   what = "tab_1"
 )
 
-# Stata when both engines exist:
+# Replicate table 1 assuming no parent steps have been run 
 run_replication(
-  doi = "10.1257/aer.91.5.1369",
-  what = "tab_2",
-  language = "stata"
-)
+  doi = "10.1017/S0003055403000534",
+  what = "tab_1", 
+  given = "nothing"
+ )
+
+# Running step: analysis_data
+# Running step: tab_1
 ```
 
 [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
@@ -175,6 +179,16 @@ Folder-backed studies may mix R, Stata, and Python. Pick the engine with
 `language =` when both exist. See
 [`vignette("stata-replications")`](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md).
 
+``` r
+
+# Stata when both engines exist:
+run_replication(
+  doi = "10.1257/aer.91.5.1369",
+  what = "tab_2",
+  language = "stata"
+)
+```
+
 ### Code exposure
 
 When you prepare a replication repository you have some discretion in
@@ -199,6 +213,10 @@ study in a collection:
 
 audit_everything(patience = 20, collections = "APSR")
 ```
+
+As a researcher you could have a collection of all your own studies. As
+a journal you could have a collection of yours only. You can run an
+instance of the shiny app restricted to studies in your collection only.
 
 ## Using AI to prep your archive
 

@@ -26,8 +26,8 @@ resolve_doi_input(doi = NULL, location = getwd(), allow_local = TRUE)
 - allow_local:
 
   When `FALSE`, never treat blank/`local`/`.` as a working-directory
-  study (used by
-  [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)).
+  study (used by the registry scope of
+  [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md)).
 
 ## Value
 

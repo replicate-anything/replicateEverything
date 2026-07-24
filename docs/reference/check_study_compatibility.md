@@ -48,7 +48,7 @@ per-engine `dependencies`.
 
 ## See also
 
-[`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md),
+[`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md),
 [`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md)
 
 ## Examples

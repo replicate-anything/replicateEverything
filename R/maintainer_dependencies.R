@@ -132,25 +132,19 @@ install_package_dependencies <- function(meta, ctx) {
 #' Does **not** build display outputs — use [build_study_outputs()] for that.
 #'
 #' Live Run and Shiny probe dependencies only; call this function (or
-#' [install_registry_dependencies()]) when onboarding a machine.
+#' [install_dependencies()] with \code{what = "everywhere"}) when onboarding a
+#' machine.
 #'
 #' @param location Study DOI, registry handle, local path, or GitHub slug.
 #' @param registry_root Optional registry checkout for monorepo dev.
 #' @param repo,folder Optional registry row hints.
-#' @param from_registry_index Logical. When \code{TRUE} (set by
-#'   [install_registry_dependencies()]), never treat blank input or a sibling
+#' @param from_registry_index Logical. When \code{TRUE} (set by the registry
+#'   scope of [install_dependencies()]), never treat blank input or a sibling
 #'   folder name in \code{getwd()} as the local study.
 #' @return Invisibly \code{TRUE} on success.
-#' @seealso [check_study_compatibility()], [build_study_outputs()],
-#'   [install_registry_dependencies()]
-#'
-#' @examples
-#' \dontrun{
-#' install_study_dependencies("10.1017/S0003055426101749")
-#' install_study_dependencies("path/to/study-repo")
-#' }
-#'
-#' @export
+#' @seealso [install_dependencies()], [check_study_compatibility()],
+#'   [build_study_outputs()]
+#' @keywords internal
 install_study_dependencies <- function(
   location,
   registry_root = NULL,
@@ -244,7 +238,7 @@ install_study_dependencies <- function(
 #' Resolve a registry index row to a study location for maintainer APIs
 #'
 #' Rows without a DOI (handle-only stubs) must not pass an empty string to
-#' [install_study_dependencies()], because blank input means "local study in
+#' [install_dependencies()], because blank input means "local study in
 #' getwd()".
 #'
 #' @param row One row from [load_index()].
@@ -291,7 +285,7 @@ registry_install_error_message <- function(
     paste0("  repo: ", index_row_field(row, "repo", repo %||% "")),
     "",
     "Resolution path: index row -> registry stub -> study GitHub repo ",
-    "(install_registry_dependencies never uses getwd() as the study).",
+    "(install_dependencies(\"everywhere\") never uses getwd() as the study).",
     sep = "\n"
   )
 }
@@ -300,19 +294,14 @@ registry_install_error_message <- function(
 #'
 #' Maintainer setup for a shared server or audit machine. Calls
 #' [install_study_dependencies()] for each row in [load_index()]. Failures are
-#' collected and reported; other studies continue.
+#' collected and reported; other studies continue. Called by
+#' [install_dependencies()] with \code{what = "everywhere"}.
 #'
 #' @param registry_root Optional registry checkout path.
 #' @param verbose Logical. Print progress lines.
 #' @return Invisibly, a named list of per-DOI results (\code{ok} / \code{error}).
-#' @seealso [install_study_dependencies()], [check_study_compatibility()]
-#'
-#' @examples
-#' \dontrun{
-#' install_registry_dependencies()
-#' }
-#'
-#' @export
+#' @seealso [install_dependencies()], [check_study_compatibility()]
+#' @keywords internal
 install_registry_dependencies <- function(
   registry_root = NULL,
   verbose = TRUE
@@ -389,6 +378,58 @@ install_registry_dependencies <- function(
   invisible(results)
 }
 
+#' Install declared dependencies for a study, or for the whole registry
+#'
+#' Single maintainer entry point for dependency setup. Mirrors the
+#' [build_outputs()] / [validate_outputs()] scope pattern: pass a study
+#' location to install for one study, or \code{what = "everywhere"} to install
+#' for every study in the registry index (see [load_index()]).
+#'
+#' @param what Study DOI, registry handle, local path, or GitHub slug
+#'   (default \code{"."}, the current working directory); or
+#'   \code{"everywhere"} to install dependencies for every study in the
+#'   registry index.
+#' @param registry_root Optional registry checkout for monorepo dev.
+#' @param repo,folder Optional registry row hints. Ignored when
+#'   \code{what = "everywhere"}.
+#' @param verbose Logical. Print progress lines. Only used when
+#'   \code{what = "everywhere"}.
+#' @return Invisibly \code{TRUE} for a single study, or (when
+#'   \code{what = "everywhere"}) a named list of per-DOI results
+#'   (\code{ok} / \code{error}).
+#' @seealso [check_study_compatibility()], [build_study_outputs()],
+#'   [build_outputs()], [validate_outputs()]
+#'
+#' @examples
+#' \dontrun{
+#' install_dependencies("10.1017/S0003055426101749")
+#' install_dependencies("path/to/study-repo")
+#' options(replicateEverything.registry_root = "../registry")
+#' install_dependencies("everywhere")
+#' }
+#'
+#' @export
+install_dependencies <- function(
+  what = ".",
+  registry_root = NULL,
+  repo = NULL,
+  folder = NULL,
+  verbose = TRUE
+) {
+  if (identical(what, "everywhere")) {
+    return(install_registry_dependencies(
+      registry_root = registry_root,
+      verbose = verbose
+    ))
+  }
+  install_study_dependencies(
+    what,
+    registry_root = registry_root,
+    repo = repo,
+    folder = folder
+  )
+}
+
 #' Check yaml-declared dependencies against this machine (no installs)
 #'
 #' Reads \code{languages:}, \code{paper.dependencies},
@@ -400,7 +441,7 @@ install_registry_dependencies <- function(
 #' @inheritParams study_system_compatibility
 #' @return A \code{study_system_compatibility} list with \code{ready},
 #'   \code{install_needed}, and per-engine \code{dependencies}.
-#' @seealso [install_study_dependencies()], [maintainer_dependency_hint()]
+#' @seealso [install_dependencies()], [maintainer_dependency_hint()]
 #'
 #' @examples
 #' \dontrun{

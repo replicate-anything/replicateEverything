@@ -35,8 +35,8 @@ install_study_dependencies(
 
 - from_registry_index:
 
-  Logical. When `TRUE` (set by
-  [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)),
+  Logical. When `TRUE` (set by the registry scope of
+  [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md)),
   never treat blank input or a sibling folder name in
   [`getwd()`](https://rdrr.io/r/base/getwd.html) as the local study.
 
@@ -47,20 +47,11 @@ Invisibly `TRUE` on success.
 ## Details
 
 Live Run and Shiny probe dependencies only; call this function (or
-[`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md))
-when onboarding a machine.
+[`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md)
+with `what = "everywhere"`) when onboarding a machine.
 
 ## See also
 
+[`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md),
 [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md),
-[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md),
-[`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-install_study_dependencies("10.1017/S0003055426101749")
-install_study_dependencies("path/to/study-repo")
-} # }
-```
+[`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)

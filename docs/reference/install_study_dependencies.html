@@ -13,7 +13,7 @@ Does not build display outputs — use build_study_outputs() for that."><meta pr
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -71,8 +71,8 @@ Does <strong>not</strong> build display outputs — use <code><a href="build_stu
 
 
 <dt id="arg-from-registry-index">from_registry_index<a class="anchor" aria-label="anchor" href="#arg-from-registry-index"></a></dt>
-<dd><p>Logical. When <code>TRUE</code> (set by
-<code><a href="install_registry_dependencies.html">install_registry_dependencies()</a></code>), never treat blank input or a sibling
+<dd><p>Logical. When <code>TRUE</code> (set by the registry
+scope of <code><a href="install_dependencies.html">install_dependencies()</a></code>), never treat blank input or a sibling
 folder name in <code><a href="https://rdrr.io/r/base/getwd.html" class="external-link">getwd()</a></code> as the local study.</p></dd>
 
 </dl></div>
@@ -83,23 +83,15 @@ folder name in <code><a href="https://rdrr.io/r/base/getwd.html" class="external
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Live Run and Shiny probe dependencies only; call this function (or
-<code><a href="install_registry_dependencies.html">install_registry_dependencies()</a></code>) when onboarding a machine.</p>
+<code><a href="install_dependencies.html">install_dependencies()</a></code> with <code>what = "everywhere"</code>) when onboarding a
+machine.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="check_study_compatibility.html">check_study_compatibility()</a></code>, <code><a href="build_study_outputs.html">build_study_outputs()</a></code>,
-<code><a href="install_registry_dependencies.html">install_registry_dependencies()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="install_dependencies.html">install_dependencies()</a></code>, <code><a href="check_study_compatibility.html">check_study_compatibility()</a></code>,
+<code><a href="build_study_outputs.html">build_study_outputs()</a></code></p></div>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu">install_study_dependencies</span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">install_study_dependencies</span><span class="op">(</span><span class="st">"path/to/study-repo"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

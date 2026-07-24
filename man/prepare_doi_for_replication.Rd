@@ -12,7 +12,8 @@ prepare_doi_for_replication(doi, location = getwd(), allow_local = TRUE)
 \item{location}{Directory to search for a local study (default \code{getwd()}).}
 
 \item{allow_local}{When \code{FALSE}, never treat blank/\code{local}/\code{.}
-as a working-directory study (used by \code{\link[=install_registry_dependencies]{install_registry_dependencies()}}).}
+as a working-directory study (used by the registry scope of
+\code{\link[=install_dependencies]{install_dependencies()}}).}
 }
 \value{
 Character DOI.

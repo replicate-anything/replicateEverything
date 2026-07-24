@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -90,9 +90,9 @@ maintainer commands documented here.</p>
 package-backed registry studies (R CRAN, Python pip, Stata
 <code>install_stata_deps.do</code>):</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_study_dependencies.html">install_study_dependencies</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/install_study_dependencies.html">install_study_dependencies</a></span><span class="op">(</span><span class="st">"10.1371/journal.pone.0278337"</span><span class="op">)</span>  <span class="co"># package-backed too</span></span>
-<span><span class="fu"><a href="../reference/install_study_dependencies.html">install_study_dependencies</a></span><span class="op">(</span><span class="st">"path/to/study-repo"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"10.1371/journal.pone.0278337"</span><span class="op">)</span>  <span class="co"># package-backed too</span></span>
+<span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"path/to/study-repo"</span><span class="op">)</span></span></code></pre></div>
 <p>This does <strong>not</strong> rebuild display artifacts — only
 dependencies. After setup, build artifacts with the kind-specific
 builder (paths differ by design):</p>
@@ -108,7 +108,7 @@ package-backed studies use <code>inst/report/outputs/</code> (or legacy
 </h2>
 <p>On a shared audit or Shiny server, run once:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_registry_dependencies.html">install_registry_dependencies</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"everywhere"</span><span class="op">)</span></span></code></pre></div>
 <p>Covers folder- and package-backed entries. Failures are collected per
 DOI; other studies continue.</p>
 </div>
@@ -262,11 +262,11 @@ exists on disk (Shiny <strong>Display</strong> mode). This does
 </tr>
 <tr class="even">
 <td>Install one study (all kinds, all languages)</td>
-<td><code>install_study_dependencies(doi)</code></td>
+<td><code>install_dependencies(doi)</code></td>
 </tr>
 <tr class="odd">
 <td>Install entire registry</td>
-<td><code><a href="../reference/install_registry_dependencies.html">install_registry_dependencies()</a></code></td>
+<td><code>install_dependencies("everywhere")</code></td>
 </tr>
 <tr class="even">
 <td>Build study outputs</td>

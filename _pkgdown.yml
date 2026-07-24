@@ -52,8 +52,7 @@ reference:
   contents:
   - configure_local_monorepo
   - check_study_compatibility
-  - install_study_dependencies
-  - install_registry_dependencies
+  - install_dependencies
   - maintainer_dependency_hint
   - package_build_info
   - package_deploy_diagnostics

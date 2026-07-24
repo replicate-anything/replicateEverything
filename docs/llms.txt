@@ -379,7 +379,10 @@ against the study.
 | View source code | [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md) |
 | Run one replication | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Replicate full paper | `run_replication(doi, "everything")` |
+| Check machine vs. declared dependencies | [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md) |
+| Install dependencies (one study or `"everywhere"`) | [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md) |
 | Build study outputs (folder or package) | [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md) |
+| Build outputs by DOI/scope (registry-wide with `doi = "everywhere"`) | [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md) |
 | Validate a study (+ optional bake) | [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md) |
 | Validate study layout + tests | [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md) |
 | Sync a study into the registry (maintainer) | [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md) |
@@ -581,10 +584,8 @@ diagnostics.
   : Configure options for a local replicate-anything monorepo
 - [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
   : Check yaml-declared dependencies against this machine (no installs)
-- [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)
-  : Install dependencies for one folder-backed or registry study
-- [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md)
-  : Install dependencies for every study in the registry index
+- [`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md)
+  : Install declared dependencies for a study, or for the whole registry
 - [`maintainer_dependency_hint()`](https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.md)
   : Maintainer guidance when dependencies or executables are missing
 - [`package_build_info()`](https://replicate-anything.github.io/replicateEverything/reference/package_build_info.md)

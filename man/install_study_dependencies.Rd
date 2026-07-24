@@ -19,8 +19,8 @@ install_study_dependencies(
 
 \item{repo, folder}{Optional registry row hints.}
 
-\item{from_registry_index}{Logical. When \code{TRUE} (set by
-\code{\link[=install_registry_dependencies]{install_registry_dependencies()}}), never treat blank input or a sibling
+\item{from_registry_index}{Logical. When \code{TRUE} (set by the registry
+scope of \code{\link[=install_dependencies]{install_dependencies()}}), never treat blank input or a sibling
 folder name in \code{getwd()} as the local study.}
 }
 \value{
@@ -34,16 +34,11 @@ Does \strong{not} build display outputs — use \code{\link[=build_study_outputs
 }
 \details{
 Live Run and Shiny probe dependencies only; call this function (or
-\code{\link[=install_registry_dependencies]{install_registry_dependencies()}}) when onboarding a machine.
-}
-\examples{
-\dontrun{
-install_study_dependencies("10.1017/S0003055426101749")
-install_study_dependencies("path/to/study-repo")
-}
-
+\code{\link[=install_dependencies]{install_dependencies()}} with \code{what = "everywhere"}) when onboarding a
+machine.
 }
 \seealso{
-\code{\link[=check_study_compatibility]{check_study_compatibility()}}, \code{\link[=build_study_outputs]{build_study_outputs()}},
-\code{\link[=install_registry_dependencies]{install_registry_dependencies()}}
+\code{\link[=install_dependencies]{install_dependencies()}}, \code{\link[=check_study_compatibility]{check_study_compatibility()}},
+\code{\link[=build_study_outputs]{build_study_outputs()}}
 }
+\keyword{internal}

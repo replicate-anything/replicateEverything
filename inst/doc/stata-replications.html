@@ -470,7 +470,7 @@ blocks for Table 1)</td>
 <pre><code>do &quot;code/tab_1.do&quot;</code></pre>
 <p>The runner sets <code>global maindir</code> to the repo root,
 <code>global datadir</code> to <code>data/</code>, and writes
-<code>artifacts/staging/tab_1_stata.log</code>. That matches what R runs
+<code>outputs/staging/tab_1_stata.log</code>. That matches what R runs
 via <code>run_stata_replication()</code>.</p>
 </div>
 <div id="view-code-from-r-before-opening-stata" class="section level3">
@@ -504,7 +504,7 @@ do &quot;${maindir}/code/maketable1.do&quot;</code></pre>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.do</span></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="at">    </span><span class="fu">stata_source</span><span class="kw">:</span><span class="at"> code/maketable1.do</span></span>
 <span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> code/format_stata.R</span></span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="at">    </span><span class="fu">output</span><span class="kw">:</span><span class="at"> artifacts/staging/tab_1_stata.log</span></span></code></pre></div>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="at">    </span><span class="fu">output</span><span class="kw">:</span><span class="at"> outputs/staging/tab_1_stata.log</span></span></code></pre></div>
 <p>Shiny and <code>audit_everything()</code> treat <code>group</code> as
 one logical table and run <strong>both</strong> engines when listed.</p>
 </div>

@@ -708,9 +708,9 @@ maintainer_hint <- function(...) {
     "",
     "Maintainers — install for this study:",
     if (!is.null(doi) && nzchar(as.character(doi))) {
-      paste0("  install_study_dependencies(", shQuote(as.character(doi), type = "sh"), ")")
+      paste0("  install_dependencies(", shQuote(as.character(doi), type = "sh"), ")")
     } else {
-      "  install_study_dependencies(<doi>)"
+      "  install_dependencies(<doi>)"
     },
     "",
     "Live Run does not install packages."

@@ -17,14 +17,10 @@ Invisibly, a named list of per-DOI results (\code{ok} / \code{error}).
 \description{
 Maintainer setup for a shared server or audit machine. Calls
 \code{\link[=install_study_dependencies]{install_study_dependencies()}} for each row in \code{\link[=load_index]{load_index()}}. Failures are
-collected and reported; other studies continue.
-}
-\examples{
-\dontrun{
-install_registry_dependencies()
-}
-
+collected and reported; other studies continue. Called by
+\code{\link[=install_dependencies]{install_dependencies()}} with \code{what = "everywhere"}.
 }
 \seealso{
-\code{\link[=install_study_dependencies]{install_study_dependencies()}}, \code{\link[=check_study_compatibility]{check_study_compatibility()}}
+\code{\link[=install_dependencies]{install_dependencies()}}, \code{\link[=check_study_compatibility]{check_study_compatibility()}}
 }
+\keyword{internal}

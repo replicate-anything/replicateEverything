@@ -41,6 +41,5 @@ maintainer_dependency_hint("10.1017/S0003055426101749")
 
 }
 \seealso{
-\code{\link[=install_study_dependencies]{install_study_dependencies()}}, \code{\link[=install_registry_dependencies]{install_registry_dependencies()}},
-\code{\link[=check_study_compatibility]{check_study_compatibility()}}
+\code{\link[=install_dependencies]{install_dependencies()}}, \code{\link[=check_study_compatibility]{check_study_compatibility()}}
 }

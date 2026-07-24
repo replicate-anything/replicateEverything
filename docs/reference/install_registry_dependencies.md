@@ -4,7 +4,9 @@ Maintainer setup for a shared server or audit machine. Calls
 [`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md)
 for each row in
 [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md).
-Failures are collected and reported; other studies continue.
+Failures are collected and reported; other studies continue. Called by
+[`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md)
+with `what = "everywhere"`.
 
 ## Usage
 
@@ -28,13 +30,5 @@ Invisibly, a named list of per-DOI results (`ok` / `error`).
 
 ## See also
 
-[`install_study_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_study_dependencies.md),
+[`install_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_dependencies.md),
 [`check_study_compatibility()`](https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.md)
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-install_registry_dependencies()
-} # }
-```

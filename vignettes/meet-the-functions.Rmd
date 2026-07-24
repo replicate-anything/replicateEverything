@@ -151,8 +151,8 @@ Live Run and Shiny **probe** dependencies only. Maintainers install once with:
 
 ```{r}
 check_study_compatibility("10.1017/S0003055426101749")
-install_study_dependencies("10.1017/S0003055426101749")  # folder or package DOI
-install_registry_dependencies()
+install_dependencies("10.1017/S0003055426101749")  # folder or package DOI
+install_dependencies("everywhere")                  # every study in the registry
 ```
 
 Build display outputs with [build_study_outputs()]. Full details: `vignette("maintainer-setup")`.
@@ -259,8 +259,8 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | Interactive browser | `run_shiny_app()`, `save_local_shiny()` |
 | **Contributor** | |
 | Check machine vs study yaml | `check_study_compatibility()` |
-| Install deps (one study) | `install_study_dependencies()` |
-| Install deps (all studies) | `install_registry_dependencies()` |
+| Install deps (one study) | `install_dependencies()` |
+| Install deps (all studies) | `install_dependencies("everywhere")` |
 | Build study outputs | `build_study_outputs()` |
 | Validate (+ optional bake) | `check_and_bake_study()` |
 | Validate study (checklist only) | `check_replication()` |

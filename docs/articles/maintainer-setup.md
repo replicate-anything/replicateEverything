@@ -34,9 +34,9 @@ studies (R CRAN, Python pip, Stata `install_stata_deps.do`):
 
 ``` r
 
-install_study_dependencies("10.1017/S0003055426101749")
-install_study_dependencies("10.1371/journal.pone.0278337")  # package-backed too
-install_study_dependencies("path/to/study-repo")
+install_dependencies("10.1017/S0003055426101749")
+install_dependencies("10.1371/journal.pone.0278337")  # package-backed too
+install_dependencies("path/to/study-repo")
 ```
 
 This does **not** rebuild display artifacts — only dependencies. After
@@ -58,7 +58,7 @@ On a shared audit or Shiny server, run once:
 
 ``` r
 
-install_registry_dependencies()
+install_dependencies("everywhere")
 ```
 
 Covers folder- and package-backed entries. Failures are collected per
@@ -204,8 +204,8 @@ Or from the registry repo: `Rscript scripts/validate_outputs.R`.
 | Task | Function |
 |----|----|
 | Probe this machine | `check_study_compatibility(doi)` |
-| Install one study (all kinds, all languages) | `install_study_dependencies(doi)` |
-| Install entire registry | [`install_registry_dependencies()`](https://replicate-anything.github.io/replicateEverything/reference/install_registry_dependencies.md) |
+| Install one study (all kinds, all languages) | `install_dependencies(doi)` |
+| Install entire registry | `install_dependencies("everywhere")` |
 | Build study outputs | `build_study_outputs(location, install_deps = TRUE)` |
 | Validate study | `check_replication(location)` |
 | Check precomputed outputs | `validate_outputs(location)` or `validate_outputs(doi, what = "everything")` |

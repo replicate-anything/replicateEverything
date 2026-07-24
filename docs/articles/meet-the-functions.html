@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -196,8 +196,8 @@ GitHub and clones study materials on demand.</p>
 Maintainers install once with:</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_study_compatibility.html">check_study_compatibility</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/install_study_dependencies.html">install_study_dependencies</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span>  <span class="co"># folder or package DOI</span></span>
-<span><span class="fu"><a href="../reference/install_registry_dependencies.html">install_registry_dependencies</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"10.1017/S0003055426101749"</span><span class="op">)</span>  <span class="co"># folder or package DOI</span></span>
+<span><span class="fu"><a href="../reference/install_dependencies.html">install_dependencies</a></span><span class="op">(</span><span class="st">"everywhere"</span><span class="op">)</span>                  <span class="co"># every study in the registry</span></span></code></pre></div>
 <p>Build display outputs with [build_study_outputs()]. Full details:
 <code><a href="../articles/maintainer-setup.html">vignette("maintainer-setup")</a></code>.</p>
 </div>
@@ -346,11 +346,11 @@ shipped with the package.</p>
 </tr>
 <tr class="even">
 <td>Install deps (one study)</td>
-<td><code><a href="../reference/install_study_dependencies.html">install_study_dependencies()</a></code></td>
+<td><code><a href="../reference/install_dependencies.html">install_dependencies()</a></code></td>
 </tr>
 <tr class="odd">
 <td>Install deps (all studies)</td>
-<td><code><a href="../reference/install_registry_dependencies.html">install_registry_dependencies()</a></code></td>
+<td><code>install_dependencies("everywhere")</code></td>
 </tr>
 <tr class="even">
 <td>Build study outputs</td>

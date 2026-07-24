@@ -302,7 +302,10 @@ must **not** define or ship `run_replication()`, `list_replications()`,
 | View source code | `get_code()` |
 | Run one replication | `run_replication()` |
 | Replicate full paper | `run_replication(doi, "everything")` |
+| Check machine vs. declared dependencies | `check_study_compatibility()` |
+| Install dependencies (one study or `"everywhere"`) | `install_dependencies()` |
 | Build study outputs (folder or package) | `build_study_outputs()` |
+| Build outputs by DOI/scope (registry-wide with `doi = "everywhere"`) | `build_outputs()` |
 | Validate a study (+ optional bake) | `check_and_bake_study()` |
 | Validate study layout + tests | `check_replication()` |
 | Sync a study into the registry (maintainer) | `sync_study_to_registry()` |

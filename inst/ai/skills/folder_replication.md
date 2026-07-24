@@ -386,7 +386,7 @@ write products under `outputs/`.
 yaml::read_yaml("replication.yml")
 replicateEverything::describe_study_dag(meta)  # after parsing — sanity-check graph
 replicateEverything::check_study_compatibility("<doi>")
-replicateEverything::install_study_dependencies("<doi>")
+replicateEverything::install_dependencies("<doi>")
 ```
 
 ### Step 4c — replicateEverything conventions (no package hardcoding)
@@ -437,8 +437,8 @@ Both study types use the **same maintainer functions** for dependency setup:
 | Task | Function |
 |------|----------|
 | Probe machine | `check_study_compatibility(doi)` |
-| Install deps | `install_study_dependencies(doi)` |
-| Registry bulk install | `install_registry_dependencies()` |
+| Install deps | `install_dependencies(doi)` |
+| Registry bulk install | `install_dependencies("everywhere")` |
 | Layout | `replication_kind(meta)` → `"folder"` or `"package"` |
 | Artifact root | `study_output_dir(meta, ctx)` — **`outputs/`** for folder studies |
 
@@ -465,7 +465,7 @@ replicateEverything **auto-generates** maintainer install and compatibility prob
 - Installs **`require`** when `reghdfe` is listed (SSC 6.x dependency)
 - Refreshes broken GitHub `reghdfe` 6.x stacks on shared servers
 
-Maintainers: `install_study_dependencies(doi)` once. Live Run and Shiny probe only.
+Maintainers: `install_dependencies(doi)` once. Live Run and Shiny probe only.
 
 | Field | When to use |
 |-------|-------------|

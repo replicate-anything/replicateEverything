@@ -117,8 +117,8 @@ test_that("from_registry_index rejects blank location without cwd lookup", {
 test_that("maintainer_dependency_hint mentions install functions", {
   hint <- maintainer_dependency_hint("10.1017/S0003055426101749")
   expect_type(hint, "character")
-  expect_match(hint, "install_study_dependencies")
-  expect_match(hint, "install_registry_dependencies")
+  expect_match(hint, "install_dependencies")
+  expect_match(hint, "everywhere")
   expect_match(hint, "check_study_compatibility")
   expect_match(hint, "Renviron")
 })
@@ -143,7 +143,7 @@ test_that("assert_study_ready_for_replication stops with hint when R deps missin
       meta = meta,
       install_deps = FALSE
     ),
-    "install_study_dependencies"
+    "install_dependencies"
   )
 })
 
