@@ -1614,6 +1614,27 @@ dependency_hint_modal <- function(session, doi, audit = NULL, title = "Missing d
   ))
 }
 
+partial_replication_modal <- function(message, engines = character(0)) {
+  msg <- trimws(as.character(message %||% ""))
+  if (!nzchar(msg)) {
+    return(invisible(FALSE))
+  }
+  showModal(modalDialog(
+    title = "Partial replication",
+    tags$div(
+      class = "d-flex align-items-start gap-2",
+      if (any(tolower(engines) %in% c("mathematica", "wolfram", "wolframscript")) ||
+          grepl("Mathematica", msg, fixed = TRUE)) {
+        tags$span(class = "engine-badge mt-1", title = "Mathematica", engine_icon_mathematica())
+      },
+      tags$p(class = "mb-0", msg)
+    ),
+    easyClose = TRUE,
+    footer = modalButton("OK")
+  ))
+  invisible(TRUE)
+}
+
 registry_health_bar_ui <- function(summary) {
   if (is.null(summary)) {
     return(NULL)
@@ -1825,15 +1846,40 @@ engine_icon_python <- function() {
   )
 }
 
-engine_icons_display <- function(has_r = FALSE, has_stata = FALSE, has_python = FALSE) {
-  if (!has_r && !has_stata && !has_python) {
+engine_icon_mathematica <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    tags$circle(cx = "12", cy = "12", r = "11", fill = "#DD1100"),
+    tags$text(
+      x = "12", y = "16.5", `text-anchor` = "middle",
+      fill = "#ffffff", `font-size` = "13", `font-weight` = "700",
+      `font-family` = "Georgia, 'Times New Roman', serif",
+      "\u2133"
+    )
+  )
+}
+
+engine_icons_display <- function(
+  has_r = FALSE,
+  has_stata = FALSE,
+  has_python = FALSE,
+  has_mathematica = FALSE
+) {
+  if (!has_r && !has_stata && !has_python && !has_mathematica) {
     return(tags$span(class = "text-muted small", "—"))
   }
   tags$div(
     class = "engine-icons-cell",
     if (has_r) tags$span(class = "engine-badge", title = "R", engine_icon_r()),
     if (has_stata) tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
-    if (has_python) tags$span(class = "engine-badge", title = "Python", engine_icon_python())
+    if (has_python) tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
+    if (has_mathematica) {
+      tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+    }
   )
 }
 
@@ -1877,8 +1923,9 @@ study_engine_availability <- function(reps) {
   has_r <- FALSE
   has_stata <- FALSE
   has_python <- FALSE
+  has_mathematica <- FALSE
   if (is.null(reps) || !length(reps)) {
-    return(list(r = FALSE, stata = FALSE, python = FALSE))
+    return(list(r = FALSE, stata = FALSE, python = FALSE, mathematica = FALSE))
   }
   for (x in reps) {
     eng <- entry_engine(x)
@@ -1889,31 +1936,80 @@ study_engine_availability <- function(reps) {
     } else {
       has_r <- TRUE
     }
+    req <- tryCatch(
+      replicate_fn("step_required_engine", x),
+      error = function(e) NULL
+    )
+    if (is.null(req)) {
+      raw <- tolower(as.character(x$requires_engine[[1]] %||% x$requires_engine %||% ""))
+      if (raw %in% c("mathematica", "wolfram", "wolframscript")) {
+        req <- "Mathematica"
+      }
+    }
+    if (identical(req, "Mathematica")) {
+      has_mathematica <- TRUE
+    }
   }
-  list(r = has_r, stata = has_stata, python = has_python)
+  list(r = has_r, stata = has_stata, python = has_python, mathematica = has_mathematica)
+}
+
+parse_languages_engine_flags <- function(langs) {
+  parts <- tolower(strsplit(as.character(langs %||% ""), "[|;]")[[1]])
+  parts <- trimws(parts)
+  parts <- parts[nzchar(parts)]
+  list(
+    r = "r" %in% parts,
+    stata = "stata" %in% parts,
+    python = "python" %in% parts || "py" %in% parts,
+    mathematica = any(parts %in% c("mathematica", "wolfram", "wolframscript"))
+  )
 }
 
 study_engine_availability_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO) {
   langs <- row$languages[[1]] %||% ""
-  if (nzchar(langs)) {
-    parts <- tolower(strsplit(langs, "[|;]")[[1]])
-    parts <- trimws(parts)
-    parts <- parts[nzchar(parts)]
-    return(list(
-      r = "r" %in% parts,
-      stata = "stata" %in% parts,
-      python = "python" %in% parts || "py" %in% parts
-    ))
+  flags <- parse_languages_engine_flags(langs)
+  if (any(unlist(flags))) {
+    # languages: may omit system engines (e.g. Mathematica via requires_engine).
+    # When a study folder is available, enrich from step metadata.
+    folder <- row$folder[[1]] %||% NULL
+    if (!is.null(folder) && nzchar(folder) && !isTRUE(flags$mathematica)) {
+      reps <- tryCatch(
+        fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
+        error = function(e) NULL
+      )
+      if (!is.null(reps) && length(reps)) {
+        from_steps <- study_engine_availability(reps)
+        flags$mathematica <- isTRUE(from_steps$mathematica)
+      }
+    }
+    return(flags)
   }
   folder <- row$folder[[1]] %||% NULL
   if (is.null(folder) || !nzchar(folder)) {
-    return(list(r = TRUE, stata = FALSE, python = FALSE))
+    return(list(r = TRUE, stata = FALSE, python = FALSE, mathematica = FALSE))
   }
   reps <- tryCatch(
     fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
     error = function(e) NULL
   )
   study_engine_availability(reps)
+}
+
+entry_requires_engine_token <- function(x) {
+  raw <- tolower(trimws(as.character(
+    x$requires_engine[[1]] %||% x$requires_engine %||% ""
+  )))
+  if (nzchar(raw)) {
+    return(raw)
+  }
+  req <- tryCatch(
+    replicate_fn("step_required_engine", x),
+    error = function(e) NULL
+  )
+  if (is.null(req)) {
+    return("")
+  }
+  tolower(as.character(req))
 }
 
 parse_index_collections <- function(row) {
@@ -2393,6 +2489,7 @@ prep_to_df <- function(prep_steps) {
       type = "transform",
       incomplete = isTRUE(x$incomplete %||% FALSE),
       blocked_reason = as.character(x$blocked_reason %||% ""),
+      requires_engine = entry_requires_engine_token(x),
       stringsAsFactors = FALSE
     )
   })
@@ -2450,6 +2547,7 @@ replications_to_df <- function(reps) {
       type = as.character(primary$type),
       incomplete = isTRUE(primary$incomplete %||% FALSE),
       blocked_reason = as.character(primary$blocked_reason %||% ""),
+      requires_engine = entry_requires_engine_token(primary),
       stringsAsFactors = FALSE
     )
   })
@@ -4978,7 +5076,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: 1fr 4.5rem 3rem 4.5rem 2rem 2.75rem;
+      grid-template-columns: 1fr 4.5rem 3rem 5.5rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
     }
@@ -5510,7 +5608,8 @@ server <- function(input, output, session) {
     code_viewer_root = NULL,
     code_viewer_entry = NULL,
     pending_deep_link_language = NULL,
-    suppress_url_sync = FALSE
+    suppress_url_sync = FALSE,
+    partial_notice_doi = NULL
   )
 
   options(replicateEverything.progress = function(msg) {
@@ -5811,6 +5910,32 @@ server <- function(input, output, session) {
     state$study_audit <- NULL
     state$study_audit_running <- FALSE
 
+    # One-shot partial-replication notice from yaml incomplete / requires_engine
+    # (and registry audit when available). Do not re-show for the same DOI.
+    if (!identical(state$partial_notice_doi, doi)) {
+      notice <- tryCatch({
+        study_meta <- replicate_fn(
+          "get_replication_meta",
+          doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo
+        )
+        replicate_fn(
+          "study_partial_replication_notice",
+          study_meta,
+          doi = doi,
+          include_registry_audit = TRUE
+        )
+      }, error = function(e) NULL)
+      state$partial_notice_doi <- doi
+      if (!is.null(notice) && isTRUE(notice$partial) && nzchar(notice$message %||% "")) {
+        partial_replication_modal(
+          notice$message,
+          engines = notice$required_engines %||% character(0)
+        )
+      }
+    }
+
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
       first <- state$replications_df[1, , drop = FALSE]
       if (!is.null(state$pending_deep_link_what) &&
@@ -6008,7 +6133,12 @@ server <- function(input, output, session) {
         ),
         tags$div(
           class = "study-engine-col",
-          engine_icons_display(engines$r, engines$stata, engines$python)
+          engine_icons_display(
+            engines$r,
+            engines$stata,
+            engines$python,
+            engines$mathematica %||% FALSE
+          )
         ),
         tags$div(
           class = "study-link-col",
@@ -6089,6 +6219,11 @@ server <- function(input, output, session) {
     } else {
       "DOI: "
     }
+    engines <- if (nrow(row) > 0) {
+      study_engine_availability_for_row(row)
+    } else {
+      study_engine_availability(c(state$replications %||% list(), state$prep_steps %||% list()))
+    }
     tagList(
       card(
         card_header(if (!is.null(state$local_study_meta) && nrow(row) == 0) {
@@ -6096,7 +6231,16 @@ server <- function(input, output, session) {
         } else {
           "Study details"
         }),
-        h4(paper$title %||% state$doi),
+        tags$div(
+          class = "d-flex align-items-start justify-content-between gap-2",
+          h4(class = "mb-0", paper$title %||% state$doi),
+          engine_icons_display(
+            engines$r,
+            engines$stata,
+            engines$python,
+            engines$mathematica %||% FALSE
+          )
+        ),
         tags$details(
           class = "study-details-expand",
           tags$summary(
@@ -6197,8 +6341,12 @@ server <- function(input, output, session) {
         blocked_msg <- blocked_reason
       }
       badge_text <- if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
+      req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
       return(tags$div(
         class = row_class,
+        if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
+          tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+        },
         tags$span(label, class = "replication-label", title = label_full),
         tags$div(
           class = "replication-actions",
@@ -6374,11 +6522,17 @@ server <- function(input, output, session) {
             step_id <- row$id[[1]]
             step_engine <- row$engine[[1]] %||% "r"
             safe_id <- gsub("[^a-zA-Z0-9]", "_", step_id)
-            engine_badge <- switch(
-              step_engine,
-              stata = tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
-              python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
-              tags$span(class = "engine-badge", title = "R", engine_icon_r())
+            req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
+            engine_badge <- tagList(
+              switch(
+                step_engine,
+                stata = tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
+                python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
+                tags$span(class = "engine-badge", title = "R", engine_icon_r())
+              ),
+              if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
+                tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+              }
             )
             step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
             step_blocked_reason <- as.character(row$blocked_reason[[1]] %||% "")

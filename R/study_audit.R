@@ -260,6 +260,7 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
       total = 0L,
       passed = 0L,
       failed = 0L,
+      timed_out = 0L,
       failures = NULL
     ))
   }
@@ -276,6 +277,7 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
       total = 0L,
       passed = 0L,
       failed = 0L,
+      timed_out = 0L,
       failures = NULL,
       not_in_audit = TRUE
     ))
@@ -283,10 +285,19 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
 
   passed <- sum(sub$success, na.rm = TRUE)
   failed <- sum(!sub$success, na.rm = TRUE)
+  timed_out <- if ("timed_out" %in% names(sub)) {
+    sum(as.logical(sub$timed_out) %in% TRUE, na.rm = TRUE)
+  } else {
+    0L
+  }
   fail_rows <- sub[!sub$success, , drop = FALSE]
   failures <- NULL
   if (nrow(fail_rows) > 0L) {
-    failures <- fail_rows[, c("object", "object_label", "engine", "error_snippet"), drop = FALSE]
+    keep <- intersect(
+      c("object", "object_label", "engine", "error_snippet", "timed_out"),
+      names(fail_rows)
+    )
+    failures <- fail_rows[, keep, drop = FALSE]
   }
 
   list(
@@ -295,6 +306,7 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
     total = nrow(sub),
     passed = passed,
     failed = failed,
+    timed_out = as.integer(timed_out),
     failures = failures,
     not_in_audit = FALSE
   )

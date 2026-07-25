@@ -10,6 +10,21 @@
 You can use it from `R` or your
 [browser](https://shiny2.wzb.eu/ipi/replicate/).
 
+**replicateEverything does not replace** long-term structured
+repositories such as ICPSR and Dataverse. It is an **access point**. We
+are not there yet, but an aim is for it to read those repositories
+directly.
+
+For preparing a deposit, follow the [AEA Data Editor
+guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)
+and the [Data and Code Availability
+Standard](https://datacodestandard.org/) (data–code separation and
+related rules). Beyond those, we ask for two things: a `replication.yml`
+file, and data/analysis packaged into **consumable steps**. See
+[Contributing
+principles](https://replicate-anything.github.io/replicateEverything/articles/contributing-principles.md)
+for the contributor walkthrough.
+
 TL;DR — just do this
 
 ``` r

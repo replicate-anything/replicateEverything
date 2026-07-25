@@ -244,6 +244,186 @@ step_missing_engine_message <- function(meta, what, output_exists = FALSE) {
   }
 }
 
+#' System engines required by incomplete / blocked steps (e.g. Mathematica)
+#'
+#' Scans \code{requires_engine:} / \code{system_requirements:} / blocked-reason
+#' text on steps marked \code{incomplete: true}. Does not include ordinary
+#' replication engines (R / Stata / Python).
+#'
+#' @param meta Parsed replication metadata, or a list of step entries.
+#' @return Character vector of display names (e.g. \code{"Mathematica"}).
+#' @keywords internal
+study_required_system_engines <- function(meta) {
+  entries <- if (is.list(meta) && !is.null(meta$steps)) {
+    tryCatch(collect_study_step_entries(meta), error = function(e) list())
+  } else if (is.list(meta) && length(meta) > 0L && is.list(meta[[1]])) {
+    meta
+  } else {
+    list()
+  }
+  engines <- character(0)
+  for (entry in entries) {
+    if (!isTRUE(entry$incomplete %||% FALSE)) {
+      next
+    }
+    eng <- step_required_engine(entry)
+    if (!is.null(eng) && !eng %in% c("R", "Stata", "Python")) {
+      engines <- c(engines, eng)
+    }
+  }
+  unique(engines)
+}
+
+#' English list join for short UI phrases
+#' @keywords internal
+oxford_join <- function(items, conj = "and") {
+  items <- as.character(items)
+  items <- items[nzchar(items)]
+  n <- length(items)
+  if (n == 0L) {
+    return("")
+  }
+  if (n == 1L) {
+    return(items[[1]])
+  }
+  if (n == 2L) {
+    return(paste(items[[1]], conj, items[[2]]))
+  }
+  paste0(
+    paste(items[-n], collapse = ", "),
+    ", ",
+    conj,
+    " ",
+    items[[n]]
+  )
+}
+
+#' Build the one-line partial-replication notice shown on study select
+#' @keywords internal
+format_partial_replication_message <- function(
+  engines = character(0),
+  incomplete_n = 0L,
+  audit_failed = 0L,
+  audit_timed_out = 0L
+) {
+  engines <- unique(as.character(engines))
+  engines <- engines[nzchar(engines)]
+  incomplete_n <- as.integer(incomplete_n %||% 0L)
+  audit_failed <- as.integer(audit_failed %||% 0L)
+  audit_timed_out <- as.integer(audit_timed_out %||% 0L)
+
+  bits <- character(0)
+  if (length(engines) > 0L) {
+    bits <- c(
+      bits,
+      paste0(
+        "missing ",
+        oxford_join(engines),
+        if (length(engines) == 1L) " installation" else " installations"
+      )
+    )
+  } else if (incomplete_n > 0L) {
+    bits <- c(
+      bits,
+      sprintf(
+        "%d output%s marked incomplete",
+        incomplete_n,
+        if (incomplete_n == 1L) "" else "s"
+      )
+    )
+  }
+  if (audit_timed_out > 0L) {
+    bits <- c(bits, "some audit runs timed out")
+  } else if (audit_failed > 0L && length(engines) == 0L && incomplete_n == 0L) {
+    bits <- c(bits, "some audit runs failed or are incomplete")
+  }
+
+  if (!length(bits)) {
+    return(NULL)
+  }
+  paste0(
+    "Only partial replication currently available (",
+    paste(bits, collapse = "; "),
+    ")"
+  )
+}
+
+#' Summarize why a study offers only partial replication (yaml + optional audit)
+#'
+#' Driven by step \code{incomplete:} / \code{requires_engine:} /
+#' \code{blocked_reason:} fields, optionally enriched with the latest registry
+#' \code{audit_latest.rds} failures and timeouts. Used by Shiny for a one-shot
+#' notice when a study is selected.
+#'
+#' @param meta Parsed replication metadata.
+#' @param doi Optional DOI for registry audit lookup.
+#' @param registry_root Optional local registry checkout.
+#' @param include_registry_audit When \code{TRUE}, merge latest audit snapshot.
+#' @return List with \code{partial}, \code{message}, \code{required_engines},
+#'   \code{incomplete_ids}, \code{incomplete_n}, \code{audit_failed},
+#'   \code{audit_timed_out}.
+#' @keywords internal
+study_partial_replication_notice <- function(
+  meta,
+  doi = NULL,
+  registry_root = NULL,
+  include_registry_audit = TRUE
+) {
+  empty <- list(
+    partial = FALSE,
+    message = NULL,
+    required_engines = character(0),
+    incomplete_ids = character(0),
+    incomplete_n = 0L,
+    audit_failed = 0L,
+    audit_timed_out = 0L
+  )
+  if (is.null(meta) || !is.list(meta)) {
+    return(empty)
+  }
+
+  entries <- tryCatch(collect_study_step_entries(meta), error = function(e) list())
+  incomplete <- entries[vapply(entries, function(x) {
+    isTRUE(x$incomplete %||% FALSE)
+  }, logical(1))]
+  incomplete_ids <- vapply(incomplete, function(x) {
+    as.character(x$id[[1]] %||% x$id %||% "")
+  }, character(1))
+  incomplete_ids <- incomplete_ids[nzchar(incomplete_ids)]
+  engines <- study_required_system_engines(meta)
+
+  audit_failed <- 0L
+  audit_timed_out <- 0L
+  if (isTRUE(include_registry_audit) && !is.null(doi) && nzchar(as.character(doi))) {
+    reg <- tryCatch(
+      study_registry_audit_results(doi, registry_root = registry_root),
+      error = function(e) NULL
+    )
+    if (!is.null(reg) && isTRUE(reg$available) && !isTRUE(reg$not_in_audit)) {
+      audit_failed <- as.integer(reg$failed %||% 0L)
+      audit_timed_out <- as.integer(reg$timed_out %||% 0L)
+    }
+  }
+
+  incomplete_n <- length(incomplete_ids)
+  msg <- format_partial_replication_message(
+    engines = engines,
+    incomplete_n = incomplete_n,
+    audit_failed = audit_failed,
+    audit_timed_out = audit_timed_out
+  )
+  partial <- !is.null(msg) && nzchar(msg)
+  list(
+    partial = partial,
+    message = msg,
+    required_engines = engines,
+    incomplete_ids = incomplete_ids,
+    incomplete_n = incomplete_n,
+    audit_failed = audit_failed,
+    audit_timed_out = audit_timed_out
+  )
+}
+
 #' Whether any declared display output for a step already exists
 #' @keywords internal
 step_display_output_exists <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {

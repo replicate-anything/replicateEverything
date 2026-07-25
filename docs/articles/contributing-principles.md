@@ -1,5 +1,18 @@
 # Contributing principles
 
+**replicateEverything does not replace** long-term structured
+repositories such as ICPSR and Dataverse. It is an **access point**. We
+are not there yet, but an aim is for it to read those repositories
+directly.
+
+For preparing a deposit, follow the [AEA Data Editor
+guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)
+and the [Data and Code Availability
+Standard](https://datacodestandard.org/) (data–code separation and
+related rules). Beyond those, we ask for two things: a `replication.yml`
+file, and data/analysis packaged into **consumable steps**. Field-level
+detail stays in the checklists linked below.
+
 Heart of contributing a study under **Contributing replications**. Gold
 shape:
 [`rep-template`](https://github.com/replicate-anything/rep-template).

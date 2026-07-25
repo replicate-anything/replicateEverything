@@ -136,3 +136,83 @@ test_that("folder_display_replications() still excludes incomplete steps from ba
   expect_true("tab_1" %in% ids)
   expect_false("tab_2" %in% ids)
 })
+
+test_that("study_required_system_engines() collects Mathematica from incomplete steps", {
+  meta <- list(
+    steps = list(
+      list(id = "fig_5", type = "figure", code = "code/fig_5.do"),
+      list(
+        id = "compute_mvpf_main",
+        type = "transform",
+        code = "code/compute_mvpf_main.do",
+        incomplete = TRUE,
+        requires_engine = "mathematica",
+        blocked_reason = "Requires Mathematica."
+      ),
+      list(
+        id = "fig_1",
+        type = "figure",
+        code = "code/fig_1.do",
+        incomplete = TRUE,
+        requires_engine = "mathematica",
+        blocked_reason = "Requires Mathematica."
+      )
+    )
+  )
+  expect_identical(study_required_system_engines(meta), "Mathematica")
+})
+
+test_that("format_partial_replication_message() prefers missing-engine phrasing", {
+  expect_identical(
+    format_partial_replication_message(engines = "Mathematica", incomplete_n = 8L),
+    "Only partial replication currently available (missing Mathematica installation)"
+  )
+  expect_identical(
+    format_partial_replication_message(
+      engines = c("Mathematica", "MATLAB"),
+      incomplete_n = 2L
+    ),
+    "Only partial replication currently available (missing Mathematica and MATLAB installations)"
+  )
+  expect_identical(
+    format_partial_replication_message(incomplete_n = 3L),
+    "Only partial replication currently available (3 outputs marked incomplete)"
+  )
+  expect_identical(
+    format_partial_replication_message(audit_timed_out = 2L),
+    "Only partial replication currently available (some audit runs timed out)"
+  )
+  expect_null(format_partial_replication_message())
+})
+
+test_that("study_partial_replication_notice() is driven by yaml incomplete steps", {
+  meta <- list(
+    steps = list(
+      list(id = "fig_5", type = "figure", code = "code/fig_5.do"),
+      list(
+        id = "fig_1",
+        type = "figure",
+        label = "Figure 1",
+        code = "code/fig_1.do",
+        incomplete = TRUE,
+        requires_engine = "mathematica",
+        blocked_reason = "Requires Mathematica."
+      )
+    )
+  )
+  notice <- study_partial_replication_notice(meta, include_registry_audit = FALSE)
+  expect_true(notice$partial)
+  expect_identical(notice$required_engines, "Mathematica")
+  expect_identical(notice$incomplete_ids, "fig_1")
+  expect_identical(
+    notice$message,
+    "Only partial replication currently available (missing Mathematica installation)"
+  )
+
+  ok <- study_partial_replication_notice(
+    list(steps = list(list(id = "fig_5", type = "figure", code = "code/fig_5.do"))),
+    include_registry_audit = FALSE
+  )
+  expect_false(ok$partial)
+  expect_null(ok$message)
+})
