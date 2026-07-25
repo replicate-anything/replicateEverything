@@ -1611,8 +1611,9 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
   code_path <- resolve_registry_file(rep$code, ctx, meta = meta)
   staging_dir <- writable_stata_staging_dir(meta, ctx, study_root = study_root)
 
-  if (!is.null(rep$data)) {
-    ensure_study_data_files(rep$data, study_root, meta, ctx)
+  data_paths <- replication_data_paths(rep)
+  if (length(data_paths)) {
+    ensure_study_data_files(data_paths, study_root, meta, ctx)
   }
 
   install_stata_dependencies(

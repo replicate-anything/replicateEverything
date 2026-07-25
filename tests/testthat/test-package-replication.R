@@ -259,3 +259,56 @@ test_that("get_code dispatches to package-backed study", {
     }
   )
 })
+
+test_that("replication_package_usable accepts modern packages without list_replications", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  pkg_dir <- file.path(monorepo_root, "rep-10.1371-journal.pone.0278337")
+  skip_if_not(dir.exists(pkg_dir), "vaccine solidarity rep package missing")
+
+  ns_lines <- readLines(file.path(pkg_dir, "NAMESPACE"), warn = FALSE)
+  expect_false(any(grepl("^export\\(list_replications\\)", ns_lines)))
+
+  skip_if_not(
+    requireNamespace("rep1371journalpone0278337", quietly = TRUE),
+    "study package not installed"
+  )
+  # Usable when installed with replication.yml / make_* — even without list_replications().
+  expect_true(replication_package_usable("rep1371journalpone0278337"))
+})
+
+test_that("build from package source root sees figure/table steps", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  pkg_dir <- file.path(monorepo_root, "rep-10.1371-journal.pone.0278337")
+  skip_if_not(dir.exists(pkg_dir), "vaccine solidarity rep package missing")
+
+  meta <- read_study_meta_from_root(pkg_dir, kind = "package")
+  reps <- folder_display_replications(meta)
+  expect_gt(length(reps), 0L)
+  ids <- vapply(reps, function(x) x$id, character(1))
+  expect_true("fig_1" %in% ids)
+  expect_true("tab_1" %in% ids)
+
+  skip_if_not(
+    requireNamespace("rep1371journalpone0278337", quietly = TRUE),
+    "study package not installed"
+  )
+  # Prefer source yaml over a stale library install that still has prep:/replications:.
+  expect_error(
+    build_package_outputs_impl(
+      package = "rep1371journalpone0278337",
+      install_deps = FALSE,
+      ids = "tab_1",
+      study_root = pkg_dir,
+      only_missing = TRUE
+    ),
+    NA
+  )
+})

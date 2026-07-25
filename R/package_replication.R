@@ -1147,6 +1147,11 @@ load_replication_package_path <- function(path, package) {
 
 #' Whether a study replication package namespace can be used
 #'
+#' Modern study packages export \code{make_*} / \code{format_*} only (verbs live
+#' in replicateEverything). Legacy packages may still ship
+#' \code{list_replications()}. Either shape counts as usable when the package
+#' loads and exposes replication metadata or analysis helpers.
+#'
 #' @param package Installed or dev-loaded package name.
 #' @keywords internal
 replication_package_usable <- function(package) {
@@ -1156,8 +1161,18 @@ replication_package_usable <- function(package) {
   tryCatch(
     {
       ns <- asNamespace(package)
-      get("list_replications", envir = ns, inherits = FALSE, mode = "function")
-      TRUE
+      if (exists("list_replications", envir = ns, inherits = FALSE, mode = "function")) {
+        return(TRUE)
+      }
+      if (exists("replication_meta", envir = ns, inherits = FALSE, mode = "function")) {
+        return(TRUE)
+      }
+      yml <- system.file("replication.yml", package = package)
+      if (nzchar(yml) && file.exists(yml)) {
+        return(TRUE)
+      }
+      exports <- getNamespaceExports(ns)
+      any(grepl("^(make_|format_|prep_)", exports))
     },
     error = function(e) FALSE
   )

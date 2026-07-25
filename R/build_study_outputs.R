@@ -58,7 +58,8 @@ build_study_outputs <- function(
         ids = ids,
         output_dir = output_dir,
         force_prep = force_prep,
-        only_missing = only_missing
+        only_missing = only_missing,
+        study_root = root
       ))
     }
     return(build_folder_outputs_impl(
@@ -95,11 +96,45 @@ build_package_outputs_impl <- function(
   ids = NULL,
   output_dir = NULL,
   force_prep = FALSE,
-  only_missing = FALSE
+  only_missing = FALSE,
+  study_root = NULL
 ) {
   package <- as.character(package[[1]])
-  ensure_replication_package(package)
-  meta <- read_package_replication_meta(package)
+  if (!is.null(study_root) && dir.exists(study_root)) {
+    study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+    # Prefer yaml from the caller-resolved source tree over a stale library install.
+    meta <- read_study_meta_from_root(study_root, kind = "package")
+    pkg_root <- study_root
+    loaded <- tryCatch(
+      {
+        load_replication_package_path(study_root, package)
+        TRUE
+      },
+      error = function(e) {
+        warning(
+          "Could not load package source at ", study_root, ": ",
+          conditionMessage(e),
+          ". Falling back to the installed package namespace.",
+          call. = FALSE
+        )
+        FALSE
+      }
+    )
+    if (!isTRUE(loaded)) {
+      ensure_replication_package(package, meta = meta, ctx = NULL)
+      if (!requireNamespace(package, quietly = TRUE)) {
+        stop(
+          "Replication package ", package,
+          " is not installed and could not be loaded from ", study_root, ".",
+          call. = FALSE
+        )
+      }
+    }
+  } else {
+    ensure_replication_package(package)
+    meta <- read_package_replication_meta(package)
+    pkg_root <- package_source_root(package)
+  }
   paper <- meta$paper
   if (is.null(paper$doi) || !nzchar(as.character(paper$doi[[1]]))) {
     stop("paper.doi is required in replication.yml", call. = FALSE)
@@ -108,7 +143,6 @@ build_package_outputs_impl <- function(
   doi <- normalize_doi(paper$doi)
   folder <- doi_to_registry_folder(doi)
   ctx <- paper_context(doi, folder = folder)
-  pkg_root <- package_source_root(package)
   if (is.null(output_dir) || !nzchar(output_dir)) {
     default_dir <- study_artifact_dir(meta, ctx, installed = FALSE, package = package)
     if (is.null(default_dir)) {
@@ -122,6 +156,17 @@ build_package_outputs_impl <- function(
   }
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
 
+  # Surface yaml contract errors (e.g. legacy prep:/replications:) instead of
+  # treating a failed normalize as an empty display list.
+  tryCatch(
+    normalize_study_steps(meta),
+    error = function(e) {
+      stop(
+        "Cannot build package outputs: ", conditionMessage(e),
+        call. = FALSE
+      )
+    }
+  )
   display_reps <- folder_display_replications(meta)
   if (!is.null(ids)) {
     display_reps <- display_reps[vapply(display_reps, function(x) {

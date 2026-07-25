@@ -274,6 +274,9 @@ ensure_study_data_files <- function(data_files, study_root, meta, ctx = NULL) {
     return(invisible(character(0)))
   }
 
+  # Yaml location wiring (dataverse.files / data_files:) — fetch before fail
+  materialize_declared_data_for_paths(data_files, study_root, meta, ctx = ctx)
+
   resolved_paths <- vapply(data_files, function(rel_path) {
     target <- file.path(study_root, rel_path)
     hit <- resolve_study_data_file(rel_path, study_root, meta, ctx)

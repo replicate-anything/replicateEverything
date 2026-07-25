@@ -1,3 +1,20 @@
+# replicateEverything 0.7.7
+
+## Declared remote data wiring (no access_data step)
+
+* **New:** [materialize_declared_data()] fetches files listed under
+  `dataverse.files` or top-level `data_files:` (each entry: local `path` +
+  `url`, or Dataverse `id`/`file_id` with optional `original: true`) into the
+  study tree. Hooked from [prepare_study_run()] and [ensure_study_data_files()]
+  so `given = "nothing"` obtains raw roots without a study-local download step.
+* **Studies:** Jiang (`rep-10.1017-s0003055426101749`) drops `access_data` and
+  relies on yaml wiring → `data/raw/*.dta`. Transform steps remain for merges /
+  recodes under `outputs/`.
+* **Merge:** folder study yaml `dataverse:` / `data_files:` now copy into
+  registry stubs via [complete_folder_study_meta()].
+* **Stata:** [run_stata_replication()] ensures `inputs:` as well as `data:` via
+  [replication_data_paths()].
+
 # replicateEverything 0.7.6
 
 ## Clearer Shiny / list_replications errors when study yaml cannot be fetched

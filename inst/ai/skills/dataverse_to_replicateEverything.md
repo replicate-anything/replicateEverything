@@ -54,7 +54,7 @@ folder-replication Step 4b.
 - [ ] 2. **Reconstruct step DAG** from README order + script file I/O (folder-replication Step 1b)
 - [ ] 3. Inventory engines (Stata / R / Python) and pipeline order
 - [ ] 4. Create study repo layout (see Target layout)
-- [ ] 5. **Data:** commit `data/raw/` (â‰¤50MB) **or** wire `access_data` from Dataverse (preferred when deposit is public)
+- [ ] 5. **Data:** commit `data/raw/` (≤50MB) **or** declare `dataverse.files` (path + url/id) for package materialize — prefer wiring over an `access_data` step
 - [ ] 5b. **Check native format** â€” inspect `originalFileName` / `originalFormatLabel` before any `.tab` conversion
 - [ ] 6. **Search all code for dependencies** â€” folder-replication Step 4a + Dataverse delivery patterns below
 - [ ] 7. Add dependency automation (Stata install script, R CRAN, Python pip)
@@ -126,11 +126,11 @@ source for `steps:` â€” not a guess from table ids alone.
 
 | README pattern | Step yaml |
 |----------------|-----------|
-| Dataverse / external deposit | `access_data` transform (`parents: []`, `outputs: outputs/data.dta`) |
-| Step 0: merge / construct dataset | `type: transform`, `parents: []`, raw `inputs:` from `data/raw/` |
-| Step 1: main tables | One `type: table` per table, `parents: [access_data]` or `[construct_â€¦]` |
+| Dataverse / external deposit | Prefer `dataverse.files` wiring → `data/`; legacy: `access_data` → `outputs/` |
+| Step 0: merge / construct dataset | `type: transform`, raw `inputs:` from `data/` |
+| Step 1: main tables | One `type: table` per table, `parents: [construct_…]` |
 | Later: figures / ML / conjoint | `type: figure` or extra transforms as needed |
-| Shared `.dta` used by many scripts | **One** transform step; tables point to `outputs/<step_id>/â€¦` |
+| Shared `.dta` used by many scripts | **One** transform step; tables point to `outputs/<step_id>/…` |
 
 Trace **`use` / `merge` / `save`** in monolithic `.do` files to confirm edges. See
 **folder-replication Step 1b** for the full agent workflow and Fearon/Jiang examples.
@@ -286,23 +286,62 @@ inspect_dataverse_formats <- function(dataset, server = "dataverse.harvard.edu")
 `.csv` names, when Dataverse already serves the native format via `original = TRUE`
 or the `.tab` file is directly readable.
 
-### Pattern A â€” Dataverse fetch (preferred for public deposits)
+### Pattern A — Declared remote files (preferred for public deposits)
 
-**Do not commit** the analysis `.dta`. Add a root R transform:
+**Do not commit** large analysis `.dta` files. Prefer **yaml location wiring** —
+not an `access_data` step. Declare where each file lives; the package
+materializes into `data/` before runs.
 
-| yaml | Value |
-|------|-------|
-| `id` | `access_data` |
-| `label` | Access data from Dataverse |
-| `type` | `transform` |
-| `parents` | `[]` |
-| `engine` | `r` |
-| `code` | `code/steps/access_data.R` |
-| `outputs` | `outputs/data.dta` |
+```yaml
+dataverse:
+  doi: https://doi.org/10.7910/DVN/LCZERW
+  server: dataverse.harvard.edu
+  dataset: "10.7910/DVN/LCZERW"
+  files:
+    - path: data/raw/all_asperson_original.dta
+      url: https://dataverse.harvard.edu/api/access/datafile/13684082?format=original
+    - path: data/raw/CPED_2022.dta
+      url: https://dataverse.harvard.edu/api/access/datafile/13684095?format=original
+```
 
-Study-level `dataverse:` block in `replication.yml`. Use the **paper DOI** in
-`paper.doi` (registry id, repo naming). Always record the **Dataverse dataset DOI**
-in `dataverse.doi` when materials are fetched from Harvard Dataverse:
+Or by Dataverse file id (native upload behind a `.tab` listing):
+
+```yaml
+    - path: data/raw/data-1.dta
+      id: "12345678"
+      original: true
+```
+
+`replicateEverything::materialize_declared_data()` (also called from
+`prepare_study_run` / `ensure_study_data_files`) downloads missing paths.
+Downstream transforms list those paths under `inputs:` with **no** `parents`
+for the fetch — roots are `data/`, not a step.
+
+`.gitignore` the fetched binaries by name. Document URLs in `data/raw/README.md`.
+
+**When is a transform step appropriate?** When you **change** the data (merge,
+recode, subset) and write under `outputs/`. Pure “get the file from URL” is
+wiring, not a step.
+
+**Legacy Pattern A′ — `access_data` transform** (Blair-style): only when the
+fetch itself produces a study-specific object under `outputs/` (e.g. read via
+`dataverse::get_dataframe_by_name` + `haven::write_dta` to `outputs/data.dta`)
+and tables parent that step. Prefer wiring when the deposit already ships the
+file you need at a URL.
+
+```yaml
+# Legacy — prefer dataverse.files wiring above when possible
+steps:
+  - id: access_data
+    type: transform
+    engine: r
+    code: code/steps/access_data.R
+    outputs:
+      - outputs/data.dta
+```
+
+Study-level `dataverse:` block with `file:` + study-local `make_access_data()`
+using the **dataverse** package (do not reinvent downloads in the study):
 
 ```yaml
 paper:
@@ -310,7 +349,6 @@ paper:
   dependencies:
     - dataverse
     - haven
-    - yaml
 
 dataverse:
   doi: https://doi.org/10.7910/DVN/OXSQMU
@@ -319,29 +357,7 @@ dataverse:
   file: data-1.tab
 ```
 
-`code/steps/access_data.R` â€” `make_access_data()`. The deposit lists `data-1.tab`
-but metadata shows `originalFileName = data-1.dta`; `original = TRUE` fetches the
-native Stata file â€” **no `.tab` conversion step**:
-
-```r
-make_access_data <- function() {
-  dat <- dataverse::get_dataframe_by_name(
-    filename = "data-1.tab",
-    dataset = "10.7910/DVN/OXSQMU",
-    original = TRUE,
-    .f = haven::read_dta,
-    server = "dataverse.harvard.edu"
-  )
-  root <- Sys.getenv("REPLICATE_STUDY_ROOT", ".")
-  out <- file.path(root, "outputs", "data.dta")
-  dir.create(dirname(out), recursive = TRUE, showWarnings = FALSE)
-  haven::write_dta(dat, out)
-  dat
-}
-```
-
-Downstream Stata tables: `parents: [access_data]`, `data: outputs/data.dta`, and
-`use "${processed}/data.dta"` in `mk_tab_N.do` (`processed` â†’ `outputs/`).
+`code/steps/access_data.R` — thin wrapper around `dataverse::get_dataframe_by_name(..., original = TRUE)` writing `outputs/data.dta`. Downstream: `parents: [access_data]`, `data: outputs/data.dta`.
 
 `.gitignore`:
 
@@ -349,9 +365,17 @@ Downstream Stata tables: `parents: [access_data]`, `data: outputs/data.dta`, and
 outputs/data.dta
 ```
 
-`data/raw/README.md` documents the Dataverse DOI and filename â€” **no binary in git**.
+`data/raw/README.md` documents the Dataverse DOI and filename — **no binary in git**.
 
-**Run semantics:**
+**Run semantics (wiring):**
+
+| Call | Fetches when `data/raw/*.dta` missing? |
+|------|------------------------------------------|
+| `materialize_declared_data(doi)` | Yes |
+| `run_replication(doi, "analysis_data", given = "nothing")` | Yes (auto) |
+| `build_study_outputs()` | Yes (via prepare_study_run) |
+
+**Run semantics (legacy access_data step):**
 
 | Call | Fetches when `outputs/data.dta` missing? |
 |------|------------------------------------------|

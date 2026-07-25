@@ -922,7 +922,9 @@ merge_folder_study_meta_fields <- function(meta, study_meta) {
     "r_dependencies",
     "stata_deps_probe",
     "stata_dependencies",
-    "stata_packages"
+    "stata_packages",
+    "dataverse",
+    "data_files"
   )) {
     val <- meta[[field]] %||% NULL
     if (is.null(val) || length(val) == 0L) {

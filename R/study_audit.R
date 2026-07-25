@@ -377,7 +377,6 @@ evaluate_study_compatibility <- function(
 
   if (identical(kind, "package")) {
     pkg <- as.character(meta$paper$package[[1]] %||% "")
-    pkg_ok <- nzchar(pkg) && replication_package_usable(pkg)
     if (isTRUE(do_materialize)) {
       mat <- tryCatch(
         materialize_study(meta, ctx),
@@ -387,7 +386,9 @@ evaluate_study_compatibility <- function(
         study_root <- mat$root
         meta <- mat$meta
       }
-    } else if (pkg_ok) {
+    }
+    pkg_ok <- nzchar(pkg) && replication_package_usable(pkg)
+    if (!isTRUE(do_materialize) && pkg_ok) {
       study_root <- package_source_root(pkg)
       meta <- tryCatch(
         read_package_replication_meta(pkg),

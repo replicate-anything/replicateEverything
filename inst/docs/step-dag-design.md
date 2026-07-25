@@ -2,7 +2,7 @@
 
 ## Concepts
 
-- **Roots** — raw files under `data/` (no producing step). Shown as dashed **data** nodes in the pipeline display; hover for full paths.
+- **Roots** — raw files under `data/` (no producing step). Shown as dashed **data** nodes in the pipeline display; hover for full paths. Remote roots: declare `dataverse.files` / `data_files:` (`path` + `url` or Dataverse `id`); [materialize_declared_data()] fetches — **not** a DAG step. Transform steps are for merges/recodes into `outputs/`, not pure downloads.
 - **Steps** — everything else: transforms, tables, figures, and format children.
 - **Labels** name the **output** (e.g. `Analysis dataset`, `Table 1`); put how-it-is-built in `description` (Shiny hover + Display title).
 - **Outputs** — products of steps under `outputs/`, named after the step id (e.g. `outputs/tab_1.html`, `outputs/construct_analysis_dataset/`). `outputs:` only — `artifact:` / `output:` / `stata_output:` are a hard error.

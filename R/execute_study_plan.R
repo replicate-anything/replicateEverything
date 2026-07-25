@@ -159,6 +159,24 @@ prepare_study_run <- function(
 ) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
+  # Materialize yaml-declared remote roots (dataverse.files / data_files:)
+  # before DAG readiness checks — location wiring, not a step.
+  study_root <- tryCatch(
+    ensure_study_folder_local(meta, ctx),
+    error = function(e) ctx$local_root
+  )
+  if (!is.null(study_root) && dir.exists(study_root)) {
+    meta <- complete_folder_study_meta(meta, study_root)
+    ctx$local_root <- study_root
+    tryCatch(
+      materialize_declared_data(meta, study_root = study_root, ctx = ctx),
+      error = function(e) {
+        # Defer hard failure to ensure_study_data_files / the step that needs
+        # the file; still surface the message for diagnosis.
+        message(conditionMessage(e))
+      }
+    )
+  }
   steps <- normalize_study_steps(meta)
   graph <- study_step_graph(steps)
   validate_study_step_graph(graph)
