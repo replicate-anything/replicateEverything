@@ -1670,6 +1670,61 @@ partial_replication_modal <- function(message, engines = character(0), data_unav
   invisible(TRUE)
 }
 
+#' Modal for a single data-unavailable / proprietary step (padlock click)
+data_unavailable_step_modal <- function(message, data_token = "") {
+  msg <- trimws(as.character(message %||% ""))
+  if (!nzchar(msg)) {
+    msg <- "This output is unavailable because required data are not included in the public deposit."
+  }
+  tok <- tolower(trimws(as.character(data_token %||% "")))
+  title_bit <- if (nzchar(tok)) {
+    paste0("Data not available (", tok, ")")
+  } else {
+    "Data not available"
+  }
+  showModal(modalDialog(
+    title = title_bit,
+    tags$div(
+      class = "d-flex align-items-start gap-2",
+      tags$span(
+        class = "engine-badge mt-1",
+        title = title_bit,
+        engine_icon_data_unavailable()
+      ),
+      tags$p(class = "mb-0", msg)
+    ),
+    easyClose = TRUE,
+    footer = modalButton("OK")
+  ))
+  invisible(TRUE)
+}
+
+#' Run-slot control: padlock that reports why data are unavailable
+run_unavailable_padlock_button <- function(step_key, message, data_token = "") {
+  msg <- trimws(as.character(message %||% ""))
+  tok <- tolower(trimws(as.character(data_token %||% "")))
+  title <- if (nzchar(msg)) {
+    msg
+  } else if (nzchar(tok)) {
+    paste0("Data not available (", tok, ")")
+  } else {
+    "Data not available"
+  }
+  safe_key <- gsub("\\\\", "\\\\\\\\", as.character(step_key), fixed = FALSE)
+  safe_key <- gsub("'", "\\'", safe_key, fixed = TRUE)
+  tags$button(
+    type = "button",
+    class = "btn btn-sm run-unavailable-lock",
+    title = title,
+    `aria-label` = title,
+    onclick = sprintf(
+      "Shiny.setInputValue('unavailable_step_info', '%s', {priority: 'event'})",
+      safe_key
+    ),
+    tags$span(class = "engine-badge", engine_icon_data_unavailable())
+  )
+}
+
 registry_health_bar_ui <- function(summary) {
   if (is.null(summary)) {
     return(NULL)
@@ -5208,6 +5263,29 @@ ui <- tagList(
       cursor: not-allowed;
       pointer-events: none;
     }
+    /* data_unavailable: padlock replaces Run; click shows availability message */
+    .replication-row .run-unavailable-lock {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.5rem;
+      padding: 0.2rem 0.45rem;
+      line-height: 1;
+      border: 1px solid rgba(107, 114, 128, 0.35);
+      background: rgba(107, 114, 128, 0.08);
+      color: #4b5563;
+      cursor: pointer;
+    }
+    .replication-row .run-unavailable-lock:hover,
+    .replication-row .run-unavailable-lock:focus {
+      background: rgba(107, 114, 128, 0.16);
+      border-color: rgba(107, 114, 128, 0.55);
+      color: #374151;
+    }
+    .replication-row .run-unavailable-lock .engine-badge,
+    .replication-row .run-unavailable-lock svg {
+      pointer-events: none;
+    }
     .blocked-reason-badge {
       font-size: 0.72rem;
       color: #b02a37;
@@ -6479,6 +6557,9 @@ server <- function(input, output, session) {
     if (!nzchar(blocked_reason)) {
       blocked_reason <- "This object cannot be created for this study - see the study notes."
     }
+    req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
+    data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
+    is_data_gap <- is_blocked && nzchar(data_tok)
     row_class <- paste(
       "replication-row d-flex align-items-center rounded",
       if (!is.null(active_id) && (identical(group, active_id) || identical(resolved_id, active_id))) {
@@ -6486,7 +6567,8 @@ server <- function(input, output, session) {
       } else {
         ""
       },
-      if (is_blocked) "is-blocked" else ""
+      # Strikethrough / grey only for engine gaps; data gaps use a Run padlock.
+      if (is_blocked && !is_data_gap) "is-blocked" else ""
     )
     if (is_blocked) {
       output_exists <- tryCatch(
@@ -6518,28 +6600,21 @@ server <- function(input, output, session) {
         blocked_msg <- blocked_reason
       }
       badge_text <- if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
-      req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
-      data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
       return(tags$div(
         class = row_class,
         if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
           tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
         },
-        if (nzchar(data_tok)) {
-          tags$span(
-            class = "engine-badge",
-            title = paste0("Data not available (", data_tok, ")"),
-            engine_icon_data_unavailable()
-          )
-        },
         tags$span(label, class = "replication-label", title = label_full),
         tags$div(
           class = "replication-actions",
-          tags$span(
-            class = "blocked-reason-badge",
-            title = blocked_msg,
-            badge_text
-          ),
+          if (!is_data_gap) {
+            tags$span(
+              class = "blocked-reason-badge",
+              title = blocked_msg,
+              badge_text
+            )
+          },
           if (isTRUE(output_exists)) {
             actionButton(
               paste0("display_", safe_group),
@@ -6560,7 +6635,9 @@ server <- function(input, output, session) {
               title = blocked_msg
             )
           },
-          if (shiny_live_run_enabled()) {
+          if (is_data_gap) {
+            run_unavailable_padlock_button(group, blocked_msg, data_tok)
+          } else if (shiny_live_run_enabled()) {
             actionButton(
               paste0("replicate_", safe_group),
               "Run",
@@ -6718,16 +6795,10 @@ server <- function(input, output, session) {
               ),
               if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
                 tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
-              },
-              if (nzchar(data_tok)) {
-                tags$span(
-                  class = "engine-badge",
-                  title = paste0("Data not available (", data_tok, ")"),
-                  engine_icon_data_unavailable()
-                )
               }
             )
             step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
+            step_data_gap <- step_blocked && nzchar(data_tok)
             step_blocked_reason <- as.character(row$blocked_reason[[1]] %||% "")
             if (!nzchar(step_blocked_reason)) {
               step_blocked_reason <- "This step cannot be run for this study - see the study notes."
@@ -6772,13 +6843,13 @@ server <- function(input, output, session) {
                 } else {
                   ""
                 },
-                if (step_blocked) "is-blocked" else ""
+                if (step_blocked && !step_data_gap) "is-blocked" else ""
               ),
               engine_badge,
               tags$span(row$label[[1]], class = "replication-label", title = row$label_full[[1]]),
               tags$div(
                 class = "replication-actions",
-                if (step_blocked) {
+                if (step_blocked && !step_data_gap) {
                   tags$span(
                     class = "blocked-reason-badge",
                     title = step_blocked_reason,
@@ -6823,6 +6894,8 @@ server <- function(input, output, session) {
                       step_id
                     )
                   )
+                } else if (step_blocked && step_data_gap) {
+                  run_unavailable_padlock_button(step_id, step_blocked_reason, data_tok)
                 } else if (shiny_live_run_enabled() && step_blocked) {
                   actionButton(
                     paste0("data_run_", safe_id),
@@ -6887,6 +6960,61 @@ server <- function(input, output, session) {
       load_selected_artifact(fallback_live = FALSE)
     }
     sync_url_to_selection()
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$unavailable_step_info, {
+    req(input$unavailable_step_info, state$doi)
+    step_key <- as.character(input$unavailable_step_info[[1]] %||% input$unavailable_step_info)
+    req(nzchar(step_key))
+
+    data_tok <- ""
+    blocked_msg <- NULL
+    is_prep <- !is.null(state$prep_df) && nrow(state$prep_df) > 0 &&
+      step_key %in% state$prep_df$id
+
+    if (is_prep) {
+      prow <- state$prep_df[state$prep_df$id == step_key, , drop = FALSE]
+      data_tok <- tolower(as.character(prow$data_unavailable[[1]] %||% ""))
+      state$selected_replication <- step_key
+      state$selected_type <- "transform"
+      state$selected_result <- NULL
+      state$selected_source <- "artifact"
+      load_selected_artifact(fallback_live = FALSE)
+      updateTabsetPanel(session, "result_tabs", selected = "Code")
+    } else if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
+      row <- tryCatch(resolve_replication_row(step_key), error = function(e) NULL)
+      if (!is.null(row) && nrow(row) == 1L) {
+        data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
+        select_replication_by_group(step_key)
+        updateTabsetPanel(session, "result_tabs", selected = "Code")
+      }
+    }
+
+    blocked_msg <- tryCatch({
+      meta <- replicate_fn(
+        "get_replication_meta",
+        state$doi,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      )
+      replicate_fn(
+        "step_missing_engine_message",
+        meta,
+        step_key,
+        output_exists = FALSE
+      )
+    }, error = function(e) NULL)
+    if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
+      blocked_msg <- tryCatch({
+        if (is_prep) {
+          as.character(state$prep_df$blocked_reason[state$prep_df$id == step_key][[1]] %||% "")
+        } else {
+          row <- resolve_replication_row(step_key)
+          as.character(row$blocked_reason[[1]] %||% "")
+        }
+      }, error = function(e) "")
+    }
+    data_unavailable_step_modal(blocked_msg, data_tok)
   }, ignoreInit = TRUE)
 
   observeEvent(input$replication_action, {

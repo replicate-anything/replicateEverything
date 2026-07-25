@@ -203,9 +203,10 @@ disappearance.
 Partial-replication study popup is driven by yaml `incomplete:` /
 `requires_engine:` / `data_unavailable:` and may be enriched from the latest
 registry audit snapshot (failures/timeouts) — see Shiny + `run_replication.R`.
-For **unavailable claimed** steps in Shiny: still show Code; use Unavailable
-instead of Run; no need to strikethrough labels when the badge already says
-Unavailable (`check_study_submission.md`).
+For **unavailable claimed** steps in Shiny with `data_unavailable:`: still show
+Code; replace Run with a **padlock** (click → availability message); no separate
+Unavailable badge or strikethrough needed. Engine gaps may keep Unavailable /
+Not reproducible badges (`check_study_submission.md`).
 
 **Edges:** `parents: [step_a, step_b]` only — `requires:` / `depends_on:` are a hard error. Raw files are not parents — list them under `inputs:`.
 

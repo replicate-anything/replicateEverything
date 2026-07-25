@@ -1,5 +1,12 @@
 # replicateEverything 0.7.8
 
+## Shiny: padlock Run for data-unavailable steps
+
+* **UX:** Steps with `data_unavailable:` (e.g. proprietary) keep a normal label
+  and Code; the Run slot is a **padlock** that opens the availability message on
+  click. No separate Unavailable badge or strikethrough for those rows.
+  `requires_engine` gaps still use Unavailable / Not reproducible badges.
+
 ## LaTeX tabular (texdoc) → HTML
 
 * **Internal helper:** `latex_tabular_to_html()` converts author

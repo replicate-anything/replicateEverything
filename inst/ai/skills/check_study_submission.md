@@ -86,8 +86,10 @@ Ideal: **yaml points at what is needed**; do not ship unused deposit material;
 the path to a claimed output belong in README / study popup — **not** as orphan
 Unavailable nodes.
 
-**Shiny UX (claimed but unavailable):** show Code; Unavailable instead of Run;
-no need to strikethrough step labels when the badge already says Unavailable.
+**Shiny UX (claimed but unavailable data):** show Code as usual; replace Run with a
+**padlock** that opens the data-availability message on click. Do not need a
+separate Unavailable badge or strikethrough when the padlock conveys the gap.
+Engine gaps (`requires_engine`) may keep Unavailable / Not reproducible badges.
 
 ```
 - [ ] Steps that cannot run declare `incomplete: true` (audit must **skip** them — not fail)
