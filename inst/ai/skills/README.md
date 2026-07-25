@@ -9,18 +9,21 @@ who clones or installs replicateEverything gets the current guidance.
 
 | File | Skill name | Use for |
 |------|------------|---------|
-| `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 1b DAG from original repo**; Step 4a dependency search + Step 4b `steps:` yaml |
+| `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 1b DAG from original repo**; Step 4a dependency search + Step 4b `steps:` yaml; blocked steps |
 | `dataverse_to_replicateEverything.md` | `dataverse-to-replicate-everything` | Harvard Dataverse deposits → folder-backed study repo |
+| `openicpsr_to_replicateEverything.md` | `openicpsr-to-replicate-everything` | OpenICPSR / ICPSR (often AER) deposits — download once, commit needed inputs, wrapper DAG |
 | `include_study_in_registry.md` | `include-study-in-registry` | Contributor prepare + maintainer sync into central registry |
-| `check_study_submission.md` | `check-study-submission` | Review / audit: Shiny "no steps", yaml hard errors, **surgical pulls / light-repo**, missing outputs |
+| `check_study_submission.md` | `check-study-submission` | Review / audit: Shiny "no steps", yaml hard errors, **surgical pulls / light-repo**, incomplete / proprietary steps |
 
 Each file is a self-contained Cursor Agent Skill (YAML frontmatter with
 `name:` + `description:`, then the body).
 
 **Policy (see root `AI.md`):** study repos stay light; **Pattern B default** =
-surgical Dataverse file-id pulls → `outputs/`; full archive only when Pattern C
-is justified. Jiang (`rep-10.1017-s0003055426101749`) is Pattern A (surgical
-file URLs into `data/raw/`) and should migrate toward Pattern B when convenient.
+surgical Dataverse file-id pulls → `outputs/`; Pattern A materialize → `data/`
+only when fetch is not a claimed step; full archive only when Pattern C
+justified. OpenICPSR (no public file API): commit needed inputs only, still
+yaml-declare. Blocked steps: `incomplete:` + `requires_engine:` or
+`data_unavailable:` (audit skips).
 
 ## Single source of truth
 

@@ -17,7 +17,11 @@ Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `re
 
 **Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml; **gold example** `rep-template`), `include-study-in-registry` (maintainer `sync_study_to_registry`).
 
-**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse` / `fetch_dataverse_file()`; full archive only when Pattern C justified (see root `AI.md`).
+**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse` / `fetch_dataverse_file()`; Pattern A materialize → `data/` only when fetch is not a claimed product; full archive only when Pattern C justified (see root `AI.md`).
+
+**Not OpenICPSR:** if the deposit is on openicpsr.org / ICPSR (often AER), use
+`openicpsr_to_replicateEverything.md` instead — usually no public per-file API;
+download once to `original_studies/`, commit needed inputs only.
 
 **Canonical examples:** [`rep-template`](https://github.com/replicate-anything/rep-template) (minimal gold); `rep-10.1017-s0003055426101749` (Jiang & Yang, multi-engine); [`rep-10.1017-s0003055422000284`](https://github.com/replicate-anything/rep-10.1017-s0003055422000284) (Blair et al., Dataverse fetch + Stata).
 

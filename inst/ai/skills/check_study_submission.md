@@ -15,8 +15,9 @@ Shiny and registry sync. Companion to `folder_replication.md` and
 **reject or request fixes**.
 
 **Gold shape:** `rep-template/`. Prefer keeping author code/data in the original
-deposit (or Pattern A/C Dataverse fetch) and pointing at it from yaml — do not
-copy wholesale archives into the study repo.
+deposit (or Pattern B Dataverse access → `outputs/`) and pointing at it from yaml —
+do not copy wholesale archives into the study repo. OpenICPSR: see
+`openicpsr_to_replicateEverything.md` (commit needed inputs only).
 
 ## Quick diagnosis: Shiny says "no steps" / "no replications"
 
@@ -68,13 +69,24 @@ Ideal: **yaml points at what is needed**; do not ship unused deposit material;
 ```
 - [ ] No ethics / instruments / questionnaires / appendix-only blobs unless a declared step needs them
 - [ ] **Surgical pulls:** file-id / `?format=original` only — no `archive_original` / full DVN zip unless Pattern C justified in README
-- [ ] Prefer Pattern B access → `outputs/` (or Pattern A materialize) over committing raw when file ids exist
+- [ ] Prefer Pattern B access → `outputs/` (or Pattern A materialize when fetch is not a claimed product) over committing raw when file ids exist
+- [ ] OpenICPSR / no file API: commit **only** yaml-declared inputs; full unzip stays in `original_studies/` — no unused deposit bulk
 - [ ] Prefer package `fetch_dataverse_file()` / `engine: dataverse` — no study-local `httr::GET` / `download.file` download helpers
 - [ ] Prefer sourcing author scripts in place (Pattern C) over rewriting when scripts are standalone; still use file-id manifest rows when possible
 - [ ] For monolithic `.Rmd` only: thin `make_*` extracts are OK — document the Rmd chunk mapping in README
 - [ ] No empty directories (no `data/raw/` with only a placeholder README if nothing is committed there — document fetch in root README instead, or commit ≤50 MB data)
 - [ ] No study-local `registry/` handoff
 - [ ] No scratch / staging / deposit cache committed (`outputs/deposit/`, `outputs/staging/` gitignored)
+```
+
+### B2. Incomplete / blocked steps
+
+```
+- [ ] Steps that cannot run declare `incomplete: true` (audit must **skip** them — not fail)
+- [ ] Engine gaps: `requires_engine:` + `blocked_reason:`; check deposit for precomputed gold before concluding unavailable
+- [ ] Proprietary / restricted data: `data_unavailable: proprietary` (+ `blocked_reason:`) — distinct from engine-missing and from audit fail/timeout
+- [ ] Wrapper-granularity DAG (README tables) — not one node per unused micro-script
+- [ ] Partial-replication popup drivers present when incomplete steps exist (`requires_engine` / `data_unavailable` / counts)
 ```
 
 Grep helpers for heaviness (from study root):
@@ -89,10 +101,11 @@ git ls-files "data/**" "outputs/**/*.dta" "outputs/**/*.csv" 2>/dev/null | head
 ### C. Outputs and Display
 
 ```
-- [ ] Every table/figure step has a committed display sink under `outputs/` (`.html` / `.png`)
+- [ ] Every **runnable** table/figure step has a committed display sink under `outputs/` (`.html` / `.png`)
+- [ ] Incomplete / `data_unavailable` / `requires_engine` steps may lack sinks — that is expected; do not force-bake them
 - [ ] `outputs/manifest.json` matches files that actually exist
 - [ ] Intermediate RDS/DTA under `outputs/<step_id>/` either committed (if needed for `given = "parents"`) or rebuildable via DAG
-- [ ] `build_study_outputs()` / `check_and_bake_study(".")` clean
+- [ ] `build_study_outputs()` / `check_and_bake_study(".")` clean (incomplete steps skipped)
 ```
 
 ### D. Code conventions

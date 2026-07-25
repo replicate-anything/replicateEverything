@@ -421,12 +421,34 @@ dag_path_node_records <- function(path_ids, graph, steps, produced_outputs) {
     }
   }
   for (id in path_ids) {
+    step <- step_by_id[[id]]
+    incomplete <- isTRUE(step$incomplete %||% FALSE)
+    data_tok <- if (incomplete) {
+      as.character(
+        step$data_unavailable[[1]] %||% step$data_unavailable %||%
+          step$unavailable_reason[[1]] %||% step$unavailable_reason %||% ""
+      )
+    } else {
+      ""
+    }
+    data_tok <- tolower(trimws(data_tok))
+    if (data_tok %in% c("false", "no", "0", "na", "null", "none")) {
+      data_tok <- ""
+    }
+    req_eng <- if (incomplete) {
+      as.character(step$requires_engine[[1]] %||% step$requires_engine %||% "")
+    } else {
+      ""
+    }
     out[[length(out) + 1L]] <- list(
       id = id,
       label = step_graph_display_label(id, graph, steps),
       description = graph$descriptions[[id]],
       type = graph$types[[id]],
-      kind = "step"
+      kind = "step",
+      incomplete = incomplete,
+      data_unavailable = data_tok,
+      requires_engine = tolower(trimws(req_eng))
     )
   }
   out

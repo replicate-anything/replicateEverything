@@ -123,7 +123,7 @@ test_that("stop_if_step_blocked() is a no-op for a runnable step", {
   expect_null(stop_if_step_blocked(meta, "tab_1"))
 })
 
-test_that("folder_display_replications() still excludes incomplete steps from baking/audit", {
+test_that("folder_display_replications() still excludes incomplete steps from baking", {
   meta <- list(
     steps = list(
       list(id = "tab_1", type = "table", code = "code/tab_1.R"),
@@ -135,6 +135,35 @@ test_that("folder_display_replications() still excludes incomplete steps from ba
   ids <- vapply(reps, function(x) x$id, character(1))
   expect_true("tab_1" %in% ids)
   expect_false("tab_2" %in% ids)
+})
+
+test_that("audit records incomplete Mathematica / proprietary steps as skipped jobs", {
+  reps <- list(
+    list(id = "fig_5", type = "figure", label = "Figure 5", engine = "stata", code = "code/fig_5.do"),
+    list(
+      id = "fig_1",
+      type = "figure",
+      label = "Figure 1",
+      engine = "stata",
+      incomplete = TRUE,
+      requires_engine = "mathematica",
+      blocked_reason = "Requires Mathematica."
+    ),
+    list(
+      id = "tab_h1",
+      type = "table",
+      label = "Table H.1",
+      engine = "stata",
+      incomplete = TRUE,
+      data_unavailable = "proprietary",
+      blocked_reason = "Proprietary deposit."
+    )
+  )
+  jobs <- audit_jobs_from_replications(reps)
+  expect_identical(jobs$what[is.na(jobs$skip_reason)], "fig_5")
+  skipped <- jobs[!is.na(jobs$skip_reason), , drop = FALSE]
+  expect_setequal(skipped$what, c("fig_1", "tab_h1"))
+  expect_true(all(grepl("Mathematica|proprietary", skipped$skip_reason)))
 })
 
 test_that("study_required_system_engines() collects Mathematica from incomplete steps", {
@@ -215,4 +244,40 @@ test_that("study_partial_replication_notice() is driven by yaml incomplete steps
   )
   expect_false(ok$partial)
   expect_null(ok$message)
+})
+
+test_that("data_unavailable proprietary steps get distinct messaging and audit skip", {
+  entry <- list(
+    id = "tab_h1",
+    type = "table",
+    label = "Table H.1",
+    incomplete = TRUE,
+    data_unavailable = "proprietary",
+    blocked_reason = "CaixaBank tourist expenditure data not in the public deposit."
+  )
+  expect_identical(step_data_unavailable(entry), "proprietary")
+  expect_identical(
+    missing_data_message("Table H.1", "proprietary", "not_available"),
+    "Table H.1 not available because of proprietary data"
+  )
+  meta <- list(steps = list(
+    list(id = "tab_1", type = "table", code = "code/tab_1.do"),
+    entry
+  ))
+  expect_identical(
+    step_missing_engine_message(meta, "tab_h1", output_exists = FALSE),
+    "Table H.1 not available because of proprietary data"
+  )
+  expect_error(
+    stop_if_step_blocked(meta, "tab_h1", output_exists = FALSE),
+    "proprietary data"
+  )
+  notice <- study_partial_replication_notice(meta, include_registry_audit = FALSE)
+  expect_true(notice$partial)
+  expect_identical(notice$data_unavailable, "proprietary")
+  expect_match(notice$message, "proprietary data")
+  reps <- folder_display_replications(meta)
+  ids <- vapply(reps, function(x) x$id, character(1))
+  expect_true("tab_1" %in% ids)
+  expect_false("tab_h1" %in% ids)
 })

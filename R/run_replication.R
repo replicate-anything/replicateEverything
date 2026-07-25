@@ -210,7 +210,96 @@ missing_engine_message <- function(output, engine, mode = c("not_available", "no
   }
 }
 
+#' Structured data-unavailability class from yaml (e.g. proprietary)
+#'
+#' Reads \code{data_unavailable:} (or legacy \code{unavailable_reason:} /
+#' \code{requires_data:}) on an incomplete step. Tokens are lower-case
+#' (\code{proprietary}, \code{restricted}, \code{missing}, \ldots).
+#' @keywords internal
+step_data_unavailable <- function(entry) {
+  if (is.null(entry) || !is.list(entry)) {
+    return(NULL)
+  }
+  if (!isTRUE(entry$incomplete %||% FALSE)) {
+    return(NULL)
+  }
+  for (field in c("data_unavailable", "unavailable_reason", "requires_data")) {
+    val <- entry[[field]] %||% NULL
+    if (is.null(val) || !length(val)) {
+      next
+    }
+    tok <- tolower(trimws(as.character(val[[1]] %||% val)))
+    if (nzchar(tok) && !tok %in% c("false", "no", "0", "na", "null", "none")) {
+      return(tok)
+    }
+  }
+  NULL
+}
+
+#' Human label for a data_unavailable token
+#' @keywords internal
+normalize_data_unavailable_label <- function(token) {
+  tok <- tolower(trimws(as.character(token[[1]] %||% token)))
+  if (!nzchar(tok)) {
+    return(NULL)
+  }
+  known <- c(
+    proprietary = "proprietary data",
+    restricted = "restricted data",
+    confidential = "confidential data",
+    missing = "missing data",
+    unavailable = "unavailable data"
+  )
+  if (tok %in% names(known)) {
+    return(unname(known[[tok]]))
+  }
+  paste(tok, "data")
+}
+
+#' Message when an output cannot be shown or re-run due to unavailable data
+#' @keywords internal
+missing_data_message <- function(output, data_class, mode = c("not_available", "not_reproducible")) {
+  mode <- match.arg(mode)
+  output <- trimws(as.character(output[[1]] %||% output))
+  data_class <- trimws(as.character(data_class[[1]] %||% data_class))
+  if (!nzchar(output)) {
+    output <- "Output"
+  }
+  if (!nzchar(data_class)) {
+    data_class <- "unavailable data"
+  }
+  label <- normalize_data_unavailable_label(data_class) %||% data_class
+  if (identical(mode, "not_available")) {
+    paste0(output, " not available because of ", label)
+  } else {
+    paste0(output, " not reproducible because of ", label)
+  }
+}
+
+#' Collect data_unavailable tokens from incomplete steps
+#' @keywords internal
+study_data_unavailable_classes <- function(meta) {
+  entries <- if (is.list(meta) && !is.null(meta$steps)) {
+    tryCatch(collect_study_step_entries(meta), error = function(e) list())
+  } else if (is.list(meta) && length(meta) > 0L && is.list(meta[[1]])) {
+    meta
+  } else {
+    list()
+  }
+  classes <- character(0)
+  for (entry in entries) {
+    tok <- step_data_unavailable(entry)
+    if (!is.null(tok)) {
+      classes <- c(classes, tok)
+    }
+  }
+  unique(classes)
+}
+
 #' User-facing blocked-step message, distinguishing absent vs baked-but-blocked
+#'
+#' Prefers \code{requires_engine:} phrasing, then \code{data_unavailable:}, then
+#' free-text \code{blocked_reason:}.
 #'
 #' @param output_exists Whether a declared display artifact is already on disk
 #'   (or otherwise fetchable). When \code{TRUE}, the step is "not reproducible";
@@ -226,12 +315,13 @@ step_missing_engine_message <- function(meta, what, output_exists = FALSE) {
   if (!nzchar(label)) {
     label <- as.character(what)
   }
+  mode <- if (isTRUE(output_exists)) "not_reproducible" else "not_available"
   if (!is.null(engine)) {
-    return(missing_engine_message(
-      label,
-      engine,
-      mode = if (isTRUE(output_exists)) "not_reproducible" else "not_available"
-    ))
+    return(missing_engine_message(label, engine, mode = mode))
+  }
+  data_tok <- step_data_unavailable(entry)
+  if (!is.null(data_tok)) {
+    return(missing_data_message(label, data_tok, mode = mode))
   }
   reason <- as.character(entry$blocked_reason %||% "")
   if (!nzchar(reason)) {
@@ -304,10 +394,13 @@ format_partial_replication_message <- function(
   engines = character(0),
   incomplete_n = 0L,
   audit_failed = 0L,
-  audit_timed_out = 0L
+  audit_timed_out = 0L,
+  data_unavailable = character(0)
 ) {
   engines <- unique(as.character(engines))
   engines <- engines[nzchar(engines)]
+  data_unavailable <- unique(tolower(as.character(data_unavailable)))
+  data_unavailable <- data_unavailable[nzchar(data_unavailable)]
   incomplete_n <- as.integer(incomplete_n %||% 0L)
   audit_failed <- as.integer(audit_failed %||% 0L)
   audit_timed_out <- as.integer(audit_timed_out %||% 0L)
@@ -322,7 +415,16 @@ format_partial_replication_message <- function(
         if (length(engines) == 1L) " installation" else " installations"
       )
     )
-  } else if (incomplete_n > 0L) {
+  }
+  if (length(data_unavailable) > 0L) {
+    labels <- vapply(data_unavailable, function(tok) {
+      normalize_data_unavailable_label(tok) %||% tok
+    }, character(1))
+    bits <- c(
+      bits,
+      paste0("some outputs unavailable due to ", oxford_join(unique(labels)))
+    )
+  } else if (length(engines) == 0L && incomplete_n > 0L) {
     bits <- c(
       bits,
       sprintf(
@@ -334,7 +436,12 @@ format_partial_replication_message <- function(
   }
   if (audit_timed_out > 0L) {
     bits <- c(bits, "some audit runs timed out")
-  } else if (audit_failed > 0L && length(engines) == 0L && incomplete_n == 0L) {
+  } else if (
+    audit_failed > 0L &&
+      length(engines) == 0L &&
+      length(data_unavailable) == 0L &&
+      incomplete_n == 0L
+  ) {
     bits <- c(bits, "some audit runs failed or are incomplete")
   }
 
@@ -391,6 +498,7 @@ study_partial_replication_notice <- function(
   }, character(1))
   incomplete_ids <- incomplete_ids[nzchar(incomplete_ids)]
   engines <- study_required_system_engines(meta)
+  data_classes <- study_data_unavailable_classes(meta)
 
   audit_failed <- 0L
   audit_timed_out <- 0L
@@ -410,13 +518,15 @@ study_partial_replication_notice <- function(
     engines = engines,
     incomplete_n = incomplete_n,
     audit_failed = audit_failed,
-    audit_timed_out = audit_timed_out
+    audit_timed_out = audit_timed_out,
+    data_unavailable = data_classes
   )
   partial <- !is.null(msg) && nzchar(msg)
   list(
     partial = partial,
     message = msg,
     required_engines = engines,
+    data_unavailable = data_classes,
     incomplete_ids = incomplete_ids,
     incomplete_n = incomplete_n,
     audit_failed = audit_failed,

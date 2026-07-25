@@ -22,7 +22,7 @@ Turn delivered analysis materials into a **folder-backed study repository** wire
 | Rule | Detail |
 |------|--------|
 | **Yaml is the execute recipe** | `replication.yml` + [run_replication()] are the one verb to run a step. Scripts only define helpers. |
-| **Light repo / wiring-not-shipping** | Keep the study **as light as possible**. **Default Pattern B:** surgical access step → `outputs/` via file ids (`?format=original`). Exception Pattern A: silent materialize → `data/`. Never full DVN zip unless Pattern C justified. Thin runners; package helpers only. See root `AI.md` and Step 5. |
+| **Light repo / wiring-not-shipping** | Keep the study **as light as possible**. **Default Pattern B:** surgical access step → `outputs/` via file ids (`?format=original`). Exception Pattern A: silent materialize → `data/` only when fetch is **not** a claimed step. Never full DVN zip unless Pattern C justified. **OpenICPSR:** usually no public file API → commit **needed** inputs under `data/`, still yaml-declare; do not ship unused deposit bulk (`openicpsr_to_replicateEverything.md`). Thin runners; package helpers only. See root `AI.md` and Step 5. |
 | **Minimal step yaml** | Declare `outputs:` (not deprecated `artifact:`). **Omit** empty `parents: []`. Format children: no unused `label:`. Use `description:` for Shiny hover + Display title (`label_full`). |
 | **Pure helpers** | `make_<id>()` / `format_<id>()` only — **no required** `sys.nframe()` footers. Prefer replicateEverything / established packages over study-local utilities. |
 | **Code tips** | [get_code()] defaults to `mode = "definitions"`; `mode = "run"` appends the yaml-implied load → make → format recipe. Tips are engine-aware (R / Stata / Python). |
@@ -127,9 +127,11 @@ author pipeline.
 2. **Walk README order** — each numbered author step becomes one or more `type: transform` steps (or a table/figure if it only produces a display output).
 3. **Follow writes** — every `save`, `export`, `write.csv`, `ggsave` becomes an `outputs:` path. Use flat `outputs/<step_id>.<ext>` for transform steps (e.g. `outputs/analysis_data.rds`); display sinks use `outputs/<id>.html` or `.png`.
 4. **Split shared prep** — if three tables all `use` the same constructed `.dta`, declare **one** transform step and set `parents: [that_step]` on each table (do not duplicate prep inside every table script).
-5. **Parallel engines** — when authors ship both Stata and R for the same table, use **separate step ids** (`tab_1`, `tab_1_stata`) with optional `group: tab_1`. They may read different inputs (raw vs cleaned) if that matches the author code.
-6. **Format children** — when Display needs HTML/PNG but analysis returns a model or temp file, add `type: format` with `parent: <table_or_figure_id>` (or rely on auto-generated `<id>_format` from legacy migration).
-7. **Draw the graph** — sanity-check: every non-root input is either under `data/` or produced by a listed parent; no cycles; `given = "parents"` on a table only requires immediate parents' `outputs/` to exist.
+5. **Wrapper granularity** — prefer author wrappers / master scripts as DAG nodes (e.g. one batch transform feeding many thin tables), **not** one node per policy or micro-script when the README runs them in batch. OpenICPSR AER packages often have ~100 policy `.do` files feeding a handful of wrappers — map README tables, then collapse.
+6. **Parallel engines** — when authors ship both Stata and R for the same table, use **separate step ids** (`tab_1`, `tab_1_stata`) with optional `group: tab_1`. They may read different inputs (raw vs cleaned) if that matches the author code.
+7. **Format children** — when Display needs HTML/PNG but analysis returns a model or temp file, add `type: format` with `parent: <table_or_figure_id>` (or rely on auto-generated `<id>_format` from legacy migration).
+8. **Blocked / unavailable steps** — before marking unavailable, search deposit + study for **precomputed** outputs. Then declare `incomplete: true` plus a structured class (see **Blocked steps** below).
+9. **Draw the graph** — sanity-check: every non-root input is either under `data/` or produced by a listed parent; no cycles; `given = "parents"` on a table only requires immediate parents' `outputs/` to exist.
 
 Example (Fearon & Laitin):
 
@@ -170,7 +172,31 @@ sidebar and labels are unused there.
 | `data` / `inputs` | Files loaded or declared as inputs |
 | `outputs` | Files written under `outputs/` (first displayable path is used for Shiny Display) |
 | `dependencies` | Step-level R packages (unioned with `paper.dependencies`) |
+| `incomplete` | `true` when the step cannot be produced here — **audit skips** (not success/fail) |
+| `requires_engine` | System engine token when missing engine is the block (`mathematica`, `matlab`, …) |
+| `data_unavailable` | Data-access class when proprietary/restricted/missing data is the block (`proprietary`, …) |
+| `blocked_reason` | Human text for Shiny hover / tooltips |
 | `languages` (root) | Study engines for registry / system checks |
+
+### Blocked steps (`incomplete:` / engines / proprietary data)
+
+Three **distinct** classes — do not conflate them with audit fail/timeout:
+
+| Class | Declare | Messages / UX | Audit |
+|-------|---------|---------------|-------|
+| Missing system engine | `incomplete: true` + `requires_engine: mathematica` (+ `blocked_reason:`) | “`{output} not available because of missing {Engine} engine`” vs “`… not reproducible …`” when baked; Shiny greys Display/Run; Mathematica (etc.) icon; study **partial-replication** popup | Skipped |
+| Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` (+ `blocked_reason:`) | Distinct data-unavailable icon + study popup; DAG mark | Skipped (unavailable ≠ success/failure) |
+| Other incomplete | `incomplete: true` + `blocked_reason:` | Generic not available / not reproducible | Skipped |
+
+**Before** concluding unavailable: grep the deposit and study for precomputed gold
+(`outputs/`, results folders, paper supplements). Empty OpenICPSR placeholders ≠
+“no gold exists.” Prefer fail-fast helpers (`step_blocked_reason()`,
+`missing_engine_message()`, `study_partial_replication_notice()`) over silent
+disappearance.
+
+Partial-replication study popup is driven by yaml `incomplete:` /
+`requires_engine:` / `data_unavailable:` and may be enriched from the latest
+registry audit snapshot (failures/timeouts) — see Shiny + `run_replication.R`.
 
 **Edges:** `parents: [step_a, step_b]` only — `requires:` / `depends_on:` are a hard error. Raw files are not parents — list them under `inputs:`.
 
@@ -526,7 +552,7 @@ binaries in git. Keep the study repo **as light as possible**.
 | Public Dataverse/ICPSR file id(s) known | **Pattern B (default):** surgical `access_*` step (`engine: dataverse` or thin `fetch_dataverse_file()`) → `outputs/…`. Document `api/access/datafile/<id>?format=original`. Gitignore fetched binaries. Later steps `parents:` the access step. |
 | Many raw roots; fetch is **not** a claimed product | **Pattern A (exception):** declare under `dataverse.files` / `data_files:` → package [materialize_declared_data()] into `data/`. |
 | Author scripts need deposit layout | **Pattern C:** manifest with **file ids** (surgical per-file into `outputs/deposit/`). Use `fetch: archive_original` **only** when file ids cannot reconstruct the needed tree — document why. |
-| No usable fetch API (private / offline / some OpenICPSR) | **Commit fallback:** ≤50 MB under `data/`; else registry data area. |
+| No usable fetch API (private / offline / **OpenICPSR** typical) | **Commit fallback:** download once to `original_studies/`; commit **only needed** inputs ≤50 MB under `data/`; yaml-declare; do not ship unused deposit bulk. Else registry data area. See `openicpsr_to_replicateEverything.md`. |
 
 ```yaml
 # Pattern B — surgical access step (preferred)
@@ -815,7 +841,10 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 
 ## Common pitfalls
 
-- **Heavy study repo** — committed raw that Dataverse/ICPSR can serve, or study-local download R; prefer yaml wiring + materialize (`check_study_submission.md` § B)
+- **Heavy study repo** — committed raw that Dataverse can serve surgically, or shipping unused OpenICPSR bulk; prefer yaml wiring (`check_study_submission.md` § B)
+- **One node per micro-script** — prefer wrapper-granularity DAG from README tables
+- **Marking unavailable without searching for precomputed gold** — check deposit/repo `outputs/` first
+- **Conflating engine-missing, proprietary-data, and audit fail** — use `requires_engine:` vs `data_unavailable:`; audit **skips** `incomplete:` (not fail)
 - **Broken code links** — `source("../helpers/foo.R")` from `code/tables/tab_1.R` must resolve to `code/helpers/foo.R`; run `check_replication()` before submit
 - **Inventing the DAG without reading the author repo** — wrong `parents:` breaks Run and inheritance; always trace README + file I/O first (Step 1b)
 - **Skipping Step 4a** — yaml missing `reghdfe`, `require`, `haven`, or `pandas` because only the main script was read
@@ -830,4 +859,4 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 - Forgetting to update `index.csv` `repo` column (sync/refresh handles this)
 - Extension study listing every base step — only `inherit:` / local steps belong in the extension yaml
 - Tests without `replicateEverything.index` override for the new `repo` slug
-- Pure-download as `access_data` step when `dataverse.files` wiring would suffice
+- Using Pattern A / silent materialize when Pattern B access → `outputs/` would make the fetch a claimed step

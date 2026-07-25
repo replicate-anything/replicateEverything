@@ -1491,6 +1491,7 @@ study_audit_ui <- function(audit, compact = FALSE) {
     )
   } else {
     reg_ok <- (reg$failed %||% 0L) == 0L
+    n_skip <- as.integer(reg$skipped %||% 0L)
     reg_class <- if (reg_ok) "study-audit-ok" else "study-audit-fail"
     tagList(
       tags$p(
@@ -1498,10 +1499,11 @@ study_audit_ui <- function(audit, compact = FALSE) {
         tags$span(
           class = paste("study-audit-status", reg_class),
           sprintf(
-            "Registry audit%s: %d / %d passed",
+            "Registry audit%s: %d / %d passed%s",
             if (nzchar(reg$finished_at %||% "")) paste0(" (", reg$finished_at, ")") else "",
             reg$passed %||% 0L,
-            reg$total %||% 0L
+            reg$total %||% 0L,
+            if (n_skip > 0L) sprintf(" (%d skipped)", n_skip) else ""
           )
         )
       ),
@@ -1523,6 +1525,29 @@ study_audit_ui <- function(audit, compact = FALSE) {
           }),
           if (nrow(reg$failures) > 6L) {
             tags$li(class = "text-muted", sprintf("… and %d more", nrow(reg$failures) - 6L))
+          }
+        )
+      },
+      if (n_skip > 0L && !is.null(reg$skips) && nrow(reg$skips) > 0L) {
+        tags$ul(
+          class = "study-audit-skips small mb-0",
+          lapply(seq_len(min(6L, nrow(reg$skips))), function(i) {
+            row <- reg$skips[i, , drop = FALSE]
+            label <- row$object_label %||% row$object %||% "?"
+            eng <- row$engine %||% "?"
+            snippet <- trimws(as.character(row$error_snippet %||% ""))
+            if (nchar(snippet) > 80L) {
+              snippet <- paste0(substr(snippet, 1L, 77L), "...")
+            }
+            tags$li(
+              tags$span(class = "study-audit-skip-badge", "Skipped"),
+              " ",
+              tags$code(paste0(label, " (", eng, ")")),
+              if (nzchar(snippet)) paste0(" — ", snippet)
+            )
+          }),
+          if (nrow(reg$skips) > 6L) {
+            tags$li(class = "text-muted", sprintf("… and %d more skipped", nrow(reg$skips) - 6L))
           }
         )
       }
@@ -1614,18 +1639,28 @@ dependency_hint_modal <- function(session, doi, audit = NULL, title = "Missing d
   ))
 }
 
-partial_replication_modal <- function(message, engines = character(0)) {
+partial_replication_modal <- function(message, engines = character(0), data_unavailable = character(0)) {
   msg <- trimws(as.character(message %||% ""))
   if (!nzchar(msg)) {
     return(invisible(FALSE))
   }
+  show_math <- any(tolower(engines) %in% c("mathematica", "wolfram", "wolframscript")) ||
+    grepl("Mathematica", msg, fixed = TRUE)
+  show_data <- length(data_unavailable) > 0L ||
+    grepl("proprietary data|restricted data|unavailable due to", msg, ignore.case = TRUE)
   showModal(modalDialog(
     title = "Partial replication",
     tags$div(
       class = "d-flex align-items-start gap-2",
-      if (any(tolower(engines) %in% c("mathematica", "wolfram", "wolframscript")) ||
-          grepl("Mathematica", msg, fixed = TRUE)) {
+      if (show_math) {
         tags$span(class = "engine-badge mt-1", title = "Mathematica", engine_icon_mathematica())
+      },
+      if (show_data) {
+        tags$span(
+          class = "engine-badge mt-1",
+          title = "Data not available",
+          engine_icon_data_unavailable()
+        )
       },
       tags$p(class = "mb-0", msg)
     ),
@@ -1641,11 +1676,22 @@ registry_health_bar_ui <- function(summary) {
   }
   total <- as.integer(summary$runs %||% 0)
   ok <- as.integer(summary$success %||% 0)
+  skipped <- as.integer(summary$skipped %||% 0)
   if (!is.finite(total) || total <= 0L) {
     return(NULL)
   }
-  ok <- max(0L, min(ok, total))
-  pct_ok <- 100 * ok / total
+  attempted <- max(0L, total - max(0L, skipped))
+  if (attempted <= 0L) {
+    return(tags$div(
+      class = "registry-health-wrap",
+      tags$span(
+        class = "registry-health-label",
+        sprintf("%d skipped (no runnable audit jobs)", skipped)
+      )
+    ))
+  }
+  ok <- max(0L, min(ok, attempted))
+  pct_ok <- 100 * ok / attempted
   pct_fail <- 100 - pct_ok
   finished <- summary$finished_at %||% ""
   tags$div(
@@ -1653,9 +1699,10 @@ registry_health_bar_ui <- function(summary) {
     tags$div(
       class = "registry-health-bar",
       title = sprintf(
-        "Registry audit: %d of %d tables/figures replicating%s",
+        "Registry audit: %d of %d tables/figures replicating%s%s",
         ok,
-        total,
+        attempted,
+        if (skipped > 0L) sprintf(" (%d skipped)", skipped) else "",
         if (nzchar(finished)) paste0(" (", finished, ")") else ""
       ),
       tags$div(class = "registry-health-ok", style = sprintf("width:%.4f%%", pct_ok)),
@@ -1663,7 +1710,12 @@ registry_health_bar_ui <- function(summary) {
     ),
     tags$span(
       class = "registry-health-label",
-      sprintf("%d / %d replicating", ok, total)
+      sprintf(
+        "%d / %d replicating%s",
+        ok,
+        attempted,
+        if (skipped > 0L) sprintf(" (%d skipped)", skipped) else ""
+      )
     )
   )
 }
@@ -1863,6 +1915,29 @@ engine_icon_mathematica <- function() {
   )
 }
 
+# Distinct from Mathematica script M: lock-style mark for proprietary / missing data.
+engine_icon_data_unavailable <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    tags$circle(cx = "12", cy = "12", r = "11", fill = "#6B7280"),
+    tags$rect(
+      x = "8", y = "11", width = "8", height = "6", rx = "1",
+      fill = "#ffffff"
+    ),
+    tags$path(
+      d = "M9.5 11 V9 a2.5 2.5 0 0 1 5 0 v2",
+      fill = "none",
+      stroke = "#ffffff",
+      `stroke-width` = "1.6",
+      `stroke-linecap` = "round"
+    )
+  )
+}
+
 engine_icons_display <- function(
   has_r = FALSE,
   has_stata = FALSE,
@@ -2010,6 +2085,25 @@ entry_requires_engine_token <- function(x) {
     return("")
   }
   tolower(as.character(req))
+}
+
+entry_data_unavailable_token <- function(x) {
+  raw <- tryCatch({
+    x$data_unavailable[[1]] %||% x$data_unavailable %||%
+      x$unavailable_reason[[1]] %||% x$unavailable_reason %||% ""
+  }, error = function(e) "")
+  raw <- tolower(trimws(as.character(raw)))
+  if (nzchar(raw) && !raw %in% c("false", "no", "0", "na", "null", "none")) {
+    return(raw)
+  }
+  tok <- tryCatch(
+    replicate_fn("step_data_unavailable", x),
+    error = function(e) NULL
+  )
+  if (is.null(tok)) {
+    return("")
+  }
+  tolower(as.character(tok))
 }
 
 parse_index_collections <- function(row) {
@@ -2239,12 +2333,18 @@ study_dag_chain_ui <- function(path) {
       label
     }
     desc <- trimws(as.character(node$description %||% ""))
+    incomplete <- isTRUE(node$incomplete %||% FALSE)
+    data_tok <- tolower(trimws(as.character(node$data_unavailable %||% "")))
     tip <- if (identical(node$kind %||% "", "data")) {
       if (nzchar(desc)) {
         paste0("Raw data\n", desc)
       } else {
         "Raw data"
       }
+    } else if (incomplete && nzchar(data_tok)) {
+      paste0(label, " — data not available (", data_tok, ")")
+    } else if (incomplete) {
+      paste0(label, " — incomplete / unavailable")
     } else if (nzchar(desc)) {
       paste0(label, " — ", desc)
     } else {
@@ -2252,7 +2352,8 @@ study_dag_chain_ui <- function(path) {
     }
     node_class <- paste(
       "study-dag-node",
-      if (identical(node$kind %||% "", "data")) "is-data" else "is-step"
+      if (identical(node$kind %||% "", "data")) "is-data" else "is-step",
+      if (incomplete && nzchar(data_tok)) "is-data-unavailable" else if (incomplete) "is-incomplete" else ""
     )
     tags$span(class = node_class, title = tip, short)
   })
@@ -2282,7 +2383,11 @@ study_dag_legend_ui <- function() {
     class = "study-dag-legend small text-muted",
     tags$span(class = "me-1", "Key:"),
     tags$span(class = "study-dag-node is-data study-dag-legend-swatch me-1", "raw data"),
-    tags$span(class = "study-dag-node is-step study-dag-legend-swatch", "analysis step")
+    tags$span(class = "study-dag-node is-step study-dag-legend-swatch me-1", "analysis step"),
+    tags$span(
+      class = "study-dag-node is-step is-data-unavailable study-dag-legend-swatch",
+      "data unavailable"
+    )
   )
 }
 
@@ -2490,6 +2595,7 @@ prep_to_df <- function(prep_steps) {
       incomplete = isTRUE(x$incomplete %||% FALSE),
       blocked_reason = as.character(x$blocked_reason %||% ""),
       requires_engine = entry_requires_engine_token(x),
+      data_unavailable = entry_data_unavailable_token(x),
       stringsAsFactors = FALSE
     )
   })
@@ -2548,6 +2654,7 @@ replications_to_df <- function(reps) {
       incomplete = isTRUE(primary$incomplete %||% FALSE),
       blocked_reason = as.character(primary$blocked_reason %||% ""),
       requires_engine = entry_requires_engine_token(primary),
+      data_unavailable = entry_data_unavailable_token(primary),
       stringsAsFactors = FALSE
     )
   })
@@ -3613,7 +3720,49 @@ as_table_ui <- function(result) {
     return(tableOutput("dynamic_table"))
   }
 
-  HTML(as.character(obj))
+  # Stata result lists must not fall through to as.character() — that dumps
+  # "path NULL study_root id" into Display instead of the table/log HTML.
+  if (is.list(obj) && !is.data.frame(obj)) {
+    path <- obj$output_path %||% obj$smcl_path %||% NULL
+    if (is.character(path) && length(path) == 1L && nzchar(path) && file.exists(path)) {
+      ext <- tolower(tools::file_ext(path))
+      if (identical(ext, "html")) {
+        html <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+        return(tags$div(
+          class = "replication-table table-responsive",
+          HTML(replicate_fn("normalize_html_table", html))
+        ))
+      }
+      lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
+      text <- paste(lines, collapse = "\n")
+      if (requireNamespace("htmltools", quietly = TRUE)) {
+        text <- htmltools::htmlEscape(text)
+      }
+      return(tags$div(
+        class = "replication-table table-responsive",
+        HTML(paste0('<pre class="stata-output replication-table">', text, "</pre>"))
+      ))
+    }
+    return(tags$div(
+      class = "alert alert-warning",
+      "Could not format this replication result for display. ",
+      "Re-run the step, or check that a format_* helper produced HTML."
+    ))
+  }
+
+  if (is.character(obj) && length(obj) >= 1L) {
+    return(tags$pre(
+      class = "mb-0",
+      style = "white-space: pre-wrap;",
+      paste(obj, collapse = "\n")
+    ))
+  }
+
+  tags$pre(
+    class = "mb-0",
+    style = "white-space: pre-wrap;",
+    paste(utils::capture.output(print(obj)), collapse = "\n")
+  )
 }
 
 contribute_prose <- function(..., class = NULL) {
@@ -5204,6 +5353,17 @@ ui <- tagList(
     .study-dag-node.is-step {
       background: #f1f3f5;
     }
+    .study-dag-node.is-incomplete {
+      opacity: 0.72;
+      border: 1px dashed #adb5bd;
+    }
+    .study-dag-node.is-data-unavailable {
+      background: #f8f9fa;
+      border: 1px dashed #868e96;
+      color: #495057;
+      text-decoration: line-through;
+      text-decoration-thickness: 1px;
+    }
     .study-dag-legend {
       text-align: center;
     }
@@ -5407,10 +5567,26 @@ ui <- tagList(
     .study-audit-ok { color: #198754; }
     .study-audit-warn { color: #856404; }
     .study-audit-fail { color: #b02a37; }
+    .study-audit-skip { color: #6c757d; }
     .study-audit-detail { font-weight: 400; }
     .study-audit-failures {
       margin: 0.25rem 0 0.5rem 1rem;
       padding-left: 0.25rem;
+    }
+    .study-audit-skips {
+      margin: 0.25rem 0 0.5rem 1rem;
+      padding-left: 0.25rem;
+      color: #6c757d;
+    }
+    .study-audit-skip-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #6c757d;
+      background: #e9ecef;
+      border-radius: 0.25rem;
+      padding: 0.05rem 0.35rem;
+      margin-right: 0.15rem;
     }
     .study-audit-summary {
       font-size: 0.82rem;
@@ -5931,7 +6107,8 @@ server <- function(input, output, session) {
       if (!is.null(notice) && isTRUE(notice$partial) && nzchar(notice$message %||% "")) {
         partial_replication_modal(
           notice$message,
-          engines = notice$required_engines %||% character(0)
+          engines = notice$required_engines %||% character(0),
+          data_unavailable = notice$data_unavailable %||% character(0)
         )
       }
     }
@@ -6342,10 +6519,18 @@ server <- function(input, output, session) {
       }
       badge_text <- if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
       req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
+      data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
       return(tags$div(
         class = row_class,
         if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
           tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+        },
+        if (nzchar(data_tok)) {
+          tags$span(
+            class = "engine-badge",
+            title = paste0("Data not available (", data_tok, ")"),
+            engine_icon_data_unavailable()
+          )
         },
         tags$span(label, class = "replication-label", title = label_full),
         tags$div(
@@ -6523,6 +6708,7 @@ server <- function(input, output, session) {
             step_engine <- row$engine[[1]] %||% "r"
             safe_id <- gsub("[^a-zA-Z0-9]", "_", step_id)
             req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
+            data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
             engine_badge <- tagList(
               switch(
                 step_engine,
@@ -6532,6 +6718,13 @@ server <- function(input, output, session) {
               ),
               if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
                 tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+              },
+              if (nzchar(data_tok)) {
+                tags$span(
+                  class = "engine-badge",
+                  title = paste0("Data not available (", data_tok, ")"),
+                  engine_icon_data_unavailable()
+                )
               }
             )
             step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
