@@ -1,10 +1,10 @@
 Package: replicateEverything
 Title: Tools to Replicate Empirical Research Papers
-Version: 0.7.7
+Version: 0.7.8
 Authors@R: c(
-    person("Macartan", "Humphreys", email = "macartan.humphreys@wzb.eu", role = c("aut")),
-    person("Cord", "Masche", email = "cord.masche@wzb.eu", role = c("aut")),
-    person("Vermon", "Washington", email = "vermon.washington@wzb.eu", role = c("aut", "cre")))
+    person("Macartan", "Humphreys", email = "macartan.humphreys@wzb.eu", role = c("ctb")),
+    person("Cord", "Masche", email = "cord.masche@wzb.eu", role = c("ctb")),
+    person("Vermon", "Washington", email = "vermon.washington@wzb.eu", role = c("ctb", "cre")))
 Description: Provides tools for discovering and running computational replications of
     empirical research papers. The package connects to a replication registry, retrieves
     replication materials (data, code, and metadata), and reproduces figures and tables
