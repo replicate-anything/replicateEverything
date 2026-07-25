@@ -17,10 +17,13 @@
   blocks `--more--` paging, live `pause` prompts, and Break-key `r(1)` continue
   dialogs during Windows `/e` batch runs. (`varabbrev off` is intentionally
   not forced: many deposits rely on default abbreviation matching.)
-* **Windows:** `run_stata_system2()` starts Stata with `processx`
-  `windows_hide = TRUE` and discards stdout/stderr (Stata `/e` already writes a
-  `.log`). Piping without a reader could fill the OS pipe and stall Stata;
-  a visible flashing taskbar icon then invites cancel → `--Break--` / r(1).
+* **Windows (real Continue/Break fix):** `stata_batch_args()` now passes
+  `/e /i /q` (not bare `/e`). Stata's `/i` suppresses the batch taskbar icon
+  ([GSW] B.5). Without it, clicking that icon opens "cancel the batch job?",
+  injects `--Break--` / r(1), and cascades "Would you like the batch job to
+  continue?" dialogs as nested do-files unwind — `set more off` cannot stop
+  that. `run_stata_system2()` keeps `processx` `windows_hide = TRUE` and no
+  longer falls back to a *visible* processx child if hide setup fails.
 
 ## Clear messaging for steps that cannot be created (`incomplete:` / `blocked_reason:`)
 

@@ -183,8 +183,15 @@ stata_shell_do_path <- function(path) {
 
 #' Stata command-line arguments for non-interactive do-file execution
 #'
-#' Windows: \code{/e do file.do}. Unix/Linux/macOS: \code{-b file.do}.
-#' Paths with spaces are shortened on Windows when possible.
+#' Windows: \code{/e /i /q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
+#'
+#' On Windows, \code{/e} exits when the job finishes (no end-of-job OK click).
+#' \code{/i} suppresses the Stata taskbar icon ([GSW] B.5). Without \code{/i},
+#' the icon appears for the whole run; clicking it opens "cancel the batch
+#' job?", which injects \code{--Break--} / \code{r(1)} and then cascades
+#' "Would you like the batch job to continue?" dialogs as nested do-files
+#' unwind. \code{/q} suppresses the logo. Paths with spaces are shortened on
+#' Windows when possible.
 #'
 #' @param do_path Path to the do-file.
 #' @return Character vector of arguments for \code{system2()}.
@@ -192,9 +199,9 @@ stata_shell_do_path <- function(path) {
 stata_batch_args <- function(do_path) {
   path <- stata_shell_do_path(do_path)
   if (.Platform$OS.type == "windows") {
-    return(c("/e", "do", path))
+    return(c("/e", "/i", "/q", "do", path))
   }
-  c("-b", path)
+  c("-b", "-q", path)
 }
 
 #' @keywords internal
@@ -264,9 +271,9 @@ cleanup_stata_stray_batch_logs <- function(dirs, log_name, keep = NULL) {
 #' @keywords internal
 run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   timeout <- as.integer(timeout[1])
-  # Windows: prefer R system2(invisible=TRUE) so the Stata GUI never appears on
-  # the taskbar. Clicking that icon cancels the batch job with --Break-- r(1)
-  # even under nobreak. processx is used when a timeout is requested.
+  # Windows: always hide the process. Combined with /i in stata_batch_args(),
+  # this keeps the cancel-batch taskbar dialog from appearing. Clicking that
+  # dialog injects --Break-- r(1) even under nobreak / capture noisily.
   use_timeout <- length(timeout) == 1L && !is.na(timeout) && timeout > 0L
   if (.Platform$OS.type == "windows" && !use_timeout) {
     return(system2(
@@ -281,8 +288,8 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   if (requireNamespace("processx", quietly = TRUE)) {
     # Discard stdio (Stata /e already writes a .log). Piping to "|" without a
     # reader can fill the OS pipe buffer and stall Stata mid-command.
-    # windows_hide: keep the Stata GUI off the taskbar so a click does not
-    # inject Break / the "cancel the batch job?" dialog mid-run.
+    # windows_hide: hide the GUI window. Never fall back to a visible process
+    # — a visible / flashing taskbar entry invites cancel → --Break-- / r(1).
     proc_args <- list(
       command = stata,
       args = batch_args,
@@ -294,11 +301,20 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
     }
     proc <- tryCatch(
       do.call(processx::process$new, proc_args),
-      error = function(e) {
-        proc_args$windows_hide <- NULL
-        do.call(processx::process$new, proc_args)
-      }
+      error = function(e) e
     )
+    if (inherits(proc, "error")) {
+      if (.Platform$OS.type == "windows") {
+        # Keep the run hidden even if processx cannot set windows_hide
+        # (never spawn a visible processx child — that invites Break dialogs).
+        return(as.integer(system2(
+          stata, batch_args,
+          wait = TRUE, stdout = "", stderr = "",
+          invisible = TRUE
+        )))
+      }
+      stop(proc)
+    }
     proc$wait(timeout = timeout * 1000)
     if (proc$is_alive()) {
       proc$kill()
