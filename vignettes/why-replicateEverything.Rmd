@@ -16,9 +16,6 @@ vignette: >
 
 You can use it from `R` or your [browser](https://shiny2.wzb.eu/ipi/replicate/).
 
-**replicateEverything does not replace** long-term structured repositories such as ICPSR and Dataverse. It is an **access point**. We are not there yet, but an aim is for it to read those repositories directly.
-
-For preparing a deposit, follow the [AEA Data Editor guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html) and the [Data and Code Availability Standard](https://datacodestandard.org/) (data–code separation and related rules). Beyond those, we ask for two things: a `replication.yml` file, and data/analysis packaged into **consumable steps**. See [Contributing principles](contributing-principles.html) for the contributor walkthrough.
 
 ```{r, include = FALSE}
 library(replicateEverything)
@@ -36,7 +33,7 @@ fig_snapshot <- if (length(fig_candidates)) fig_candidates[[1]] else ""
 ```
 
 <style>
-.tldr-box {
+.tldr-box, .note-box {
   border: 1px solid #e0e0e0;
   border-radius: 10px;
   padding: 1.1em 1.3em;
@@ -44,11 +41,19 @@ fig_snapshot <- if (length(fig_candidates)) fig_candidates[[1]] else ""
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
   background: #fbfbfb;
 }
-.tldr-box .tldr-label {
+.note-box {
+  border-left: 4px solid #0d6efd;
+  background: #f8fbff;
+}
+.tldr-box .tldr-label,
+.note-box .note-label {
   font-weight: 600;
   font-size: 1.05em;
   margin-bottom: 0.6em;
   letter-spacing: 0.01em;
+}
+.note-box p:last-child {
+  margin-bottom: 0;
 }
 </style>
 
@@ -72,15 +77,28 @@ knitr::include_graphics(fig_snapshot)
 
 
 
+
 ## Why bother?
 
-Computational replication has never been easier. But it is still a bit of a jungle. Archives are *ad hoc* in structure, paths shift, dependencies drift, and every new reader has to re-wrangle the collection of files they download from dataverse or osf. Plus there are no guarantees: Nobody runs a standing check that the archive still runs today.
+Computational replication has never been easier. But it is still a bit of a jungle. Archives are too often *ad hoc* in structure, paths shift, dependencies drift, and every new reader has to re-wrangle the collection of files they download from dataverse or osf. Plus there are no guarantees: Nobody runs a standing check that the archive still runs today.
 
 `replicateEverything` contributes by proposing a format that makes code quickly accessible and runnable. 
 
 Are we fighting the last battle?  You might wonder (we certainly wonder): if an AI can rewrite the analysis from a paper on the fly, why keep an authoritative codebase? Our answer: Because the code is a *record* of analytic choices. When results disagree, you need a shared object to inspect, not a fresh vibe-coded reimplementation. That case gets stronger, we think,  as models get better at improvising.
 
 So this is an attempt to keep humans in the loop. 
+
+<div class="note-box">
+
+<p class="note-label">Relation with existing repositories</p>
+
+**replicateEverything does not replace** long-term structured repositories such as ICPSR and Dataverse. You can think of it as an **access point**. Though we are not there yet, we would love to get to the point where `replicateEverything` simply reads from existing repositories directly.
+
+For preparing a deposit, follow the [AEA Data Editor guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html) and the [Data and Code Availability Standard](https://datacodestandard.org/) (data–code separation and related rules).
+
+However, we also want a common, machine-readable layout that  is legible to humans. For this, we ask for two things: data/analysis packaged into consumable steps and a `replication.yml` that provides a roadmap.
+
+</div>
 
 Here's a walk through of the main elements plus the bells and whistles.
 
@@ -133,9 +151,9 @@ run_replication(
 ```{r list-reps, eval=FALSE}
 list_replications("10.1017/S0003055403000534")
 # Replications: Ethnicity, Insurgency, and Civil War [10.1017/s0003055403000534]
-#        id   type engine                      label
-#     tab_1  table      r                     Table 1
-# tab_1_stata table  stata                     Table 1
+# id          type   engine  label
+# tab_1       table  r       Table 1
+# tab_1_stata table  stata   Table 1
 ```
 
 

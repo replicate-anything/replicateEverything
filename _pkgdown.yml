@@ -83,6 +83,7 @@ reference:
   - refresh_registry
   - build_registry_index
   - audit_everything
+  - audit_result_status
 - title: 'Maintainer: setup & diagnostics'
   desc: Probe and install study dependencies; local monorepo and deploy diagnostics.
   contents:

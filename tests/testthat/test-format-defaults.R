@@ -1,3 +1,28 @@
+test_that("format_specified detects type: format children", {
+  meta <- list(
+    steps = list(
+      list(id = "tab_1", type = "table", engine = "stata", code = "code/tab_1.do"),
+      list(
+        id = "tab_1_format",
+        type = "format",
+        parent = "tab_1",
+        code = "code/helpers/format_stata.R"
+      )
+    )
+  )
+  rep <- meta$steps[[1]]
+  expect_false(replicateEverything:::format_specified(rep))
+  expect_true(replicateEverything:::format_specified(rep, meta = meta))
+  expect_equal(
+    replicateEverything:::format_script_path(rep, meta = meta),
+    "code/helpers/format_stata.R"
+  )
+  expect_equal(
+    replicateEverything:::format_function_candidates(rep, list(languages = "stata"), meta = meta),
+    c("format_tab_1_stata", "format_tab_1")
+  )
+})
+
 test_that("format_function_candidates includes stata and base names", {
   rep <- list(
     id = "tab_2",

@@ -86,9 +86,71 @@ test_that("audit_jobs_from_replications lists each engine", {
     list(id = "prep_data", type = "step", label = "Prepare data", engine = "python", code = "code/steps/prep.ipynb")
   )
   jobs <- audit_jobs_from_replications(reps)
-  expect_equal(nrow(jobs), 4L)
-  expect_setequal(jobs$what, c("tab_1", "tab_1_stata", "fig_1", "prep_data"))
-  expect_setequal(jobs$engine, c("r", "stata", "r", "python"))
+  # Runnable audit jobs are display sinks only; pipeline prep_data is omitted unless skipped
+  expect_equal(nrow(jobs), 3L)
+  expect_setequal(jobs$what, c("tab_1", "tab_1_stata", "fig_1"))
+  expect_setequal(jobs$engine, c("r", "stata", "r"))
+  expect_true(all(is.na(jobs$skip_reason)))
+})
+
+test_that("audit_jobs_from_replications records incomplete steps as skipped", {
+  reps <- list(
+    list(id = "fig_5", type = "figure", label = "Figure 5", engine = "stata", code = "code/fig_5.do"),
+    list(
+      id = "fig_1",
+      type = "figure",
+      label = "Figure 1",
+      engine = "stata",
+      code = "code/fig_1.do",
+      incomplete = TRUE,
+      requires_engine = "mathematica",
+      blocked_reason = "Needs wolframscript."
+    ),
+    list(
+      id = "compute_mvpf_main",
+      type = "transform",
+      label = "Compute MVPF",
+      engine = "stata",
+      code = "code/compute_mvpf_main.do",
+      incomplete = TRUE,
+      requires_engine = "mathematica",
+      blocked_reason = "Needs wolframscript."
+    ),
+    list(
+      id = "tab_h1",
+      type = "table",
+      label = "Table H.1",
+      engine = "stata",
+      code = "code/tab_h1.do",
+      incomplete = TRUE,
+      data_unavailable = "proprietary",
+      blocked_reason = "Restricted bank data."
+    )
+  )
+  jobs <- audit_jobs_from_replications(reps)
+  expect_true("fig_5" %in% jobs$what)
+  expect_true(is.na(jobs$skip_reason[jobs$what == "fig_5"]))
+  expect_true("fig_1" %in% jobs$what)
+  expect_match(jobs$skip_reason[jobs$what == "fig_1"], "Mathematica")
+  expect_true("compute_mvpf_main" %in% jobs$what)
+  expect_match(jobs$skip_reason[jobs$what == "compute_mvpf_main"], "Mathematica")
+  expect_true("tab_h1" %in% jobs$what)
+  expect_match(jobs$skip_reason[jobs$what == "tab_h1"], "proprietary")
+})
+
+test_that("audit_timeout_message names the audit cap", {
+  msg <- audit_timeout_message(60)
+  expect_match(msg, "Timed out after 60 seconds")
+  expect_match(msg, "audit cap")
+  expect_match(msg, "timeout_seconds: 60")
+  expect_match(audit_timeout_message(60, "processx_wait failed"), "processx_wait")
+})
+
+test_that("audit_result_status labels skipped distinctly", {
+  expect_equal(
+    audit_result_status(c(TRUE, FALSE, FALSE, NA), c(FALSE, TRUE, FALSE, FALSE), c(FALSE, FALSE, FALSE, TRUE)),
+    c("OK", "Timed out", "Failed", "Skipped")
+  )
 })
 
 test_that("audit_error_snippet truncates long messages", {

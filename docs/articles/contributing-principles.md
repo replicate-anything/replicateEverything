@@ -124,12 +124,26 @@ comments)
 | Source | Typical entry | Prefer |
 |----|----|----|
 | Harvard Dataverse | `doi:10.7910/DVN/…` | File-id URL with `?format=original`; package `engine: dataverse` / [`fetch_dataverse_file()`](https://replicate-anything.github.io/replicateEverything/reference/fetch_dataverse_file.md) |
-| OpenICPSR / ICPSR | project or study page with downloadable files | Direct file URLs when the API exposes them; same surgical rule |
-| No usable fetch API (private, offline, some OpenICPSR) | — | Commit ≤50 MB under `data/`; document why; larger → registry data area |
+| OpenICPSR / ICPSR | project page (often JS-gated; no public per-file API) | Download once → `original_studies/`; commit **only** yaml-declared inputs ≤50 MB; do not ship unused deposit bulk. See OpenICPSR skill |
+| No usable fetch API (private, offline) | — | Same commit fallback; document why; larger → registry data area |
 
 Discover deposits with the R `dataverse` package (`get_dataset()`) when
 on Dataverse — a full zip is not required to start. Inspect
 `originalFileName` / native format before converting `.tab` files.
+
+### Incomplete / unavailable steps
+
+Some steps cannot be produced in every environment. Declare them in
+yaml; do not pretend they succeed in audit.
+
+| Situation | Yaml | Effect |
+|----|----|----|
+| Missing Mathematica / MATLAB / similar | `incomplete: true` + `requires_engine:` + `blocked_reason:` | Shiny greys Display/Run; “not available” vs “not reproducible”; study partial-replication popup; audit **skips** |
+| Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` + `blocked_reason:` | Distinct icon + popup; DAG mark; audit **skips** (unavailable ≠ success/failure) |
+
+Search the deposit for precomputed gold before marking unavailable.
+Detail: folder checklist and package skills (`folder_replication.md`,
+`openicpsr_to_replicateEverything.md`).
 
 If data lives **elsewhere** (author site, OSF, journal supplement):
 

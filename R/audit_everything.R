@@ -42,11 +42,142 @@ audit_replication_group <- function(rep) {
   as.character(rep$id %||% "")
 }
 
+#' Whether a proprietary / system engine is available on PATH
+#'
+#' Light probe only (no installs). Ordinary engines (R / Stata / Python) are
+#' treated as available here; their absence is handled by the usual run path.
+#' @keywords internal
+system_engine_available <- function(display_name) {
+  nm <- tolower(trimws(as.character(display_name[[1]] %||% display_name)))
+  if (!nzchar(nm)) {
+    return(TRUE)
+  }
+  if (nm %in% c("mathematica", "wolfram")) {
+    return(
+      nzchar(Sys.which("wolframscript")) ||
+        nzchar(Sys.which("MathKernel")) ||
+        nzchar(Sys.which("math"))
+    )
+  }
+  if (identical(nm, "matlab")) {
+    return(nzchar(Sys.which("matlab")))
+  }
+  if (identical(nm, "julia")) {
+    return(nzchar(Sys.which("julia")))
+  }
+  TRUE
+}
+
+#' Reason an audit job should be recorded as skipped (not executed)
+#'
+#' Skips yaml \code{incomplete: true} steps (including \code{requires_engine:}
+#' and \code{data_unavailable:} gaps), and steps that declare a missing
+#' proprietary/system engine even when \code{incomplete} was omitted.
+#' @keywords internal
+audit_step_skip_reason <- function(rep) {
+  if (!is.list(rep)) {
+    return(NULL)
+  }
+  label <- audit_replication_label(rep)
+  if (!nzchar(label)) {
+    label <- as.character(rep$id %||% "Step")
+  }
+
+  if (isTRUE(rep$incomplete %||% FALSE)) {
+    eng <- step_required_engine(rep)
+    if (!is.null(eng)) {
+      return(missing_engine_message(label, eng, mode = "not_available"))
+    }
+    data_tok <- step_data_unavailable(rep)
+    if (!is.null(data_tok)) {
+      return(missing_data_message(label, data_tok, mode = "not_available"))
+    }
+    reason <- as.character(rep$blocked_reason %||% "")
+    if (!nzchar(reason)) {
+      reason <- "marked incomplete in replication.yml (no reason given)"
+    }
+    return(paste0(label, " not available because of: ", reason))
+  }
+
+  eng <- step_required_engine(rep)
+  if (!is.null(eng) && !eng %in% c("R", "Stata", "Python") &&
+      !isTRUE(system_engine_available(eng))) {
+    return(missing_engine_message(label, eng, mode = "not_available"))
+  }
+  NULL
+}
+
+#' User-facing status label for one audit result row
+#'
+#' Maps success / timeout / skipped flags to `"OK"`, `"Timed out"`,
+#' `"Failed"`, or `"Skipped"`. Used by registry audit reports and the
+#' package audit vignette.
+#'
+#' @param success Logical vector of success flags (`NA` allowed).
+#' @param timed_out Logical vector of timeout flags.
+#' @param skipped Logical vector of skip flags (incomplete / blocked steps).
+#' @return Character vector of status labels, same length as the inputs.
+#' @export
+audit_result_status <- function(success, timed_out = FALSE, skipped = FALSE) {
+  n <- max(length(success), length(timed_out), length(skipped), 1L)
+  success <- rep_len(success, n)
+  timed_out <- rep_len(timed_out, n)
+  skipped <- rep_len(skipped, n)
+  out <- character(n)
+  for (i in seq_len(n)) {
+    if (isTRUE(skipped[[i]])) {
+      out[[i]] <- "Skipped"
+    } else if (isTRUE(success[[i]])) {
+      out[[i]] <- "OK"
+    } else if (isTRUE(timed_out[[i]])) {
+      out[[i]] <- "Timed out"
+    } else {
+      out[[i]] <- "Failed"
+    }
+  }
+  out
+}
+
+#' Format an audit timeout error for reports
+#'
+#' @param patience Seconds used as the audit elapsed-time cap.
+#' @param detail Optional underlying error text (kept short when present).
+#' @return Character scalar for the Error column.
+#' @keywords internal
+audit_timeout_message <- function(patience, detail = NULL) {
+  patience <- as.numeric(patience[[1]] %||% patience)
+  if (!is.finite(patience) || patience <= 0) {
+    patience <- NA_real_
+  }
+  cap <- if (is.finite(patience)) {
+    sprintf(
+      "Timed out after %.0f seconds (audit cap; timeout_seconds: %.0f)",
+      patience,
+      patience
+    )
+  } else {
+    "Timed out (audit cap)"
+  }
+  detail <- trimws(as.character(detail %||% ""))
+  if (!nzchar(detail)) {
+    return(cap)
+  }
+  # Avoid duplicating the cap phrase if the detail already names it
+  if (grepl("audit cap|timeout_seconds", detail, ignore.case = TRUE)) {
+    return(audit_error_snippet(detail))
+  }
+  paste0(cap, " | ", audit_error_snippet(detail, max_chars = 160L))
+}
+
 #' List audit jobs (one row per engine) from replication entries
+#'
+#' Incomplete / blocked steps are included with a non-empty \code{skip_reason}
+#' so the audit can record them as \strong{Skipped} without executing them.
+#' Runnable jobs are display steps (figure / table) only.
 #'
 #' @param reps List of replication entries from \code{list_replications()}.
 #' @return Data frame with columns \code{group}, \code{what}, \code{engine},
-#'   \code{label}, and \code{type}.
+#'   \code{label}, \code{type}, and \code{skip_reason}.
 #' @keywords internal
 audit_jobs_from_replications <- function(reps) {
   if (is.null(reps) || !length(reps)) {
@@ -57,11 +188,8 @@ audit_jobs_from_replications <- function(reps) {
     is.list(x) && !is.null(x$id) && nzchar(as.character(x$id[[1]] %||% x$id))
   }, logical(1))]
   reps <- reps[vapply(reps, function(x) {
-    type <- as.character(x$type %||% "")
-    type %in% c("figure", "table", "step", "prep", "pipeline")
-  }, logical(1))]
-  reps <- reps[vapply(reps, function(x) {
-    !isTRUE(x$incomplete %||% FALSE)
+    type <- tolower(as.character(x$type %||% ""))
+    type %in% c("figure", "table", "step", "prep", "pipeline", "transform")
   }, logical(1))]
   if (!length(reps)) {
     return(NULL)
@@ -81,12 +209,24 @@ audit_jobs_from_replications <- function(reps) {
         next
       }
       rep <- eng_reps[[1]]
+      skip_reason <- audit_step_skip_reason(rep)
+      type <- tolower(as.character(rep$type %||% ""))
+      # Runnable audit targets remain display sinks; blocked pipeline / transform
+      # steps are still listed so they appear as Skipped rather than vanishing.
+      if (is.null(skip_reason) && !type %in% c("figure", "table")) {
+        next
+      }
       jobs[[length(jobs) + 1L]] <- data.frame(
         group = group,
         what = as.character(rep$id),
         engine = eng,
         label = audit_replication_label(rep),
         type = as.character(rep$type %||% ""),
+        skip_reason = if (is.null(skip_reason)) {
+          NA_character_
+        } else {
+          as.character(skip_reason)
+        },
         stringsAsFactors = FALSE
       )
     }
@@ -273,9 +413,11 @@ audit_error_snippet <- function(x, max_chars = 240L) {
 #' Run one replication with a per-object time limit
 #'
 #' @inheritParams render_replication
-#' @param patience Seconds before halting the run (default 20).
-#' @return List with \code{success}, \code{seconds}, \code{timed_out}, and
-#'   \code{error}.
+#' @param patience Seconds before halting the run (default 20). This is the
+#'   audit cap applied via \code{setTimeLimit}; for Stata, the processx wait is
+#'   also aligned to this cap so overdue batch jobs are killed cleanly.
+#' @return List with \code{success}, \code{seconds}, \code{timed_out},
+#'   \code{timeout_seconds}, and \code{error}.
 #' @keywords internal
 audit_run_one <- function(
   doi,
@@ -287,9 +429,19 @@ audit_run_one <- function(
   folder = NULL,
   substantive = TRUE
 ) {
-  patience <- as.numeric(patience)
+  patience <- as.numeric(patience[[1]] %||% patience)
   if (!is.finite(patience) || patience <= 0) {
     stop("patience must be a positive number of seconds.", call. = FALSE)
+  }
+
+  # Align Stata processx waits with the audit cap (do not raise above patience).
+  old_stata_timeout <- getOption("replicateEverything.stata_timeout", NULL)
+  if (identical(tolower(as.character(engine[[1]] %||% "")), "stata")) {
+    options(replicateEverything.stata_timeout = as.integer(ceiling(patience)))
+    on.exit(
+      options(replicateEverything.stata_timeout = old_stata_timeout),
+      add = TRUE
+    )
   }
 
   t0 <- proc.time()
@@ -316,9 +468,13 @@ audit_run_one <- function(
     }
   )
   seconds <- (proc.time() - t0)[["elapsed"]]
+  err_msg <- if (!is.null(run$error)) conditionMessage(run$error) else ""
   timed_out <- !isTRUE(run$ok) &&
-    !is.null(run$error) &&
-    grepl("elapsed time limit|cpu time limit", conditionMessage(run$error), ignore.case = TRUE)
+    grepl(
+      "elapsed time limit|cpu time limit|did not finish within",
+      err_msg,
+      ignore.case = TRUE
+    )
 
   substantive_ok <- NA
   substantive_message <- ""
@@ -346,6 +502,7 @@ audit_run_one <- function(
     substantive_message = substantive_message,
     seconds = seconds,
     timed_out = timed_out,
+    timeout_seconds = patience,
     error = run$error
   )
 }
@@ -354,13 +511,18 @@ audit_run_one <- function(
 #'
 #' Walks the replication registry and attempts every table and figure in each
 #' available engine (R and Stata where defined). Failures do not stop the audit;
-#' results are returned in a concise data frame. For a full HTML report, render
+#' results are returned in a concise data frame. Yaml steps marked
+#' \code{incomplete: true} (or blocked by a missing \code{requires_engine:} /
+#' \code{data_unavailable:} gap) are recorded as \strong{Skipped} with a reason
+#' and are not executed. Each runnable job is halted after \code{patience}
+#' seconds (the audit cap); timeout rows record \code{timeout_seconds} and an
+#' explicit audit-cap message. For a full HTML report, render
 #' \code{audit_everything.qmd} in the
 #' [registry repository](https://github.com/replicate-anything/registry) (see
 #' [audit_everything_qmd()]).
 #'
 #' @param patience Seconds to allow each table or figure before halting that run.
-#'   Defaults to \code{20}.
+#'   Defaults to \code{20}. Registry reports often use \code{60}.
 #' @param index Registry index data frame; defaults to [load_index()].
 #' @param dois Optional character vector of DOIs to audit. When \code{NULL},
 #'   audits every row in \code{index} (after any \code{collections} filter).
@@ -478,7 +640,7 @@ audit_everything <- function(
     }
 
     reps <- tryCatch(
-      list_replications(doi, repo = repo, folder = folder),
+      list_replications(doi, repo = repo, folder = folder, include = "all"),
       error = function(e) e
     )
 
@@ -496,6 +658,8 @@ audit_everything <- function(
         seconds = NA_real_,
         runtime_category = NA_character_,
         timed_out = FALSE,
+        skipped = FALSE,
+        timeout_seconds = as.numeric(patience),
         error_snippet = audit_error_snippet(reps),
         stringsAsFactors = FALSE
       )
@@ -517,6 +681,8 @@ audit_everything <- function(
         seconds = NA_real_,
         runtime_category = NA_character_,
         timed_out = FALSE,
+        skipped = FALSE,
+        timeout_seconds = as.numeric(patience),
         error_snippet = "No table, figure, or pipeline step replications listed for this study.",
         stringsAsFactors = FALSE
       )
@@ -529,6 +695,39 @@ audit_everything <- function(
       engine <- job$engine[[1]]
       label <- job$label[[1]]
       type <- job$type[[1]]
+      skip_reason <- if ("skip_reason" %in% names(job)) {
+        as.character(job$skip_reason[[1]] %||% "")
+      } else {
+        ""
+      }
+      if (is.na(skip_reason)) {
+        skip_reason <- ""
+      }
+
+      if (nzchar(skip_reason)) {
+        if (isTRUE(verbose)) {
+          message(sprintf("  - %s (%s, %s) [skipped]", label, what, engine))
+        }
+        results[[length(results) + 1L]] <- data.frame(
+          doi = doi,
+          title = title,
+          object = what,
+          object_label = label,
+          type = type,
+          engine = engine,
+          success = NA,
+          run_ok = NA,
+          substantive_ok = NA,
+          seconds = NA_real_,
+          runtime_category = NA_character_,
+          timed_out = FALSE,
+          skipped = TRUE,
+          timeout_seconds = as.numeric(patience),
+          error_snippet = audit_error_snippet(skip_reason),
+          stringsAsFactors = FALSE
+        )
+        next
+      }
 
       if (isTRUE(verbose)) {
         message(sprintf("  - %s (%s, %s)", label, what, engine))
@@ -547,6 +746,11 @@ audit_everything <- function(
 
       err_snippet <- if (run$success) {
         ""
+      } else if (isTRUE(run$timed_out)) {
+        audit_timeout_message(
+          run$timeout_seconds %||% patience,
+          if (!is.null(run$error)) conditionMessage(run$error) else NULL
+        )
       } else if (isFALSE(run$substantive_ok) && isTRUE(run$run_ok)) {
         audit_error_snippet(run$substantive_message)
       } else {
@@ -566,6 +770,8 @@ audit_everything <- function(
         seconds = run$seconds,
         runtime_category = audit_runtime_category(run$seconds),
         timed_out = run$timed_out,
+        skipped = FALSE,
+        timeout_seconds = as.numeric(run$timeout_seconds %||% patience),
         error_snippet = err_snippet,
         stringsAsFactors = FALSE
       )
@@ -574,15 +780,23 @@ audit_everything <- function(
 
   results_df <- do.call(rbind, results)
   rownames(results_df) <- NULL
-  if (!is.null(results_df) && nrow(results_df) > 0L &&
-      !"runtime_category" %in% names(results_df)) {
-    results_df$runtime_category <- audit_runtime_category(results_df$seconds)
+  if (!is.null(results_df) && nrow(results_df) > 0L) {
+    if (!"runtime_category" %in% names(results_df)) {
+      results_df$runtime_category <- audit_runtime_category(results_df$seconds)
+    }
+    if (!"skipped" %in% names(results_df)) {
+      results_df$skipped <- FALSE
+    }
+    if (!"timeout_seconds" %in% names(results_df)) {
+      results_df$timeout_seconds <- as.numeric(patience)
+    }
   }
 
   finished_at <- Sys.time()
-  n_ok <- sum(results_df$success, na.rm = TRUE)
-  n_fail <- sum(!results_df$success, na.rm = TRUE)
-  n_timeout <- sum(results_df$timed_out, na.rm = TRUE)
+  n_ok <- sum(results_df$success %in% TRUE, na.rm = TRUE)
+  n_skip <- sum(results_df$skipped %in% TRUE, na.rm = TRUE)
+  n_fail <- sum(results_df$success %in% FALSE, na.rm = TRUE)
+  n_timeout <- sum(results_df$timed_out %in% TRUE, na.rm = TRUE)
   n_substantive_fail <- sum(
     !is.na(results_df$substantive_ok) & !results_df$substantive_ok,
     na.rm = TRUE
@@ -602,6 +816,7 @@ audit_everything <- function(
         success = n_ok,
         failed = n_fail,
         timed_out = n_timeout,
+        skipped = n_skip,
         substantive_failed = n_substantive_fail
       )
     ),
@@ -632,6 +847,11 @@ print.audit_everything <- function(x, ...) {
   } else {
     ""
   }
+  skipped_line <- if (!is.null(sm$skipped) && sm$skipped > 0L) {
+    sprintf(" | Skipped: %d", sm$skipped)
+  } else {
+    ""
+  }
   collections_line <- if (!is.null(x$collections) && length(x$collections) > 0L) {
     sprintf("Collections: %s | ", paste(x$collections, collapse = ", "))
   } else {
@@ -640,7 +860,10 @@ print.audit_everything <- function(x, ...) {
   cat(
     "replicateEverything registry audit\n",
     sprintf(
-      "%sPatience: %gs | Studies: %d | Runs: %d | OK: %d | Failed: %d | Timed out: %d%s\n",
+      paste0(
+        "%sPatience: %gs | Studies: %d | Runs: %d | OK: %d | Failed: %d | ",
+        "Timed out: %d%s%s\n"
+      ),
       collections_line,
       x$patience,
       sm$studies,
@@ -648,13 +871,37 @@ print.audit_everything <- function(x, ...) {
       sm$success,
       sm$failed,
       sm$timed_out,
+      skipped_line,
       substantive_line
     ),
     sep = ""
   )
+  if (isTRUE(sm$skipped > 0L)) {
+    cat("\nSkipped (incomplete / unavailable):\n")
+    skips <- x$results[x$results$skipped %in% TRUE, , drop = FALSE]
+    studies <- unique(skips$title)
+    for (study in studies) {
+      sf <- skips[skips$title == study, , drop = FALSE]
+      cat(sprintf("  %s\n", study))
+      for (k in seq_len(nrow(sf))) {
+        row <- sf[k, , drop = FALSE]
+        cat(sprintf(
+          "    - %s (%s, %s): %s\n",
+          row$object_label[[1]],
+          row$object[[1]],
+          row$engine[[1]],
+          row$error_snippet[[1]]
+        ))
+      }
+    }
+  }
   if (sm$failed > 0L) {
     cat("\nFailures by study:\n")
-    fails <- x$results[!x$results$success, , drop = FALSE]
+    fails <- x$results[
+      x$results$success %in% FALSE & !x$results$skipped %in% TRUE,
+      ,
+      drop = FALSE
+    ]
     studies <- unique(fails$title)
     for (study in studies) {
       sf <- fails[fails$title == study, , drop = FALSE]
@@ -666,7 +913,8 @@ print.audit_everything <- function(x, ...) {
           cat(sprintf("    - %s\n", row$error_snippet[[1]]))
         } else {
           tag <- if (isTRUE(row$timed_out[[1]])) {
-            " [timed out]"
+            cap <- row$timeout_seconds[[1]] %||% x$patience
+            sprintf(" [timed out after %gs audit cap]", as.numeric(cap))
           } else if (isFALSE(row$substantive_ok[[1]]) && isTRUE(row$run_ok[[1]])) {
             " [substantive]"
           } else {
@@ -745,6 +993,7 @@ write_registry_audit_record <- function(audit, registry_root = NULL) {
     success = sm$success,
     failed = sm$failed,
     timed_out = sm$timed_out,
+    skipped = sm$skipped %||% 0L,
     substantive_failed = sm$substantive_failed %||% 0L
   )
   jsonlite::write_json(

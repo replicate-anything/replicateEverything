@@ -7,7 +7,7 @@
 
 **Tools to discover, run, and contribute computational replications of empirical research papers.**
 
-`replicateEverything` connects to a public [replication registry](https://github.com/replicate-anything/registry), retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The package also bundles a **Shiny demo app** for browsing studies and running replications interactively — try the [live demo](https://shiny2.wzb.eu/ipi/replicate/).
+`replicateEverything` connects to a public [replication registry](https://github.com/replicate-anything/registry), retrieves replication materials (metadata, processed data, and analysis code), and reproduces figures and tables from published studies in a standardized workflow. The package also bundles a **Shiny demo app** for browsing studies and running replications interactively — try the [online portal](https://shiny2.wzb.eu/ipi/replicate/).
 
 **Start here:** [Why replicateEverything?](https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.html) — the best high-level overview of motivation, the registry, and how to run replications.
 

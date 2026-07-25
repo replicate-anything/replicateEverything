@@ -81,10 +81,19 @@ Ideal: **yaml points at what is needed**; do not ship unused deposit material;
 
 ### B2. Incomplete / blocked steps
 
+**DAG membership:** put a step in `steps:` only if it is a **replication claim**
+(Display / audit). Proprietary prep or other blocked stages that are **not** on
+the path to a claimed output belong in README / study popup — **not** as orphan
+Unavailable nodes.
+
+**Shiny UX (claimed but unavailable):** show Code; Unavailable instead of Run;
+no need to strikethrough step labels when the badge already says Unavailable.
+
 ```
 - [ ] Steps that cannot run declare `incomplete: true` (audit must **skip** them — not fail)
 - [ ] Engine gaps: `requires_engine:` + `blocked_reason:`; check deposit for precomputed gold before concluding unavailable
 - [ ] Proprietary / restricted data: `data_unavailable: proprietary` (+ `blocked_reason:`) — distinct from engine-missing and from audit fail/timeout
+- [ ] No orphan Unavailable nodes — blocked prep off the claim path stays in docs/popup, not `steps:`
 - [ ] Wrapper-granularity DAG (README tables) — not one node per unused micro-script
 - [ ] Partial-replication popup drivers present when incomplete steps exist (`requires_engine` / `data_unavailable` / counts)
 ```

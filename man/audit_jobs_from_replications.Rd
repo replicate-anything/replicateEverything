@@ -11,9 +11,11 @@ audit_jobs_from_replications(reps)
 }
 \value{
 Data frame with columns \code{group}, \code{what}, \code{engine},
-\code{label}, and \code{type}.
+\code{label}, \code{type}, and \code{skip_reason}.
 }
 \description{
-List audit jobs (one row per engine) from replication entries
+Incomplete / blocked steps are included with a non-empty \code{skip_reason}
+so the audit can record them as \strong{Skipped} without executing them.
+Runnable jobs are display steps (figure / table) only.
 }
 \keyword{internal}

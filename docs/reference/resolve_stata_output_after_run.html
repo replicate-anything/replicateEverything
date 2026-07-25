@@ -56,7 +56,12 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">resolve_stata_output_after_run</span><span class="op">(</span><span class="va">rep</span>, <span class="va">study_root</span>, staging_dir <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">resolve_stata_output_after_run</span><span class="op">(</span></span>
+<span>  <span class="va">rep</span>,</span>
+<span>  <span class="va">study_root</span>,</span>
+<span>  staging_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  before_mtimes <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -73,6 +78,12 @@
 
 <dt id="arg-staging-dir">staging_dir<a class="anchor" aria-label="anchor" href="#arg-staging-dir"></a></dt>
 <dd><p>Optional writable staging directory.</p></dd>
+
+
+<dt id="arg-before-mtimes">before_mtimes<a class="anchor" aria-label="anchor" href="#arg-before-mtimes"></a></dt>
+<dd><p>Optional snapshot from
+<code><a href="stata_output_mtime_snapshot.html">stata_output_mtime_snapshot()</a></code>; when supplied, only files that are
+new or whose mtime/size changed count as the run's output.</p></dd>
 
 </dl></div>
 

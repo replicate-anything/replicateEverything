@@ -17,7 +17,7 @@ audit_everything(
 }
 \arguments{
 \item{patience}{Seconds to allow each table or figure before halting that run.
-Defaults to \code{20}.}
+Defaults to \code{20}. Registry reports often use \code{60}.}
 
 \item{index}{Registry index data frame; defaults to \code{\link[=load_index]{load_index()}}.}
 
@@ -47,7 +47,12 @@ An object of class \code{audit_everything} with components
 \description{
 Walks the replication registry and attempts every table and figure in each
 available engine (R and Stata where defined). Failures do not stop the audit;
-results are returned in a concise data frame. For a full HTML report, render
+results are returned in a concise data frame. Yaml steps marked
+\code{incomplete: true} (or blocked by a missing \code{requires_engine:} /
+\code{data_unavailable:} gap) are recorded as \strong{Skipped} with a reason
+and are not executed. Each runnable job is halted after \code{patience}
+seconds (the audit cap); timeout rows record \code{timeout_seconds} and an
+explicit audit-cap message. For a full HTML report, render
 \code{audit_everything.qmd} in the
 \href{https://github.com/replicate-anything/registry}{registry repository} (see
 \code{\link[=audit_everything_qmd]{audit_everything_qmd()}}).

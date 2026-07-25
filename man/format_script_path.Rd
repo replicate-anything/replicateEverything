@@ -4,10 +4,12 @@
 \alias{format_script_path}
 \title{Resolve optional path to a format script}
 \usage{
-format_script_path(rep)
+format_script_path(rep, meta = NULL)
 }
 \arguments{
 \item{rep}{A single replication entry from \code{replication.yml}.}
+
+\item{meta}{Optional full study metadata (for format children).}
 }
 \description{
 Resolve optional path to a format script

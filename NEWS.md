@@ -1,5 +1,13 @@
 # replicateEverything 0.7.8
 
+## LaTeX tabular (texdoc) → HTML
+
+* **Internal helper:** `latex_tabular_to_html()` converts author
+  `\begin{tabular}...\end{tabular}` fragments (Stata `texdoc` / booktabs) into
+  HTML tables for Shiny Display — `\multicolumn`, `\hline`, `\textit` /
+  `\textbf` supported; no LaTeX or pandoc required. Study format steps can call
+  it via `replicateEverything:::latex_tabular_to_html()`.
+
 ## Shiny startup: auto-update check for replicateEverything
 
 * **Shiny:** On app start, compare the installed package `RemoteSha` (fallback:

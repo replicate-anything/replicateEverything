@@ -4,12 +4,15 @@
 \alias{format_specified}
 \title{Check whether a replication entry defines a separate format step}
 \usage{
-format_specified(rep)
+format_specified(rep, meta = NULL)
 }
 \arguments{
 \item{rep}{A single replication entry from \code{replication.yml}.}
+
+\item{meta}{Optional full study metadata (needed to detect format children).}
 }
 \description{
-Check whether a replication entry defines a separate format step
+True when the entry has a legacy \code{format:} field, or when
+\code{meta} lists a \code{type: format} child (e.g. \code{tab_1_format}).
 }
 \keyword{internal}

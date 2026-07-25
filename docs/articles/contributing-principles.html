@@ -227,14 +227,15 @@ not ship wholesale deposits or invent download helpers.</p>
 </tr>
 <tr class="even">
 <td>OpenICPSR / ICPSR</td>
-<td>project or study page with downloadable files</td>
-<td>Direct file URLs when the API exposes them; same surgical rule</td>
+<td>project page (often JS-gated; no public per-file API)</td>
+<td>Download once → <code>original_studies/</code>; commit
+<strong>only</strong> yaml-declared inputs ≤50 MB; do not ship unused
+deposit bulk. See OpenICPSR skill</td>
 </tr>
 <tr class="odd">
-<td>No usable fetch API (private, offline, some OpenICPSR)</td>
+<td>No usable fetch API (private, offline)</td>
 <td>—</td>
-<td>Commit ≤50 MB under <code>data/</code>; document why; larger →
-registry data area</td>
+<td>Same commit fallback; document why; larger → registry data area</td>
 </tr>
 </tbody>
 </table>
@@ -242,6 +243,54 @@ registry data area</td>
 (<code>get_dataset()</code>) when on Dataverse — a full zip is not
 required to start. Inspect <code>originalFileName</code> / native format
 before converting <code>.tab</code> files.</p>
+</div>
+</div>
+<div class="section level3">
+<h3 id="incomplete-unavailable-steps">Incomplete / unavailable steps<a class="anchor" aria-label="anchor" href="#incomplete-unavailable-steps"></a>
+</h3>
+<p>Some steps cannot be produced in every environment. Declare them in
+yaml; do not pretend they succeed in audit.</p>
+<table class="table">
+<colgroup>
+<col width="44%">
+<col width="24%">
+<col width="32%">
+</colgroup>
+<thead><tr class="header">
+<th>Situation</th>
+<th>Yaml</th>
+<th>Effect</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Missing Mathematica / MATLAB / similar</td>
+<td>
+<code>incomplete: true</code> + <code>requires_engine:</code> +
+<code>blocked_reason:</code>
+</td>
+<td>Shiny greys Display/Run; “not available” vs “not reproducible”;
+study partial-replication popup; audit <strong>skips</strong>
+</td>
+</tr>
+<tr class="even">
+<td>Proprietary / restricted data</td>
+<td>
+<code>incomplete: true</code> +
+<code>data_unavailable: proprietary</code> +
+<code>blocked_reason:</code>
+</td>
+<td>Distinct icon + popup; DAG mark; audit <strong>skips</strong>
+(unavailable ≠ success/failure)</td>
+</tr>
+</tbody>
+</table>
+<p>Search the deposit for precomputed gold before marking unavailable.
+Put a step in the DAG only if it is a <strong>replication claim</strong>
+(Display / audit); proprietary prep or other blocked stages off that
+path belong in README / study popup — not as orphan Unavailable nodes.
+Detail: folder checklist and package skills
+(<code>folder_replication.md</code>,
+<code>openicpsr_to_replicateEverything.md</code>).</p>
 <p>If data lives <strong>elsewhere</strong> (author site, OSF, journal
 supplement):</p>
 <ul class="task-list">
@@ -252,7 +301,6 @@ supplement):</p>
 <input type="checkbox" id="e2"><label for="e2">Do not rely on “download the zip and dig inside” as the only path — document a direct file URL once you have it</label>
 </li>
 </ul>
-</div>
 </div>
 <div class="section level3">
 <h3 id="public-study-repos">Public study repos<a class="anchor" aria-label="anchor" href="#public-study-repos"></a>

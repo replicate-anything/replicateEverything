@@ -130,7 +130,7 @@ author pipeline.
 5. **Wrapper granularity** — prefer author wrappers / master scripts as DAG nodes (e.g. one batch transform feeding many thin tables), **not** one node per policy or micro-script when the README runs them in batch. OpenICPSR AER packages often have ~100 policy `.do` files feeding a handful of wrappers — map README tables, then collapse.
 6. **Parallel engines** — when authors ship both Stata and R for the same table, use **separate step ids** (`tab_1`, `tab_1_stata`) with optional `group: tab_1`. They may read different inputs (raw vs cleaned) if that matches the author code.
 7. **Format children** — when Display needs HTML/PNG but analysis returns a model or temp file, add `type: format` with `parent: <table_or_figure_id>` (or rely on auto-generated `<id>_format` from legacy migration).
-8. **Blocked / unavailable steps** — before marking unavailable, search deposit + study for **precomputed** outputs. Then declare `incomplete: true` plus a structured class (see **Blocked steps** below).
+8. **Blocked / unavailable steps** — before marking unavailable, search deposit + study for **precomputed** outputs. Then declare `incomplete: true` plus a structured class (see **Blocked steps** below). **Put a step in the DAG only if it is a replication claim** (Display/audit); proprietary prep or other blocked stages that are *not* on the path to a claimed output belong in README / study popup — not as orphan Unavailable nodes in `steps:`.
 9. **Draw the graph** — sanity-check: every non-root input is either under `data/` or produced by a listed parent; no cycles; `given = "parents"` on a table only requires immediate parents' `outputs/` to exist.
 
 Example (Fearon & Laitin):
@@ -188,6 +188,12 @@ Three **distinct** classes — do not conflate them with audit fail/timeout:
 | Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` (+ `blocked_reason:`) | Distinct data-unavailable icon + study popup; DAG mark | Skipped (unavailable ≠ success/failure) |
 | Other incomplete | `incomplete: true` + `blocked_reason:` | Generic not available / not reproducible | Skipped |
 
+**Rule of thumb — DAG membership:** put a step in `steps:` **only if it is a
+replication claim** (something you want in Display / audit). Proprietary prep
+(or other blocked pipeline stages) that is **not** on the path to a claimed
+output belongs in documentation / study popup / README — **not** as orphan
+Unavailable nodes in the DAG.
+
 **Before** concluding unavailable: grep the deposit and study for precomputed gold
 (`outputs/`, results folders, paper supplements). Empty OpenICPSR placeholders ≠
 “no gold exists.” Prefer fail-fast helpers (`step_blocked_reason()`,
@@ -197,6 +203,9 @@ disappearance.
 Partial-replication study popup is driven by yaml `incomplete:` /
 `requires_engine:` / `data_unavailable:` and may be enriched from the latest
 registry audit snapshot (failures/timeouts) — see Shiny + `run_replication.R`.
+For **unavailable claimed** steps in Shiny: still show Code; use Unavailable
+instead of Run; no need to strikethrough labels when the badge already says
+Unavailable (`check_study_submission.md`).
 
 **Edges:** `parents: [step_a, step_b]` only — `requires:` / `depends_on:` are a hard error. Raw files are not parents — list them under `inputs:`.
 
@@ -843,6 +852,7 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 
 - **Heavy study repo** — committed raw that Dataverse can serve surgically, or shipping unused OpenICPSR bulk; prefer yaml wiring (`check_study_submission.md` § B)
 - **One node per micro-script** — prefer wrapper-granularity DAG from README tables
+- **Orphan Unavailable nodes** — proprietary prep (etc.) not on the path to a claimed output → document in README / popup, do **not** add to `steps:`
 - **Marking unavailable without searching for precomputed gold** — check deposit/repo `outputs/` first
 - **Conflating engine-missing, proprietary-data, and audit fail** — use `requires_engine:` vs `data_unavailable:`; audit **skips** `incomplete:` (not fail)
 - **Broken code links** — `source("../helpers/foo.R")` from `code/tables/tab_1.R` must resolve to `code/helpers/foo.R`; run `check_replication()` before submit

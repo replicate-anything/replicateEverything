@@ -1,10 +1,20 @@
 #' Check whether a replication entry defines a separate format step
 #'
+#' True when the entry has a legacy \code{format:} field, or when
+#' \code{meta} lists a \code{type: format} child (e.g. \code{tab_1_format}).
+#'
 #' @param rep A single replication entry from \code{replication.yml}.
+#' @param meta Optional full study metadata (needed to detect format children).
 #' @keywords internal
-format_specified <- function(rep) {
+format_specified <- function(rep, meta = NULL) {
   fmt <- rep$format
-  !is.null(fmt) && length(fmt) > 0 && nzchar(as.character(fmt[[1]]))
+  if (!is.null(fmt) && length(fmt) > 0 && nzchar(as.character(fmt[[1]]))) {
+    return(TRUE)
+  }
+  if (!is.null(meta) && !is.null(rep$id) && nzchar(as.character(rep$id))) {
+    return(!is.null(format_child_step(meta, as.character(rep$id))))
+  }
+  FALSE
 }
 
 #' Default format function name for a replication id
@@ -19,12 +29,24 @@ default_format_name <- function(rep_id) {
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
 #' @param paper_meta Optional paper-level metadata (used for Stata format names).
+#' @param meta Optional full study metadata (for format children).
 #' @keywords internal
-format_function_name <- function(rep, paper_meta = NULL) {
-  if (!format_specified(rep)) {
+format_function_name <- function(rep, paper_meta = NULL, meta = NULL) {
+  if (!format_specified(rep, meta = meta)) {
     return(NULL)
   }
-  fmt <- as.character(rep$format[[1]])
+  fmt <- NULL
+  if (!is.null(rep$format) && length(rep$format) > 0) {
+    fmt <- as.character(rep$format[[1]])
+  } else if (!is.null(meta)) {
+    child <- format_child_step(meta, as.character(rep$id))
+    if (!is.null(child$code) && length(child$code) > 0) {
+      fmt <- as.character(child$code[[1]])
+    }
+  }
+  if (is.null(fmt) || !nzchar(fmt)) {
+    return(NULL)
+  }
   if (grepl("[/\\\\]", fmt) || grepl("\\.R$", fmt, ignore.case = TRUE)) {
     base <- default_format_name(rep$id)
     if (is_stata_replication(rep, paper_meta)) {
@@ -39,10 +61,11 @@ format_function_name <- function(rep, paper_meta = NULL) {
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
 #' @param paper_meta Optional paper-level metadata.
+#' @param meta Optional full study metadata (for format children).
 #' @keywords internal
-format_function_candidates <- function(rep, paper_meta = NULL) {
+format_function_candidates <- function(rep, paper_meta = NULL, meta = NULL) {
   candidates <- character(0)
-  primary <- format_function_name(rep, paper_meta)
+  primary <- format_function_name(rep, paper_meta, meta = meta)
   if (!is.null(primary) && nzchar(primary)) {
     candidates <- c(candidates, primary)
   }
@@ -121,8 +144,8 @@ default_format_object <- function(object, rep, paper_meta = NULL) {
 #' @param rep Replication entry.
 #' @param paper_meta Optional paper-level metadata.
 #' @keywords internal
-resolve_format_function <- function(env, rep, paper_meta = NULL) {
-  for (fn_name in format_function_candidates(rep, paper_meta)) {
+resolve_format_function <- function(env, rep, paper_meta = NULL, meta = NULL) {
+  for (fn_name in format_function_candidates(rep, paper_meta, meta = meta)) {
     if (exists(fn_name, envir = env, inherits = FALSE)) {
       return(get(fn_name, envir = env, inherits = FALSE))
     }
@@ -135,14 +158,23 @@ resolve_format_function <- function(env, rep, paper_meta = NULL) {
 #' Resolve optional path to a format script
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
+#' @param meta Optional full study metadata (for format children).
 #' @keywords internal
-format_script_path <- function(rep) {
-  if (!format_specified(rep)) {
-    return(NULL)
+format_script_path <- function(rep, meta = NULL) {
+  if (!is.null(rep$format) && length(rep$format) > 0) {
+    fmt <- as.character(rep$format[[1]])
+    if (nzchar(fmt) && (grepl("[/\\\\]", fmt) || grepl("\\.R$", fmt, ignore.case = TRUE))) {
+      return(fmt)
+    }
   }
-  fmt <- as.character(rep$format[[1]])
-  if (grepl("[/\\\\]", fmt) || grepl("\\.R$", fmt, ignore.case = TRUE)) {
-    return(fmt)
+  if (!is.null(meta) && !is.null(rep$id)) {
+    child <- format_child_step(meta, as.character(rep$id))
+    if (!is.null(child$code) && length(child$code) > 0) {
+      code <- as.character(child$code[[1]])
+      if (nzchar(code)) {
+        return(code)
+      }
+    }
   }
   NULL
 }
@@ -161,11 +193,11 @@ source_replication_scripts <- function(rep, ctx, env, install_deps = FALSE, incl
     source_replication_functions(tmp_code, env, install_deps = install_deps)
   }
 
-  if (!include_format || !format_specified(rep)) {
+  if (!include_format || !format_specified(rep, meta = meta)) {
     return(invisible(env))
   }
 
-  fmt_path <- format_script_path(rep)
+  fmt_path <- format_script_path(rep, meta = meta)
   if (!is.null(fmt_path) && normalizePath(fmt_path, winslash = "/", mustWork = FALSE) !=
       normalizePath(tmp_code, winslash = "/", mustWork = FALSE)) {
     tmp_format <- resolve_registry_file(fmt_path, ctx, meta = meta)
@@ -217,7 +249,7 @@ format_for_display <- function(
 
   rep <- find_replication_entry(meta, what, language = language)
 
-  if (!format_specified(rep)) {
+  if (!format_specified(rep, meta = meta)) {
     return(object)
   }
 
@@ -251,7 +283,7 @@ format_for_display <- function(
   env <- new.env(parent = globalenv())
   source_replication_scripts(rep, ctx, env, install_deps = install_deps, include_format = TRUE, meta = meta)
 
-  fmt_fn <- resolve_format_function(env, rep, paper_meta = meta$paper)
+  fmt_fn <- resolve_format_function(env, rep, paper_meta = meta$paper, meta = meta)
   fmt_object <- if (is_stata_replication(rep, meta$paper)) {
     normalize_stata_result_object(object)
   } else {

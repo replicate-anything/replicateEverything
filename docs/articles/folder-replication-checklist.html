@@ -222,6 +222,43 @@ compatibility shim.</p>
 <p>Format steps (<code>type: format</code>) run when
 <code>run_replication(..., format = TRUE)</code>. Omit
 <code>label:</code> on format children (unused in Display).</p>
+<div class="section level3">
+<h3 id="blocked-incomplete-steps">Blocked / incomplete steps<a class="anchor" aria-label="anchor" href="#blocked-incomplete-steps"></a>
+</h3>
+<p>When a step cannot be produced here (missing Mathematica, proprietary
+data, etc.):</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_restricted</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="at">  </span><span class="fu">incomplete</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="at">  </span><span class="fu">data_unavailable</span><span class="kw">:</span><span class="at"> proprietary</span><span class="co">   # or requires_engine: mathematica</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="at">  </span><span class="fu">blocked_reason</span><span class="kw">:</span><span class="at"> </span><span class="st">"Proprietary microdata not in the deposit."</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">  # code: / outputs: optional until unblocked</span></span></code></pre></div>
+<p><code>incomplete: true</code> excludes the step from baking and from
+<code><a href="../reference/audit_everything.html">audit_everything()</a></code> (neither success nor failure). Prefer
+structured <code>requires_engine:</code> /
+<code>data_unavailable:</code> so Shiny can show the right icon and
+partial-replication popup. Put a step in <code>steps:</code> only if it
+is a <strong>replication claim</strong>; blocked prep off the claim path
+stays in README / popup — not as orphan Unavailable nodes. Recover DAGs
+at <strong>wrapper granularity</strong> from author README tables —
+especially OpenICPSR AER packages. See <a href="contributing-principles.html">Contributing principles</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="data-patterns-short">Data patterns (short)<a class="anchor" aria-label="anchor" href="#data-patterns-short"></a>
+</h3>
+<ul>
+<li>
+<strong>Pattern B (default):</strong> surgical Dataverse file-id
+access → <code>outputs/</code>.</li>
+<li>
+<strong>Pattern A:</strong> materialize → <code>data/</code> only
+when fetch is not a claimed step.</li>
+<li>
+<strong>OpenICPSR:</strong> usually commit needed inputs only (no
+public file API); keep the full unzip under monorepo
+<code>original_studies/</code>.</li>
+</ul>
+</div>
 </div>
 <div class="section level2">
 <h2 id="workflow-from-the-study-repo">Workflow from the study repo<a class="anchor" aria-label="anchor" href="#workflow-from-the-study-repo"></a>
@@ -230,7 +267,7 @@ compatibility shim.</p>
 <h3 id="build-display-artifacts">1. Build display artifacts<a class="anchor" aria-label="anchor" href="#build-display-artifacts"></a>
 </h3>
 <p>Run from the study repository root (or pass its path):</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
@@ -246,7 +283,7 @@ compatibility shim.</p>
 <code>outputs/</code>, and writes
 <code>outputs/manifest.json</code>.</p>
 <p>Confirm outputs exist before handoff:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/validate_outputs.html">validate_outputs</a></span><span class="op">(</span>location <span class="op">=</span> <span class="st">"."</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -262,7 +299,7 @@ child step exists</li>
 <code>outputs/</code> (HTML normalize or PNG md5)</li>
 </ul>
 <p>Run:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_dir.html" class="external-link">test_dir</a></span><span class="op">(</span><span class="st">"tests/testthat"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
@@ -272,14 +309,14 @@ child step exists</li>
 check</strong> from the study repo root confirms the study resolves and
 runs without any registry setup — pass <code>"local"</code> (the
 working-directory study) instead of a DOI:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span>        <span class="co"># what does this study expose?</span></span>
 <span><span class="fu"><a href="../reference/describe_study_dag.html">describe_study_dag</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span>       <span class="co"># sanity-check the parsed step DAG</span></span>
 <span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"local"</span>, <span class="st">"tab_1"</span><span class="op">)</span> <span class="co"># one light step end-to-end</span></span></code></pre></div>
 <p>Then run the full contributor checklist:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span></span>
 <span>  location <span class="op">=</span> <span class="st">"."</span>,</span>
 <span>  build_artifacts <span class="op">=</span> <span class="cn">FALSE</span>   <span class="co"># already built above</span></span>
@@ -296,7 +333,7 @@ Commit your study once checks pass; a registry
 </h3>
 <p>Maintainers work from a local <a href="https://github.com/replicate-anything/registry" class="external-link">registry</a>
 checkout:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span></span>
@@ -314,13 +351,13 @@ never the full <code>steps:</code> list), writes it to
 <code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> in one call.</p>
 <p>After syncing several studies, refresh the whole registry and rerun
 the audit:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="tests-recommended-before-syncing">5. Tests (recommended before syncing)<a class="anchor" aria-label="anchor" href="#tests-recommended-before-syncing"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">testthat</span><span class="fu">::</span><span class="fu"><a href="https://testthat.r-lib.org/reference/test_dir.html" class="external-link">test_dir</a></span><span class="op">(</span><span class="st">"tests/testthat"</span><span class="op">)</span></span></code></pre></div>
 <p>Run tests before <code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> so the checklist
 reflects a merge-ready study.</p>
@@ -337,7 +374,7 @@ replicated estimates to <strong>numbers in the published table</strong>
 figure where you can quote benchmarks from the paper. Reference
 implementation: <a href="https://github.com/replicate-anything/rep-10.1017-S0003055403000534/blob/main/tests/substantive/tab_1.R" class="external-link">Fearon
 &amp; Laitin <code>tab_1</code></a>.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># tests/substantive/tab_1.R — see Fearon &amp; Laitin reference implementation</span></span>
 <span><span class="va">substantive_check_tab_1</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">object</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="../reference/check_glm_table_benchmark.html">check_glm_table_benchmark</a></span><span class="op">(</span><span class="va">object</span>, <span class="fu">tab_1_prior_war_benchmark</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -359,7 +396,7 @@ Use <code>full_replication = TRUE</code> to run defined checks.
 <div class="section level3">
 <h3 id="maintainer-shortcut">Maintainer shortcut<a class="anchor" aria-label="anchor" href="#maintainer-shortcut"></a>
 </h3>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>replicateEverything.registry_root <span class="op">=</span> <span class="st">"../registry"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span><span class="st">"../rep-10.1177-00491241211036161"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>

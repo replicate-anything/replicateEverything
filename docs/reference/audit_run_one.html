@@ -81,7 +81,9 @@
 
 
 <dt id="arg-patience">patience<a class="anchor" aria-label="anchor" href="#arg-patience"></a></dt>
-<dd><p>Seconds before halting the run (default 20).</p></dd>
+<dd><p>Seconds before halting the run (default 20). This is the
+audit cap applied via <code>setTimeLimit</code>; for Stata, the processx wait is
+also aligned to this cap so overdue batch jobs are killed cleanly.</p></dd>
 
 
 <dt id="arg-install-deps">install_deps<a class="anchor" aria-label="anchor" href="#arg-install-deps"></a></dt>
@@ -99,8 +101,8 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>List with <code>success</code>, <code>seconds</code>, <code>timed_out</code>, and
-<code>error</code>.</p>
+    <p>List with <code>success</code>, <code>seconds</code>, <code>timed_out</code>,
+<code>timeout_seconds</code>, and <code>error</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

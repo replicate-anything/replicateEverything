@@ -531,7 +531,7 @@ render_replication <- function(
         type = rep$type,
         object = obj,
         format = infer_result_format(obj, rep$type),
-        has_format = format_specified(rep),
+        has_format = format_specified(rep, meta = meta),
         meta = rep,
         source = "stata"
       ),
@@ -551,7 +551,7 @@ render_replication <- function(
         type = obj_type,
         object = obj,
         format = infer_result_format(obj, obj_type),
-        has_format = format_specified(rep),
+        has_format = format_specified(rep, meta = meta),
         meta = rep,
         source = "python"
       ),
@@ -591,7 +591,7 @@ render_replication <- function(
       type = rep$type,
       object = result,
       format = infer_result_format(result, rep$type),
-      has_format = format_specified(rep),
+      has_format = format_specified(rep, meta = meta),
       meta = rep,
       source = "r"
     ),
@@ -842,7 +842,15 @@ save_artifact <- function(
   object <- replication_object(result)
   format_type <- infer_result_format(object, result$type %||% rep$type %||% "unknown")
 
-  if (format_specified(rep)) {
+  study_meta <- NULL
+  if (!is.null(doi) && nzchar(as.character(doi))) {
+    study_meta <- tryCatch(
+      get_replication_meta(doi, repo = repo, folder = folder),
+      error = function(e) NULL
+    )
+  }
+
+  if (format_specified(rep, meta = study_meta)) {
     if (is.null(doi) || !nzchar(doi)) {
       stop("doi is required to save display artifacts when format is specified.", call. = FALSE)
     }

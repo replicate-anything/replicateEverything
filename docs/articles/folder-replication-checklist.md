@@ -111,6 +111,38 @@ Format steps (`type: format`) run when
 `run_replication(..., format = TRUE)`. Omit `label:` on format children
 (unused in Display).
 
+### Blocked / incomplete steps
+
+When a step cannot be produced here (missing Mathematica, proprietary
+data, etc.):
+
+``` yaml
+- id: tab_restricted
+  type: table
+  incomplete: true
+  data_unavailable: proprietary   # or requires_engine: mathematica
+  blocked_reason: "Proprietary microdata not in the deposit."
+  # code: / outputs: optional until unblocked
+```
+
+`incomplete: true` excludes the step from baking and from
+[`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
+(neither success nor failure). Prefer structured `requires_engine:` /
+`data_unavailable:` so Shiny can show the right icon and
+partial-replication popup. Recover DAGs at **wrapper granularity** from
+author README tables — especially OpenICPSR AER packages. See
+[Contributing
+principles](https://replicate-anything.github.io/replicateEverything/articles/contributing-principles.md).
+
+### Data patterns (short)
+
+- **Pattern B (default):** surgical Dataverse file-id access →
+  `outputs/`.
+- **Pattern A:** materialize → `data/` only when fetch is not a claimed
+  step.
+- **OpenICPSR:** usually commit needed inputs only (no public file API);
+  keep the full unzip under monorepo `original_studies/`.
+
 ## Workflow from the study repo
 
 ### 1. Build display artifacts

@@ -1487,25 +1487,102 @@ cleanup_stata_run_dir <- function(run_dir) {
   invisible(TRUE)
 }
 
+#' Snapshot identity of declared Stata output candidates before a run
+#'
+#' Used so a successful-looking Stata exit cannot silently reuse a stale
+#' pre-existing output when the do-file never rewrote it (e.g. an unclosed
+#' \code{/*} block comment swallowed the script).
+#'
+#' @keywords internal
+stata_output_mtime_snapshot <- function(rep, study_root, staging_dir = NULL) {
+  rels <- step_output_rel_candidates(rep)
+  if (length(rels) == 0L) {
+    rels <- paste0("outputs/staging/", rep$id, ".smcl")
+  }
+  paths <- unique(c(
+    file.path(study_root, rels),
+    if (!is.null(staging_dir) && nzchar(staging_dir)) {
+      file.path(staging_dir, basename(rels))
+    } else {
+      character(0)
+    }
+  ))
+  tokens <- lapply(paths, stata_output_file_token)
+  stats::setNames(tokens, paths)
+}
+
+#' @keywords internal
+stata_output_file_token <- function(path) {
+  if (is.null(path) || !nzchar(path) || !file.exists(path)) {
+    return(NULL)
+  }
+  info <- file.info(path)
+  list(
+    mtime = as.numeric(info$mtime),
+    size = as.numeric(info$size)
+  )
+}
+
+#' @keywords internal
+stata_output_snapshot_token <- function(path, before_tokens) {
+  if (is.null(before_tokens) || !length(before_tokens)) {
+    return(NULL)
+  }
+  path_key <- normalizePath(path, winslash = "/", mustWork = FALSE)
+  if (path_key %in% names(before_tokens)) {
+    return(before_tokens[[path_key]])
+  }
+  if (path %in% names(before_tokens)) {
+    return(before_tokens[[path]])
+  }
+  for (nm in names(before_tokens)) {
+    nm_norm <- tryCatch(
+      normalizePath(nm, winslash = "/", mustWork = FALSE),
+      error = function(e) nm
+    )
+    if (identical(nm_norm, path_key)) {
+      return(before_tokens[[nm]])
+    }
+  }
+  NULL
+}
+
+#' @keywords internal
+stata_output_is_fresh <- function(path, before_tokens) {
+  after <- stata_output_file_token(path)
+  if (is.null(after)) {
+    return(FALSE)
+  }
+  before <- stata_output_snapshot_token(path, before_tokens)
+  if (is.null(before)) {
+    return(TRUE)
+  }
+  !identical(before$mtime, after$mtime) || !identical(before$size, after$size)
+}
+
 #' Resolve Stata output path after a run
 #'
 #' @param rep Replication entry.
 #' @param study_root Study repository root.
 #' @param staging_dir Optional writable staging directory.
+#' @param before_mtimes Optional snapshot from
+#'   \code{stata_output_mtime_snapshot()}; when supplied, only files that are
+#'   new or whose mtime/size changed count as the run's output.
 #' @keywords internal
-resolve_stata_output_after_run <- function(rep, study_root, staging_dir = NULL) {
+resolve_stata_output_after_run <- function(rep, study_root, staging_dir = NULL,
+                                           before_mtimes = NULL) {
   rels <- step_output_rel_candidates(rep)
   if (length(rels) == 0L) {
     rels <- paste0("outputs/staging/", rep$id, ".smcl")
   }
   for (rel in rels) {
     primary <- file.path(study_root, rel)
-    if (file.exists(primary)) {
+    if (stata_output_is_fresh(primary, before_mtimes)) {
       return(normalizePath(primary, winslash = "/", mustWork = FALSE))
     }
     if (!is.null(staging_dir) && nzchar(staging_dir)) {
       candidate <- file.path(staging_dir, basename(rel))
-      if (file.exists(candidate)) {
+      if (stata_output_is_fresh(candidate, before_mtimes)) {
         return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
       }
     }
@@ -1641,6 +1718,8 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
     )
   }
 
+  before_mtimes <- stata_output_mtime_snapshot(rep, study_root, staging_dir = staging_dir)
+
   stata_run <- tryCatch(
     run_replication_do(),
     error = function(e) e
@@ -1658,6 +1737,7 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
         install_deps = TRUE,
         force = TRUE
       )
+      before_mtimes <- stata_output_mtime_snapshot(rep, study_root, staging_dir = staging_dir)
       stata_run <- tryCatch(
         run_replication_do(),
         error = function(e) e
@@ -1669,10 +1749,26 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
     stop(stata_run)
   }
 
-  output_path <- resolve_stata_output_after_run(rep, study_root, staging_dir = staging_dir)
-  if (!file.exists(output_path)) {
+  output_path <- resolve_stata_output_after_run(
+    rep,
+    study_root,
+    staging_dir = staging_dir,
+    before_mtimes = before_mtimes
+  )
+  if (!file.exists(output_path) || !stata_output_is_fresh(output_path, before_mtimes)) {
     stop(
-      stata_output_missing_message(output_path, study_root, stata_run, staging_dir = staging_dir),
+      paste0(
+        stata_output_missing_message(output_path, study_root, stata_run, staging_dir = staging_dir),
+        if (file.exists(output_path)) {
+          paste0(
+            "\nNote: ", output_path,
+            " exists but was not updated by this Stata run ",
+            "(possible silent no-op, e.g. an unclosed /* block comment in the do-file)."
+          )
+        } else {
+          ""
+        }
+      ),
       call. = FALSE
     )
   }

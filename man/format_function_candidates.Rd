@@ -4,12 +4,14 @@
 \alias{format_function_candidates}
 \title{Candidate format function names for a replication entry}
 \usage{
-format_function_candidates(rep, paper_meta = NULL)
+format_function_candidates(rep, paper_meta = NULL, meta = NULL)
 }
 \arguments{
 \item{rep}{A single replication entry from \code{replication.yml}.}
 
 \item{paper_meta}{Optional paper-level metadata.}
+
+\item{meta}{Optional full study metadata (for format children).}
 }
 \description{
 Candidate format function names for a replication entry

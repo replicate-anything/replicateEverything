@@ -93,18 +93,8 @@ once</li>
 files</li>
 </ul>
 <p>You can use it from <code>R</code> or your <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">browser</a>.</p>
-<p><strong>replicateEverything does not replace</strong> long-term
-structured repositories such as ICPSR and Dataverse. It is an
-<strong>access point</strong>. We are not there yet, but an aim is for
-it to read those repositories directly.</p>
-<p>For preparing a deposit, follow the <a href="https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html" class="external-link">AEA
-Data Editor guidance</a> and the <a href="https://datacodestandard.org/" class="external-link">Data and Code Availability
-Standard</a> (data–code separation and related rules). Beyond those, we
-ask for two things: a <code>replication.yml</code> file, and
-data/analysis packaged into <strong>consumable steps</strong>. See <a href="contributing-principles.html">Contributing principles</a> for the
-contributor walkthrough.</p>
 <style>
-.tldr-box {
+.tldr-box, .note-box {
   border: 1px solid #e0e0e0;
   border-radius: 10px;
   padding: 1.1em 1.3em;
@@ -112,11 +102,19 @@ contributor walkthrough.</p>
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10);
   background: #fbfbfb;
 }
-.tldr-box .tldr-label {
+.note-box {
+  border-left: 4px solid #0d6efd;
+  background: #f8fbff;
+}
+.tldr-box .tldr-label,
+.note-box .note-label {
   font-weight: 600;
   font-size: 1.05em;
   margin-bottom: 0.6em;
   letter-spacing: 0.01em;
+}
+.note-box p:last-child {
+  margin-bottom: 0;
 }
 </style>
 <div class="tldr-box">
@@ -135,11 +133,11 @@ TL;DR — just do this
 <h2 id="why-bother">Why bother?<a class="anchor" aria-label="anchor" href="#why-bother"></a>
 </h2>
 <p>Computational replication has never been easier. But it is still a
-bit of a jungle. Archives are <em>ad hoc</em> in structure, paths shift,
-dependencies drift, and every new reader has to re-wrangle the
-collection of files they download from dataverse or osf. Plus there are
-no guarantees: Nobody runs a standing check that the archive still runs
-today.</p>
+bit of a jungle. Archives are too often <em>ad hoc</em> in structure,
+paths shift, dependencies drift, and every new reader has to re-wrangle
+the collection of files they download from dataverse or osf. Plus there
+are no guarantees: Nobody runs a standing check that the archive still
+runs today.</p>
 <p><code>replicateEverything</code> contributes by proposing a format
 that makes code quickly accessible and runnable.</p>
 <p>Are we fighting the last battle? You might wonder (we certainly
@@ -149,6 +147,22 @@ keep an authoritative codebase? Our answer: Because the code is a
 shared object to inspect, not a fresh vibe-coded reimplementation. That
 case gets stronger, we think, as models get better at improvising.</p>
 <p>So this is an attempt to keep humans in the loop.</p>
+<div class="note-box">
+<p class="note-label">
+Relation with existing repositories
+</p>
+<p><strong>replicateEverything does not replace</strong> long-term
+structured repositories such as ICPSR and Dataverse. You can think of it
+as an <strong>access point</strong>. Though we are not there yet, we
+would love to get to the point where <code>replicateEverything</code>
+simply reads from existing repositories directly.</p>
+<p>For preparing a deposit, follow the <a href="https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html" class="external-link">AEA
+Data Editor guidance</a> and the <a href="https://datacodestandard.org/" class="external-link">Data and Code Availability
+Standard</a> (data–code separation and related rules).</p>
+<p>However, we also want replication archives to be legible. For this,
+we ask for two things: a <code>replication.yml</code> file, and
+data/analysis packaged into <strong>consumable steps</strong>.</p>
+</div>
 <p>Here’s a walk through of the main elements plus the bells and
 whistles.</p>
 </div>
@@ -199,9 +213,9 @@ study:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span><span class="op">)</span></span>
 <span><span class="co"># Replications: Ethnicity, Insurgency, and Civil War [10.1017/s0003055403000534]</span></span>
-<span><span class="co">#        id   type engine                      label</span></span>
-<span><span class="co">#     tab_1  table      r                     Table 1</span></span>
-<span><span class="co"># tab_1_stata table  stata                     Table 1</span></span></code></pre></div>
+<span><span class="co"># id          type   engine  label</span></span>
+<span><span class="co"># tab_1       table  r       Table 1</span></span>
+<span><span class="co"># tab_1_stata table  stata   Table 1</span></span></code></pre></div>
 <p>Run from top to bottom to get a list of all objects created including
 all intermediate datasets.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">

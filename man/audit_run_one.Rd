@@ -20,7 +20,9 @@ audit_run_one(
 
 \item{what}{Character. Replication identifier (logical id, e.g. \code{"tab_1"}).}
 
-\item{patience}{Seconds before halting the run (default 20).}
+\item{patience}{Seconds before halting the run (default 20). This is the
+audit cap applied via \code{setTimeLimit}; for Stata, the processx wait is
+also aligned to this cap so overdue batch jobs are killed cleanly.}
 
 \item{install_deps}{Logical. Install missing CRAN dependencies when
 \code{TRUE}. Defaults to \code{FALSE}.}
@@ -30,8 +32,8 @@ audit_run_one(
 \item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
-List with \code{success}, \code{seconds}, \code{timed_out}, and
-\code{error}.
+List with \code{success}, \code{seconds}, \code{timed_out},
+\code{timeout_seconds}, and \code{error}.
 }
 \description{
 Run one replication with a per-object time limit

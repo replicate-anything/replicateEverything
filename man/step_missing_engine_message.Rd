@@ -12,6 +12,7 @@ step_missing_engine_message(meta, what, output_exists = FALSE)
 when \code{FALSE}, it is "not available".}
 }
 \description{
-User-facing blocked-step message, distinguishing absent vs baked-but-blocked
+Prefers \code{requires_engine:} phrasing, then \code{data_unavailable:}, then
+free-text \code{blocked_reason:}.
 }
 \keyword{internal}

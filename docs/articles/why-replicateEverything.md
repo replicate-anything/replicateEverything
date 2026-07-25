@@ -20,10 +20,9 @@ guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-dep
 and the [Data and Code Availability
 Standard](https://datacodestandard.org/) (data–code separation and
 related rules). Beyond those, we ask for two things: a `replication.yml`
-file, and data/analysis packaged into **consumable steps**. See
-[Contributing
-principles](https://replicate-anything.github.io/replicateEverything/articles/contributing-principles.md)
-for the contributor walkthrough.
+file, and data/analysis packaged into **consumable steps**. Contributor
+walkthrough: **yaml → code/data → bake → share** — see [Contributing
+principles](https://replicate-anything.github.io/replicateEverything/articles/contributing-principles.md).
 
 TL;DR — just do this
 

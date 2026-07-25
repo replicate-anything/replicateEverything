@@ -261,7 +261,9 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
       passed = 0L,
       failed = 0L,
       timed_out = 0L,
-      failures = NULL
+      skipped = 0L,
+      failures = NULL,
+      skips = NULL
     ))
   }
 
@@ -278,26 +280,43 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
       passed = 0L,
       failed = 0L,
       timed_out = 0L,
+      skipped = 0L,
       failures = NULL,
+      skips = NULL,
       not_in_audit = TRUE
     ))
   }
 
-  passed <- sum(sub$success, na.rm = TRUE)
-  failed <- sum(!sub$success, na.rm = TRUE)
+  passed <- sum(sub$success %in% TRUE, na.rm = TRUE)
+  is_skipped <- if ("skipped" %in% names(sub)) {
+    as.logical(sub$skipped) %in% TRUE
+  } else {
+    rep(FALSE, nrow(sub))
+  }
+  skipped <- sum(is_skipped, na.rm = TRUE)
+  failed <- sum(sub$success %in% FALSE, na.rm = TRUE)
   timed_out <- if ("timed_out" %in% names(sub)) {
     sum(as.logical(sub$timed_out) %in% TRUE, na.rm = TRUE)
   } else {
     0L
   }
-  fail_rows <- sub[!sub$success, , drop = FALSE]
+  fail_rows <- sub[sub$success %in% FALSE & !is_skipped, , drop = FALSE]
+  skip_rows <- sub[is_skipped, , drop = FALSE]
   failures <- NULL
   if (nrow(fail_rows) > 0L) {
     keep <- intersect(
-      c("object", "object_label", "engine", "error_snippet", "timed_out"),
+      c("object", "object_label", "engine", "error_snippet", "timed_out", "skipped", "timeout_seconds"),
       names(fail_rows)
     )
     failures <- fail_rows[, keep, drop = FALSE]
+  }
+  skips <- NULL
+  if (nrow(skip_rows) > 0L) {
+    keep <- intersect(
+      c("object", "object_label", "engine", "error_snippet", "skipped"),
+      names(skip_rows)
+    )
+    skips <- skip_rows[, keep, drop = FALSE]
   }
 
   list(
@@ -307,7 +326,9 @@ study_registry_audit_results <- function(doi, registry_root = NULL) {
     passed = passed,
     failed = failed,
     timed_out = as.integer(timed_out),
+    skipped = as.integer(skipped),
     failures = failures,
+    skips = skips,
     not_in_audit = FALSE
   )
 }

@@ -101,6 +101,12 @@ seconds) — each table or figure is halted after this limit; the audit
 <strong>Failures do not stop the run</strong> — results are
 collected in a data frame.</li>
 <li>
+<strong>Incomplete / unavailable steps are skipped</strong> — yaml
+<code>incomplete: true</code> (including <code>requires_engine:</code> /
+<code>data_unavailable:</code> gaps) is <strong>not</strong> attempted
+and is <strong>not</strong> counted as success or failure. Distinct from
+fail/timeout.</li>
+<li>
 <strong>Report fields</strong> — study, object id, engine, success,
 elapsed seconds, timed-out flag, and a short error snippet on
 failure.</li>

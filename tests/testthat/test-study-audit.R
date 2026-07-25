@@ -94,6 +94,6 @@ test_that("study_registry_audit_results filters audit snapshot by doi", {
   )
   expect_true(res$available)
   if (res$total > 0L) {
-    expect_true(res$passed + res$failed == res$total)
+    expect_true(res$passed + res$failed + (res$skipped %||% 0L) == res$total)
   }
 })

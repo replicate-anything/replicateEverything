@@ -15,6 +15,10 @@ Key behaviour:
   after this limit; the audit **continues** with the next object.
 - **Failures do not stop the run** — results are collected in a data
   frame.
+- **Incomplete / unavailable steps are skipped** — yaml
+  `incomplete: true` (including `requires_engine:` / `data_unavailable:`
+  gaps) is **not** attempted and is **not** counted as success or
+  failure. Distinct from fail/timeout.
 - **Report fields** — study, object id, engine, success, elapsed
   seconds, timed-out flag, and a short error snippet on failure.
 - **Substantive checks** (default `substantive = TRUE`) — when a study

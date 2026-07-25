@@ -116,6 +116,11 @@ nodes that the author never runs individually.
 
 ## Blocked steps (engines vs proprietary data)
 
+**DAG membership:** put a step in `steps:` only if it is a **replication claim**
+(Display / audit). Proprietary prep (or other blocked stages) that is **not** on
+the path to a claimed output belongs in README / study popup — **not** as orphan
+Unavailable nodes in the DAG.
+
 Before marking a step unavailable, **search the deposit and study repo for
 precomputed gold** (results folders, committed `outputs/`, paper supplements).
 Empty placeholders are common — that is not the same as “no gold anywhere.”

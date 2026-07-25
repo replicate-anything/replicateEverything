@@ -301,7 +301,7 @@ check_folder_replication <- function(
       rid <- as.character(rep$id[[1]])
       live_ok <- tryCatch(
         {
-          use_format <- format_specified(rep)
+          use_format <- format_specified(rep, meta = meta)
           obj <- run_replication(
             lookup,
             rid,

@@ -4,7 +4,12 @@
 \alias{resolve_stata_output_after_run}
 \title{Resolve Stata output path after a run}
 \usage{
-resolve_stata_output_after_run(rep, study_root, staging_dir = NULL)
+resolve_stata_output_after_run(
+  rep,
+  study_root,
+  staging_dir = NULL,
+  before_mtimes = NULL
+)
 }
 \arguments{
 \item{rep}{Replication entry.}
@@ -12,6 +17,10 @@ resolve_stata_output_after_run(rep, study_root, staging_dir = NULL)
 \item{study_root}{Study repository root.}
 
 \item{staging_dir}{Optional writable staging directory.}
+
+\item{before_mtimes}{Optional snapshot from
+\code{stata_output_mtime_snapshot()}; when supplied, only files that are
+new or whose mtime/size changed count as the run's output.}
 }
 \description{
 Resolve Stata output path after a run

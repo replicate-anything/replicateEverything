@@ -4,7 +4,7 @@
 \alias{resolve_format_function}
 \title{Resolve a format function, falling back to a no-op default}
 \usage{
-resolve_format_function(env, rep, paper_meta = NULL)
+resolve_format_function(env, rep, paper_meta = NULL, meta = NULL)
 }
 \arguments{
 \item{env}{Environment sourced from replication scripts.}
