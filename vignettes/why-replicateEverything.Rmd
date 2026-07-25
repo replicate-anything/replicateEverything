@@ -94,9 +94,8 @@ So this is an attempt to keep humans in the loop.
 
 **replicateEverything does not replace** long-term structured repositories such as ICPSR and Dataverse. You can think of it as an **access point**. Though we are not there yet, we would love to get to the point where `replicateEverything` simply reads from existing repositories directly.
 
-For preparing a deposit, follow the [AEA Data Editor guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html) and the [Data and Code Availability Standard](https://datacodestandard.org/) (data–code separation and related rules).
+For preparing a deposit, the guidance in  [AEA Data Editor guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html) and the [Data and Code Availability Standard](https://datacodestandard.org/) (data–code separation and related rules) is excellent. However, in addition we want to be sure we have want a common, machine-readable layout that  is legible to humans. For this, we ask for two things: data/analysis packaged into consumable steps and a `replication.yml` that provides a machine readable roadmap.
 
-However, we also want a common, machine-readable layout that  is legible to humans. For this, we ask for two things: data/analysis packaged into consumable steps and a `replication.yml` that provides a roadmap.
 
 </div>
 
