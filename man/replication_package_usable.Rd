@@ -10,6 +10,9 @@ replication_package_usable(package)
 \item{package}{Installed or dev-loaded package name.}
 }
 \description{
-Whether a study replication package namespace can be used
+Modern study packages export \code{make_*} / \code{format_*} only (verbs live
+in replicateEverything). Legacy packages may still ship
+\code{list_replications()}. Either shape counts as usable when the package
+loads and exposes replication metadata or analysis helpers.
 }
 \keyword{internal}

@@ -13,7 +13,15 @@ stata_batch_args(do_path)
 Character vector of arguments for \code{system2()}.
 }
 \description{
-Windows: \code{/e do file.do}. Unix/Linux/macOS: \code{-b file.do}.
-Paths with spaces are shortened on Windows when possible.
+Windows: \code{/e /i /q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
+}
+\details{
+On Windows, \code{/e} exits when the job finishes (no end-of-job OK click).
+\code{/i} suppresses the Stata taskbar icon (\link{GSW} B.5). Without \code{/i},
+the icon appears for the whole run; clicking it opens "cancel the batch
+job?", which injects \code{--Break--} / \code{r(1)} and then cascades
+"Would you like the batch job to continue?" dialogs as nested do-files
+unwind. \code{/q} suppresses the logo. Paths with spaces are shortened on
+Windows when possible.
 }
 \keyword{internal}
