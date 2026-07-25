@@ -4,7 +4,7 @@
 \alias{stop_if_step_blocked}
 \title{Stop with a clear, informative message when a step cannot be created}
 \usage{
-stop_if_step_blocked(meta, what)
+stop_if_step_blocked(meta, what, output_exists = NULL)
 }
 \description{
 Stop with a clear, informative message when a step cannot be created

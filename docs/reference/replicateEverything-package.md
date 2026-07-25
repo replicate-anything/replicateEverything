@@ -73,11 +73,10 @@ Useful links:
 ## Author
 
 **Maintainer**: Vermon Washington <vermon.washington@wzb.eu>
+\[contributor\]
 
-Authors:
+Other contributors:
 
-- Vermon Washington <vermon.washington@wzb.eu>
+- Macartan Humphreys <macartan.humphreys@wzb.eu> \[contributor\]
 
-- Macartan Humphreys <macartan.humphreys@wzb.eu>
-
-- Cord Masche <cord.masche@wzb.eu>
+- Cord Masche <cord.masche@wzb.eu> \[contributor\]

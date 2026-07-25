@@ -17,7 +17,7 @@ Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `re
 
 **Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml; **gold example** `rep-template`), `include-study-in-registry` (maintainer `sync_study_to_registry`).
 
-**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title.
+**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse` / `fetch_dataverse_file()`; full archive only when Pattern C justified (see root `AI.md`).
 
 **Canonical examples:** [`rep-template`](https://github.com/replicate-anything/rep-template) (minimal gold); `rep-10.1017-s0003055426101749` (Jiang & Yang, multi-engine); [`rep-10.1017-s0003055422000284`](https://github.com/replicate-anything/rep-10.1017-s0003055422000284) (Blair et al., Dataverse fetch + Stata).
 
@@ -54,9 +54,11 @@ folder-replication Step 4b.
 - [ ] 2. **Reconstruct step DAG** from README order + script file I/O (folder-replication Step 1b)
 - [ ] 3. Inventory engines (Stata / R / Python) and pipeline order
 - [ ] 4. Create study repo layout (see Target layout)
-- [ ] 5. **Data:** commit `data/raw/` (≤50MB) **or** declare `dataverse.files` (path + url/id) for package materialize — prefer wiring over an `access_data` step
-- [ ] 5b. **Check native format** â€” inspect `originalFileName` / `originalFormatLabel` before any `.tab` conversion
-- [ ] 6. **Search all code for dependencies** â€” folder-replication Step 4a + Dataverse delivery patterns below
+- [ ] 5. **Data (light repo, Pattern B default):** surgical `access_*` → `outputs/` via file id / `?format=original` (`engine: dataverse` / `fetch_dataverse_file()`); **no full DVN zip** unless Pattern C justified
+- [ ] 5b. **Check native format** — inspect `originalFileName` / `originalFormatLabel` before any `.tab` conversion
+- [ ] 5c. **Pattern A / commit only if needed** — silent materialize → `data/` when fetch is not a claimed product; commit raw only when no fetch API
+- [ ] 6. **Search all code for dependencies** — folder-replication Step 4a + Dataverse delivery patterns below
+- [ ] 6b. **No study-local download helpers** — use package `fetch_dataverse_file()` / materialize / `dataverse`
 - [ ] 7. Add dependency automation (Stata install script, R CRAN, Python pip)
 - [ ] 8. Extract pipeline â†’ code/steps/ + transform steps in replication.yml
 - [ ] 9. Split monolithic .do â†’ code/tables/tab_N.do + mk_tab_N.do
@@ -126,7 +128,7 @@ source for `steps:` â€” not a guess from table ids alone.
 
 | README pattern | Step yaml |
 |----------------|-----------|
-| Dataverse / external deposit | Prefer `dataverse.files` wiring → `data/`; legacy: `access_data` → `outputs/` |
+| Dataverse / external deposit | **Default Pattern B:** surgical access → `outputs/` (file id + `?format=original`). Exception A: `dataverse.files` → `data/`. Pattern C archive only if deposit layout required |
 | Step 0: merge / construct dataset | `type: transform`, raw `inputs:` from `data/` |
 | Step 1: main tables | One `type: table` per table, `parents: [construct_…]` |
 | Later: figures / ML / conjoint | `type: figure` or extra transforms as needed |

@@ -1,5 +1,134 @@
 # Changelog
 
+## replicateEverything 0.7.8
+
+### Missing-engine messages: not available vs not reproducible
+
+- **UX:** Incomplete steps that need a proprietary/system engine (e.g.
+  Mathematica) now use two fixed phrasings:
+  - baked output absent →
+    `"{label} not available because of missing {Engine} engine"`
+  - baked output present →
+    `"{label} not reproducible because of missing {Engine} engine"`
+- **Bug fix:** yaml field checks for deprecated `requires:` /
+  `depends_on:` now use exact `[[ ]]` indexing. R’s `$requires` was
+  partial-matching the new `requires_engine:` field and hard-erroring
+  normalize.
+- **Yaml:** optional step field `requires_engine:` (e.g. `mathematica`),
+  or `system_requirements:`; otherwise the engine is inferred from
+  `blocked_reason:` text. Helpers: \[missing_engine_message()\],
+  \[step_missing_engine_message()\], \[step_required_engine()\],
+  \[step_display_output_exists()\].
+- **Shiny:** blocked table/figure pills keep **Display** enabled when a
+  baked artifact exists (badge “Not reproducible”); both Display and Run
+  stay disabled (visually greyed) with badge “Unavailable” when the file
+  is absent. Hover/title and the missing-artifact panel use the same
+  messages. Display on “Not reproducible” rows wires the same
+  `replication_action` handler as runnable rows so baked artifacts still
+  open.
+- **Run:** \[stop_if_step_blocked()\] / \[run_replication()\] raise the
+  new phrasing instead of only
+  `"This object cannot be created because of: ..."`.
+
+### Surgical Dataverse pulls + Pattern B default
+
+- **New:** \[fetch_dataverse_file()\] — exported surgical download by
+  file id / URL (`api/access/datafile/<id>?format=original`). Prefer
+  over full-dataset zips and study-local
+  [`httr::GET`](https://httr.r-lib.org/reference/GET.html) helpers.
+- **New:** `engine: dataverse` on transform steps runs
+  \[run_dataverse_access_step()\] (file id + `outputs:` → disk) without
+  inventing study download code.
+- **Display:** \[is_dataverse_access_prep_step()\] matches Pattern C
+  deposit/manifest only — Pattern B `access_data` → `outputs/*.dta`
+  shows a data preview (or a clear missing-output note), not a false
+  “deposit summary”.
+- **Shiny Live Run:** \[run_live_display()\] passes `force = TRUE` so
+  the target step re-executes (matches \[run_replication()\] defaults).
+- **Policy:** root `AI.md` + skills — Pattern B access → `outputs/` is
+  default; full archive only when Pattern C is justified; Jiang noted
+  for B migration.
+- **Studies:** Blair (`14058927`) and Madsen/Voeten (`14008582`) use
+  surgical Pattern B pulls; Madsen no longer downloads a full DVN zip
+  for one CSV.
+
+### Declared remote data wiring (no access_data step)
+
+- **New:** \[materialize_declared_data()\] fetches files listed under
+  `dataverse.files` or top-level `data_files:` (each entry: local
+  `path` + `url`, or Dataverse `id`/`file_id` with optional
+  `original: true`) into the study tree. Hooked from
+  \[prepare_study_run()\] and \[ensure_study_data_files()\] so
+  `given = "nothing"` obtains raw roots without a study-local download
+  step.
+- **Studies:** Jiang (`rep-10.1017-s0003055426101749`) drops
+  `access_data` and relies on yaml wiring → `data/raw/*.dta`. Transform
+  steps remain for merges / recodes under `outputs/`.
+- **Merge:** folder study yaml `dataverse:` / `data_files:` now copy
+  into registry stubs via \[complete_folder_study_meta()\].
+- **Stata:** \[run_stata_replication()\] ensures `inputs:` as well as
+  `data:` via \[replication_data_paths()\].
+
+## replicateEverything 0.7.6
+
+### Clearer Shiny / list_replications errors when study yaml cannot be fetched
+
+- **UX:** When a registry stub has no `steps:` and the study repo
+  `replication.yml` cannot be loaded, \[list_replications()\] now
+  reports a specific reason (HTTP 404/403 private-or-missing, network
+  failure, yaml parse/normalize errors such as deprecated `artifact:`,
+  or a genuinely empty stub) instead of the generic empty-`steps:`
+  normalize message. The bundled Shiny app surfaces the same package
+  message.
+
+### Stata batch preamble hardened against interactive prompts
+
+- **Bug fix / hardening:**
+  [`stata_runner_lines()`](https://replicate-anything.github.io/replicateEverything/reference/stata_runner_lines.md)
+  now also emits `pause off`, `set linesize 255`, and re-asserts
+  `set more off` / `pause off` immediately before running the study
+  script under `capture noisily nobreak do`. This blocks `--more--`
+  paging, live `pause` prompts, and Break-key `r(1)` continue dialogs
+  during Windows `/e` batch runs. (`varabbrev off` is intentionally not
+  forced: many deposits rely on default abbreviation matching.)
+- **Windows (real Continue/Break fix):**
+  [`stata_batch_args()`](https://replicate-anything.github.io/replicateEverything/reference/stata_batch_args.md)
+  now passes `/e /i /q` (not bare `/e`). Stata’s `/i` suppresses the
+  batch taskbar icon (\[GSW\] B.5). Without it, clicking that icon opens
+  “cancel the batch job?”, injects `--Break--` / r(1), and cascades
+  “Would you like the batch job to continue?” dialogs as nested do-files
+  unwind — `set more off` cannot stop that.
+  [`run_stata_system2()`](https://replicate-anything.github.io/replicateEverything/reference/run_stata_system2.md)
+  keeps `processx` `windows_hide = TRUE` and no longer falls back to a
+  *visible* processx child if hide setup fails.
+
+### Clear messaging for steps that cannot be created (`incomplete:` / `blocked_reason:`)
+
+- **New:** a step in `replication.yml` may declare `incomplete: true`
+  plus a free-text `blocked_reason: "..."` explaining why it cannot be
+  produced in this environment (missing proprietary engine such as
+  Mathematica/MATLAB, a data file absent from the deposit, etc.).
+  `incomplete:` already existed and already excluded a step from
+  \[build_study_outputs()\] / baking and from \[audit_everything()\];
+  `blocked_reason:` is new and is now surfaced to users instead of the
+  step just silently disappearing:
+  - \[run_replication()\] now stops immediately with
+    `"This object cannot be created because of: <reason>"` when asked to
+    run a blocked step directly, and *skips* (with a
+    [`message()`](https://rdrr.io/r/base/message.html), not an error)
+    blocked steps encountered during `what = "everything"`, so one
+    blocked leaf no longer aborts the rest of the DAG.
+  - \[list_replications()\] still lists blocked steps (it always has -
+    they are still real tables/figures, just not creatable here) so
+    users can see what exists even when it cannot be built.
+  - The bundled Shiny app now shows blocked table/figure/data-step pills
+    greyed out with a disabled Display/Run button and an “Unavailable”
+    badge; hovering (or the button title) surfaces the `blocked_reason`
+    text.
+- No schema aliases: `incomplete`/`blocked_reason` are the only
+  supported field names (no `unavailable:` synonym) to keep
+  `replication.yml` parsing simple.
+
 ## replicateEverything 0.7.5
 
 ### Stata batch runs are now fully non-interactive (no more “would you like the batch job to continue?” dialogs)

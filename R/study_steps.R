@@ -21,7 +21,8 @@ is_pipeline_step_type <- function(type) {
 #' Parent ids declared on a step entry (`parents:` only)
 #' @keywords internal
 step_parent_ids <- function(step) {
-  if (!is.null(step$requires) || !is.null(step$depends_on)) {
+  # Use [[ ]] — `$requires` would partial-match `requires_engine`.
+  if (!is.null(step[["requires"]]) || !is.null(step[["depends_on"]])) {
     stop(
       "Step '", as.character(step$id %||% "?"),
       "' uses requires:/depends_on:; use parents: only.",

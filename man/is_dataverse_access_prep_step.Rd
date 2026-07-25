@@ -2,11 +2,13 @@
 % Please edit documentation in R/dataverse_manifest.R
 \name{is_dataverse_access_prep_step}
 \alias{is_dataverse_access_prep_step}
-\title{Whether a prep step should use the Dataverse deposit summary display}
+\title{Whether a prep step should use the Dataverse \emph{full-deposit} summary display}
 \usage{
 is_dataverse_access_prep_step(prep, meta, ctx = NULL)
 }
 \description{
-Whether a prep step should use the Dataverse deposit summary display
+Pattern C only (manifest / deposit_root / access_deposit / archive fetch).
+Pattern B surgical \code{access_data} → \code{outputs/*.dta} uses the normal
+data-file preview — do \strong{not} match bare \code{"access"} in the step id.
 }
 \keyword{internal}

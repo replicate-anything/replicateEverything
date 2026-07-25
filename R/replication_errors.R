@@ -306,7 +306,8 @@ try_render_for_display <- function(
   language = NULL,
   install_deps = FALSE,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  force = FALSE
 ) {
   tryCatch(
     render_for_display(
@@ -315,7 +316,8 @@ try_render_for_display <- function(
       language = language,
       install_deps = install_deps,
       repo = repo,
-      folder = folder
+      folder = folder,
+      force = force
     ),
     error = function(e) e
   )

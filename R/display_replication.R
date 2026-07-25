@@ -153,13 +153,15 @@ run_live_display <- function(
   repo = NULL,
   folder = NULL
 ) {
+  # Live Run must re-execute the target (match run_replication force = TRUE).
   result <- try_render_for_display(
     doi,
     what,
     language = language,
     install_deps = install_deps,
     repo = repo,
-    folder = folder
+    folder = folder,
+    force = TRUE
   )
   if (inherits(result, "error")) {
     return(list(ok = FALSE, error = result, source = "live"))

@@ -12,7 +12,7 @@ replication_engine(rep, paper_meta = NULL)
 \item{paper_meta}{Optional paper-level metadata.}
 }
 \value{
-\code{"r"}, \code{"stata"}, or \code{"python"}.
+\code{"r"}, \code{"stata"}, \code{"python"}, or \code{"dataverse"}.
 }
 \description{
 Replication engine for a single entry

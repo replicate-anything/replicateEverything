@@ -287,7 +287,8 @@ render_for_display <- function(
   language = NULL,
   install_deps = FALSE,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  force = FALSE
 ) {
   result <- render_replication(
     doi,
@@ -295,7 +296,8 @@ render_for_display <- function(
     language = language,
     install_deps = install_deps,
     repo = repo,
-    folder = folder
+    folder = folder,
+    force = force
   )
   display <- format_for_display(
     replication_object(result),

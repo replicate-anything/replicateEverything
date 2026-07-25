@@ -60,18 +60,30 @@ Run through in order; stop on hard blockers.
 - [ ] `list_replications("local")` and `describe_study_dag("local")` succeed
 ```
 
-### B. Materials lean-ness
+### B. Materials lean-ness / surgical pulls
 
-Ideal: **yaml points at what is needed**; do not ship unused deposit material.
+Ideal: **yaml points at what is needed**; do not ship unused deposit material;
+**never** download a full Dataverse zip when file ids suffice.
 
 ```
 - [ ] No ethics / instruments / questionnaires / appendix-only blobs unless a declared step needs them
-- [ ] Prefer Dataverse `access_*` + manifest over copying large archives into git
-- [ ] Prefer sourcing author scripts in place (Pattern C) over rewriting when scripts are standalone
+- [ ] **Surgical pulls:** file-id / `?format=original` only — no `archive_original` / full DVN zip unless Pattern C justified in README
+- [ ] Prefer Pattern B access → `outputs/` (or Pattern A materialize) over committing raw when file ids exist
+- [ ] Prefer package `fetch_dataverse_file()` / `engine: dataverse` — no study-local `httr::GET` / `download.file` download helpers
+- [ ] Prefer sourcing author scripts in place (Pattern C) over rewriting when scripts are standalone; still use file-id manifest rows when possible
 - [ ] For monolithic `.Rmd` only: thin `make_*` extracts are OK — document the Rmd chunk mapping in README
 - [ ] No empty directories (no `data/raw/` with only a placeholder README if nothing is committed there — document fetch in root README instead, or commit ≤50 MB data)
 - [ ] No study-local `registry/` handoff
 - [ ] No scratch / staging / deposit cache committed (`outputs/deposit/`, `outputs/staging/` gitignored)
+```
+
+Grep helpers for heaviness (from study root):
+
+```bash
+rg -n "api/access/dataset|:persistentId|archive_original|download_dataverse_dataset_archive" .
+rg -n "httr::GET|download\\.file\\(" code/
+rg -n "get_dataframe_by_name" code/
+git ls-files "data/**" "outputs/**/*.dta" "outputs/**/*.csv" 2>/dev/null | head
 ```
 
 ### C. Outputs and Display

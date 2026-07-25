@@ -44,6 +44,7 @@ The full contract stays at repo root: `replication.yml` (folder) or
 - [ ] 4. Validate: `check_replication()` (includes substantive-check coverage)
 - [ ] 4b. Add `tests/substantive/<step_id>.R` for published benchmarks where possible
 - [ ] 5. Prepare / validate: `check_and_bake_study(".")`
+- [ ] 5b. Light-repo / surgical pulls: no full DVN zip unless Pattern C justified; prefer Pattern B access → `outputs/`
 - [ ] 6. Commit study repo (code, data, outputs, tests, replication.yml) — no registry/
 - [ ] 7. Open PR on study repo; notify registry maintainer
 ```

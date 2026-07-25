@@ -12,10 +12,15 @@ who clones or installs replicateEverything gets the current guidance.
 | `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 1b DAG from original repo**; Step 4a dependency search + Step 4b `steps:` yaml |
 | `dataverse_to_replicateEverything.md` | `dataverse-to-replicate-everything` | Harvard Dataverse deposits → folder-backed study repo |
 | `include_study_in_registry.md` | `include-study-in-registry` | Contributor prepare + maintainer sync into central registry |
-| `check_study_submission.md` | `check-study-submission` | Review / audit a submission: Shiny "no steps", yaml hard errors, lean materials, missing outputs |
+| `check_study_submission.md` | `check-study-submission` | Review / audit: Shiny "no steps", yaml hard errors, **surgical pulls / light-repo**, missing outputs |
 
 Each file is a self-contained Cursor Agent Skill (YAML frontmatter with
 `name:` + `description:`, then the body).
+
+**Policy (see root `AI.md`):** study repos stay light; **Pattern B default** =
+surgical Dataverse file-id pulls → `outputs/`; full archive only when Pattern C
+is justified. Jiang (`rep-10.1017-s0003055426101749`) is Pattern A (surgical
+file URLs into `data/raw/`) and should migrate toward Pattern B when convenient.
 
 ## Single source of truth
 

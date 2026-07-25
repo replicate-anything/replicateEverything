@@ -44,6 +44,10 @@ Bake precomputed outputs and validate a study repo before registration.
   : Validate a folder-backed replication study
 - [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
   : Build outputs and validate a study (contributor)
+- [`fetch_dataverse_file()`](https://replicate-anything.github.io/replicateEverything/reference/fetch_dataverse_file.md)
+  : Fetch a Dataverse file into a study-relative path (surgical pull)
+- [`materialize_declared_data()`](https://replicate-anything.github.io/replicateEverything/reference/materialize_declared_data.md)
+  : Materialize remotely declared study data into the study root
 
 ## Maintainer: registry ops
 

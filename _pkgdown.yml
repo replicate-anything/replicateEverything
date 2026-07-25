@@ -15,6 +15,40 @@ navbar:
     - reference
     - articles
     right: github
+  components:
+    articles:
+      text: Articles
+      menu:
+      - text: All articles
+        href: articles/index.html
+      - text: -------
+      - text: Getting going
+      - text: Why replicateEverything?
+        href: articles/why-replicateEverything.html
+      - text: Meet the functions
+        href: articles/meet-the-functions.html
+      - text: Shiny demo app
+        href: articles/shiny-app.html
+      - text: Replication Examples Using Code
+        href: articles/replication-example.html
+      - text: -------
+      - text: Contributing replications
+      - text: Contributing principles
+        href: articles/contributing-principles.html
+      - text: Stata replications
+        href: articles/stata-replications.html
+      - text: Reanalysis and extension studies
+        href: articles/reanalysis-studies.html
+      - text: Folder replication checklist
+        href: articles/folder-replication-checklist.html
+      - text: Package replication checklist
+        href: articles/package-replication-checklist.html
+      - text: -------
+      - text: Maintaining the registry
+      - text: Maintainer setup
+        href: articles/maintainer-setup.html
+      - text: Registry audit
+        href: articles/audit.html
 reference:
 - title: Package
   desc: Package overview.
@@ -39,6 +73,8 @@ reference:
   - build_study_outputs
   - check_replication
   - check_and_bake_study
+  - fetch_dataverse_file
+  - materialize_declared_data
 - title: 'Maintainer: registry ops'
   desc: Register studies, sync stubs, rebuild the index, and audit the registry.
   contents:
@@ -72,15 +108,23 @@ reference:
 build:
   readme: yes
 articles:
-- title: Articles
+- title: Getting going
+  navbar: Getting going
   contents:
   - why-replicateEverything
   - meet-the-functions
-  - replication-example
-  - folder-replication-checklist
-  - reanalysis-studies
-  - stata-replications
   - shiny-app
-  - audit
-  - maintainer-setup
+  - replication-example
+- title: Contributing replications
+  navbar: Contributing replications
+  contents:
+  - contributing-principles
+  - stata-replications
+  - reanalysis-studies
+  - folder-replication-checklist
   - package-replication-checklist
+- title: Maintaining the registry
+  navbar: Maintaining the registry
+  contents:
+  - maintainer-setup
+  - audit

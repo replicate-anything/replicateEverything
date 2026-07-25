@@ -1,4 +1,62 @@
-# replicateEverything 0.7.7
+# replicateEverything 0.7.8
+
+## Shiny startup: auto-update check for replicateEverything
+
+* **Shiny:** On app start, compare the installed package `RemoteSha` (fallback:
+  bundled `BUNDLE_SHA`) to the latest GitHub commit on
+  `replicate-anything/replicateEverything@main`. When behind and auto-update is
+  enabled, install via `remotes::install_github()`, refresh the deploy bundle
+  when possible, and show an info banner asking for a browser refresh (Shiny
+  workers may still need a restart). Network failures fail soft with a warning
+  banner.
+* **Opt out:** `options(replicate_shiny.auto_update_replicate_everything = FALSE)`
+  or alias `options(replicateEverything.shiny_auto_update = FALSE)`. Default
+  `TRUE` on bare Shiny Server; [run_shiny_app()] and `local.R.example` set
+  `FALSE` for local / `load_all` development.
+* **Helpers:** [shiny_auto_update_enabled()], [package_sha_update_status()],
+  [ensure_replicate_everything_current()].
+
+## Missing-engine messages: not available vs not reproducible
+
+* **UX:** Incomplete steps that need a proprietary/system engine (e.g.
+  Mathematica) now use two fixed phrasings:
+  * baked output absent →
+    `"{label} not available because of missing {Engine} engine"`
+  * baked output present →
+    `"{label} not reproducible because of missing {Engine} engine"`
+* **Bug fix:** yaml field checks for deprecated `requires:` / `depends_on:` now
+  use exact `[[ ]]` indexing. R's `$requires` was partial-matching the new
+  `requires_engine:` field and hard-erroring normalize.
+* **Yaml:** optional step field `requires_engine:` (e.g. `mathematica`), or
+  `system_requirements:`; otherwise the engine is inferred from
+  `blocked_reason:` text. Helpers: [missing_engine_message()],
+  [step_missing_engine_message()], [step_required_engine()],
+  [step_display_output_exists()].
+* **Shiny:** blocked table/figure pills keep **Display** enabled when a baked
+  artifact exists (badge "Not reproducible"); both Display and Run stay
+  disabled (visually greyed) with badge "Unavailable" when the file is absent.
+  Hover/title and the missing-artifact panel use the same messages. Display on
+  "Not reproducible" rows wires the same `replication_action` handler as
+  runnable rows so baked artifacts still open.
+* **Run:** [stop_if_step_blocked()] / [run_replication()] raise the new
+  phrasing instead of only `"This object cannot be created because of: ..."`.
+
+## Surgical Dataverse pulls + Pattern B default
+
+* **New:** [fetch_dataverse_file()] — exported surgical download by file id / URL
+  (`api/access/datafile/<id>?format=original`). Prefer over full-dataset zips and
+  study-local `httr::GET` helpers.
+* **New:** `engine: dataverse` on transform steps runs [run_dataverse_access_step()]
+  (file id + `outputs:` → disk) without inventing study download code.
+* **Display:** [is_dataverse_access_prep_step()] matches Pattern C deposit/manifest
+  only — Pattern B `access_data` → `outputs/*.dta` shows a data preview (or a
+  clear missing-output note), not a false "deposit summary".
+* **Shiny Live Run:** [run_live_display()] passes `force = TRUE` so the target
+  step re-executes (matches [run_replication()] defaults).
+* **Policy:** root `AI.md` + skills — Pattern B access → `outputs/` is default;
+  full archive only when Pattern C is justified; Jiang noted for B migration.
+* **Studies:** Blair (`14058927`) and Madsen/Voeten (`14008582`) use surgical
+  Pattern B pulls; Madsen no longer downloads a full DVN zip for one CSV.
 
 ## Declared remote data wiring (no access_data step)
 

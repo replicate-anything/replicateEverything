@@ -435,7 +435,15 @@ render_replication <- function(
       ))
     }
     status_msg <- NULL
-    if (is_stata_replication(rep, meta$paper)) {
+    if (is_dataverse_replication(rep, meta$paper)) {
+      run_dataverse_access_step(
+        rep,
+        study_root,
+        meta = meta,
+        force = isTRUE(force)
+      )
+      status_msg <- "Dataverse file fetch finished."
+    } else if (is_stata_replication(rep, meta$paper)) {
       ensure_stata_available(rep)
       run_stata_replication(rep, run_ctx, meta = meta, install_deps = install_deps)
       status_msg <- "Stata pipeline step finished."

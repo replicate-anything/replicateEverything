@@ -264,38 +264,239 @@ manifest_row_use_original <- function(row) {
 
 #' Download a Harvard Dataverse file by id
 #'
+#' Prefers surgical file-level fetches (`api/access/datafile/<id>?format=original`)
+#' over full dataset archives. Studies should call [fetch_dataverse_file()] rather
+#' than inventing local `httr::GET` helpers.
+#'
 #' @param file_id Dataverse numeric file id.
 #' @param dest Destination path.
 #' @param server Dataverse host.
 #' @param original When \code{TRUE}, append \code{?format=original} (native upload).
+#' @param force Re-download even when \code{dest} exists and is non-empty.
+#' @param timeout Seconds.
+#' @return Invisibly, \code{dest}.
 #' @keywords internal
 download_dataverse_file <- function(
   file_id,
   dest,
   server = "dataverse.harvard.edu",
-  original = FALSE
+  original = FALSE,
+  force = TRUE,
+  timeout = 600
 ) {
   dest_dir <- dirname(dest)
   dir.create(dest_dir, recursive = TRUE, showWarnings = FALSE)
+  if (!isTRUE(force) && file.exists(dest) && isTRUE(file.info(dest)$size > 0)) {
+    return(invisible(dest))
+  }
   url <- sprintf(
     "https://%s/api/access/datafile/%s%s",
     server,
     file_id,
     if (isTRUE(original)) "?format=original" else ""
   )
-  resp <- httr::GET(
-    url,
-    httr::write_disk(dest, overwrite = TRUE),
-    httr::add_headers(`User-Agent` = "replicateEverything-dataverse/1.0"),
-    httr::timeout(600)
+  download_url_to_path(url, dest, force = TRUE, timeout = timeout)
+  invisible(dest)
+}
+
+#' Fetch a Dataverse file into a study-relative path (surgical pull)
+#'
+#' Downloads one file by Dataverse file id (or absolute URL) into the study
+#' tree. Prefer this over full-dataset zip downloads and over study-local
+#' download helpers. Typical Pattern B: write under \code{outputs/}.
+#'
+#' @param file_id Dataverse file id (ignored when \code{url} is set).
+#' @param path Study-relative destination (e.g. \code{"outputs/data.dta"}).
+#' @param url Optional direct URL (e.g. already including \code{?format=original}).
+#' @param original When \code{TRUE} and using \code{file_id}, request native upload.
+#' @param server Dataverse host.
+#' @param study_root Local study root; defaults to \code{REPLICATE_STUDY_ROOT} or \code{"."}.
+#' @param force Re-download existing files.
+#' @return Invisibly, absolute destination path.
+#' @export
+fetch_dataverse_file <- function(
+  file_id = NULL,
+  path,
+  url = NULL,
+  original = TRUE,
+  server = "dataverse.harvard.edu",
+  study_root = NULL,
+  force = TRUE
+) {
+  if (is.null(study_root) || !nzchar(as.character(study_root[[1]] %||% ""))) {
+    study_root <- Sys.getenv("REPLICATE_STUDY_ROOT", unset = "")
+    if (!nzchar(study_root)) {
+      study_root <- "."
+    }
+  }
+  study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+  rel <- gsub("\\\\", "/", as.character(path[[1]] %||% ""))
+  if (!nzchar(rel)) {
+    stop("fetch_dataverse_file() needs path =.", call. = FALSE)
+  }
+  dest <- file.path(study_root, rel)
+  url <- as.character(url %||% "")
+  if (!nzchar(url)) {
+    fid <- as.character(file_id %||% "")
+    if (!nzchar(fid)) {
+      stop("fetch_dataverse_file() needs file_id = or url =.", call. = FALSE)
+    }
+    download_dataverse_file(
+      fid,
+      dest,
+      server = server,
+      original = isTRUE(original),
+      force = force
+    )
+  } else {
+    download_url_to_path(url, dest, force = force)
+  }
+  invisible(normalizePath(dest, winslash = "/", mustWork = FALSE))
+}
+
+#' Resolve surgical Dataverse file entries for an access step
+#'
+#' Reads step-level \code{files:} / \code{file_id} + \code{outputs:}, or falls
+#' back to study \code{dataverse.file_id} mapped to the first output path.
+#' @keywords internal
+dataverse_access_step_entries <- function(rep, meta = NULL) {
+  entries <- list()
+  step_files <- rep$files %||% rep$dataverse$files %||% list()
+  if (is.data.frame(step_files)) {
+    step_files <- split(step_files, seq_len(nrow(step_files)))
+  }
+  for (entry in step_files) {
+    if (is.null(entry) || !is.list(entry)) {
+      next
+    }
+    path <- as.character(entry$path %||% "")
+    if (!nzchar(path)) {
+      next
+    }
+    entries[[length(entries) + 1L]] <- entry
+  }
+  if (length(entries)) {
+    return(entries)
+  }
+
+  outs <- character(0)
+  if (!is.null(rep$outputs) && length(rep$outputs)) {
+    outs <- vapply(rep$outputs, function(x) as.character(x[[1]] %||% x), character(1))
+    outs <- outs[nzchar(outs)]
+  }
+  fid <- as.character(
+    rep$file_id %||% rep$id %||%
+      rep$dataverse$file_id %||% rep$dataverse$id %||%
+      meta$dataverse$file_id %||% meta$dataverse$id %||% ""
   )
-  if (httr::http_error(resp)) {
+  if (nzchar(fid) && length(outs) >= 1L) {
+    original <- rep$original %||% rep$dataverse$original %||%
+      meta$dataverse$original %||% TRUE
+    return(list(list(
+      path = outs[[1]],
+      id = fid,
+      file_id = fid,
+      original = original,
+      url = as.character(rep$url %||% meta$dataverse$url %||% "")
+    )))
+  }
+  list()
+}
+
+#' Run a Pattern B Dataverse access step (surgical file pulls → outputs/)
+#' @keywords internal
+run_dataverse_access_step <- function(
+  rep,
+  study_root,
+  meta = NULL,
+  force = TRUE
+) {
+  entries <- dataverse_access_step_entries(rep, meta = meta)
+  if (!length(entries)) {
     stop(
-      "Dataverse download failed for file id ", file_id, ": HTTP ",
-      httr::status_code(resp), call. = FALSE
+      "engine: dataverse step '", rep$id %||% "?",
+      "' needs files: (path + id/url) or file_id + outputs:.",
+      call. = FALSE
     )
   }
-  invisible(dest)
+  dv <- meta$dataverse %||% list()
+  server <- as.character(
+    rep$server %||% rep$dataverse$server %||% dv$server %||% "dataverse.harvard.edu"
+  )
+  written <- character(0)
+  for (entry in entries) {
+    rel <- gsub("\\\\", "/", as.character(entry$path %||% ""))
+    fid <- as.character(entry$id %||% entry$file_id %||% "")
+    url <- as.character(entry$url %||% "")
+    original <- isTRUE(entry$original) ||
+      identical(tolower(as.character(entry$original %||% "")), "true") ||
+      (is.null(entry$original) && !nzchar(url))
+    message("Fetching Dataverse file → ", rel)
+    written <- c(
+      written,
+      fetch_dataverse_file(
+        file_id = if (nzchar(fid)) fid else NULL,
+        path = rel,
+        url = if (nzchar(url)) url else NULL,
+        original = original,
+        server = server,
+        study_root = study_root,
+        force = force
+      )
+    )
+  }
+  invisible(written)
+}
+
+#' Download only manifest-listed Dataverse files (surgical Pattern C)
+#'
+#' When the manifest has an \code{id} column, fetches each file by id into the
+#' deposit layout. Prefer this over [access_dataverse_deposit_archive()] unless
+#' author scripts require a full deposit tree that cannot be reconstructed from
+#' file ids.
+#'
+#' @param manifest_df Manifest data frame with \code{id} and \code{path}.
+#' @param deposit_root Deposit directory.
+#' @param server Dataverse host.
+#' @param force Re-download existing files.
+#' @return Invisibly, character vector of destination paths.
+#' @keywords internal
+access_dataverse_deposit_manifest_files <- function(
+  manifest_df,
+  deposit_root,
+  server = "dataverse.harvard.edu",
+  force = TRUE
+) {
+  if (is.null(manifest_df) || !nrow(manifest_df)) {
+    stop("Manifest is empty.", call. = FALSE)
+  }
+  if (!"id" %in% names(manifest_df) || !"path" %in% names(manifest_df)) {
+    stop(
+      "Surgical deposit fetch needs manifest columns id and path. ",
+      "Use fetch: archive_original only when file ids are unavailable.",
+      call. = FALSE
+    )
+  }
+  dir.create(deposit_root, recursive = TRUE, showWarnings = FALSE)
+  written <- character(0)
+  for (i in seq_len(nrow(manifest_df))) {
+    row <- manifest_df[i, , drop = FALSE]
+    fid <- as.character(row$id[[1]] %||% "")
+    if (!nzchar(fid) || identical(fid, "NA")) {
+      next
+    }
+    written <- c(
+      written,
+      download_dataverse_manifest_file(row, deposit_root, server = server)
+    )
+  }
+  if (!length(written)) {
+    stop(
+      "No manifest rows with Dataverse file ids; cannot do a surgical deposit pull.",
+      call. = FALSE
+    )
+  }
+  invisible(written)
 }
 
 #' Build manifest rows from a Dataverse dataset inventory
@@ -482,25 +683,34 @@ print.dataverse_deposit_summary <- function(x, ...) {
   invisible(x)
 }
 
-#' Whether a prep step should use the Dataverse deposit summary display
+#' Whether a prep step should use the Dataverse *full-deposit* summary display
+#'
+#' Pattern C only (manifest / deposit_root / access_deposit / archive fetch).
+#' Pattern B surgical \code{access_data} → \code{outputs/*.dta} uses the normal
+#' data-file preview — do **not** match bare \code{"access"} in the step id.
 #' @keywords internal
 is_dataverse_access_prep_step <- function(prep, meta, ctx = NULL) {
   if (is.null(prep) || !is.list(prep)) {
     return(FALSE)
   }
   id <- tolower(as.character(prep$id %||% ""))
-  if (grepl("dataverse|deposit|access", id)) {
+  code <- tolower(as.character(prep$code %||% ""))
+  if (grepl("access_deposit|deposit", id) ||
+      grepl("access_deposit|deposit", code)) {
     return(TRUE)
   }
-  code <- tolower(as.character(prep$code %||% ""))
-  if (grepl("dataverse|access_deposit|access_deposit", code)) {
+  outs <- tolower(paste(unlist(prep$outputs %||% list()), collapse = " "))
+  if (grepl("deposit", outs)) {
     return(TRUE)
   }
   if (!is.null(ctx)) {
     dv <- study_dataverse_config(meta, ctx)
-    if (!is.null(dv) && length(dv) > 0L &&
-        grepl("deposit", tolower(paste(unlist(prep$outputs %||% list()), collapse = " ")))) {
-      return(TRUE)
+    fetch <- tolower(as.character(dv$fetch %||% ""))
+    if (nzchar(as.character(dv$manifest %||% "")) &&
+        grepl("archive|deposit", fetch)) {
+      if (grepl("access|deposit|dataverse", id) || grepl("deposit", outs)) {
+        return(TRUE)
+      }
     }
   }
   FALSE
@@ -514,7 +724,22 @@ load_prep_step_display <- function(meta, ctx, prep) {
   }
   path <- prep_output_path(prep, ctx, meta = meta)
   if (is.null(path) || !file.exists(path)) {
-    return(NULL)
+    rel <- if (!is.null(prep$outputs) && length(prep$outputs)) {
+      as.character(prep$outputs[[1]][[1]] %||% prep$outputs[[1]])
+    } else {
+      NA_character_
+    }
+    return(structure(
+      list(
+        path = path %||% NA_character_,
+        note = paste0(
+          "Output not on disk yet",
+          if (isTRUE(nzchar(rel))) paste0(": ", rel) else "",
+          ". Use Live Run on this step or build_study_outputs()."
+        )
+      ),
+      class = "prep_output_preview"
+    ))
   }
   ext <- tolower(tools::file_ext(path))
   if (ext %in% c("html", "png", "svg")) {

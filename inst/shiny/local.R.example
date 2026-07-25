@@ -59,6 +59,8 @@ if (dir.exists(registry_root) && file.exists(file.path(registry_root, "index.csv
 }
 
 options(
+  # Disable GitHub auto-update of replicateEverything on app start (local / load_all).
+  # Alias: options(replicateEverything.shiny_auto_update = FALSE)
   replicate_shiny.auto_update_replicate_everything = FALSE,
   replicate_shiny.auto_install_study_packages = FALSE
 )

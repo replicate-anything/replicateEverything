@@ -2,25 +2,25 @@
 
 ## Authors
 
-- **Macartan Humphreys**. Author.
+- **Macartan Humphreys**. Contributor.
 
-- **Cord Masche**. Author.
+- **Cord Masche**. Contributor.
 
-- **Vermon Washington**. Author, maintainer.
+- **Vermon Washington**. Contributor, maintainer.
 
 ## Citation
 
 Source:
 [`DESCRIPTION`](https://github.com/replicate-anything/replicateEverything/blob/HEAD/DESCRIPTION)
 
-Humphreys M, Masche C, Washington V (2026). *replicateEverything: Tools
-to Replicate Empirical Research Papers*. R package version 0.7.5,
+Washington V (2026). *replicateEverything: Tools to Replicate Empirical
+Research Papers*. R package version 0.7.8,
 <https://github.com/replicate-anything/replicateEverything>.
 
     @Manual{,
       title = {replicateEverything: Tools to Replicate Empirical Research Papers},
-      author = {Macartan Humphreys and Cord Masche and Vermon Washington},
+      author = {Vermon Washington},
       year = {2026},
-      note = {R package version 0.7.5},
+      note = {R package version 0.7.8},
       url = {https://github.com/replicate-anything/replicateEverything},
     }

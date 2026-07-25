@@ -113,17 +113,181 @@ step_blocked_reason <- function(meta, what) {
   reason
 }
 
+#' Map a yaml engine token to a display name (e.g. mathematica -> Mathematica)
+#' @keywords internal
+normalize_engine_display_name <- function(token) {
+  tok <- tolower(trimws(as.character(token[[1]] %||% token)))
+  if (!nzchar(tok)) {
+    return(NULL)
+  }
+  known <- c(
+    mathematica = "Mathematica",
+    wolfram = "Mathematica",
+    wolframscript = "Mathematica",
+    matlab = "MATLAB",
+    stata = "Stata",
+    python = "Python",
+    r = "R",
+    julia = "Julia"
+  )
+  if (tok %in% names(known)) {
+    return(unname(known[[tok]]))
+  }
+  # Title-case unknown tokens
+  paste0(toupper(substr(tok, 1L, 1L)), substr(tok, 2L, nchar(tok)))
+}
+
+#' Required proprietary/system engine for a blocked step, if declared or inferred
+#'
+#' Prefers structured yaml \code{requires_engine:} (or \code{system_requirements:}),
+#' then parses common names out of \code{blocked_reason:}.
+#' @keywords internal
+step_required_engine <- function(entry) {
+  if (is.null(entry) || !is.list(entry)) {
+    return(NULL)
+  }
+  for (field in c("requires_engine", "required_engine")) {
+    val <- entry[[field]] %||% NULL
+    if (!is.null(val) && length(val) > 0L) {
+      name <- normalize_engine_display_name(val[[1]])
+      if (!is.null(name)) {
+        return(name)
+      }
+    }
+  }
+  sys <- entry$system_requirements %||% entry$system_requirement %||% NULL
+  if (!is.null(sys) && length(sys) > 0L) {
+    for (item in sys) {
+      name <- normalize_engine_display_name(item)
+      if (!is.null(name) && !name %in% c("R", "Stata", "Python")) {
+        return(name)
+      }
+    }
+    name <- normalize_engine_display_name(sys[[1]])
+    if (!is.null(name)) {
+      return(name)
+    }
+  }
+  reason <- as.character(entry$blocked_reason %||% "")
+  if (!nzchar(reason)) {
+    return(NULL)
+  }
+  patterns <- c(
+    Mathematica = "(?i)\\b(mathematica|wolframscript|wolfram)\\b",
+    MATLAB = "(?i)\\bmatlab\\b",
+    Julia = "(?i)\\bjulia\\b"
+  )
+  for (nm in names(patterns)) {
+    if (grepl(patterns[[nm]], reason, perl = TRUE)) {
+      return(nm)
+    }
+  }
+  NULL
+}
+
+#' Message when an output cannot be shown or re-run due to a missing engine
+#'
+#' Two modes (exact phrasing):
+#' \itemize{
+#'   \item \code{not_available}: \code{"{output} not available because of missing {Engine} engine"}
+#'   \item \code{not_reproducible}: \code{"{output} not reproducible because of missing {Engine} engine"}
+#' }
+#' @keywords internal
+missing_engine_message <- function(output, engine, mode = c("not_available", "not_reproducible")) {
+  mode <- match.arg(mode)
+  output <- trimws(as.character(output[[1]] %||% output))
+  engine <- trimws(as.character(engine[[1]] %||% engine))
+  if (!nzchar(output)) {
+    output <- "Output"
+  }
+  if (!nzchar(engine)) {
+    engine <- "required"
+  }
+  if (identical(mode, "not_available")) {
+    paste0(output, " not available because of missing ", engine, " engine")
+  } else {
+    paste0(output, " not reproducible because of missing ", engine, " engine")
+  }
+}
+
+#' User-facing blocked-step message, distinguishing absent vs baked-but-blocked
+#'
+#' @param output_exists Whether a declared display artifact is already on disk
+#'   (or otherwise fetchable). When \code{TRUE}, the step is "not reproducible";
+#'   when \code{FALSE}, it is "not available".
+#' @keywords internal
+step_missing_engine_message <- function(meta, what, output_exists = FALSE) {
+  entry <- tryCatch(find_replication_entry(meta, what), error = function(e) NULL)
+  if (is.null(entry) || !isTRUE(entry$incomplete %||% FALSE)) {
+    return(NULL)
+  }
+  engine <- step_required_engine(entry)
+  label <- as.character(entry$label %||% what)
+  if (!nzchar(label)) {
+    label <- as.character(what)
+  }
+  if (!is.null(engine)) {
+    return(missing_engine_message(
+      label,
+      engine,
+      mode = if (isTRUE(output_exists)) "not_reproducible" else "not_available"
+    ))
+  }
+  reason <- as.character(entry$blocked_reason %||% "")
+  if (!nzchar(reason)) {
+    reason <- "marked incomplete in replication.yml (no reason given)"
+  }
+  if (isTRUE(output_exists)) {
+    paste0(label, " not reproducible because of: ", reason)
+  } else {
+    paste0(label, " not available because of: ", reason)
+  }
+}
+
+#' Whether any declared display output for a step already exists
+#' @keywords internal
+step_display_output_exists <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  cands <- tryCatch(
+    artifact_lookup_candidates(doi, what, repo = repo, folder = folder, language = language),
+    error = function(e) character(0)
+  )
+  if (!length(cands)) {
+    return(FALSE)
+  }
+  for (path in cands) {
+    if (grepl("^https?://", path, ignore.case = TRUE)) {
+      resp <- tryCatch(
+        httr::HEAD(path, httr::user_agent("replicateEverything"), httr::timeout(8)),
+        error = function(e) NULL
+      )
+      if (!is.null(resp) && httr::status_code(resp) < 400L) {
+        return(TRUE)
+      }
+    } else if (file.exists(path)) {
+      return(TRUE)
+    }
+  }
+  FALSE
+}
+
 #' Stop with a clear, informative message when a step cannot be created
 #' @keywords internal
-stop_if_step_blocked <- function(meta, what) {
-  reason <- step_blocked_reason(meta, what)
-  if (is.null(reason)) {
+stop_if_step_blocked <- function(meta, what, output_exists = NULL) {
+  if (is.null(step_blocked_reason(meta, what))) {
     return(invisible(NULL))
   }
-  stop(
-    "This object cannot be created because of: ", reason,
-    call. = FALSE
-  )
+  if (is.null(output_exists)) {
+    output_exists <- FALSE
+    doi <- meta$paper$doi %||% meta$doi %||% NULL
+    if (!is.null(doi) && nzchar(as.character(doi))) {
+      output_exists <- tryCatch(
+        step_display_output_exists(doi, what),
+        error = function(e) FALSE
+      )
+    }
+  }
+  msg <- step_missing_engine_message(meta, what, output_exists = isTRUE(output_exists))
+  stop(msg %||% "This object cannot be created.", call. = FALSE)
 }
 
 #' @keywords internal

@@ -8,7 +8,9 @@ download_dataverse_file(
   file_id,
   dest,
   server = "dataverse.harvard.edu",
-  original = FALSE
+  original = FALSE,
+  force = TRUE,
+  timeout = 600
 )
 }
 \arguments{
@@ -19,8 +21,17 @@ download_dataverse_file(
 \item{server}{Dataverse host.}
 
 \item{original}{When \code{TRUE}, append \code{?format=original} (native upload).}
+
+\item{force}{Re-download even when \code{dest} exists and is non-empty.}
+
+\item{timeout}{Seconds.}
+}
+\value{
+Invisibly, \code{dest}.
 }
 \description{
-Download a Harvard Dataverse file by id
+Prefers surgical file-level fetches (\verb{api/access/datafile/<id>?format=original})
+over full dataset archives. Studies should call \code{\link[=fetch_dataverse_file]{fetch_dataverse_file()}} rather
+than inventing local \code{httr::GET} helpers.
 }
 \keyword{internal}

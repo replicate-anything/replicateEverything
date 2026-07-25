@@ -2,13 +2,13 @@
 #'
 #' @param rep Replication entry from \code{replication.yml}.
 #' @param paper_meta Optional paper-level metadata.
-#' @return \code{"r"}, \code{"stata"}, or \code{"python"}.
+#' @return \code{"r"}, \code{"stata"}, \code{"python"}, or \code{"dataverse"}.
 #' @keywords internal
 replication_engine <- function(rep, paper_meta = NULL) {
   eng <- rep$engine %||% NULL
   if (!is.null(eng) && length(eng) > 0L) {
     value <- tolower(as.character(eng[[1]]))
-    if (value %in% c("stata", "r", "python", "py")) {
+    if (value %in% c("stata", "r", "python", "py", "dataverse")) {
       if (value %in% c("py")) return("python")
       return(value)
     }
@@ -46,6 +46,12 @@ replication_engine <- function(rep, paper_meta = NULL) {
 #' @keywords internal
 is_stata_replication <- function(rep, paper_meta = NULL) {
   identical(replication_engine(rep, paper_meta), "stata")
+}
+
+#' Whether a replication entry is a surgical Dataverse access step
+#' @keywords internal
+is_dataverse_replication <- function(rep, paper_meta = NULL) {
+  identical(replication_engine(rep, paper_meta), "dataverse")
 }
 
 #' Build common Stata install paths for the current OS
@@ -186,7 +192,8 @@ stata_shell_do_path <- function(path) {
 #' Windows: \code{/e /i /q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
 #'
 #' On Windows, \code{/e} exits when the job finishes (no end-of-job OK click).
-#' \code{/i} suppresses the Stata taskbar icon ([GSW] B.5). Without \code{/i},
+#' \code{/i} suppresses the Stata taskbar icon (Stata Getting Started with
+#' Windows (GSW) manual B.5). Without \code{/i},
 #' the icon appears for the whole run; clicking it opens "cancel the batch
 #' job?", which injects \code{--Break--} / \code{r(1)} and then cascades
 #' "Would you like the batch job to continue?" dialogs as nested do-files

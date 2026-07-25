@@ -22,8 +22,9 @@ Turn delivered analysis materials into a **folder-backed study repository** wire
 | Rule | Detail |
 |------|--------|
 | **Yaml is the execute recipe** | `replication.yml` + [run_replication()] are the one verb to run a step. Scripts only define helpers. |
+| **Light repo / wiring-not-shipping** | Keep the study **as light as possible**. **Default Pattern B:** surgical access step → `outputs/` via file ids (`?format=original`). Exception Pattern A: silent materialize → `data/`. Never full DVN zip unless Pattern C justified. Thin runners; package helpers only. See root `AI.md` and Step 5. |
 | **Minimal step yaml** | Declare `outputs:` (not deprecated `artifact:`). **Omit** empty `parents: []`. Format children: no unused `label:`. Use `description:` for Shiny hover + Display title (`label_full`). |
-| **Pure helpers** | `make_<id>()` / `format_<id>()` only — **no required** `sys.nframe()` footers. |
+| **Pure helpers** | `make_<id>()` / `format_<id>()` only — **no required** `sys.nframe()` footers. Prefer replicateEverything / established packages over study-local utilities. |
 | **Code tips** | [get_code()] defaults to `mode = "definitions"`; `mode = "run"` appends the yaml-implied load → make → format recipe. Tips are engine-aware (R / Stata / Python). |
 | **Registry stub** | Maintainer runs [sync_study_to_registry()] from study root yaml — **no** study-local `registry/` handoff folder. |
 
@@ -74,7 +75,8 @@ Copy and track progress:
 - [ ] 3. Create GitHub study repo (empty) + local clone as monorepo sibling
 - [ ] 4a. **Search all code** for R, Stata, and Python dependencies (Step 4a)
 - [ ] 4b. **Write `replication.yml`** — languages, deps, **steps:** DAG, **maintainer**, **collections** (Step 4b)
-- [ ] 5. Structure repo: code/, data/, outputs/; add Stata install/probe helpers if needed
+- [ ] 5. Structure repo: code/, data/, outputs/; **prefer remote data wiring** (Step 5); add Stata install/probe helpers if needed
+- [ ] 5b. **Light-repo pass** — no study-local download R; document fetch URLs; Pattern B commit only when no API (Step 5)
 - [ ] 6. Refactor code into one script per step; make_<id>() + format_<id>() where needed
 - [ ] 6b. **Verify code file links** — relative `source()` / `do` paths resolve from the caller script (Step 6b)
 - [ ] 7. Build outputs; write outputs/manifest.json
@@ -492,14 +494,16 @@ Maintainers: `install_dependencies(doi)` once. Live Run and Shiny probe only.
 ### Outputs and data (summary)
 
 - **`outputs:`** — canonical step products; the first displayable path (html/png/rds/svg) is what Shiny Display reads.
-- **Data ≤ 50 MB** — commit under `data/` so clones work for live Run.
-- **Data > 50 MB** — gitignore by explicit filename; stage under `registry/data/<folder>/`; rely on precomputed `outputs/` for Display when absent locally.
+- **Data (light repo, default Pattern B)** — surgical access → `outputs/`; gitignore fetched binaries; document URLs.
+- **Pattern A** — `dataverse.files` materialize → `data/` when fetch is not a claimed product.
+- **Commit fallback only when no fetch API** — ≤50 MB under `data/`; larger → registry data area.
 
 ### Checklist before opening a PR
 
 ```
 - [ ] Step 1b: DAG traced from author README / scripts; parents match real file I/O
 - [ ] Step 4a: dependency search re-run after final code layout
+- [ ] Step 5 / light-repo: remote wiring preferred; no study-local download helpers; URLs documented
 - [ ] replication.yml: languages + deps + steps: complete; each code:/inputs:/outputs: path exists
 - [ ] describe_study_dag() / Shiny pipeline view looks correct
 - [ ] check_study_compatibility() passes (or documents expected gaps)
@@ -509,34 +513,76 @@ Maintainers: `install_dependencies(doi)` once. Live Run and Shiny probe only.
 - [ ] audit_everything() or package tests pass with fixture study
 ```
 
-## Step 5 — Data files (git vs. large files)
+## Step 5 — Data files (light repo: wire first, commit only when needed)
 
-Live replication (the Shiny **Run** button, and any fresh clone) works from a
-**clone of the study repo**. If an input file is not committed, the clone lacks
-it and Stata/R/Python steps fail with "file not found". So **commit data by
-default** — do not blanket-gitignore `data/`.
+Live replication (Shiny **Run**, fresh clone) needs inputs on disk at run time.
+Prefer **fetching from the original deposit** into a local cache over shipping
+binaries in git. Keep the study repo **as light as possible**.
 
-Rule, keyed to GitHub's limits (soft warning at 50 MB, hard reject at 100 MB):
+### Decision order
 
-| File size | Handling |
-|-----------|----------|
-| **≤ 50 MB** | Commit it in the study repo under `data/`. Live runs work from any clone. |
-| **> 50 MB** | Do **not** put it in git. Stage it under the registry data area (`registry/data/<folder>/`) for manual deploy to the server, and document its source (URL/DOI/Dataverse) in `data/raw/README.md`. Live runs from a bare clone won't have it; rely on precomputed `outputs/` instead. |
+| Situation | Action |
+|-----------|--------|
+| Public Dataverse/ICPSR file id(s) known | **Pattern B (default):** surgical `access_*` step (`engine: dataverse` or thin `fetch_dataverse_file()`) → `outputs/…`. Document `api/access/datafile/<id>?format=original`. Gitignore fetched binaries. Later steps `parents:` the access step. |
+| Many raw roots; fetch is **not** a claimed product | **Pattern A (exception):** declare under `dataverse.files` / `data_files:` → package [materialize_declared_data()] into `data/`. |
+| Author scripts need deposit layout | **Pattern C:** manifest with **file ids** (surgical per-file into `outputs/deposit/`). Use `fetch: archive_original` **only** when file ids cannot reconstruct the needed tree — document why. |
+| No usable fetch API (private / offline / some OpenICPSR) | **Commit fallback:** ≤50 MB under `data/`; else registry data area. |
 
-Recommended `.gitignore` (keep data; exclude only logs, staging, and oversized inputs which you list explicitly):
+```yaml
+# Pattern B — surgical access step (preferred)
+dataverse:
+  doi: https://doi.org/10.7910/DVN/…
+  server: dataverse.harvard.edu
+  dataset: "10.7910/DVN/…"
+  file_id: "12345678"
+  original: true
+
+steps:
+  - id: access_data
+    type: transform
+    engine: dataverse
+    file_id: "12345678"
+    original: true
+    outputs:
+      - outputs/data.dta
+```
+
+**Surgical pull:** download **only** needed file ids — never the whole Dataverse
+dataset zip “just in case”. **Do not** invent study-local download R.
+
+**Do not** blanket-gitignore `data/` when using the commit fallback — that silently
+drops committed inputs. For Pattern A/B, gitignore **named** fetched binaries only.
+
+Recommended `.gitignore` fragments:
 
 ```gitignore
 .Rproj.user/
 *.log
 outputs/staging/
 
-# Commit data so live replication works from a clone. Only exclude inputs
-# too large for git (>50 MB): keep those out, stage under registry/data/<folder>/,
-# and deploy to the server manually. List any such files explicitly below.
+# Pattern A — list each fetched binary by name (examples):
+# data/raw/analysis.dta
+# outputs/data.dta
+
+# Pattern B — only exclude inputs too large for git (>50 MB), by name
 ```
 
-Do **not** use blanket patterns like `data/raw/*.dta` — that silently drops all
-inputs and breaks live replication.
+### Size rules (when you must commit — Pattern B)
+
+| File size | Handling |
+|-----------|----------|
+| **≤ 50 MB** | Commit under `data/` so clones work offline. |
+| **> 50 MB** | Keep out of git. Stage under `registry/data/<folder>/` for server deploy; document source in `data/raw/README.md`; rely on precomputed `outputs/` for Display. |
+
+### Functions / helpers
+
+Studies provide **wiring and thin runners**, not duplicated fetch utilities.
+Prefer `replicateEverything::fetch_dataverse_file()`, `engine: dataverse`,
+[materialize_declared_data()], or package Dataverse helpers. Grep for accidental
+study-local downloads before submit (see `check_study_submission.md` § B).
+
+Full Dataverse patterns (B default / A / C): skill
+`dataverse_to_replicateEverything.md`.
 
 ## Step 6 — Code scripts (`code/<id>.R` or `.do`)
 
@@ -769,6 +815,7 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 
 ## Common pitfalls
 
+- **Heavy study repo** — committed raw that Dataverse/ICPSR can serve, or study-local download R; prefer yaml wiring + materialize (`check_study_submission.md` § B)
 - **Broken code links** — `source("../helpers/foo.R")` from `code/tables/tab_1.R` must resolve to `code/helpers/foo.R`; run `check_replication()` before submit
 - **Inventing the DAG without reading the author repo** — wrong `parents:` breaks Run and inheritance; always trace README + file I/O first (Step 1b)
 - **Skipping Step 4a** — yaml missing `reghdfe`, `require`, `haven`, or `pandas` because only the main script was read
@@ -783,3 +830,4 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 - Forgetting to update `index.csv` `repo` column (sync/refresh handles this)
 - Extension study listing every base step — only `inherit:` / local steps belong in the extension yaml
 - Tests without `replicateEverything.index` override for the new `repo` slug
+- Pure-download as `access_data` step when `dataverse.files` wiring would suffice

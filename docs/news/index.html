@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,7 +16,26 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Getting going</h6></li>
+    <li><a class="dropdown-item" href="../articles/why-replicateEverything.html">Why replicateEverything?</a></li>
+    <li><a class="dropdown-item" href="../articles/meet-the-functions.html">Meet the functions</a></li>
+    <li><a class="dropdown-item" href="../articles/shiny-app.html">Shiny demo app</a></li>
+    <li><a class="dropdown-item" href="../articles/replication-example.html">Replication Examples Using Code</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Contributing replications</h6></li>
+    <li><a class="dropdown-item" href="../articles/contributing-principles.html">Contributing principles</a></li>
+    <li><a class="dropdown-item" href="../articles/stata-replications.html">Stata replications</a></li>
+    <li><a class="dropdown-item" href="../articles/reanalysis-studies.html">Reanalysis and extension studies</a></li>
+    <li><a class="dropdown-item" href="../articles/folder-replication-checklist.html">Folder replication checklist</a></li>
+    <li><a class="dropdown-item" href="../articles/package-replication-checklist.html">Package replication checklist</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Maintaining the registry</h6></li>
+    <li><a class="dropdown-item" href="../articles/maintainer-setup.html">Maintainer setup</a></li>
+    <li><a class="dropdown-item" href="../articles/audit.html">Registry audit</a></li>
+  </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/replicate-anything/replicateEverything/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
@@ -29,6 +48,78 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.8" id="replicateeverything-078">replicateEverything 0.7.8<a class="anchor" aria-label="anchor" href="#replicateeverything-078"></a></h2>
+<div class="section level3">
+<h3 id="missing-engine-messages-not-available-vs-not-reproducible-0-7-8">Missing-engine messages: not available vs not reproducible<a class="anchor" aria-label="anchor" href="#missing-engine-messages-not-available-vs-not-reproducible-0-7-8"></a></h3>
+<ul><li>
+<strong>UX:</strong> Incomplete steps that need a proprietary/system engine (e.g. Mathematica) now use two fixed phrasings:
+<ul><li>baked output absent → <code>"{label} not available because of missing {Engine} engine"</code>
+</li>
+<li>baked output present → <code>"{label} not reproducible because of missing {Engine} engine"</code>
+</li>
+</ul></li>
+<li>
+<strong>Bug fix:</strong> yaml field checks for deprecated <code>requires:</code> / <code>depends_on:</code> now use exact <code>[[ ]]</code> indexing. R’s <code>$requires</code> was partial-matching the new <code>requires_engine:</code> field and hard-erroring normalize.</li>
+<li>
+<strong>Yaml:</strong> optional step field <code>requires_engine:</code> (e.g. <code>mathematica</code>), or <code>system_requirements:</code>; otherwise the engine is inferred from <code>blocked_reason:</code> text. Helpers: [missing_engine_message()], [step_missing_engine_message()], [step_required_engine()], [step_display_output_exists()].</li>
+<li>
+<strong>Shiny:</strong> blocked table/figure pills keep <strong>Display</strong> enabled when a baked artifact exists (badge “Not reproducible”); both Display and Run stay disabled (visually greyed) with badge “Unavailable” when the file is absent. Hover/title and the missing-artifact panel use the same messages. Display on “Not reproducible” rows wires the same <code>replication_action</code> handler as runnable rows so baked artifacts still open.</li>
+<li>
+<strong>Run:</strong> [stop_if_step_blocked()] / [run_replication()] raise the new phrasing instead of only <code>"This object cannot be created because of: ..."</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="surgical-dataverse-pulls--pattern-b-default-0-7-8">Surgical Dataverse pulls + Pattern B default<a class="anchor" aria-label="anchor" href="#surgical-dataverse-pulls--pattern-b-default-0-7-8"></a></h3>
+<ul><li>
+<strong>New:</strong> [fetch_dataverse_file()] — exported surgical download by file id / URL (<code>api/access/datafile/&lt;id&gt;?format=original</code>). Prefer over full-dataset zips and study-local <code><a href="https://httr.r-lib.org/reference/GET.html" class="external-link">httr::GET</a></code> helpers.</li>
+<li>
+<strong>New:</strong> <code>engine: dataverse</code> on transform steps runs [run_dataverse_access_step()] (file id + <code>outputs:</code> → disk) without inventing study download code.</li>
+<li>
+<strong>Display:</strong> [is_dataverse_access_prep_step()] matches Pattern C deposit/manifest only — Pattern B <code>access_data</code> → <code>outputs/*.dta</code> shows a data preview (or a clear missing-output note), not a false “deposit summary”.</li>
+<li>
+<strong>Shiny Live Run:</strong> [run_live_display()] passes <code>force = TRUE</code> so the target step re-executes (matches [run_replication()] defaults).</li>
+<li>
+<strong>Policy:</strong> root <code>AI.md</code> + skills — Pattern B access → <code>outputs/</code> is default; full archive only when Pattern C is justified; Jiang noted for B migration.</li>
+<li>
+<strong>Studies:</strong> Blair (<code>14058927</code>) and Madsen/Voeten (<code>14008582</code>) use surgical Pattern B pulls; Madsen no longer downloads a full DVN zip for one CSV.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="declared-remote-data-wiring-no-access_data-step-0-7-8">Declared remote data wiring (no access_data step)<a class="anchor" aria-label="anchor" href="#declared-remote-data-wiring-no-access_data-step-0-7-8"></a></h3>
+<ul><li>
+<strong>New:</strong> [materialize_declared_data()] fetches files listed under <code>dataverse.files</code> or top-level <code>data_files:</code> (each entry: local <code>path</code> + <code>url</code>, or Dataverse <code>id</code>/<code>file_id</code> with optional <code>original: true</code>) into the study tree. Hooked from [prepare_study_run()] and [ensure_study_data_files()] so <code>given = "nothing"</code> obtains raw roots without a study-local download step.</li>
+<li>
+<strong>Studies:</strong> Jiang (<code>rep-10.1017-s0003055426101749</code>) drops <code>access_data</code> and relies on yaml wiring → <code>data/raw/*.dta</code>. Transform steps remain for merges / recodes under <code>outputs/</code>.</li>
+<li>
+<strong>Merge:</strong> folder study yaml <code>dataverse:</code> / <code>data_files:</code> now copy into registry stubs via [complete_folder_study_meta()].</li>
+<li>
+<strong>Stata:</strong> [run_stata_replication()] ensures <code>inputs:</code> as well as <code>data:</code> via [replication_data_paths()].</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.6" id="replicateeverything-076">replicateEverything 0.7.6<a class="anchor" aria-label="anchor" href="#replicateeverything-076"></a></h2>
+<div class="section level3">
+<h3 id="clearer-shiny--list_replications-errors-when-study-yaml-cannot-be-fetched-0-7-6">Clearer Shiny / list_replications errors when study yaml cannot be fetched<a class="anchor" aria-label="anchor" href="#clearer-shiny--list_replications-errors-when-study-yaml-cannot-be-fetched-0-7-6"></a></h3>
+<ul><li>
+<strong>UX:</strong> When a registry stub has no <code>steps:</code> and the study repo <code>replication.yml</code> cannot be loaded, [list_replications()] now reports a specific reason (HTTP 404/403 private-or-missing, network failure, yaml parse/normalize errors such as deprecated <code>artifact:</code>, or a genuinely empty stub) instead of the generic empty-<code>steps:</code> normalize message. The bundled Shiny app surfaces the same package message.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="stata-batch-preamble-hardened-against-interactive-prompts-0-7-6">Stata batch preamble hardened against interactive prompts<a class="anchor" aria-label="anchor" href="#stata-batch-preamble-hardened-against-interactive-prompts-0-7-6"></a></h3>
+<ul><li>
+<strong>Bug fix / hardening:</strong> <code><a href="../reference/stata_runner_lines.html">stata_runner_lines()</a></code> now also emits <code>pause off</code>, <code>set linesize 255</code>, and re-asserts <code>set more off</code> / <code>pause off</code> immediately before running the study script under <code>capture noisily nobreak do</code>. This blocks <code>--more--</code> paging, live <code>pause</code> prompts, and Break-key <code>r(1)</code> continue dialogs during Windows <code>/e</code> batch runs. (<code>varabbrev off</code> is intentionally not forced: many deposits rely on default abbreviation matching.)</li>
+<li>
+<strong>Windows (real Continue/Break fix):</strong> <code><a href="../reference/stata_batch_args.html">stata_batch_args()</a></code> now passes <code>/e /i /q</code> (not bare <code>/e</code>). Stata’s <code>/i</code> suppresses the batch taskbar icon ([GSW] B.5). Without it, clicking that icon opens “cancel the batch job?”, injects <code>--Break--</code> / r(1), and cascades “Would you like the batch job to continue?” dialogs as nested do-files unwind — <code>set more off</code> cannot stop that. <code><a href="../reference/run_stata_system2.html">run_stata_system2()</a></code> keeps <code>processx</code> <code>windows_hide = TRUE</code> and no longer falls back to a <em>visible</em> processx child if hide setup fails.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="clear-messaging-for-steps-that-cannot-be-created-incomplete--blocked_reason-0-7-6">Clear messaging for steps that cannot be created (<code>incomplete:</code> / <code>blocked_reason:</code>)<a class="anchor" aria-label="anchor" href="#clear-messaging-for-steps-that-cannot-be-created-incomplete--blocked_reason-0-7-6"></a></h3>
+<ul><li>
+<strong>New:</strong> a step in <code>replication.yml</code> may declare <code>incomplete: true</code> plus a free-text <code>blocked_reason: "..."</code> explaining why it cannot be produced in this environment (missing proprietary engine such as Mathematica/MATLAB, a data file absent from the deposit, etc.). <code>incomplete:</code> already existed and already excluded a step from [build_study_outputs()] / baking and from [audit_everything()]; <code>blocked_reason:</code> is new and is now surfaced to users instead of the step just silently disappearing:
+<ul><li>[run_replication()] now stops immediately with <code>"This object cannot be created because of: &lt;reason&gt;"</code> when asked to run a blocked step directly, and <em>skips</em> (with a <code><a href="https://rdrr.io/r/base/message.html" class="external-link">message()</a></code>, not an error) blocked steps encountered during <code>what = "everything"</code>, so one blocked leaf no longer aborts the rest of the DAG.</li>
+<li>[list_replications()] still lists blocked steps (it always has - they are still real tables/figures, just not creatable here) so users can see what exists even when it cannot be built.</li>
+<li>The bundled Shiny app now shows blocked table/figure/data-step pills greyed out with a disabled Display/Run button and an “Unavailable” badge; hovering (or the button title) surfaces the <code>blocked_reason</code> text.</li>
+</ul></li>
+<li>No schema aliases: <code>incomplete</code>/<code>blocked_reason</code> are the only supported field names (no <code>unavailable:</code> synonym) to keep <code>replication.yml</code> parsing simple.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.5" id="replicateeverything-075">replicateEverything 0.7.5<a class="anchor" aria-label="anchor" href="#replicateeverything-075"></a></h2>
 <div class="section level3">
@@ -446,7 +537,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Macartan Humphreys, Cord Masche, Vermon Washington.</p>
+  <p>Developed by Vermon Washington.</p>
 </div>
 
 <div class="pkgdown-footer-right">

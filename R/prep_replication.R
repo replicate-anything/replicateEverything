@@ -255,7 +255,7 @@ replicate_fn_result_object <- function(result) {
 #' @param rep Step entry.
 #' @keywords internal
 replication_requires_prep <- function(rep) {
-  if (!is.null(rep$requires) || !is.null(rep$depends_on)) {
+  if (!is.null(rep[["requires"]]) || !is.null(rep[["depends_on"]])) {
     stop(
       "Step '", as.character(rep$id %||% "?"),
       "' uses requires:/depends_on:; use parents: only.",

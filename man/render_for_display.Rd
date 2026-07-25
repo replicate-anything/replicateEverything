@@ -10,7 +10,8 @@ render_for_display(
   language = NULL,
   install_deps = FALSE,
   repo = NULL,
-  folder = NULL
+  folder = NULL,
+  force = FALSE
 )
 }
 \arguments{

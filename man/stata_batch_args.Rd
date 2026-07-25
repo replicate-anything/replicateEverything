@@ -17,7 +17,8 @@ Windows: \code{/e /i /q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
 }
 \details{
 On Windows, \code{/e} exits when the job finishes (no end-of-job OK click).
-\code{/i} suppresses the Stata taskbar icon (\link{GSW} B.5). Without \code{/i},
+\code{/i} suppresses the Stata taskbar icon (Stata Getting Started with
+Windows (GSW) manual B.5). Without \code{/i},
 the icon appears for the whole run; clicking it opens "cancel the batch
 job?", which injects \code{--Break--} / \code{r(1)} and then cascades
 "Would you like the batch job to continue?" dialogs as nested do-files

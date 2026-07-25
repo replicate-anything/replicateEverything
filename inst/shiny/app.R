@@ -2,6 +2,10 @@ library(shiny)
 library(bslib)
 library(htmltools)
 
+`%||%` <- function(a, b) {
+  if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
+}
+
 REGISTRY_INDEX_URL <- "https://raw.githubusercontent.com/replicate-anything/registry/main/index.csv"
 REGISTRY_GITHUB <- "https://github.com/replicate-anything/registry"
 ORG_GITHUB <- "https://github.com/orgs/replicate-anything/repositories"
@@ -236,6 +240,143 @@ if (!isTRUE(getOption("replicate_shiny.deploy_config_loaded", FALSE))) {
   }
 }
 
+# Startup version check / optional GitHub install (before load_all or UI).
+# Disable with options(replicate_shiny.auto_update_replicate_everything = FALSE)
+# or options(replicateEverything.shiny_auto_update = FALSE).
+ensure_replicate_everything <- function() {
+  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
+    stop(
+      "replicateEverything is not installed. Install from GitHub, then restart:\n",
+      "  remotes::install_github('replicate-anything/replicateEverything')",
+      call. = FALSE
+    )
+  }
+  ns <- asNamespace("replicateEverything")
+  if (exists("ensure_replicate_everything_current", envir = ns, inherits = FALSE)) {
+    tryCatch(
+      get("ensure_replicate_everything_current", envir = ns)(),
+      error = function(e) {
+        warning(
+          "Shiny auto-update check failed: ", conditionMessage(e),
+          call. = FALSE
+        )
+        options(
+          replicate_shiny.auto_update_status = list(
+            enabled = TRUE,
+            checked = FALSE,
+            state = "unknown",
+            outdated = FALSE,
+            updated = FALSE,
+            refresh_needed = FALSE,
+            warning = paste0(
+              "Could not verify whether replicateEverything is up to date: ",
+              conditionMessage(e)
+            )
+          )
+        )
+        invisible(NULL)
+      }
+    )
+    return(invisible(TRUE))
+  }
+
+  # Fallback when installed package predates ensure_replicate_everything_current().
+  auto_opt <- getOption("replicate_shiny.auto_update_replicate_everything", NULL)
+  if (is.null(auto_opt)) {
+    auto_opt <- getOption("replicateEverything.shiny_auto_update", NULL)
+  }
+  auto_on <- if (is.null(auto_opt)) TRUE else isTRUE(auto_opt)
+  if (!auto_on || isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))) {
+    return(invisible(TRUE))
+  }
+  if (!requireNamespace("httr", quietly = TRUE)) {
+    warn <- "Could not verify replicateEverything version (httr not available)."
+    warning(warn, call. = FALSE)
+    options(replicate_shiny.auto_update_status = list(
+      enabled = TRUE, checked = FALSE, state = "unknown", outdated = FALSE,
+      updated = FALSE, refresh_needed = FALSE, warning = warn
+    ))
+    return(invisible(TRUE))
+  }
+  repo <- "replicate-anything/replicateEverything"
+  ref <- "main"
+  local_sha <- tryCatch({
+    desc <- utils::packageDescription("replicateEverything")
+    sha <- desc$RemoteSha %||% ""
+    if (nzchar(sha)) sha else NA_character_
+  }, error = function(e) NA_character_)
+  remote_sha <- tryCatch({
+    url <- sprintf(
+      "https://api.github.com/repos/%s/commits/%s",
+      repo,
+      utils::URLencode(ref, reserved = TRUE)
+    )
+    resp <- httr::GET(url, httr::user_agent("replicateEverything"), httr::timeout(15))
+    if (httr::status_code(resp) >= 400L) {
+      NA_character_
+    } else {
+      parsed <- httr::content(resp, as = "parsed", type = "application/json")
+      as.character(parsed$sha %||% NA_character_)
+    }
+  }, error = function(e) NA_character_)
+  if (is.na(remote_sha) || !nzchar(remote_sha)) {
+    warn <- paste0(
+      "Could not verify whether replicateEverything is up to date against GitHub (",
+      repo, "@", ref, "). Continuing with the installed version."
+    )
+    warning(warn, call. = FALSE)
+    options(replicate_shiny.auto_update_status = list(
+      enabled = TRUE, checked = TRUE, state = "unknown", outdated = FALSE,
+      updated = FALSE, refresh_needed = FALSE, warning = warn
+    ))
+    return(invisible(TRUE))
+  }
+  local_short <- if (!is.na(local_sha) && nzchar(local_sha)) substr(local_sha, 1L, 7L) else NA_character_
+  remote_short <- substr(remote_sha, 1L, 7L)
+  if (!is.na(local_short) && identical(local_short, remote_short)) {
+    options(replicate_shiny.auto_update_status = list(
+      enabled = TRUE, checked = TRUE, state = "current", outdated = FALSE,
+      updated = FALSE, refresh_needed = FALSE, local_sha = local_sha,
+      remote_sha = remote_sha, message = NULL, warning = NULL
+    ))
+    return(invisible(TRUE))
+  }
+  if (!requireNamespace("remotes", quietly = TRUE)) {
+    warn <- "replicateEverything is behind GitHub but remotes is not installed; skipping auto-update."
+    warning(warn, call. = FALSE)
+    options(replicate_shiny.auto_update_status = list(
+      enabled = TRUE, checked = TRUE, state = "outdated", outdated = TRUE,
+      updated = FALSE, refresh_needed = FALSE, warning = warn
+    ))
+    return(invisible(TRUE))
+  }
+  message("Shiny auto-update: installing replicateEverything from GitHub (", repo, "@", ref, ") ...")
+  ok <- tryCatch({
+    remotes::install_github(paste0(repo, "@", ref), upgrade = "always", quiet = TRUE)
+    TRUE
+  }, error = function(e) {
+    warning("Failed to auto-update replicateEverything: ", conditionMessage(e), call. = FALSE)
+    FALSE
+  })
+  options(replicate_shiny.auto_update_status = list(
+    enabled = TRUE, checked = TRUE, state = "outdated", outdated = TRUE,
+    updated = isTRUE(ok), refresh_needed = isTRUE(ok),
+    local_sha = local_sha, remote_sha = remote_sha,
+    message = if (isTRUE(ok)) {
+      "replicateEverything was updated from GitHub. Please refresh this page (restart Shiny workers if needed)."
+    } else {
+      NULL
+    },
+    warning = if (!isTRUE(ok)) {
+      "Failed to auto-update replicateEverything from GitHub."
+    } else {
+      NULL
+    }
+  ))
+  invisible(TRUE)
+}
+
+ensure_replicate_everything()
 configure_registry_source()
 
 shiny_live_run_enabled <- function() {
@@ -548,6 +689,32 @@ shiny_display_only_banner_ui <- function() {
   )
 }
 
+shiny_auto_update_banner_ui <- function() {
+  status <- getOption("replicate_shiny.auto_update_status", NULL)
+  if (is.null(status) || !is.list(status)) {
+    return(NULL)
+  }
+  if (isTRUE(status$updated) || isTRUE(status$refresh_needed)) {
+    detail <- status$message %||% paste0(
+      "replicateEverything was updated from GitHub. ",
+      "Please refresh this page (restart Shiny workers if needed)."
+    )
+    return(tags$div(
+      class = "alert alert-info py-2 px-3 mb-0 rounded-0 border-0 border-bottom",
+      tags$strong("Package updated. "),
+      detail
+    ))
+  }
+  if (nzchar(status$warning %||% "")) {
+    return(tags$div(
+      class = "alert alert-warning py-2 px-3 mb-0 rounded-0 border-0 border-bottom",
+      tags$strong("Version check. "),
+      status$warning
+    ))
+  }
+  NULL
+}
+
 app_build_footer_ui <- function() {
   info <- replicate_everything_build_info()
   tags$footer(
@@ -563,17 +730,6 @@ app_build_footer_ui <- function() {
       }
     )
   )
-}
-
-ensure_replicate_everything <- function() {
-  if (!requireNamespace("replicateEverything", quietly = TRUE)) {
-    stop(
-      "replicateEverything is not installed. Install from GitHub, then restart:\n",
-      "  remotes::install_github('replicate-anything/replicateEverything')",
-      call. = FALSE
-    )
-  }
-  invisible(TRUE)
 }
 
 ensure_study_replication_package <- function(doi, folder = NULL, repo = NULL) {
@@ -751,8 +907,6 @@ resolve_study_doi_input <- function(doi_input, from_registry = FALSE) {
   replicate_fn("resolve_doi_input", doi_input)
 }
 
-ensure_replicate_everything()
-
 doi_resolved_url <- function(doi, paper = NULL) {
   if (!is.null(paper) || (!is.null(doi) && length(doi) && nzchar(trimws(as.character(doi))))) {
     url <- tryCatch(
@@ -794,10 +948,6 @@ doi_link_ui <- function(doi, label = NULL, paper = NULL) {
     rel = "noopener noreferrer",
     as.character(display)
   )
-}
-
-`%||%` <- function(a, b) {
-  if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
 }
 
 coalesce_chr <- function(...) {
@@ -1092,7 +1242,8 @@ artifact_candidate_report <- function(path) {
   )
 }
 
-artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "output") {
+artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "output",
+                                 blocked_message = NULL) {
   candidates <- tryCatch(
     replicate_fn("artifact_lookup_candidates", doi, what, folder = folder, repo = repo),
     error = function(e) character(0)
@@ -1101,10 +1252,23 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
   reports <- Filter(Negate(is.null), reports)
   exists_but_unloaded <- Filter(function(r) isTRUE(r$exists) && !isTRUE(r$loadable), reports)
 
+  if (is.null(blocked_message) || !nzchar(as.character(blocked_message))) {
+    blocked_message <- tryCatch({
+      meta <- replicate_fn("get_replication_meta", doi, folder = folder, repo = repo)
+      replicate_fn("step_missing_engine_message", meta, what, output_exists = FALSE)
+    }, error = function(e) NULL)
+  }
+
+  headline <- if (!is.null(blocked_message) && nzchar(as.character(blocked_message))) {
+    as.character(blocked_message)
+  } else {
+    paste0("No precomputed ", kind, " available.")
+  }
+
   tagList(
     tags$div(
       class = "alert alert-secondary",
-      tags$strong(paste0("No precomputed ", kind, " available.")),
+      tags$strong(headline),
       if (length(exists_but_unloaded) > 0) {
         tags$div(
           class = "alert alert-warning small",
@@ -1117,10 +1281,20 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
           tags$strong("Run"), " to regenerate it live."
         )
       },
-      tags$p(
-        "The registry lists this replication, but the artifact file is not available yet.",
-        " Click ", tags$strong("Run"), " to generate it live."
-      ),
+      if (is.null(blocked_message) || !nzchar(as.character(blocked_message))) {
+        tags$p(
+          "The registry lists this replication, but the artifact file is not available yet.",
+          " Click ", tags$strong("Run"), " to generate it live."
+        )
+      } else {
+        tags$p(
+          class = "mb-0",
+          "This step is marked incomplete in ",
+          tags$code("replication.yml"),
+          ". Display works only when a baked output is already present; ",
+          tags$strong("Run"), " stays disabled until the missing engine is available."
+        )
+      },
       tags$p(
         class = "small mb-0",
         "Folder-backed studies: run ",
@@ -4723,6 +4897,14 @@ ui <- tagList(
       text-decoration: line-through;
       text-decoration-color: rgba(108, 117, 125, 0.6);
     }
+    /* Grey out Display/Run when a step is incomplete / missing an engine */
+    .replication-row .btn:disabled,
+    .replication-row .btn.disabled {
+      opacity: 0.4;
+      filter: grayscale(0.6);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
     .blocked-reason-badge {
       font-size: 0.72rem;
       color: #b02a37;
@@ -5089,6 +5271,7 @@ ui <- tagList(
     }
   "))),
   shiny_app_stale_banner_ui(),
+  shiny_auto_update_banner_ui(),
   shiny_display_only_banner_ui(),
   registry_health_bar_ui(registry_audit_summary),
   navbarPage(
@@ -5931,6 +6114,35 @@ server <- function(input, output, session) {
       if (is_blocked) "is-blocked" else ""
     )
     if (is_blocked) {
+      output_exists <- tryCatch(
+        replicate_fn(
+          "step_display_output_exists",
+          state$doi,
+          resolved_id,
+          folder = state$registry_folder,
+          repo = state$registry_repo,
+          language = engine
+        ),
+        error = function(e) FALSE
+      )
+      blocked_msg <- tryCatch({
+        meta <- replicate_fn(
+          "get_replication_meta",
+          state$doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo
+        )
+        replicate_fn(
+          "step_missing_engine_message",
+          meta,
+          resolved_id,
+          output_exists = isTRUE(output_exists)
+        )
+      }, error = function(e) NULL)
+      if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
+        blocked_msg <- blocked_reason
+      }
+      badge_text <- if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
       return(tags$div(
         class = row_class,
         tags$span(label, class = "replication-label", title = label_full),
@@ -5938,23 +6150,36 @@ server <- function(input, output, session) {
           class = "replication-actions",
           tags$span(
             class = "blocked-reason-badge",
-            title = blocked_reason,
-            "Unavailable"
+            title = blocked_msg,
+            badge_text
           ),
-          actionButton(
-            paste0("display_", safe_group),
-            "Display",
-            class = "btn-outline-secondary btn-sm",
-            disabled = "disabled",
-            title = blocked_reason
-          ),
+          if (isTRUE(output_exists)) {
+            actionButton(
+              paste0("display_", safe_group),
+              "Display",
+              class = "btn-outline-secondary btn-sm",
+              title = paste0(blocked_msg, " (baked output can still be shown)"),
+              onclick = sprintf(
+                "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
+                group
+              )
+            )
+          } else {
+            actionButton(
+              paste0("display_", safe_group),
+              "Display",
+              class = "btn-outline-secondary btn-sm",
+              disabled = "disabled",
+              title = blocked_msg
+            )
+          },
           if (shiny_live_run_enabled()) {
             actionButton(
               paste0("replicate_", safe_group),
               "Run",
               class = "btn-primary btn-sm",
               disabled = "disabled",
-              title = blocked_reason
+              title = blocked_msg
             )
           }
         )
@@ -6106,6 +6331,38 @@ server <- function(input, output, session) {
             if (!nzchar(step_blocked_reason)) {
               step_blocked_reason <- "This step cannot be run for this study - see the study notes."
             }
+            if (step_blocked) {
+              step_out_exists <- tryCatch(
+                replicate_fn(
+                  "step_display_output_exists",
+                  state$doi,
+                  step_id,
+                  folder = state$registry_folder,
+                  repo = state$registry_repo,
+                  language = step_engine
+                ),
+                error = function(e) FALSE
+              )
+              eng_msg <- tryCatch({
+                meta <- replicate_fn(
+                  "get_replication_meta",
+                  state$doi,
+                  folder = state$registry_folder,
+                  repo = state$registry_repo
+                )
+                replicate_fn(
+                  "step_missing_engine_message",
+                  meta,
+                  step_id,
+                  output_exists = isTRUE(step_out_exists)
+                )
+              }, error = function(e) NULL)
+              if (!is.null(eng_msg) && nzchar(as.character(eng_msg))) {
+                step_blocked_reason <- as.character(eng_msg)
+              }
+            } else {
+              step_out_exists <- FALSE
+            }
             tags$div(
               class = paste(
                 "replication-row d-flex align-items-center rounded",
@@ -6124,16 +6381,16 @@ server <- function(input, output, session) {
                   tags$span(
                     class = "blocked-reason-badge",
                     title = step_blocked_reason,
-                    "Unavailable"
+                    if (isTRUE(step_out_exists)) "Not reproducible" else "Unavailable"
                   )
                 },
                 actionButton(
                   paste0("data_display_", safe_id),
                   "Display",
                   class = "btn-outline-secondary btn-sm",
-                  disabled = if (step_blocked) "disabled" else NULL,
+                  disabled = if (step_blocked && !isTRUE(step_out_exists)) "disabled" else NULL,
                   title = if (step_blocked) step_blocked_reason else NULL,
-                  onclick = if (!step_blocked) {
+                  onclick = if (!(step_blocked && !isTRUE(step_out_exists))) {
                     sprintf(
                       "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
                       step_id

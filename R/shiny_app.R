@@ -465,6 +465,245 @@ save_local_shiny <- function(
   invisible(dest)
 }
 
+#' Whether Shiny may auto-update replicateEverything from GitHub
+#'
+#' Reads \code{options(replicate_shiny.auto_update_replicate_everything)} or
+#' the alias \code{options(replicateEverything.shiny_auto_update)}. Default
+#' \code{TRUE} (production Shiny hosts). Set either option to \code{FALSE} for
+#' local \code{pkgload::load_all} / monorepo development.
+#' [run_shiny_app()] forces the option off.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+shiny_auto_update_enabled <- function() {
+  opt <- getOption("replicate_shiny.auto_update_replicate_everything", NULL)
+  if (is.null(opt)) {
+    opt <- getOption("replicateEverything.shiny_auto_update", NULL)
+  }
+  if (is.null(opt)) {
+    return(TRUE)
+  }
+  isTRUE(opt)
+}
+
+#' Classify local vs remote package SHAs
+#'
+#' @param local_sha Installed \code{RemoteSha} (or other build SHA).
+#' @param remote_sha Latest GitHub commit SHA for the tracked ref.
+#' @return One of \code{"current"}, \code{"outdated"}, or \code{"unknown"}.
+#' @keywords internal
+package_sha_update_status <- function(local_sha, remote_sha) {
+  local_sha <- as.character(local_sha[[1]] %||% NA_character_)
+  remote_sha <- as.character(remote_sha[[1]] %||% NA_character_)
+  if (length(local_sha) != 1L || is.na(local_sha) || !nzchar(local_sha)) {
+    local_sha <- NA_character_
+  }
+  if (length(remote_sha) != 1L || is.na(remote_sha) || !nzchar(remote_sha)) {
+    remote_sha <- NA_character_
+  }
+  if (is.na(remote_sha)) {
+    return("unknown")
+  }
+  if (is.na(local_sha)) {
+    return("outdated")
+  }
+  if (identical(local_sha, remote_sha)) {
+    return("current")
+  }
+  # Compare short SHAs when one side is abbreviated (BUNDLE_SHA is 7 chars).
+  local_short <- substr(local_sha, 1L, 7L)
+  remote_short <- substr(remote_sha, 1L, 7L)
+  if (identical(local_short, remote_short)) {
+    return("current")
+  }
+  "outdated"
+}
+
+#' @keywords internal
+try_reload_package_namespace <- function(package = "replicateEverything") {
+  if (isNamespaceLoaded(package)) {
+    unloaded <- tryCatch(
+      {
+        search_name <- paste0("package:", package)
+        if (search_name %in% search()) {
+          detach(search_name, unload = TRUE, character.only = TRUE)
+        }
+        unloadNamespace(package)
+        TRUE
+      },
+      error = function(e) FALSE
+    )
+    if (!isTRUE(unloaded)) {
+      return(FALSE)
+    }
+  }
+  isTRUE(requireNamespace(package, quietly = TRUE))
+}
+
+#' Ensure installed replicateEverything matches GitHub \code{main}
+#'
+#' Used by the bundled Shiny app at startup. Compares installed
+#' \code{RemoteSha} to the latest commit on
+#' \code{replicate-anything/replicateEverything} via [github_remote_sha()].
+#' When outdated and auto-update is enabled, installs with
+#' \code{remotes::install_github()} and attempts a namespace reload.
+#' Network failures fail soft (status \code{unknown}) without blocking app start.
+#'
+#' @param package Package name.
+#' @param repo GitHub slug.
+#' @param ref Git ref.
+#' @param install If \code{FALSE}, only check (no install).
+#' @return Named list status (also stored in
+#'   \code{options(replicate_shiny.auto_update_status)}).
+#' @keywords internal
+ensure_replicate_everything_current <- function(
+  package = "replicateEverything",
+  repo = "replicate-anything/replicateEverything",
+  ref = "main",
+  install = TRUE
+) {
+  status <- list(
+    enabled = FALSE,
+    checked = FALSE,
+    state = "skipped",
+    outdated = FALSE,
+    updated = FALSE,
+    refresh_needed = FALSE,
+    local_sha = NA_character_,
+    remote_sha = NA_character_,
+    version = NA_character_,
+    message = NULL,
+    warning = NULL
+  )
+
+  finish <- function(status) {
+    options(replicate_shiny.auto_update_status = status)
+    status
+  }
+
+  if (isTRUE(getOption("replicate_shiny.use_local_replicate_everything", FALSE))) {
+    status$state <- "local_dev"
+    status$message <- "Local load_all / monorepo package in use; GitHub auto-update skipped."
+    return(finish(status))
+  }
+
+  if (!shiny_auto_update_enabled()) {
+    status$state <- "disabled"
+    status$message <- "Shiny auto-update disabled via options."
+    return(finish(status))
+  }
+  status$enabled <- TRUE
+
+  if (!requireNamespace(package, quietly = TRUE)) {
+    status$state <- "missing"
+    status$outdated <- TRUE
+    status$warning <- paste0(
+      package, " is not installed. Install with remotes::install_github(\"",
+      repo, "\")."
+    )
+    return(finish(status))
+  }
+
+  status$version <- tryCatch(
+    as.character(utils::packageVersion(package)),
+    error = function(e) NA_character_
+  )
+  status$local_sha <- tryCatch(
+    installed_package_remote_sha(package),
+    error = function(e) NA_character_
+  )
+  if (is.na(status$local_sha) || !nzchar(status$local_sha)) {
+    # Fall back to bundled Shiny stamp when RemoteSha is absent.
+    bundled <- tryCatch(package_bundled_sha(package), error = function(e) NA_character_)
+    if (nzchar(bundled %||% "")) {
+      status$local_sha <- bundled
+    }
+  }
+
+  status$remote_sha <- tryCatch(
+    github_remote_sha(repo, ref),
+    error = function(e) NA_character_
+  )
+  status$checked <- TRUE
+  status$state <- package_sha_update_status(status$local_sha, status$remote_sha)
+
+  if (identical(status$state, "unknown")) {
+    status$warning <- paste0(
+      "Could not verify whether ", package,
+      " is up to date against GitHub (", repo, "@", ref,
+      "). Continuing with the installed version."
+    )
+    warning(status$warning, call. = FALSE)
+    return(finish(status))
+  }
+
+  if (identical(status$state, "current")) {
+    status$message <- paste0(package, " matches GitHub ", repo, "@", ref, ".")
+    return(finish(status))
+  }
+
+  status$outdated <- TRUE
+  if (!isTRUE(install)) {
+    status$message <- paste0(
+      package, " is behind GitHub (", repo, "@", ref, ")."
+    )
+    return(finish(status))
+  }
+
+  message(
+    "Shiny auto-update: installing ", package, " from GitHub (",
+    repo, "@", ref, ") ..."
+  )
+  ok <- try_install_replication_package_github(package, repo, ref)
+  if (!isTRUE(ok)) {
+    status$warning <- paste0(
+      "Failed to auto-update ", package, " from GitHub (", repo, "@", ref,
+      "). Continuing with the installed version ", status$version %||% "?", "."
+    )
+    warning(status$warning, call. = FALSE)
+    return(finish(status))
+  }
+
+  status$updated <- TRUE
+  status$version <- tryCatch(
+    as.character(utils::packageVersion(package)),
+    error = function(e) status$version
+  )
+  status$local_sha <- tryCatch(
+    installed_package_remote_sha(package),
+    error = function(e) status$local_sha
+  )
+
+  reloaded <- try_reload_package_namespace(package)
+  status$refresh_needed <- !isTRUE(reloaded)
+
+  deploy_dir <- getOption("replicate_shiny.app_dir", NULL)
+  if (!is.null(deploy_dir) && length(deploy_dir) == 1L && nzchar(deploy_dir) &&
+      dir.exists(deploy_dir)) {
+    tryCatch(
+      save_local_shiny(deploy_dir),
+      error = function(e) {
+        warning(
+          "Package updated but save_local_shiny() failed for ", deploy_dir, ": ",
+          conditionMessage(e),
+          call. = FALSE
+        )
+      }
+    )
+  }
+
+  status$message <- paste0(
+    package, " was updated from GitHub (", repo, "@", ref, ").",
+    if (isTRUE(status$refresh_needed)) {
+      " Refresh the browser; restart Shiny workers if the old build banner persists."
+    } else {
+      " Using the newly installed package in this session."
+    }
+  )
+  message(status$message)
+  finish(status)
+}
+
 #' Run the bundled Shiny demo app
 #'
 #' Launches the demo from `inst/shiny` inside the installed package. Does not
@@ -521,5 +760,6 @@ run_shiny_app <- function(...) {
   }
 
   options(replicate_shiny.auto_update_replicate_everything = FALSE)
+  options(replicateEverything.shiny_auto_update = FALSE)
   shiny::runApp(app_dir, ...)
 }
