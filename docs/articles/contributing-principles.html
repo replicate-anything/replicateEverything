@@ -39,7 +39,8 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="../articles/index.html">All articles</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Getting going</h6></li>
     <li><a class="dropdown-item" href="../articles/why-replicateEverything.html">Why replicateEverything?</a></li>
     <li><a class="dropdown-item" href="../articles/meet-the-functions.html">Meet the functions</a></li>
@@ -82,33 +83,118 @@
 
     
     
-<p>High-level rules for study repos that sit under <strong>Contributing
-replications</strong>. Use this before the folder, package, Stata, or
-reanalysis checklists. Gold shape: <a href="https://github.com/replicate-anything/rep-template" class="external-link"><code>rep-template</code></a>.</p>
+<style>
+.task-list { list-style: none; padding-left: 0.25rem; margin: 0.75rem 0 1.25rem; }
+.task-list li { margin: 0.45rem 0; display: flex; align-items: flex-start; gap: 0.5rem; }
+.task-list input[type="checkbox"] { margin-top: 0.35rem; flex-shrink: 0; }
+.task-list label { margin: 0; font-weight: normal; cursor: pointer; }
+</style>
+<p>Heart of contributing a study under <strong>Contributing
+replications</strong>. Gold shape: <a href="https://github.com/replicate-anything/rep-template" class="external-link"><code>rep-template</code></a>.
+Detail lives in the linked checklists — use this page as the order of
+work and the principles gate.</p>
 <div class="section level2">
-<h2 id="wire-do-not-ship">Wire, do not ship<a class="anchor" aria-label="anchor" href="#wire-do-not-ship"></a>
+<h2 id="walkthrough-four-steps">Walkthrough: four steps<a class="anchor" aria-label="anchor" href="#walkthrough-four-steps"></a>
 </h2>
-<p>Keep study repos <strong>light</strong>. Prefer yaml that points at
-originals over committing binaries or inventing download helpers.</p>
-<pre><code>- [ ] Prefer **yaml wiring** (declared URLs / file ids / `engine: dataverse`) over shipping raw deposits
-- [ ] Prefer package helpers (`fetch_dataverse_file()`, `materialize_declared_data()`, `run_replication()`) over study-local `httr::GET` / `download.file` / unzip utilities
-- [ ] Thin runners and pure `make_*` / `format_*` only — do not reimplement package verbs in the study
-- [ ] Do not copy wholesale archives into the study when a deposit API can serve the files you need</code></pre>
+<div class="section level3">
+<h3 id="first-write-the-yaml-wiring">1. First write the yaml (wiring)<a class="anchor" aria-label="anchor" href="#first-write-the-yaml-wiring"></a>
+</h3>
+<p>Create <code>replication.yml</code> before filling the repo with
+materials. Declare paper metadata, <code>maintainer:</code>,
+<code>collections:</code>, <code>languages:</code>, and a unified
+<code>steps:</code> DAG that points at originals (URLs, Dataverse file
+ids, <code>engine: dataverse</code>) rather than shipping binaries.</p>
+<p>Field-level contract and examples: <a href="folder-replication-checklist.html">Folder replication
+checklist</a> or <a href="package-replication-checklist.html">Package
+replication checklist</a>. Stata engines: <a href="stata-replications.html">Stata replications</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="then-make-code-and-data-if-any">2. Then make <code>code/</code> and <code>data/</code> (if any)<a class="anchor" aria-label="anchor" href="#then-make-code-and-data-if-any"></a>
+</h3>
+<p>Add step scripts under <code>code/</code> (thin runners; pure
+<code>make_*</code> / <code>format_*</code>). Add <code>data/</code>
+only when files must live in-repo. Prefer package fetch helpers over
+study-local download scripts — see <strong>Wire, do not ship</strong>
+below.</p>
+</div>
+<div class="section level3">
+<h3 id="then-bake-creates-outputs">3. Then bake (creates <code>outputs/</code>)<a class="anchor" aria-label="anchor" href="#then-bake-creates-outputs"></a>
+</h3>
+<p>From the study root:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/describe_study_dag.html">describe_study_dag</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>That validates the yaml DAG and writes display products under
+<code>outputs/</code> (plus <code>manifest.json</code>). Do not invent a
+parallel bake path in the study.</p>
+</div>
+<div class="section level3">
+<h3 id="then-share">4. Then share<a class="anchor" aria-label="anchor" href="#then-share"></a>
+</h3>
+<p>Push a <strong>public</strong> study repo so Shiny can fetch root
+<code>replication.yml</code>. Contributor stops at a green bake; a
+registry <strong>maintainer</strong> syncs the stub — no study-local
+<code>registry/</code> folder. See the folder/package checklists for
+<code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> /
+<code><a href="../reference/register_study.html">register_study()</a></code>.</p>
+<hr>
+</div>
 </div>
 <div class="section level2">
-<h2 id="call-original-data-dataverse-icpsr">Call original data (Dataverse / ICPSR)<a class="anchor" aria-label="anchor" href="#call-original-data-dataverse-icpsr"></a>
+<h2 id="principles-checklist">Principles checklist<a class="anchor" aria-label="anchor" href="#principles-checklist"></a>
 </h2>
+<p>Tick as you go. Details that belong in the folder, package, Stata, or
+Dataverse articles are linked rather than repeated.</p>
+<div class="section level3">
+<h3 id="wire-do-not-ship">Wire, do not ship<a class="anchor" aria-label="anchor" href="#wire-do-not-ship"></a>
+</h3>
+<p>Keep study repos <strong>light</strong>. Yaml points at originals; do
+not ship wholesale deposits or invent download helpers.</p>
+<ul class="task-list">
+<li>
+<input type="checkbox" id="w1"><label for="w1">Prefer <strong>yaml wiring</strong> (declared URLs / file ids / <code>engine: dataverse</code>) over shipping raw deposits</label>
+</li>
+<li>
+<input type="checkbox" id="w2"><label for="w2">Prefer package helpers (<code><a href="../reference/fetch_dataverse_file.html">fetch_dataverse_file()</a></code>, <code><a href="../reference/materialize_declared_data.html">materialize_declared_data()</a></code>, <code><a href="../reference/run_replication.html">run_replication()</a></code>) over study-local <code><a href="https://httr.r-lib.org/reference/GET.html" class="external-link">httr::GET</a></code> / <code>download.file</code> / unzip utilities</label>
+</li>
+<li>
+<input type="checkbox" id="w3"><label for="w3">Thin runners and pure <code>make_*</code> / <code>format_*</code> only — do not reimplement package verbs in the study</label>
+</li>
+<li>
+<input type="checkbox" id="w4"><label for="w4">Do not copy wholesale archives into the study when a deposit API can serve the files you need</label>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="call-original-data-dataverse-icpsr">Call original data (Dataverse / ICPSR)<a class="anchor" aria-label="anchor" href="#call-original-data-dataverse-icpsr"></a>
+</h3>
 <p>When the replication lives on <strong>Harvard Dataverse</strong> or
 <strong>ICPSR / OpenICPSR</strong>, fetch from there.</p>
-<pre><code>- [ ] Resolve dataset / file ids from the deposit (or paper DOI → deposit link)
-- [ ] **Surgical pulls:** `api/access/datafile/&lt;id&gt;?format=original` (or ICPSR equivalent) for **only** files analysis needs
-- [ ] **Pattern B (default)** when the fetch is a claimed step: `access_*` → `outputs/…`; later steps `parents:` that step
-- [ ] **Pattern A (exception):** silent `dataverse.files` / `data_files:` materialize → `data/` when fetch is *not* a replication product
-- [ ] No full-dataset zip / `archive_original` unless Pattern C is justified (author scripts need that tree)
-- [ ] Document direct-download URLs once file ids are known (README or yaml comments)</code></pre>
-<div class="section level3">
-<h3 id="connecting-with-dataverse-and-icpsr">Connecting with Dataverse and ICPSR<a class="anchor" aria-label="anchor" href="#connecting-with-dataverse-and-icpsr"></a>
-</h3>
+<ul class="task-list">
+<li>
+<input type="checkbox" id="d1"><label for="d1">Resolve dataset / file ids from the deposit (or paper DOI → deposit link)</label>
+</li>
+<li>
+<input type="checkbox" id="d2"><label for="d2"><strong>Surgical pulls:</strong> <code>api/access/datafile/&lt;id&gt;?format=original</code> (or ICPSR equivalent) for <strong>only</strong> files analysis needs</label>
+</li>
+<li>
+<input type="checkbox" id="d3"><label for="d3"><strong>Pattern B (default)</strong> when the fetch is a claimed step: <code>access_*</code> → <code>outputs/…</code>; later steps <code>parents:</code> that step</label>
+</li>
+<li>
+<input type="checkbox" id="d4"><label for="d4"><strong>Pattern A (exception):</strong> silent <code>dataverse.files</code> / <code>data_files:</code> materialize → <code>data/</code> when fetch is <em>not</em> a replication product</label>
+</li>
+<li>
+<input type="checkbox" id="d5"><label for="d5">No full-dataset zip / <code>archive_original</code> unless Pattern C is justified (author scripts need that tree)</label>
+</li>
+<li>
+<input type="checkbox" id="d6"><label for="d6">Document direct-download URLs once file ids are known (README or yaml comments)</label>
+</li>
+</ul>
+<div class="section level4">
+<h4 id="connecting-with-dataverse-and-icpsr">Connecting with Dataverse and ICPSR<a class="anchor" aria-label="anchor" href="#connecting-with-dataverse-and-icpsr"></a>
+</h4>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -148,52 +234,68 @@ required to start. Inspect <code>originalFileName</code> / native format
 before converting <code>.tab</code> files.</p>
 <p>If data lives <strong>elsewhere</strong> (author site, OSF, journal
 supplement):</p>
-<pre><code>- [ ] Make files **directly accessible** (stable HTTPS URL to the file itself)
-- [ ] Do not rely on “download the zip and dig inside” as the only path — document a direct file URL once you have it</code></pre>
+<ul class="task-list">
+<li>
+<input type="checkbox" id="e1"><label for="e1">Make files <strong>directly accessible</strong> (stable HTTPS URL to the file itself)</label>
+</li>
+<li>
+<input type="checkbox" id="e2"><label for="e2">Do not rely on “download the zip and dig inside” as the only path — document a direct file URL once you have it</label>
+</li>
+</ul>
 </div>
 </div>
-<div class="section level2">
-<h2 id="public-study-repos">Public study repos<a class="anchor" aria-label="anchor" href="#public-study-repos"></a>
-</h2>
+<div class="section level3">
+<h3 id="public-study-repos">Public study repos<a class="anchor" aria-label="anchor" href="#public-study-repos"></a>
+</h3>
 <p>Shiny and registry enrichment fetch the study’s root
 <code>replication.yml</code> over HTTP.</p>
-<pre><code>- [ ] Study repo is **public** (or otherwise fetchable by the Shiny host)
-- [ ] `repo:` / `paper.study_repo` points at the correct GitHub slug
-- [ ] Raw `replication.yml` is reachable (no private-only tree for that path)</code></pre>
+<ul class="task-list">
+<li>
+<input type="checkbox" id="p1"><label for="p1">Study repo is <strong>public</strong> (or otherwise fetchable by the Shiny host)</label>
+</li>
+<li>
+<input type="checkbox" id="p2"><label for="p2"><code>repo:</code> / <code>paper.study_repo</code> points at the correct GitHub slug</label>
+</li>
+<li>
+<input type="checkbox" id="p3"><label for="p3">Raw <code>replication.yml</code> is reachable (no private-only tree for that path)</label>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="lean-materials-and-registry-handoff">Lean materials and registry handoff<a class="anchor" aria-label="anchor" href="#lean-materials-and-registry-handoff"></a>
+</h3>
+<ul class="task-list">
+<li>
+<input type="checkbox" id="l1"><label for="l1">No ethics / instruments / appendix-only blobs unless a declared step needs them</label>
+</li>
+<li>
+<input type="checkbox" id="l2"><label for="l2">No empty placeholder data trees; no scratch / <code>outputs/deposit/</code> / staging committed</label>
+</li>
+<li>
+<input type="checkbox" id="l3"><label for="l3">No study-local <code>registry/</code> folder — contributor runs <code>check_and_bake_study(".")</code>; maintainer syncs stubs</label>
+</li>
+<li>
+<input type="checkbox" id="l4"><label for="l4">Every table/figure step has a display sink under <code>outputs/</code> (<code>.html</code> / <code>.png</code>) when Display should show it</label>
+</li>
+</ul>
+<p>Yaml DAG rules (<code>steps:</code>, <code>outputs:</code>,
+<code>parents:</code>, format children): see <a href="folder-replication-checklist.html">Folder replication
+checklist</a> — do not re-learn them here.</p>
+<hr>
+</div>
 </div>
 <div class="section level2">
-<h2 id="yaml-contract">Yaml contract<a class="anchor" aria-label="anchor" href="#yaml-contract"></a>
+<h2 id="next">Next<a class="anchor" aria-label="anchor" href="#next"></a>
 </h2>
-<pre><code>- [ ] Unified `steps:` DAG — no legacy `prep:` / `replications:`
-- [ ] Products use `outputs:` only — no deprecated `artifact:` / `output:` / `stata_output:`
-- [ ] Edges use `parents:` only — no `requires:` / `depends_on:`; omit `parents` on roots (never `parents: []`)
-- [ ] `maintainer:` name + email filled; `collections:` when known; `languages:` for every engine
-- [ ] Format children: `type: format` + `parent:` (no unused `label:`)
-- [ ] `list_replications("local")` and `describe_study_dag("local")` succeed from the study root</code></pre>
-</div>
-<div class="section level2">
-<h2 id="lean-materials-and-registry-handoff">Lean materials and registry handoff<a class="anchor" aria-label="anchor" href="#lean-materials-and-registry-handoff"></a>
-</h2>
-<pre><code>- [ ] No ethics / instruments / appendix-only blobs unless a declared step needs them
-- [ ] No empty placeholder data trees; no scratch / `outputs/deposit/` / staging committed
-- [ ] No study-local `registry/` folder — contributor runs `check_and_bake_study(".")`; maintainer syncs stubs
-- [ ] Every table/figure step has a display sink under `outputs/` (`.html` / `.png`) when Display should show it</code></pre>
-</div>
-<div class="section level2">
-<h2 id="pre-submit-gate">Pre-submit gate<a class="anchor" aria-label="anchor" href="#pre-submit-gate"></a>
-</h2>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
-<span><span class="co"># from study repo root:</span></span>
-<span><span class="fu">yaml</span><span class="fu">::</span><span class="fu"><a href="https://yaml.r-lib.org/reference/read_yaml.html" class="external-link">read_yaml</a></span><span class="op">(</span><span class="st">"replication.yml"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/describe_study_dag.html">describe_study_dag</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/check_and_bake_study.html">check_and_bake_study</a></span><span class="op">(</span><span class="st">"."</span>, build_artifacts <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>Next: <a href="folder-replication-checklist.html">Folder replication
-checklist</a>, <a href="package-replication-checklist.html">Package
-replication checklist</a>, <a href="stata-replications.html">Stata
-replications</a>, or <a href="reanalysis-studies.html">Reanalysis and
-extension studies</a>.</p>
+<ul>
+<li><a href="folder-replication-checklist.html">Folder replication
+checklist</a></li>
+<li><a href="package-replication-checklist.html">Package replication
+checklist</a></li>
+<li><a href="stata-replications.html">Stata replications</a></li>
+<li><a href="reanalysis-studies.html">Reanalysis and extension
+studies</a></li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
