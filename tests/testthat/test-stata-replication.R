@@ -4,11 +4,17 @@ test_that("stata_runner_lines wraps the step do-file in capture noisily, not a b
   # batch job to continue?" dialog on Windows and hangs unattended/CI runs.
   lines <- replicateEverything:::stata_runner_lines("C:/study/code/tab_1.do", "C:/study")
   expect_true(any(grepl(
-    'capture noisily do "C:/study/code/tab_1.do"', lines, fixed = TRUE
+    'capture noisily nobreak do "C:/study/code/tab_1.do"', lines, fixed = TRUE
   )))
   expect_false(any(grepl(
     '^do "C:/study/code/tab_1.do"$', lines
   )))
+  # Non-interactive preamble must be present before the study do-file.
+  expect_true(any(grepl("set more off, permanently", lines, fixed = TRUE)))
+  expect_true(any(grepl("pause off", lines, fixed = TRUE)))
+  expect_true(any(grepl("nobreak do", lines, fixed = TRUE)))
+  # Do not force varabbrev off - deposited scripts often rely on abbreviation.
+  # Do not inject a sleep override - sleep is a Stata built-in and cannot be replaced.
   # The error must still surface in the log for stata_log_error() to find.
   expect_true(any(grepl("if _rc != 0", lines, fixed = TRUE)))
   expect_true(any(grepl("display as error", lines, fixed = TRUE)))
@@ -22,7 +28,7 @@ test_that("stata_runner_lines still wires up staging dir globals", {
     staging_dir = staging
   )
   expect_true(any(grepl("REPLICATE_STATA_RESULT", lines, fixed = TRUE)))
-  expect_true(any(grepl('capture noisily do "C:/study/code/tab_1.do"', lines, fixed = TRUE)))
+  expect_true(any(grepl('capture noisily nobreak do "C:/study/code/tab_1.do"', lines, fixed = TRUE)))
 })
 
 test_that("stata_deps_install_lines_from_packages never emits a bare ssc install", {

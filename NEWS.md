@@ -1,5 +1,27 @@
 # replicateEverything 0.7.6
 
+## Clearer Shiny / list_replications errors when study yaml cannot be fetched
+
+* **UX:** When a registry stub has no `steps:` and the study repo
+  `replication.yml` cannot be loaded, [list_replications()] now reports a
+  specific reason (HTTP 404/403 private-or-missing, network failure, yaml
+  parse/normalize errors such as deprecated `artifact:`, or a genuinely empty
+  stub) instead of the generic empty-`steps:` normalize message. The bundled
+  Shiny app surfaces the same package message.
+
+## Stata batch preamble hardened against interactive prompts
+
+* **Bug fix / hardening:** `stata_runner_lines()` now also emits `pause off`,
+  `set linesize 255`, and re-asserts `set more off` / `pause off` immediately
+  before running the study script under `capture noisily nobreak do`. This
+  blocks `--more--` paging, live `pause` prompts, and Break-key `r(1)` continue
+  dialogs during Windows `/e` batch runs. (`varabbrev off` is intentionally
+  not forced: many deposits rely on default abbreviation matching.)
+* **Windows:** `run_stata_system2()` starts Stata with `processx`
+  `windows_hide = TRUE` and discards stdout/stderr (Stata `/e` already writes a
+  `.log`). Piping without a reader could fill the OS pipe and stall Stata;
+  a visible flashing taskbar icon then invites cancel → `--Break--` / r(1).
+
 ## Clear messaging for steps that cannot be created (`incomplete:` / `blocked_reason:`)
 
 * **New:** a step in `replication.yml` may declare `incomplete: true` plus a

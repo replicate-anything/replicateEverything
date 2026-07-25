@@ -264,15 +264,40 @@ cleanup_stata_stray_batch_logs <- function(dirs, log_name, keep = NULL) {
 #' @keywords internal
 run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   timeout <- as.integer(timeout[1])
-  if (length(timeout) != 1L || is.na(timeout) || timeout <= 0L) {
+  # Windows: prefer R system2(invisible=TRUE) so the Stata GUI never appears on
+  # the taskbar. Clicking that icon cancels the batch job with --Break-- r(1)
+  # even under nobreak. processx is used when a timeout is requested.
+  use_timeout <- length(timeout) == 1L && !is.na(timeout) && timeout > 0L
+  if (.Platform$OS.type == "windows" && !use_timeout) {
+    return(system2(
+      stata, batch_args,
+      wait = TRUE, stdout = "", stderr = "",
+      invisible = TRUE
+    ))
+  }
+  if (!use_timeout) {
     return(system2(stata, batch_args, wait = TRUE, stdout = "", stderr = ""))
   }
   if (requireNamespace("processx", quietly = TRUE)) {
-    proc <- processx::process$new(
-      stata,
-      batch_args,
-      stdout = "|",
-      stderr = "|"
+    # Discard stdio (Stata /e already writes a .log). Piping to "|" without a
+    # reader can fill the OS pipe buffer and stall Stata mid-command.
+    # windows_hide: keep the Stata GUI off the taskbar so a click does not
+    # inject Break / the "cancel the batch job?" dialog mid-run.
+    proc_args <- list(
+      command = stata,
+      args = batch_args,
+      stdout = NULL,
+      stderr = NULL
+    )
+    if (.Platform$OS.type == "windows") {
+      proc_args$windows_hide <- TRUE
+    }
+    proc <- tryCatch(
+      do.call(processx::process$new, proc_args),
+      error = function(e) {
+        proc_args$windows_hide <- NULL
+        do.call(processx::process$new, proc_args)
+      }
     )
     proc$wait(timeout = timeout * 1000)
     if (proc$is_alive()) {
@@ -288,6 +313,14 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
     status <- proc$get_exit_status()
     return(if (is.null(status)) 1L else as.integer(status))
   }
+  # Fallback without processx: no kill-on-timeout, but still hide on Windows.
+  if (.Platform$OS.type == "windows") {
+    return(system2(
+      stata, batch_args,
+      wait = TRUE, stdout = "", stderr = "",
+      invisible = TRUE
+    ))
+  }
   system2(stata, batch_args, wait = TRUE, stdout = "", stderr = "")
 }
 
@@ -301,14 +334,19 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
 #' that blocks headless/unattended runs indefinitely (confirmed on Stata
 #' 10-19; happens with both \code{/e} and \code{/b} - \code{/e} only
 #' suppresses the separate "job finished, click OK" dialog on success).
-#' \code{capture} absorbs an error at the level it is applied regardless of
-#' how many nested \code{do} calls sit between it and the failing command, so
-#' wrapping only this outermost, package-generated call protects every study
-#' - individual study runners do not need their own \code{capture}.
-#' \code{noisily} keeps the usual output and the \code{r(###);} line in the
-#' log so \code{stata_log_error()} still detects the failure - only the
-#' do-file-aborting side effect (and the Windows dialog it can trigger) is
-#' swallowed.
+#' \code{capture} around the outermost \code{do} absorbs an uncaught error in
+#' that do-file (and in nested \code{do}s that abort into it) so the batch
+#' process is not left in an "interrupted" state. \code{noisily} keeps the
+#' usual output and the \code{r(###);} line in the log so
+#' \code{stata_log_error()} still detects the failure.
+#'
+#' The preamble also forces non-interactive preferences that author code
+#' sometimes re-enables: \code{set more off} and \code{pause off}. The study
+#' \code{do} is run under \code{nobreak} so a Break keypress cannot abort the
+#' batch job with \code{r(1)}. We intentionally do \emph{not} set
+#' \code{varabbrev off}: many deposited scripts rely on Stata's default
+#' abbreviation matching. Studies may still wrap their own nested \code{do}
+#' calls in \code{capture noisily} as defense in depth.
 #'
 #' @param do_in_do Do-file path already escaped/formatted for use inside a
 #'   Stata do-file (see \code{stata_path_in_do()}).
@@ -320,7 +358,12 @@ stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL) {
   runner_lines <- c(
     "version 17",
     "clear all",
+    "* Non-interactive batch preamble (must survive author clear/set more on)",
     "set more off, permanently",
+    "pause off",
+    "set linesize 255",
+    "cap set scrollbufsize 2000000",
+    "cap set netmsg off",
     sprintf("local root \"%s\"", wd_in_do),
     "cd \"`root'\""
   )
@@ -336,7 +379,12 @@ stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL) {
   }
   c(
     runner_lines,
-    sprintf("capture noisily do \"%s\"", do_in_do),
+    "* Re-assert before the study script in case a prior step left more on",
+    "set more off, permanently",
+    "pause off",
+    # nobreak: ignore Break during the nested do so Windows batch does not
+    # surface r(1) / continue dialogs if the Stata icon is clicked.
+    sprintf("capture noisily nobreak do \"%s\"", do_in_do),
     "if _rc != 0 {",
     "    display as error \"replicateEverything: step do-file ended with error r(\" _rc \");  see log above for the failing command.\"",
     "}"

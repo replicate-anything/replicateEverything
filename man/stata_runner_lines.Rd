@@ -26,15 +26,19 @@ has been interrupted. Would you like the batch job to continue?" dialog
 that blocks headless/unattended runs indefinitely (confirmed on Stata
 10-19; happens with both \code{/e} and \code{/b} - \code{/e} only
 suppresses the separate "job finished, click OK" dialog on success).
-\code{capture} absorbs an error at the level it is applied regardless of
-how many nested \code{do} calls sit between it and the failing command, so
-wrapping only this outermost, package-generated call protects every study
-\itemize{
-\item individual study runners do not need their own \code{capture}.
-\code{noisily} keeps the usual output and the \code{r(###);} line in the
-log so \code{stata_log_error()} still detects the failure - only the
-do-file-aborting side effect (and the Windows dialog it can trigger) is
-swallowed.
+\code{capture} around the outermost \code{do} absorbs an uncaught error in
+that do-file (and in nested \code{do}s that abort into it) so the batch
+process is not left in an "interrupted" state. \code{noisily} keeps the
+usual output and the \code{r(###);} line in the log so
+\code{stata_log_error()} still detects the failure.
 }
+\details{
+The preamble also forces non-interactive preferences that author code
+sometimes re-enables: \code{set more off} and \code{pause off}. The study
+\code{do} is run under \code{nobreak} so a Break keypress cannot abort the
+batch job with \code{r(1)}. We intentionally do \emph{not} set
+\code{varabbrev off}: many deposited scripts rely on Stata's default
+abbreviation matching. Studies may still wrap their own nested \code{do}
+calls in \code{capture noisily} as defense in depth.
 }
 \keyword{internal}

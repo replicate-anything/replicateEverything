@@ -29,7 +29,9 @@ cannot **normalize** them, or never fetches the study yaml.
 | Legacy `prep:` / `replications:` / `requires:` / `depends_on:` | Same call hard-errors | Convert to unified `steps:` + `parents:` |
 | Empty `parents: []` | Grep | Omit `parents` on roots (style; usually not fatal) |
 | Registry stub only (no enrichment) | Stub under `registry/studies/` has no `steps:`; study repo missing / private / wrong `repo:` | Push public study repo; set `repo:` / `paper.study_repo`; ensure raw `replication.yml` fetchable |
-| Normalize error swallowed | Shiny `tryCatch` → empty index → "No replications found…" | Fix hard-error fields above; re-run `list_replications("local")` |
+| Private / 404 / network fetch failure | `list_replications()` / Shiny message mentions HTTP 404/403 or network error for the study `replication.yml` URL | Push public study repo; fix `repo:` / `study_ref` |
+| Yaml normalize error (e.g. `artifact:`) | Package normalize message surfaced (not swallowed into empty index) | Fix hard-error fields above; re-run `list_replications("local")` |
+| Genuinely empty stub | Message says fetched yaml has no `steps:` block | Add steps to study yaml |
 
 ```r
 # From study repo root — must succeed before any Shiny claim

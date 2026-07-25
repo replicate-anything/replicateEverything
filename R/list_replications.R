@@ -46,13 +46,27 @@ list_replications <- function(
 ) {
   include <- match.arg(include)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
-  reps <- filter_replication_entries(meta, include = include)
   wrap <- function(x) {
     as_replication_list(
       x,
       doi = normalize_doi(meta$paper$doi %||% doi),
       title = as.character(meta$paper$title %||% "")
     )
+  }
+
+  reps <- tryCatch(
+    filter_replication_entries(meta, include = include),
+    error = function(e) e
+  )
+  if (inherits(reps, "error")) {
+    if (is_missing_steps_normalize_error(reps)) {
+      ctx <- paper_context(doi, repo = repo, folder = folder)
+      stop(
+        missing_replication_steps_message(meta, ctx, normalize_error = reps),
+        call. = FALSE
+      )
+    }
+    stop(reps)
   }
 
   if (grouped) {
@@ -76,7 +90,20 @@ list_replications <- function(
     ctx <- paper_context(doi, repo = repo, folder = folder)
     pkg_meta <- fetch_package_replication_yaml(meta, ctx)
     if (!is.null(pkg_meta)) {
-      return(wrap(filter_replication_entries(pkg_meta, include = include)))
+      pkg_reps <- tryCatch(
+        filter_replication_entries(pkg_meta, include = include),
+        error = function(e) {
+          stop(
+            missing_replication_steps_message(
+              pkg_meta,
+              ctx,
+              normalize_error = e
+            ),
+            call. = FALSE
+          )
+        }
+      )
+      return(wrap(pkg_reps))
     }
     pkg <- as.character(meta$paper$package[[1]])
     ensure_replication_package(pkg, meta = meta, ctx = ctx)
@@ -89,12 +116,31 @@ list_replications <- function(
         return(wrap(filter_replication_entries(pkg_meta, include = include)))
       }
     }
+    stop(missing_replication_steps_message(meta, ctx), call. = FALSE)
   }
   if (is_folder_study_replication(meta)) {
     ctx <- paper_context(doi, repo = repo, folder = folder)
     study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
     if (!is.null(study_meta)) {
-      return(wrap(filter_replication_entries(study_meta, include = include)))
+      study_reps <- tryCatch(
+        filter_replication_entries(study_meta, include = include),
+        error = function(e) {
+          stop(
+            missing_replication_steps_message(
+              study_meta,
+              ctx,
+              normalize_error = e
+            ),
+            call. = FALSE
+          )
+        }
+      )
+      if (length(study_reps) > 0L) {
+        return(wrap(study_reps))
+      }
+    }
+    if (length(meta$steps %||% list()) == 0L) {
+      stop(missing_replication_steps_message(meta, ctx), call. = FALSE)
     }
   }
   wrap(reps)

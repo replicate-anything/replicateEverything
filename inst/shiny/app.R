@@ -2838,7 +2838,19 @@ build_replication_index_diagnostics <- function(doi, folder = NULL, repo = NULL,
       )
       study_meta <- read_yaml_from_url(study_url)
       if (!is.null(study_meta)) {
-        replications_found <- replication_display_count(study_meta$replications %||% list())
+        if (length(study_meta$steps %||% list()) > 0L) {
+          replications_found <- tryCatch(
+            replication_display_count(replicate_fn("study_step_entries", study_meta)),
+            error = function(e) {
+              sum(vapply(study_meta$steps, function(x) {
+                type <- tolower(as.character(x$type %||% ""))
+                type %in% c("figure", "table")
+              }, logical(1)))
+            }
+          )
+        } else {
+          replications_found <- replication_display_count(study_meta$replications %||% list())
+        }
       }
     } else {
       pkg_repo <- stub$repo %||% stub$paper$package_repo %||% NULL
@@ -5512,13 +5524,43 @@ server <- function(input, output, session) {
       is.null(state$replications_load_error) &&
       (is.null(meta$replications) || replication_display_count(meta$replications) == 0L)
     ) {
+      explained <- tryCatch(
+        {
+          study_meta <- replicate_fn(
+            "get_replication_meta",
+            doi,
+            folder = state$registry_folder,
+            repo = state$registry_repo
+          )
+          ctx <- replicate_fn(
+            "paper_context",
+            doi,
+            folder = state$registry_folder,
+            repo = state$registry_repo
+          )
+          if (exists(
+            "missing_replication_steps_message",
+            envir = asNamespace("replicateEverything"),
+            inherits = FALSE
+          )) {
+            replicate_fn("missing_replication_steps_message", study_meta, ctx)
+          } else {
+            NULL
+          }
+        },
+        error = function(e) conditionMessage(e)
+      )
       state$replications_load_error <- simpleError(
-        paste0(
-          "No replications found for DOI ", doi, ".\n\n",
-          "Check the DOI against the Studies tab. ",
-          "For a local folder-backed repo, enter the path to the folder ",
-          "that contains replication.yml (e.g. c:/Users/you/my_repo/ or ~/my_repo/)."
-        ),
+        if (!is.null(explained) && nzchar(explained)) {
+          explained
+        } else {
+          paste0(
+            "No replications found for DOI ", doi, ".\n\n",
+            "Check the DOI against the Studies tab. ",
+            "For a local folder-backed repo, enter the path to the folder ",
+            "that contains replication.yml (e.g. c:/Users/you/my_repo/ or ~/my_repo/)."
+          )
+        },
         call = NULL
       )
     }

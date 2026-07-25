@@ -54,6 +54,124 @@ sibling_packages_enabled <- function() {
     !is.null(auto_detect_monorepo_root())
 }
 
+#' Count display (table/figure) entries in parsed study yaml
+#'
+#' Prefers unified \code{steps:}; falls back to legacy \code{replications:}.
+#'
+#' @param parsed Parsed yaml list.
+#' @return Integer count.
+#' @keywords internal
+yaml_display_entry_count <- function(parsed) {
+  if (is.null(parsed) || !is.list(parsed)) {
+    return(0L)
+  }
+  steps <- parsed$steps %||% list()
+  if (length(steps) > 0L) {
+    return(sum(vapply(steps, function(x) {
+      type <- tolower(as.character(x$type %||% ""))
+      type %in% c("figure", "table")
+    }, logical(1))))
+  }
+  reps <- parsed$replications %||% list()
+  if (length(reps) == 0L) {
+    return(0L)
+  }
+  sum(vapply(reps, function(x) {
+    type <- as.character(x$type %||% "")
+    type %in% c("figure", "table")
+  }, logical(1)))
+}
+
+#' Probe a local path or HTTP(S) yaml URL
+#'
+#' Distinguishes network failure, HTTP 404/403, empty body, and parse errors
+#' so callers can build specific user-facing messages.
+#'
+#' @param url Local path or HTTP(S) URL.
+#' @return A list with \code{ok}, \code{status}, \code{status_code},
+#'   \code{parsed}, and \code{parse_error}.
+#' @keywords internal
+yaml_url_probe <- function(url) {
+  empty <- function(status, status_code = NA_integer_, parse_error = NULL) {
+    list(
+      ok = FALSE,
+      status = status,
+      status_code = status_code,
+      parsed = NULL,
+      parse_error = parse_error
+    )
+  }
+  if (length(url) != 1L || is.na(url) || !nzchar(url)) {
+    return(empty("empty url"))
+  }
+  if (!grepl("^https?://", url, ignore.case = TRUE)) {
+    if (!file.exists(url)) {
+      return(empty("missing (local file)"))
+    }
+    parsed <- tryCatch(
+      yaml::read_yaml(url),
+      error = function(e) e
+    )
+    if (inherits(parsed, "error")) {
+      return(empty(
+        "local file exists but yaml parse failed",
+        parse_error = conditionMessage(parsed)
+      ))
+    }
+    n <- yaml_display_entry_count(parsed)
+    return(list(
+      ok = TRUE,
+      status = paste0("ok (local file, ", n, " display steps)"),
+      status_code = NA_integer_,
+      parsed = parsed,
+      parse_error = NULL
+    ))
+  }
+  resp <- tryCatch(
+    httr::GET(
+      url,
+      httr::user_agent("replicateEverything"),
+      httr::timeout(20)
+    ),
+    error = function(e) e
+  )
+  if (inherits(resp, "error")) {
+    return(empty(paste0("network error: ", conditionMessage(resp))))
+  }
+  sc <- httr::status_code(resp)
+  if (sc >= 400L) {
+    hint <- if (sc %in% c(401L, 403L, 404L)) {
+      " (repo missing, private, or wrong path/ref)"
+    } else {
+      ""
+    }
+    return(empty(paste0("HTTP ", sc, hint), status_code = sc))
+  }
+  txt <- httr::content(resp, as = "text", encoding = "UTF-8")
+  if (length(txt) != 1L || !nzchar(trimws(txt))) {
+    return(empty(paste0("HTTP ", sc, " but empty body"), status_code = sc))
+  }
+  parsed <- tryCatch(
+    yaml::read_yaml(text = txt),
+    error = function(e) e
+  )
+  if (inherits(parsed, "error")) {
+    return(empty(
+      paste0("HTTP ", sc, " but yaml parse failed"),
+      status_code = sc,
+      parse_error = conditionMessage(parsed)
+    ))
+  }
+  n <- yaml_display_entry_count(parsed)
+  list(
+    ok = TRUE,
+    status = paste0("ok (HTTP ", sc, ", ", n, " display steps)"),
+    status_code = sc,
+    parsed = parsed,
+    parse_error = NULL
+  )
+}
+
 #' Read yaml from an HTTP(S) URL without writing a temp file
 #'
 #' Avoids \code{download.file()} temp-path failures on some Shiny servers.
@@ -62,25 +180,11 @@ sibling_packages_enabled <- function() {
 #' @return Parsed yaml list or \code{NULL}.
 #' @keywords internal
 read_yaml_url <- function(url) {
-  if (length(url) != 1L || is.na(url) || !nzchar(url)) {
+  probe <- yaml_url_probe(url)
+  if (!isTRUE(probe$ok)) {
     return(NULL)
   }
-  resp <- tryCatch(
-    httr::GET(
-      url,
-      httr::user_agent("replicateEverything"),
-      httr::timeout(20)
-    ),
-    error = function(e) NULL
-  )
-  if (is.null(resp) || httr::status_code(resp) >= 400L) {
-    return(NULL)
-  }
-  txt <- httr::content(resp, as = "text", encoding = "UTF-8")
-  if (length(txt) != 1L || !nzchar(trimws(txt))) {
-    return(NULL)
-  }
-  tryCatch(yaml::read_yaml(text = txt), error = function(e) NULL)
+  probe$parsed
 }
 
 #' Read text lines from a local path or HTTP(S) URL
@@ -507,37 +611,7 @@ raw_to_github_browse <- function(url) {
 #' @param url Local path or HTTP(S) URL.
 #' @keywords internal
 yaml_url_status <- function(url) {
-  if (length(url) != 1L || !nzchar(url)) {
-    return("empty url")
-  }
-  if (!grepl("^https?://", url, ignore.case = TRUE)) {
-    if (!file.exists(url)) {
-      return("missing (local file)")
-    }
-    parsed <- tryCatch(yaml::read_yaml(url), error = function(e) NULL)
-    if (is.null(parsed)) {
-      return("local file exists but yaml parse failed")
-    }
-    n <- length(parsed$replications %||% list())
-    return(paste0("ok (local file, ", n, " replications)"))
-  }
-  resp <- tryCatch(
-    httr::GET(url, httr::user_agent("replicateEverything"), httr::timeout(15)),
-    error = function(e) paste0("error: ", conditionMessage(e))
-  )
-  if (is.character(resp)) {
-    return(resp)
-  }
-  sc <- httr::status_code(resp)
-  if (sc >= 400L) {
-    return(paste0("HTTP ", sc))
-  }
-  parsed <- read_yaml_url(url)
-  if (is.null(parsed)) {
-    return(paste0("HTTP ", sc, " but yaml parse failed"))
-  }
-  n <- length(parsed$replications %||% list())
-  paste0("ok (HTTP ", sc, ", ", n, " replications)")
+  yaml_url_probe(url)$status
 }
 
 #' Fetch \code{replication.yml} from a study package GitHub repo

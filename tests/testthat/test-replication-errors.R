@@ -14,6 +14,47 @@ test_that("replication_error_message strips Stata-style hyperlinks", {
   expect_equal(replication_error_message(err), "file not found: ./data/raw/foo")
 })
 
+test_that("missing_replication_steps_message reports HTTP fetch failure", {
+  stub <- list(
+    paper = list(
+      doi = "10.9999/example",
+      materials = "folder",
+      title = "Example"
+    ),
+    repo = "replicate-anything/rep-does-not-exist-xyz"
+  )
+  msg <- missing_replication_steps_message(stub, ctx = list())
+  expect_match(msg, "Could not load replication steps")
+  expect_match(msg, "HTTP 404|network error", perl = TRUE)
+})
+
+test_that("missing_replication_steps_message prefers normalize errors", {
+  meta <- list(
+    steps = list(list(id = "tab_1", type = "table", artifact = "outputs/x.rds"))
+  )
+  err <- simpleError("Step 'tab_1' uses artifact:; use outputs: only.")
+  msg <- missing_replication_steps_message(meta, normalize_error = err)
+  expect_match(msg, "artifact:")
+  expect_false(grepl("Could not load replication steps", msg, fixed = TRUE))
+})
+
+test_that("missing_replication_steps_message reports empty fetched yaml", {
+  parsed <- list(paper = list(doi = "10.9999/x"), steps = list())
+  header <- "Could not load replication steps for this study."
+  msg <- describe_fetched_yaml_without_usable_steps(
+    header,
+    source_label = "https://example.com/replication.yml",
+    parsed = parsed
+  )
+  expect_match(msg, "no steps: block")
+})
+
+test_that("yaml_url_probe reports local missing files", {
+  probe <- yaml_url_probe(file.path(tempdir(), "no-such-replication.yml"))
+  expect_false(probe$ok)
+  expect_match(probe$status, "missing")
+})
+
 test_that("get_artifact_path resolves figure from fixture study folder", {
   skip_on_cran()
   with_fixture_opts({

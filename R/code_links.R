@@ -10,12 +10,41 @@
 default_stata_globals <- function(study_root, result_dir = NULL) {
   study_root <- normalize_path_slashes(study_root)
   result <- result_dir %||% file.path(study_root, "outputs", "staging")
+  # Prefer code/original when present (author trees remapped via init_study_paths.do).
+  github_root <- file.path(study_root, "code", "original")
+  if (!dir.exists(github_root)) {
+    github_root <- file.path(study_root, "code")
+  }
   c(
     maindir = study_root,
     rawdir = file.path(study_root, "data", "raw"),
     processed = file.path(study_root, "outputs"),
-    result = normalize_path_slashes(result)
+    result = normalize_path_slashes(result),
+    # Common author-script aliases (Dropbox/GitHub layout remapped in study helpers)
+    dropbox = file.path(study_root, "data"),
+    github = normalize_path_slashes(github_root),
+    user = study_root
   )
+}
+
+#' Safe lookup in a named Stata-globals character vector
+#'
+#' R 4.5+ errors on \code{x[["missing"]]} for atomic vectors; treat missing
+#' names as unresolved instead of aborting code-link checks.
+#' @keywords internal
+stata_global_lookup <- function(globals, name) {
+  if (!length(globals) || is.null(names(globals))) {
+    return(NULL)
+  }
+  idx <- match(as.character(name), names(globals), nomatch = 0L)
+  if (idx == 0L) {
+    return(NULL)
+  }
+  val <- unname(globals[[idx]])
+  if (is.null(val) || length(val) == 0L || is.na(val[[1]]) || !nzchar(val[[1]])) {
+    return(NULL)
+  }
+  as.character(val[[1]])
 }
 
 #' Normalize a caller file path for code-link resolution
@@ -105,8 +134,8 @@ normalize_stata_globals <- function(study_root, globals = NULL) {
   }
   out <- defaults
   for (nm in names(globals)) {
-    val <- globals[[nm]]
-    if (nzchar(nm) && !is.null(val) && nzchar(val) && is_resolved_stata_global_value(val)) {
+    val <- stata_global_lookup(globals, nm)
+    if (nzchar(nm) && !is.null(val) && is_resolved_stata_global_value(val)) {
       out[[nm]] <- normalize_path_slashes(as.character(val))
     }
   }
@@ -409,8 +438,8 @@ substitute_stata_globals <- function(path, globals) {
     }
     name <- regmatches(out, m)
     name <- sub("^\\$\\{([^}]+)\\}$", "\\1", name, perl = TRUE)
-    val <- globals[[name]]
-    if (is.null(val) || !nzchar(val)) {
+    val <- stata_global_lookup(globals, name)
+    if (is.null(val)) {
       unresolved <- c(unresolved, name)
       break
     }
@@ -422,8 +451,8 @@ substitute_stata_globals <- function(path, globals) {
       break
     }
     name <- sub("^\\$", "", regmatches(out, m))
-    val <- globals[[name]]
-    if (is.null(val) || !nzchar(val)) {
+    val <- stata_global_lookup(globals, name)
+    if (is.null(val)) {
       unresolved <- c(unresolved, name)
       break
     }
@@ -836,7 +865,7 @@ code_link_diagnostics <- function(
   } else {
     study_root_norm
   }
-  maindir <- globals[["maindir"]] %||% NA_character_
+  maindir <- stata_global_lookup(globals, "maindir") %||% NA_character_
   if (!is.na(maindir) && nzchar(maindir)) {
     maindir <- normalize_path_slashes(normalizePath(maindir, winslash = "/", mustWork = FALSE))
   }
