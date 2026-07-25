@@ -1729,6 +1729,39 @@ local_study_select_choice <- function() {
   stats::setNames("local", paste0("\U0001f4c2 Local study (this folder): ", suffix))
 }
 
+#' Compact lightbulb hint for the study picker (hover/focus popover).
+local_study_tip_ui <- function() {
+  tip_icon <- tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 16 16",
+    width = "14",
+    height = "14",
+    fill = "currentColor",
+    `aria-hidden` = "true",
+    tags$path(
+      d = "M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13a.5.5 0 0 1 0 1 .5.5 0 0 1 0 1l-.224.447a1 1 0 0 1-.894.553H6.618a1 1 0 0 1-.894-.553L5.5 15a.5.5 0 0 1 0-1 .5.5 0 0 1 0-1 .5.5 0 0 1-.46-.302l-.761-1.77a2 2 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m6-5a5 5 0 0 0-3.479 8.592c.239.23.436.48.568.805l.762 1.769A1.5 1.5 0 0 0 6.618 15h2.764a1.5 1.5 0 0 0 1.347-.832l.762-1.77c.132-.324.329-.574.568-.805A5 5 0 0 0 8 1"
+    )
+  )
+  tags$span(
+    class = "contribute-hint study-local-hint",
+    tabindex = "0",
+    role = "button",
+    `aria-label` = "Tip about using a local study",
+    tags$span(class = "study-local-hint-icon", tip_icon),
+    tags$span(
+      class = "contribute-example study-local-hint-popover",
+      `aria-hidden` = "true",
+      tags$div(class = "contribute-example-caption", "Local study"),
+      tags$div(
+        class = "study-local-hint-body",
+        "Tip: type or select ", tags$code("local"),
+        " to use the study checked out in the app's current working directory ",
+        "(no DOI or registry lookup needed)."
+      )
+    )
+  )
+}
+
 truncate_label <- function(text, max_chars = 40L) {
   text <- trimws(as.character(text))
   if (length(text) != 1L || !nzchar(text) || nchar(text) <= max_chars) {
@@ -4830,6 +4863,29 @@ ui <- tagList(
       margin-left: auto;
     }
     .doi-go-wrap .btn { white-space: nowrap; min-width: 2.75rem; }
+    .study-local-hint-icon {
+      display: inline-flex;
+      align-items: center;
+      color: #6c757d;
+      opacity: 0.7;
+      line-height: 1;
+    }
+    .study-local-hint:hover .study-local-hint-icon,
+    .study-local-hint:focus-within .study-local-hint-icon {
+      opacity: 1;
+      color: #495057;
+    }
+    .study-local-hint-popover {
+      min-width: 220px;
+      max-width: min(320px, 92vw);
+      max-height: none;
+    }
+    .study-local-hint-body {
+      font-size: 0.78rem;
+      line-height: 1.4;
+      color: #24292f;
+      white-space: normal;
+    }
     .replication-list-wrap .text-muted { margin-bottom: 0.35rem !important; font-size: 0.82rem; }
     .replication-row {
       gap: 0.35rem;
@@ -5284,7 +5340,11 @@ ui <- tagList(
       sidebarPanel(
         width = 4,
         class = "sidebar-panel-compact",
-        h4("1. Choose a study"),
+        tags$h4(
+          class = "d-inline-flex align-items-center gap-1",
+          "1. Choose a study",
+          local_study_tip_ui()
+        ),
         selectInput(
           "study_select",
           label = NULL,
@@ -5308,12 +5368,6 @@ ui <- tagList(
             class = "doi-go-wrap",
             actionButton("doi_go", "Go", class = "btn-primary btn-sm")
           )
-        ),
-        tags$div(
-          class = "doi-input-help text-muted",
-          style = "font-size: 0.78rem; margin-top: 0.15rem;",
-          "Tip: type or select ", tags$code("local"),
-          " to use the study checked out in the app's current working directory (no DOI or registry lookup needed)."
         ),
         tags$hr(style = "margin: 0.5rem 0;"),
         tags$h4(class = "mb-1", "2. Tables & figures"),

@@ -2,6 +2,25 @@
 
 ## replicateEverything 0.7.8
 
+### Shiny startup: auto-update check for replicateEverything
+
+- **Shiny:** On app start, compare the installed package `RemoteSha`
+  (fallback: bundled `BUNDLE_SHA`) to the latest GitHub commit on
+  `replicate-anything/replicateEverything@main`. When behind and
+  auto-update is enabled, install via
+  [`remotes::install_github()`](https://remotes.r-lib.org/reference/install_github.html),
+  refresh the deploy bundle when possible, and show an info banner
+  asking for a browser refresh (Shiny workers may still need a restart).
+  Network failures fail soft with a warning banner.
+- **Opt out:**
+  `options(replicate_shiny.auto_update_replicate_everything = FALSE)` or
+  alias `options(replicateEverything.shiny_auto_update = FALSE)`.
+  Default `TRUE` on bare Shiny Server; \[run_shiny_app()\] and
+  `local.R.example` set `FALSE` for local / `load_all` development.
+- **Helpers:** \[shiny_auto_update_enabled()\],
+  \[package_sha_update_status()\],
+  \[ensure_replicate_everything_current()\].
+
 ### Missing-engine messages: not available vs not reproducible
 
 - **UX:** Incomplete steps that need a proprietary/system engine (e.g.

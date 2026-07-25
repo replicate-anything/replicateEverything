@@ -39,7 +39,8 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><hr class="dropdown-divider"></li>
+<li><a class="dropdown-item" href="../articles/index.html">All articles</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Getting going</h6></li>
     <li><a class="dropdown-item" href="../articles/why-replicateEverything.html">Why replicateEverything?</a></li>
     <li><a class="dropdown-item" href="../articles/meet-the-functions.html">Meet the functions</a></li>
@@ -106,7 +107,15 @@ directory.</p>
 <span><span class="fu"><a href="../reference/run_shiny_app.html">run_shiny_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This launches <code>inst/shiny</code> inside the installed package.
 The app uses the installed <code>replicateEverything</code> version and
-does not try to reinstall itself from GitHub.</p>
+does not try to reinstall itself from GitHub
+(<code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code> sets
+<code>replicate_shiny.auto_update_replicate_everything = FALSE</code>).</p>
+<p>On a bare Shiny Server deploy, the app compares the installed
+<code>RemoteSha</code> to GitHub <code>main</code> at startup and may
+auto-install when behind. Disable with
+<code>options(replicate_shiny.auto_update_replicate_everything = FALSE)</code>
+or the alias
+<code>options(replicateEverything.shiny_auto_update = FALSE)</code>.</p>
 <p>For local monorepo development (sibling <code>registry/</code> and
 study packages), copy <code>inst/shiny/local.R.example</code> to
 <code>local.R</code> in your working directory before calling

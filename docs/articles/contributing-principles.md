@@ -1,12 +1,5 @@
 # Contributing principles
 
-<style>
-.task-list { list-style: none; padding-left: 0.25rem; margin: 0.75rem 0 1.25rem; }
-.task-list li { margin: 0.45rem 0; display: flex; align-items: flex-start; gap: 0.5rem; }
-.task-list input[type="checkbox"] { margin-top: 0.35rem; flex-shrink: 0; }
-.task-list label { margin: 0; font-weight: normal; cursor: pointer; }
-</style>
-
 Heart of contributing a study under **Contributing replications**. Gold
 shape:
 [`rep-template`](https://github.com/replicate-anything/rep-template).
@@ -23,9 +16,11 @@ unified `steps:` DAG that points at originals (URLs, Dataverse file ids,
 `engine: dataverse`) rather than shipping binaries.
 
 Field-level contract and examples: [Folder replication
-checklist](folder-replication-checklist.html) or [Package replication
-checklist](package-replication-checklist.html). Stata engines: [Stata
-replications](stata-replications.html).
+checklist](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md)
+or [Package replication
+checklist](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md).
+Stata engines: [Stata
+replications](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md).
 
 ### 2. Then make `code/` and `data/` (if any)
 
@@ -39,6 +34,7 @@ not ship** below.
 From the study root:
 
 ``` r
+
 library(replicateEverything)
 list_replications("local")
 describe_study_dag("local")
@@ -53,7 +49,10 @@ That validates the yaml DAG and writes display products under `outputs/`
 Push a **public** study repo so Shiny can fetch root `replication.yml`.
 Contributor stops at a green bake; a registry **maintainer** syncs the
 stub — no study-local `registry/` folder. See the folder/package
-checklists for `sync_study_to_registry()` / `register_study()`.
+checklists for
+[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+/
+[`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md).
 
 ------------------------------------------------------------------------
 
@@ -67,32 +66,51 @@ Dataverse articles are linked rather than repeated.
 Keep study repos **light**. Yaml points at originals; do not ship
 wholesale deposits or invent download helpers.
 
-<ul class="task-list">
-<li><input type="checkbox" id="w1"><label for="w1">Prefer <strong>yaml wiring</strong> (declared URLs / file ids / <code>engine: dataverse</code>) over shipping raw deposits</label></li>
-<li><input type="checkbox" id="w2"><label for="w2">Prefer package helpers (<code>fetch_dataverse_file()</code>, <code>materialize_declared_data()</code>, <code>run_replication()</code>) over study-local <code>httr::GET</code> / <code>download.file</code> / unzip utilities</label></li>
-<li><input type="checkbox" id="w3"><label for="w3">Thin runners and pure <code>make_*</code> / <code>format_*</code> only — do not reimplement package verbs in the study</label></li>
-<li><input type="checkbox" id="w4"><label for="w4">Do not copy wholesale archives into the study when a deposit API can serve the files you need</label></li>
-</ul>
+Prefer **yaml wiring** (declared URLs / file ids / `engine: dataverse`)
+over shipping raw deposits
+
+Prefer package helpers
+([`fetch_dataverse_file()`](https://replicate-anything.github.io/replicateEverything/reference/fetch_dataverse_file.md),
+[`materialize_declared_data()`](https://replicate-anything.github.io/replicateEverything/reference/materialize_declared_data.md),
+[`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md))
+over study-local
+[`httr::GET`](https://httr.r-lib.org/reference/GET.html) /
+`download.file` / unzip utilities
+
+Thin runners and pure `make_*` / `format_*` only — do not reimplement
+package verbs in the study
+
+Do not copy wholesale archives into the study when a deposit API can
+serve the files you need
 
 ### Call original data (Dataverse / ICPSR)
 
 When the replication lives on **Harvard Dataverse** or **ICPSR /
 OpenICPSR**, fetch from there.
 
-<ul class="task-list">
-<li><input type="checkbox" id="d1"><label for="d1">Resolve dataset / file ids from the deposit (or paper DOI → deposit link)</label></li>
-<li><input type="checkbox" id="d2"><label for="d2"><strong>Surgical pulls:</strong> <code>api/access/datafile/&lt;id&gt;?format=original</code> (or ICPSR equivalent) for <strong>only</strong> files analysis needs</label></li>
-<li><input type="checkbox" id="d3"><label for="d3"><strong>Pattern B (default)</strong> when the fetch is a claimed step: <code>access_*</code> → <code>outputs/…</code>; later steps <code>parents:</code> that step</label></li>
-<li><input type="checkbox" id="d4"><label for="d4"><strong>Pattern A (exception):</strong> silent <code>dataverse.files</code> / <code>data_files:</code> materialize → <code>data/</code> when fetch is <em>not</em> a replication product</label></li>
-<li><input type="checkbox" id="d5"><label for="d5">No full-dataset zip / <code>archive_original</code> unless Pattern C is justified (author scripts need that tree)</label></li>
-<li><input type="checkbox" id="d6"><label for="d6">Document direct-download URLs once file ids are known (README or yaml comments)</label></li>
-</ul>
+Resolve dataset / file ids from the deposit (or paper DOI → deposit
+link)
+
+**Surgical pulls:** `api/access/datafile/<id>?format=original` (or ICPSR
+equivalent) for **only** files analysis needs
+
+**Pattern B (default)** when the fetch is a claimed step: `access_*` →
+`outputs/…`; later steps `parents:` that step
+
+**Pattern A (exception):** silent `dataverse.files` / `data_files:`
+materialize → `data/` when fetch is *not* a replication product
+
+No full-dataset zip / `archive_original` unless Pattern C is justified
+(author scripts need that tree)
+
+Document direct-download URLs once file ids are known (README or yaml
+comments)
 
 #### Connecting with Dataverse and ICPSR
 
 | Source | Typical entry | Prefer |
 |----|----|----|
-| Harvard Dataverse | `doi:10.7910/DVN/…` | File-id URL with `?format=original`; package `engine: dataverse` / `fetch_dataverse_file()` |
+| Harvard Dataverse | `doi:10.7910/DVN/…` | File-id URL with `?format=original`; package `engine: dataverse` / [`fetch_dataverse_file()`](https://replicate-anything.github.io/replicateEverything/reference/fetch_dataverse_file.md) |
 | OpenICPSR / ICPSR | project or study page with downloadable files | Direct file URLs when the API exposes them; same surgical rule |
 | No usable fetch API (private, offline, some OpenICPSR) | — | Commit ≤50 MB under `data/`; document why; larger → registry data area |
 
@@ -102,40 +120,50 @@ on Dataverse — a full zip is not required to start. Inspect
 
 If data lives **elsewhere** (author site, OSF, journal supplement):
 
-<ul class="task-list">
-<li><input type="checkbox" id="e1"><label for="e1">Make files <strong>directly accessible</strong> (stable HTTPS URL to the file itself)</label></li>
-<li><input type="checkbox" id="e2"><label for="e2">Do not rely on “download the zip and dig inside” as the only path — document a direct file URL once you have it</label></li>
-</ul>
+Make files **directly accessible** (stable HTTPS URL to the file itself)
+
+Do not rely on “download the zip and dig inside” as the only path —
+document a direct file URL once you have it
 
 ### Public study repos
 
 Shiny and registry enrichment fetch the study’s root `replication.yml`
 over HTTP.
 
-<ul class="task-list">
-<li><input type="checkbox" id="p1"><label for="p1">Study repo is <strong>public</strong> (or otherwise fetchable by the Shiny host)</label></li>
-<li><input type="checkbox" id="p2"><label for="p2"><code>repo:</code> / <code>paper.study_repo</code> points at the correct GitHub slug</label></li>
-<li><input type="checkbox" id="p3"><label for="p3">Raw <code>replication.yml</code> is reachable (no private-only tree for that path)</label></li>
-</ul>
+Study repo is **public** (or otherwise fetchable by the Shiny host)
+
+`repo:` / `paper.study_repo` points at the correct GitHub slug
+
+Raw `replication.yml` is reachable (no private-only tree for that path)
 
 ### Lean materials and registry handoff
 
-<ul class="task-list">
-<li><input type="checkbox" id="l1"><label for="l1">No ethics / instruments / appendix-only blobs unless a declared step needs them</label></li>
-<li><input type="checkbox" id="l2"><label for="l2">No empty placeholder data trees; no scratch / <code>outputs/deposit/</code> / staging committed</label></li>
-<li><input type="checkbox" id="l3"><label for="l3">No study-local <code>registry/</code> folder — contributor runs <code>check_and_bake_study(".")</code>; maintainer syncs stubs</label></li>
-<li><input type="checkbox" id="l4"><label for="l4">Every table/figure step has a display sink under <code>outputs/</code> (<code>.html</code> / <code>.png</code>) when Display should show it</label></li>
-</ul>
+No ethics / instruments / appendix-only blobs unless a declared step
+needs them
+
+No empty placeholder data trees; no scratch / `outputs/deposit/` /
+staging committed
+
+No study-local `registry/` folder — contributor runs
+`check_and_bake_study(".")`; maintainer syncs stubs
+
+Every table/figure step has a display sink under `outputs/` (`.html` /
+`.png`) when Display should show it
 
 Yaml DAG rules (`steps:`, `outputs:`, `parents:`, format children): see
-[Folder replication checklist](folder-replication-checklist.html) — do
-not re-learn them here.
+[Folder replication
+checklist](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md)
+— do not re-learn them here.
 
 ------------------------------------------------------------------------
 
 ## Next
 
-- [Folder replication checklist](folder-replication-checklist.html)
-- [Package replication checklist](package-replication-checklist.html)
-- [Stata replications](stata-replications.html)
-- [Reanalysis and extension studies](reanalysis-studies.html)
+- [Folder replication
+  checklist](https://replicate-anything.github.io/replicateEverything/articles/folder-replication-checklist.md)
+- [Package replication
+  checklist](https://replicate-anything.github.io/replicateEverything/articles/package-replication-checklist.md)
+- [Stata
+  replications](https://replicate-anything.github.io/replicateEverything/articles/stata-replications.md)
+- [Reanalysis and extension
+  studies](https://replicate-anything.github.io/replicateEverything/articles/reanalysis-studies.md)

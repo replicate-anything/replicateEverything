@@ -124,6 +124,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_prep_dependencies.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_python_available.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_python_dependencies.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_replicate_everything_current.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_replication_dependencies.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_replication_package.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ensure_stata_available.html</loc></url>
@@ -306,6 +307,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_replication_yaml_urls.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_repo_ref.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_repo_slug.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_sha_update_status.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_source_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_study_steps_unavailable_message.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_yaml_entries.html</loc></url>
@@ -441,6 +443,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/self_run.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_app_bundle_sha.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_app_dir.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_auto_update_enabled.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_deploy_dir.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/SHINY_FEEDBACK_CATEGORIES.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_feedback_category_meta.html</loc></url>

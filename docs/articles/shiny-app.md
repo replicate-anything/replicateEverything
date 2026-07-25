@@ -31,7 +31,15 @@ run_shiny_app()
 
 This launches `inst/shiny` inside the installed package. The app uses
 the installed `replicateEverything` version and does not try to
-reinstall itself from GitHub.
+reinstall itself from GitHub
+([`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+sets `replicate_shiny.auto_update_replicate_everything = FALSE`).
+
+On a bare Shiny Server deploy, the app compares the installed
+`RemoteSha` to GitHub `main` at startup and may auto-install when
+behind. Disable with
+`options(replicate_shiny.auto_update_replicate_everything = FALSE)` or
+the alias `options(replicateEverything.shiny_auto_update = FALSE)`.
 
 For local monorepo development (sibling `registry/` and study packages),
 copy `inst/shiny/local.R.example` to `local.R` in your working directory

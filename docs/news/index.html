@@ -18,7 +18,8 @@
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/index.html">All articles</a></li>
+    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Getting going</h6></li>
     <li><a class="dropdown-item" href="../articles/why-replicateEverything.html">Why replicateEverything?</a></li>
     <li><a class="dropdown-item" href="../articles/meet-the-functions.html">Meet the functions</a></li>
@@ -50,6 +51,15 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.8" id="replicateeverything-078">replicateEverything 0.7.8<a class="anchor" aria-label="anchor" href="#replicateeverything-078"></a></h2>
+<div class="section level3">
+<h3 id="shiny-startup-auto-update-check-for-replicateeverything-0-7-8">Shiny startup: auto-update check for replicateEverything<a class="anchor" aria-label="anchor" href="#shiny-startup-auto-update-check-for-replicateeverything-0-7-8"></a></h3>
+<ul><li>
+<strong>Shiny:</strong> On app start, compare the installed package <code>RemoteSha</code> (fallback: bundled <code>BUNDLE_SHA</code>) to the latest GitHub commit on <code>replicate-anything/replicateEverything@main</code>. When behind and auto-update is enabled, install via <code><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">remotes::install_github()</a></code>, refresh the deploy bundle when possible, and show an info banner asking for a browser refresh (Shiny workers may still need a restart). Network failures fail soft with a warning banner.</li>
+<li>
+<strong>Opt out:</strong> <code>options(replicate_shiny.auto_update_replicate_everything = FALSE)</code> or alias <code>options(replicateEverything.shiny_auto_update = FALSE)</code>. Default <code>TRUE</code> on bare Shiny Server; [run_shiny_app()] and <code>local.R.example</code> set <code>FALSE</code> for local / <code>load_all</code> development.</li>
+<li>
+<strong>Helpers:</strong> [shiny_auto_update_enabled()], [package_sha_update_status()], [ensure_replicate_everything_current()].</li>
+</ul></div>
 <div class="section level3">
 <h3 id="missing-engine-messages-not-available-vs-not-reproducible-0-7-8">Missing-engine messages: not available vs not reproducible<a class="anchor" aria-label="anchor" href="#missing-engine-messages-not-available-vs-not-reproducible-0-7-8"></a></h3>
 <ul><li>
