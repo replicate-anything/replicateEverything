@@ -44,7 +44,7 @@ test_that("annotate_replication_code_for_display adds R yaml epilogue for defs-o
   )
   lines <- "make_tab_1 <- function(data) data"
   out <- annotate_replication_code_for_display(lines, rep)
-  expect_true(any(grepl("Execute via replication\\.yml", out)))
+  expect_true(any(grepl("Tips for running code \\(generated from replication\\.yml\\)", out)))
   expect_true(any(grepl("haven::read_dta|make_tab_1\\(data\\)", out)))
 })
 
@@ -63,7 +63,7 @@ test_that("annotate_replication_code_for_display omits R epilogue for Stata", {
   )
   out <- annotate_replication_code_for_display(lines, rep)
   expect_true(any(grepl("parents:|inputs:", out)) || any(grepl("Display path notes", out)))
-  expect_false(any(grepl("Execute via replication\\.yml", out)))
+  expect_false(any(grepl("Tips for running code \\(generated from replication\\.yml\\)", out)))
   expect_false(any(grepl("make_tab_1", out)))
   expect_false(any(grepl("haven::read_dta", out)))
 })
@@ -78,7 +78,7 @@ test_that("annotate_replication_code_for_display omits R epilogue for Python", {
   )
   lines <- c("import pandas as pd", "print(1)")
   out <- annotate_replication_code_for_display(lines, rep)
-  expect_false(any(grepl("Execute via replication\\.yml", out)))
+  expect_false(any(grepl("Tips for running code \\(generated from replication\\.yml\\)", out)))
   expect_false(any(grepl("make_fig_2", out)))
 })
 

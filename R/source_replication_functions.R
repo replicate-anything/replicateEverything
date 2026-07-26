@@ -222,7 +222,7 @@ replication_code_display_epilogue <- function(rep, lines, meta = NULL) {
     out <- c(
       out,
       "",
-      "# --- Execute via replication.yml (get_code mode=run) ---",
+      "# --- Tips for running code (generated from replication.yml) ---",
       if (length(recipe)) {
         paste0("# ", recipe)
       } else {

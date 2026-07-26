@@ -1,3 +1,11 @@
+# replicateEverything 0.7.16
+
+## Code tab: clearer run-tips header
+
+* R defs-only Code tab epilogue banner is now
+  `# --- Tips for running code (generated from replication.yml) ---`
+  (was `Execute via replication.yml (get_code mode=run)`).
+
 # replicateEverything 0.7.15
 
 ## Shiny: study links use the same Go handler
