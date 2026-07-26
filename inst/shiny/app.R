@@ -2617,6 +2617,46 @@ collections_legend_ui <- function() {
   )
 }
 
+#' Compact key for Studies table symbols (Notes, Languages, Repo, Link)
+studies_symbols_legend_ui <- function() {
+  item <- function(icon, label) {
+    tags$span(
+      class = "studies-legend-item",
+      tags$span(class = "studies-legend-icon", icon),
+      tags$span(label)
+    )
+  }
+  tags$div(
+    class = "studies-symbols-legend text-muted small mt-2",
+    tags$div(
+      class = "studies-legend-row",
+      tags$span(class = "collections-legend-label", "Notes: "),
+      item(engine_icon_data_unavailable(), "data unavailable"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(engine_icon_missing_engine(), "missing engine"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(related_icon_upstream(), "upstream related"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(related_icon_downstream(), "downstream related")
+    ),
+    tags$div(
+      class = "studies-legend-row",
+      tags$span(class = "collections-legend-label", "Also: "),
+      item(engine_icon_r(), "R"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(engine_icon_stata(), "Stata"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(engine_icon_python(), "Python"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(engine_icon_mathematica(), "Mathematica"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(repo_icon_folder(), "study repo"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(link_icon_svg(), "share link")
+    )
+  )
+}
+
 maintainer_link_ui <- function(row) {
   name <- trimws(as.character(row$maintainer_name[[1]] %||% ""))
   email <- trimws(as.character(row$maintainer_email[[1]] %||% ""))
@@ -5765,7 +5805,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: minmax(0, 27rem) 4.5rem 3rem 5.5rem 4.75rem 2rem 2.75rem;
+      grid-template-columns: minmax(0, 35rem) 4.5rem 3rem 5.5rem 4.75rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
       justify-content: start;
@@ -5996,6 +6036,35 @@ ui <- tagList(
     .collection-tag-other { background: #6c757d; }
     .collection-tag-more { background: #e9ecef; color: #495057; }
     .collections-legend .collection-tag { cursor: default; }
+    .studies-symbols-legend {
+      line-height: 1.55;
+    }
+    .studies-legend-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.15rem 0.35rem;
+      margin-top: 0.15rem;
+    }
+    .studies-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.28rem;
+      white-space: nowrap;
+    }
+    .studies-legend-icon {
+      display: inline-flex;
+      align-items: center;
+      line-height: 0;
+    }
+    .studies-legend-icon svg {
+      width: 15px;
+      height: 15px;
+    }
+    .studies-legend-sep {
+      opacity: 0.55;
+      margin: 0 0.1rem;
+    }
     .maintainer-link {
       font-size: 0.9rem;
       color: #6c757d;
@@ -7081,7 +7150,8 @@ server <- function(input, output, session) {
         tags$div(class = "study-run-col", "Go")
       ),
       rows,
-      collections_legend_ui()
+      collections_legend_ui(),
+      studies_symbols_legend_ui()
     )
   })
 
