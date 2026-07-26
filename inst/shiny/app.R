@@ -80,6 +80,15 @@ app_welcome_intro <- function() {
           " to rerun the analysis in R."
         ),
         p(
+          "Studies come in several shapes — see the ",
+          actionLink(
+            "show_study_types_guide_welcome",
+            "guide to study types",
+            class = "welcome-guide-link"
+          ),
+          " (also on the Studies tab)."
+        ),
+        p(
           "Help us develop the app by contributing your own study to the ",
           tags$a(
             href = REGISTRY_GITHUB,
@@ -94,6 +103,89 @@ app_welcome_intro <- function() {
       )
     )
   )
+}
+
+#' Guide to different types of studies in the registry (modal body)
+study_types_guide_ui <- function() {
+  row <- function(kind, example) {
+    tags$tr(
+      tags$td(htmltools::HTML(kind)),
+      tags$td(example)
+    )
+  }
+  tags$div(
+    class = "study-types-guide",
+    tags$p(
+      class = "study-types-guide-lead text-muted",
+      "The registry mixes a few study shapes. Distinctive patterns are in bold; ",
+      "examples use short citation labels from the Studies list."
+    ),
+    tags$table(
+      class = "table table-sm study-types-guide-table",
+      tags$thead(
+        tags$tr(
+          tags$th("Pattern"),
+          tags$th("Example")
+        )
+      ),
+      tags$tbody(
+        row(
+          "The <strong>simplest</strong> folder-backed repo",
+          "Team (2026a), Minimal folder-backed template study"
+        ),
+        row(
+          "A <strong>simple bilingual</strong> (R + Stata) repo",
+          "Acemoglu et al (2001)"
+        ),
+        row(
+          "Code that <strong>pulls from Dataverse</strong>",
+          "Blair et al (2022)"
+        ),
+        row(
+          "A study with <strong>multiple prep steps</strong>",
+          "Solís Arce et al (2021)"
+        ),
+        row(
+          "A <strong>World Bank archive</strong> deposit",
+          "Bertoli et al (2023)"
+        ),
+        row(
+          "A study with <strong>mixed languages</strong> (Stata, Python, R)",
+          "Jiang and Yang (2026)"
+        ),
+        row(
+          "Code present, but <strong>some data not accessible</strong>",
+          "García-Hombrados et al (2026)"
+        ),
+        row(
+          "Code present, but <strong>missing engines here</strong>",
+          "Hahn et al (2026)"
+        ),
+        row(
+          "Backed by an <strong>R package</strong> rather than a folder",
+          "Geissler et al (2022)"
+        ),
+        row(
+          "Code present, but <strong>no data</strong>",
+          "Dawid et al (2022)"
+        ),
+        row(
+          "A repo that <strong>reanalyses another repo</strong>",
+          "Team (2026b), Minimal reanalysis template repo"
+        )
+      )
+    )
+  )
+}
+
+show_study_types_guide_modal <- function() {
+  showModal(modalDialog(
+    title = "Guide to study types",
+    study_types_guide_ui(),
+    size = "l",
+    easyClose = TRUE,
+    footer = modalButton("Close")
+  ))
 }
 
 find_shiny_monorepo_root <- function() {
@@ -5470,6 +5562,21 @@ ui <- tagList(
     }
     .welcome-copy p { margin-bottom: 0.75rem; }
     .welcome-copy p:last-child { margin-bottom: 0; }
+    .welcome-guide-link,
+    .study-types-guide-link {
+      font-weight: 600;
+    }
+    .study-types-guide-lead {
+      margin-bottom: 0.85rem;
+      font-size: 0.95rem;
+    }
+    .study-types-guide-table th:first-child,
+    .study-types-guide-table td:first-child {
+      width: 58%;
+    }
+    .study-types-guide-table td {
+      vertical-align: top;
+    }
     .sidebar-panel-compact .shiny-input-container { margin-bottom: 0.55rem; }
     .sidebar-panel-compact h4, .sidebar-panel-compact h5 {
       margin-top: 0.35rem;
@@ -6173,6 +6280,15 @@ ui <- tagList(
             "Collection",
             choices = registry_collection_choices(registry_index),
             selected = ALL_STUDIES_COLLECTION
+          )
+        ),
+        column(
+          width = 8,
+          class = "d-flex align-items-end justify-content-end pb-2",
+          actionLink(
+            "show_study_types_guide",
+            "Guide to study types",
+            class = "study-types-guide-link"
           )
         )
       ),
@@ -8273,6 +8389,14 @@ server <- function(input, output, session) {
       easyClose = TRUE,
       footer = modalButton("Close")
     ))
+  })
+
+  observeEvent(input$show_study_types_guide, {
+    show_study_types_guide_modal()
+  })
+
+  observeEvent(input$show_study_types_guide_welcome, {
+    show_study_types_guide_modal()
   })
 
   observeEvent(input$show_contribute_yaml_template, {

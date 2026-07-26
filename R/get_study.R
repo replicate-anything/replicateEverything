@@ -76,9 +76,10 @@ get_study <- function(doi, repo = NULL, folder = NULL) {
     as.character(paper$journal %||% "")
   }
   year <- if (!is.null(row)) {
-    suppressWarnings(as.integer(index_row_field(row, "year", NA_character_)))
+    y <- index_row_field(row, "year", "")
+    if (!nzchar(y)) NA_character_ else y
   } else {
-    suppressWarnings(as.integer(paper$year %||% NA_integer_))
+    normalize_registry_year(paper$year)
   }
   collections <- if (!is.null(row)) {
     index_row_field(row, "collections", "")

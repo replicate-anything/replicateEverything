@@ -51,6 +51,23 @@ registry_folder_from_paper <- function(paper) {
   stop("paper needs doi or study_handle for registry index", call. = FALSE)
 }
 
+#' Normalize paper year for registry index (keeps bibliography suffixes like 2026a)
+#' @keywords internal
+normalize_registry_year <- function(year) {
+  if (is.null(year) || length(year) < 1L) {
+    return(NA_character_)
+  }
+  y <- year[[1]]
+  if (is.null(y) || (length(y) == 1L && is.na(y))) {
+    return(NA_character_)
+  }
+  out <- trimws(as.character(y))
+  if (!nzchar(out) || identical(out, "NA")) {
+    return(NA_character_)
+  }
+  out
+}
+
 #' Build a registry index row from study or registry stub metadata
 #' @keywords internal
 registry_index_row_from_meta <- function(meta, study_root = NULL, folder = NULL) {
@@ -110,7 +127,7 @@ registry_index_row_from_meta <- function(meta, study_root = NULL, folder = NULL)
     doi = doi_out,
     title = as.character(paper$title[[1]]),
     journal = as.character(paper$journal %||% ""),
-    year = as.integer(paper$year %||% NA_integer_),
+    year = normalize_registry_year(paper$year),
     authors = authors,
     repo = repo,
     collections = collections,

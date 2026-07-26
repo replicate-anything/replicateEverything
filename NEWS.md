@@ -1,4 +1,13 @@
-# replicateEverything 0.7.10
+# replicateEverything 0.7.11
+
+## Study-types guide + Team 2026a/b labels
+
+* **Shiny:** "Guide to study types" modal from the Studies tab and welcome
+  screen (table of registry patterns with distinctive bits in bold).
+* **Registry years:** paper years may use bibliography suffixes (`2026a`,
+  `2026b`); index / `get_study()` keep them as character labels.
+* **Studies Notes column:** gap icons (padlock / compass) remain in Notes;
+  Languages stays engine badges only.
 
 ## Study summary API + Related column
 
