@@ -296,3 +296,19 @@ test_that("app.R defers deep-link apply until Studies cache is ready", {
   expect_match(text, "popstate")
   expect_match(text, "params\\.get\\('handle'\\)")
 })
+
+test_that("app.R applies pending what after study steps are ready", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  text <- paste(readLines(file.path(src, "app.R"), warn = FALSE), collapse = "\n")
+  # Second gate: steps come from study yaml (replications_df), not Studies index.
+  expect_match(text, "apply_pending_deep_link_what\\s*<-\\s*function")
+  expect_match(text, "study_keys_match\\s*<-\\s*function")
+  expect_match(
+    text,
+    "observeEvent\\s*\\(\\s*list\\s*\\(\\s*state\\$replications_df\\s*,\\s*state\\$pending_deep_link_what\\s*\\)",
+    perl = TRUE
+  )
+  expect_match(text, "study_keys_match\\s*\\(\\s*input\\$study_select")
+})

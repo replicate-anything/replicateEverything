@@ -6947,15 +6947,22 @@ server <- function(input, output, session) {
     }
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
-      if (!is.null(state$pending_deep_link_what) &&
-          nzchar(state$pending_deep_link_what)) {
-        select_replication_by_group(
-          state$pending_deep_link_what,
+      # what is applied once the study yaml step index exists (not from
+      # shiny_studies.json). Prefer pending deep-link what; otherwise first
+      # Display-ready step.
+      pending_what <- state$pending_deep_link_what
+      applied_what <- FALSE
+      if (!is.null(pending_what) && nzchar(as.character(pending_what))) {
+        applied_what <- isTRUE(select_replication_by_group(
+          pending_what,
           language = state$pending_deep_link_language
-        )
+        ))
+        # Clear only after steps were available to resolve against (success
+        # or unknown id). Leave pending if replications_df was empty above.
         state$pending_deep_link_what <- NULL
         state$pending_deep_link_language <- NULL
-      } else {
+      }
+      if (!isTRUE(applied_what)) {
         # Prefer first step where Display works (baked output, or normal
         # runnable); skip data_unavailable / missing-engine / incomplete
         # rows with nothing to show (e.g. Hahn fig_1 → fig_5).
@@ -7038,6 +7045,43 @@ server <- function(input, output, session) {
     TRUE
   }
 
+  # Apply queued ?what= once the per-study step list exists (yaml via
+  # load_study / replications_df). Studies index has DOIs/handles only.
+  apply_pending_deep_link_what <- function() {
+    pending_what <- isolate(state$pending_deep_link_what)
+    if (is.null(pending_what) || !nzchar(as.character(pending_what))) {
+      return(FALSE)
+    }
+    reps <- isolate(state$replications_df)
+    if (is.null(reps) || nrow(reps) < 1L) {
+      return(FALSE)
+    }
+    ok <- isTRUE(select_replication_by_group(
+      pending_what,
+      language = isolate(state$pending_deep_link_language)
+    ))
+    if (ok) {
+      state$pending_deep_link_what <- NULL
+      state$pending_deep_link_language <- NULL
+    }
+    ok
+  }
+
+  study_keys_match <- function(a, b) {
+    a <- trimws(as.character(a %||% ""))
+    b <- trimws(as.character(b %||% ""))
+    if (!nzchar(a) || !nzchar(b)) {
+      return(FALSE)
+    }
+    if (identical(a, b)) {
+      return(TRUE)
+    }
+    identical(
+      tryCatch(replicate_fn("normalize_doi", a), error = function(e) a),
+      tryCatch(replicate_fn("normalize_doi", b), error = function(e) b)
+    )
+  }
+
   observeEvent(input$url_deep_link, {
     link <- input$url_deep_link
     link <- tryCatch(
@@ -7090,17 +7134,7 @@ server <- function(input, output, session) {
       state$pending_deep_link_doi <- NULL
       state$suppress_url_sync <- FALSE
       updateNavbarPage(session, "main_nav", selected = "Replicate")
-      if (!is.null(state$pending_deep_link_what) &&
-          nzchar(state$pending_deep_link_what) &&
-          !is.null(state$replications_df) &&
-          nrow(state$replications_df) > 0) {
-        select_replication_by_group(
-          state$pending_deep_link_what,
-          language = state$pending_deep_link_language
-        )
-        state$pending_deep_link_what <- NULL
-        state$pending_deep_link_language <- NULL
-      }
+      apply_pending_deep_link_what()
       sync_url_to_selection()
       return(invisible(NULL))
     }
@@ -7114,6 +7148,17 @@ server <- function(input, output, session) {
     sync_url_to_selection()
   }, ignoreInit = TRUE)
 
+  # Second gate for ?what=: step list is built from study yaml in load_study,
+  # not from the Studies index. If what was queued before replications_df
+  # existed (or a duplicate study_select reload left it pending), apply now.
+  observeEvent(
+    list(state$replications_df, state$pending_deep_link_what),
+    {
+      apply_pending_deep_link_what()
+    },
+    ignoreInit = TRUE
+  )
+
   observeEvent(input$study_select, {
     req(nzchar(input$study_select))
     # Deep-link / Go path may updateSelectInput then load_study itself;
@@ -7123,6 +7168,13 @@ server <- function(input, output, session) {
     }
     pending <- isolate(state$pending_deep_link_doi)
     if (!is.null(pending) && nzchar(as.character(pending))) {
+      return(invisible(NULL))
+    }
+    # Cold paste: updateSelectInput(selected=doi) echoes asynchronously
+    # after load_study already applied ?what=. Reloading here would reset
+    # to the first Display-ready step and drop the deep-linked figure/table.
+    if (isTRUE(study_keys_match(input$study_select, isolate(state$doi)))) {
+      apply_pending_deep_link_what()
       return(invisible(NULL))
     }
     load_study(input$study_select, from_registry = TRUE)

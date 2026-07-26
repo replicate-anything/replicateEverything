@@ -7,6 +7,13 @@
   study. Previously the deep-link queue could apply before
   `shiny_studies.json` was ready, so `updateSelectInput(selected=)` missed and
   the session stayed on the main Studies page (click-through Go still worked).
+* **Bug fix:** `?what=` (table/figure) could still be dropped after the study
+  opened: `updateSelectInput` echoed the same DOI asynchronously and
+  re-ran `load_study`, which reset to the first Display-ready step. Skip that
+  duplicate reload when the study is already selected, and re-apply pending
+  `what` once the per-study step list (`replications_df` from yaml) is ready.
+  The Studies index still lists DOIs/handles only — steps are not required
+  there.
 * Preserves the pending / current study when rebuilding the DOI dropdown;
   does not strip inbound query params while a deep link is pending.
 * Accepts `handle=` as a study key; re-reads the query on `popstate`
