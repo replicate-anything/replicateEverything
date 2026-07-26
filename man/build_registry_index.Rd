@@ -11,14 +11,17 @@ build_registry_index(registry_root = NULL)
 \code{getOption("replicateEverything.registry_root")} or \code{\link[=auto_detect_registry_root]{auto_detect_registry_root()}}.}
 }
 \value{
-Invisibly, a list with \code{index_path}, \code{index}, and \code{n}.
+Invisibly, a list with \code{index_path}, \code{index}, \code{n}, and
+\code{shiny_studies_path}.
 }
 \description{
 Reads every \verb{studies/*.yml} under a registry checkout and writes
 \code{index.csv} with \code{collections}, \verb{maintainer_*}, \code{languages}, and related
 study columns. Upstream links come from stub
 \code{paper.related} / \code{paper.extends}; \code{related_downstream} is
-inferred by reversing those pointers across the registry.
+inferred by reversing those pointers across the registry. Also writes
+\code{\link[=build_shiny_studies_cache]{build_shiny_studies_cache()}} → \code{shiny_studies.json} for the Shiny
+Studies tab (no live yaml at list time).
 }
 \examples{
 \dontrun{

@@ -2,11 +2,11 @@
 % Please edit documentation in R/folder_requirements.R
 \name{registry_stub_summary_fields}
 \alias{registry_stub_summary_fields}
-\title{Maintainer, collections, and languages copied into registry study stubs}
+\title{Maintainer, collections, languages, and notes copied into registry study stubs}
 \usage{
 registry_stub_summary_fields(meta)
 }
 \description{
-Maintainer, collections, and languages copied into registry study stubs
+Maintainer, collections, languages, and notes copied into registry study stubs
 }
 \keyword{internal}

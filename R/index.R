@@ -198,11 +198,14 @@ resolve_registry_handle <- function(x) {
 #' `index.csv` with `collections`, `maintainer_*`, `languages`, and related
 #' study columns. Upstream links come from stub
 #' \code{paper.related} / \code{paper.extends}; \code{related_downstream} is
-#' inferred by reversing those pointers across the registry.
+#' inferred by reversing those pointers across the registry. Also writes
+#' [build_shiny_studies_cache()] → \code{shiny_studies.json} for the Shiny
+#' Studies tab (no live yaml at list time).
 #'
 #' @param registry_root Path to the registry repository. Defaults to
 #'   `getOption("replicateEverything.registry_root")` or [auto_detect_registry_root()].
-#' @return Invisibly, a list with `index_path`, `index`, and `n`.
+#' @return Invisibly, a list with `index_path`, `index`, `n`, and
+#'   `shiny_studies_path`.
 #'
 #' @examples
 #' \dontrun{
@@ -231,16 +234,33 @@ build_registry_index <- function(registry_root = NULL) {
     stop("No study stubs found in ", studies_dir, call. = FALSE)
   }
 
-  index <- compile_registry_index_from_stubs(registry_root)
+  metas <- lapply(yml_files, function(path) {
+    tryCatch(yaml::read_yaml(path), error = function(e) NULL)
+  })
+  rows <- lapply(seq_along(yml_files), function(i) {
+    stub_folder <- sub("\\.yml$", "", basename(yml_files[[i]]), ignore.case = TRUE)
+    registry_index_row_from_meta(metas[[i]], study_root = NULL, folder = stub_folder)
+  })
+  index <- do.call(rbind, rows)
+  index <- ensure_index_handles(index)
+  index <- annotate_index_related(index, metas = metas)
   ord <- order(index$title, index$year, index$folder)
   index <- index[ord, , drop = FALSE]
+  metas <- metas[ord]
 
   index_path <- file.path(registry_root, "index.csv")
   utils::write.csv(index, index_path, row.names = FALSE)
 
+  shiny_out <- build_shiny_studies_cache(
+    registry_root,
+    index = index,
+    metas = metas
+  )
+
   invisible(list(
     index_path = index_path,
     index = index,
-    n = nrow(index)
+    n = nrow(index),
+    shiny_studies_path = shiny_out$path
   ))
 }

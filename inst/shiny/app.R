@@ -450,7 +450,8 @@ ensure_replicate_everything <- function() {
   invisible(TRUE)
 }
 
-ensure_replicate_everything()
+# Version check / GitHub auto-update runs after first paint (session$onFlushed).
+# configure_registry_source() is cheap path wiring and stays on the critical path.
 configure_registry_source()
 
 shiny_live_run_enabled <- function() {
@@ -1426,70 +1427,59 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
   )
 }
 
-load_registry_index <- function() {
-  ensure_handles <- function(df) {
-    if (is.null(df) || !is.data.frame(df)) {
-      return(df)
-    }
-    if (requireNamespace("replicateEverything", quietly = TRUE)) {
-      return(get("ensure_index_handles", envir = asNamespace("replicateEverything"))(df))
-    }
-    df
-  }
-
-  registry_root <- getOption("replicateEverything.registry_root", NULL)
-  if (!is.null(registry_root) && dir.exists(registry_root)) {
-    local_csv <- file.path(registry_root, "index.csv")
-    if (file.exists(local_csv)) {
-      df <- tryCatch({
-        old_root <- getOption("replicateEverything.registry_root", NULL)
-        old_index <- getOption("replicateEverything.index", NULL)
-        on.exit({
-          if (is.null(old_root)) {
-            options(replicateEverything.registry_root = NULL)
-          } else {
-            options(replicateEverything.registry_root = old_root)
-          }
-          options(replicateEverything.index = old_index)
-        }, add = TRUE)
-        options(
-          replicateEverything.registry_root = registry_root,
-          replicateEverything.index = NULL
-        )
-        idx <- replicateEverything::load_index()
-        idx$doi <- replicate_fn("normalize_doi", idx$doi)
-        if (!"repo" %in% names(idx)) idx$repo <- DEFAULT_REGISTRY_REPO
-        idx
-      }, error = function(e) NULL)
-      if (!is.null(df)) {
-        return(ensure_handles(df))
-      }
-    }
-  }
-
-  df <- tryCatch({
-    idx <- replicateEverything::load_index()
-    idx$doi <- replicate_fn("normalize_doi", idx$doi)
-    if (!"repo" %in% names(idx)) idx$repo <- DEFAULT_REGISTRY_REPO
-    idx
-  }, error = function(e) NULL)
-
-  if (!is.null(df) && "folder" %in% names(df)) return(ensure_handles(df))
-
-  tryCatch({
-    df <- utils::read.csv(REGISTRY_INDEX_URL, stringsAsFactors = FALSE)
-    df$doi <- replicate_fn("normalize_doi", df$doi)
-    df$repo <- DEFAULT_REGISTRY_REPO
-    ensure_handles(df)
-  }, error = function(e) NULL)
+#' Empty index placeholder until the Studies cache loads after first paint
+empty_registry_index <- function() {
+  data.frame(
+    folder = character(0),
+    handle = character(0),
+    doi = character(0),
+    title = character(0),
+    journal = character(0),
+    year = character(0),
+    authors = character(0),
+    repo = character(0),
+    collections = character(0),
+    maintainer_name = character(0),
+    maintainer_email = character(0),
+    languages = character(0),
+    article_url = character(0),
+    related_upstream = character(0),
+    related_downstream = character(0),
+    stringsAsFactors = FALSE
+  )
 }
 
-registry_index <- load_registry_index()
+#' Load Studies list from registry-baked shiny_studies.json (no live yaml)
+load_studies_session_data <- function() {
+  cache <- tryCatch(
+    replicateEverything::load_shiny_studies_cache(),
+    error = function(e) NULL
+  )
+  if (is.null(cache)) {
+    return(list(cache = NULL, index = empty_registry_index()))
+  }
+  index <- tryCatch(
+    get("shiny_studies_as_index_df", envir = asNamespace("replicateEverything"))(cache),
+    error = function(e) empty_registry_index()
+  )
+  if (!is.null(index) && "doi" %in% names(index)) {
+    index$doi <- vapply(as.character(index$doi %||% ""), function(d) {
+      if (!nzchar(d)) {
+        return("")
+      }
+      tryCatch(replicate_fn("normalize_doi", d), error = function(e) d)
+    }, character(1))
+  }
+  if (!is.null(index) && !"repo" %in% names(index)) {
+    index$repo <- DEFAULT_REGISTRY_REPO
+  }
+  list(cache = cache, index = index)
+}
 
-registry_audit_summary <- tryCatch(
-  replicate_fn("load_registry_audit_summary"),
-  error = function(e) NULL
-)
+# Filled after first paint via session$onFlushed (see server).
+registry_index <- empty_registry_index()
+registry_audit_summary <- NULL
+shiny_studies_cache_global <- NULL
 
 study_audit_dep_line <- function(engine, dep) {
   label <- switch(
@@ -2452,49 +2442,52 @@ study_engine_availability_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO)
   chrome$engines
 }
 
-#' Engines + padlock/hammer gap flags for one Studies-list row
+#' Engines + padlock/hammer from registry-baked index / cache row (no yaml fetch)
 study_row_chrome_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO) {
   langs <- row$languages[[1]] %||% ""
   flags <- parse_languages_engine_flags(langs)
   gaps <- list(
-    data_unavailable = FALSE,
-    missing_engine = isTRUE(flags$mathematica)
+    data_unavailable = isTRUE(row$data_unavailable[[1]] %||% row$data_unavailable),
+    missing_engine = isTRUE(row$missing_engine[[1]] %||% row$missing_engine) ||
+      isTRUE(flags$mathematica)
   )
-  folder <- row$folder[[1]] %||% NULL
-  if (!is.null(folder) && nzchar(as.character(folder))) {
-    reps <- tryCatch(
-      fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
-      error = function(e) NULL
-    )
-    if (!is.null(reps) && length(reps)) {
-      from_steps <- study_engine_availability(reps)
-      flags$r <- isTRUE(flags$r) || isTRUE(from_steps$r)
-      flags$stata <- isTRUE(flags$stata) || isTRUE(from_steps$stata)
-      flags$python <- isTRUE(flags$python) || isTRUE(from_steps$python)
-      flags$mathematica <- isTRUE(flags$mathematica) || isTRUE(from_steps$mathematica)
-      gap_from <- tryCatch(
-        replicate_fn("study_gap_flags_from_entries", reps),
-        error = function(e) {
-          # Fallback without package helper
-          list(
-            data_unavailable = any(vapply(reps, function(x) {
-              nzchar(entry_data_unavailable_token(x))
-            }, logical(1))),
-            missing_engine = any(vapply(reps, function(x) {
-              tok <- entry_requires_engine_token(x)
-              nzchar(tok) && !tok %in% c("r", "stata", "python")
-            }, logical(1)))
-          )
-        }
-      )
-      gaps$data_unavailable <- isTRUE(gap_from$data_unavailable)
-      gaps$missing_engine <- isTRUE(gaps$missing_engine) || isTRUE(gap_from$missing_engine)
-    }
-  }
   if (!any(unlist(flags))) {
     flags <- list(r = TRUE, stata = FALSE, python = FALSE, mathematica = FALSE)
   }
   list(engines = flags, gaps = gaps)
+}
+
+#' Engines + gaps from a shiny_studies.json record
+study_chrome_from_cache_record <- function(rec) {
+  engines <- rec$engines %||% list(
+    r = FALSE, stata = FALSE, python = FALSE, mathematica = FALSE
+  )
+  notes <- rec$notes %||% list(data_unavailable = FALSE, missing_engine = FALSE)
+  if (!any(unlist(engines))) {
+    engines <- list(r = TRUE, stata = FALSE, python = FALSE, mathematica = FALSE)
+  }
+  list(
+    engines = list(
+      r = isTRUE(engines$r),
+      stata = isTRUE(engines$stata),
+      python = isTRUE(engines$python),
+      mathematica = isTRUE(engines$mathematica)
+    ),
+    gaps = list(
+      data_unavailable = isTRUE(notes$data_unavailable),
+      missing_engine = isTRUE(notes$missing_engine) || isTRUE(engines$mathematica)
+    )
+  )
+}
+
+#' Related icons from precomputed cache related_* records
+study_related_icons_from_cache_record <- function(rec) {
+  up <- rec$related_upstream %||% list()
+  down <- rec$related_downstream %||% list()
+  tagList(
+    lapply(up, function(item) related_study_icon_link(item, "upstream")),
+    lapply(down, function(item) related_study_icon_link(item, "downstream"))
+  )
 }
 
 entry_requires_engine_token <- function(x) {
@@ -2541,6 +2534,19 @@ parse_index_collections <- function(row) {
   parts <- unlist(strsplit(raw, "[|;]", perl = TRUE))
   parts <- trimws(parts)
   unique(parts[nzchar(parts)])
+}
+
+#' Collections vector from a shiny_studies.json record (list or character)
+shiny_studies_collections_vec_safe <- function(collections) {
+  if (is.null(collections)) {
+    return(character(0))
+  }
+  if (is.list(collections)) {
+    parts <- trimws(as.character(unlist(collections, use.names = FALSE)))
+  } else {
+    parts <- trimws(unlist(strsplit(as.character(collections), "[|;]", perl = TRUE)))
+  }
+  unique(parts[nzchar(parts) & !is.na(parts)])
 }
 
 collection_tag_abbrev <- function(collection) {
@@ -6205,10 +6211,9 @@ ui <- tagList(
       color: inherit;
     }
   "))),
-  shiny_app_stale_banner_ui(),
-  shiny_auto_update_banner_ui(),
+  uiOutput("shiny_deferred_banners"),
   shiny_display_only_banner_ui(),
-  registry_health_bar_ui(registry_audit_summary),
+  uiOutput("registry_health_bar"),
   navbarPage(
   id = "main_nav",
   title = app_brand_title(),
@@ -6229,8 +6234,7 @@ ui <- tagList(
           label = NULL,
           choices = c(
             "Choose a study…" = "",
-            local_study_select_choice(),
-            nice_doi_choices(registry_index)
+            local_study_select_choice()
           )
         ),
         tags$div(
@@ -6278,7 +6282,7 @@ ui <- tagList(
           selectInput(
             "studies_collection_filter",
             "Collection",
-            choices = registry_collection_choices(registry_index),
+            choices = c("All studies" = ALL_STUDIES_COLLECTION),
             selected = ALL_STUDIES_COLLECTION
           )
         ),
@@ -6350,22 +6354,53 @@ ui <- tagList(
 server <- function(input, output, session) {
   options(shiny.sanitize.errors = FALSE)
 
-  registry_index <<- load_registry_index()
-  updateSelectInput(
-    session,
-    "study_select",
-    choices = c(
-      "Choose a study…" = "",
-      local_study_select_choice(),
-      nice_doi_choices(registry_index)
+  # Studies list + index are loaded after first paint (session$onFlushed).
+  studies_cache_rv <- reactiveVal(shiny_studies_cache_global)
+  registry_ready <- reactiveVal(!is.null(shiny_studies_cache_global))
+
+  output$shiny_deferred_banners <- renderUI({
+    # Re-read after deferred auto-update / stale checks
+    registry_ready()
+    tagList(
+      shiny_app_stale_banner_ui(),
+      shiny_auto_update_banner_ui()
     )
-  )
-  updateSelectInput(
-    session,
-    "studies_collection_filter",
-    choices = registry_collection_choices(registry_index),
-    selected = ALL_STUDIES_COLLECTION
-  )
+  })
+
+  output$registry_health_bar <- renderUI({
+    registry_ready()
+    summary <- tryCatch(
+      replicate_fn("load_registry_audit_summary"),
+      error = function(e) NULL
+    )
+    registry_health_bar_ui(summary)
+  })
+
+  apply_studies_session_data <- function(data) {
+    if (is.null(data) || is.null(data$index)) {
+      return(invisible(FALSE))
+    }
+    registry_index <<- data$index
+    shiny_studies_cache_global <<- data$cache
+    studies_cache_rv(data$cache)
+    updateSelectInput(
+      session,
+      "study_select",
+      choices = c(
+        "Choose a study…" = "",
+        local_study_select_choice(),
+        nice_doi_choices(registry_index)
+      )
+    )
+    updateSelectInput(
+      session,
+      "studies_collection_filter",
+      choices = registry_collection_choices(registry_index),
+      selected = ALL_STUDIES_COLLECTION
+    )
+    registry_ready(TRUE)
+    invisible(TRUE)
+  }
 
   # One-shot flags for onFlushed / observers. Environment so nested callbacks
   # mutate shared state (plain-list `$<-` rebinds only the local frame).
@@ -6469,8 +6504,27 @@ server <- function(input, output, session) {
 
   # onFlushed is not a reactive consumer: never call invalidateLater() or
   # read session$clientData / reactiveValues without isolate() here.
-  # Arm welcome_defer_until; the observe below owns the delay + modal.
+  # Paint the UI shell first, then load the Studies cache + version check.
   session$onFlushed(function() {
+    # 1. Registry-baked Studies cache (session-memoized by mtime)
+    data <- tryCatch(load_studies_session_data(), error = function(e) NULL)
+    if (!is.null(data)) {
+      apply_studies_session_data(data)
+    }
+
+    # 2. Version check / optional GitHub install (off critical path)
+    tryCatch(ensure_replicate_everything(), error = function(e) NULL)
+    # Nudge banner outputs after auto-update status is set
+    isolate({
+      if (isTRUE(registry_ready())) {
+        registry_ready(TRUE)
+      } else {
+        registry_ready(FALSE)
+        registry_ready(TRUE)
+      }
+    })
+
+    # 3. Deep link / welcome (existing behaviour)
     if (isTRUE(deep_link_flags$url_deep_link_parsed)) {
       return(invisible(NULL))
     }
@@ -6920,17 +6974,38 @@ server <- function(input, output, session) {
   })
 
   output$studies_bibliography <- renderUI({
-    req(registry_index)
-    idx <- registry_index[studies_for_bibliography(registry_index), , drop = FALSE]
-    idx <- filter_index_by_collection(idx, input$studies_collection_filter)
+    cache <- studies_cache_rv()
+    if (is.null(cache)) {
+      return(tags$p(class = "text-muted", "Loading studies…"))
+    }
+    rows_data <- tryCatch(
+      replicateEverything::studies_table_data(
+        cache,
+        collection = input$studies_collection_filter
+      ),
+      error = function(e) list()
+    )
+    if (!length(rows_data)) {
+      return(tags$p(class = "text-muted", "No studies match this collection."))
+    }
 
-    rows <- lapply(seq_len(nrow(idx)), function(i) {
-      row <- idx[i, , drop = FALSE]
-      cite <- format_study_citation(row)
-      chrome <- study_row_chrome_for_row(row)
+    rows <- lapply(seq_along(rows_data), function(i) {
+      rec <- rows_data[[i]]
+      chrome <- study_chrome_from_cache_record(rec)
       engines <- chrome$engines
       gaps <- chrome$gaps
-      collections <- parse_index_collections(row)
+      collections <- shiny_studies_collections_vec_safe(rec$collections)
+      fake_row <- data.frame(
+        authors = as.character(rec$authors %||% ""),
+        year = as.character(rec$year %||% ""),
+        title = as.character(rec$title %||% ""),
+        doi = as.character(rec$doi %||% ""),
+        journal = as.character(rec$journal %||% ""),
+        article_url = as.character(rec$article_url %||% ""),
+        stringsAsFactors = FALSE
+      )
+      cite <- format_study_citation(fake_row)
+      study_key <- as.character(rec$key %||% rec$doi %||% rec$handle %||% "")
       tags$div(
         class = "study-citation",
         tags$div(
@@ -6948,7 +7023,7 @@ server <- function(input, output, session) {
           tags$div(
             class = "study-repo-col",
             tags$span(class = "study-citation-meta-label", "Repo"),
-            repo_link_display(study_repo_url_for_row(row))
+            repo_link_display(as.character(rec$study_url %||% ""))
           ),
           tags$div(
             class = "study-engine-col",
@@ -6966,14 +7041,14 @@ server <- function(input, output, session) {
             study_notes_icons_display(
               has_data_gap = isTRUE(gaps$data_unavailable),
               has_engine_gap = isTRUE(gaps$missing_engine),
-              related_ui = study_related_icons_display(row, index_df = registry_index)
+              related_ui = study_related_icons_from_cache_record(rec)
             )
           ),
           tags$div(
             class = "study-link-col",
             tags$span(class = "study-citation-meta-label", "Link"),
             share_link_ui(
-              shiny_deep_link_query_list(study_index_key_for_row(row)),
+              shiny_deep_link_query_list(study_key),
               title = "Link to this study on the public server"
             )
           ),
@@ -6986,7 +7061,7 @@ server <- function(input, output, session) {
               class = "btn-primary btn-sm study-go-btn",
               onclick = sprintf(
                 "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
-                study_index_key_for_row(row)
+                gsub("'", "\\\\'", study_key, fixed = TRUE)
               )
             )
           )
@@ -7057,16 +7132,22 @@ server <- function(input, output, session) {
     } else {
       study_engine_availability(c(state$replications %||% list(), state$prep_steps %||% list()))
     }
-    gaps <- if (nrow(row) > 0) {
-      study_row_chrome_for_row(row)$gaps
-    } else {
+    gaps <- if (!is.null(state$replications) || !is.null(state$prep_steps)) {
       tryCatch(
         replicate_fn(
           "study_gap_flags_from_entries",
           c(state$replications %||% list(), state$prep_steps %||% list())
         ),
-        error = function(e) list(data_unavailable = FALSE, missing_engine = FALSE)
+        error = function(e) {
+          if (nrow(row) > 0) study_row_chrome_for_row(row)$gaps else {
+            list(data_unavailable = FALSE, missing_engine = FALSE)
+          }
+        }
       )
+    } else if (nrow(row) > 0) {
+      study_row_chrome_for_row(row)$gaps
+    } else {
+      list(data_unavailable = FALSE, missing_engine = FALSE)
     }
     tagList(
       card(

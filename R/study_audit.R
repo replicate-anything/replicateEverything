@@ -25,7 +25,10 @@ study_declared_languages <- function(meta) {
   )
   raw <- tolower(raw)
   raw[raw %in% c("py")] <- "python"
-  raw <- unique(raw[raw %in% c("r", "stata", "python")])
+  raw[raw %in% c("wolfram", "wolframscript")] <- "mathematica"
+  # Include mathematica for registry / Studies display (hammer notes); runnable
+  # engines remain r / stata / python elsewhere.
+  raw <- unique(raw[raw %in% c("r", "stata", "python", "mathematica")])
   if (length(raw) > 0L) {
     return(raw)
   }

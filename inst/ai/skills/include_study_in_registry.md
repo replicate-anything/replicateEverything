@@ -107,7 +107,7 @@ refresh_registry("../registry", audit = TRUE)
 | Check + bake | `check_and_bake_study(study_path)` |
 | Check + sync | `register_study(study_path)` |
 | Sync stub only | `sync_study_to_registry(study_path)` |
-| Rebuild index only | `build_registry_index("../registry")` |
+| Rebuild index only | `build_registry_index("../registry")` → `index.csv` + `shiny_studies.json` |
 | Index + full audit | `refresh_registry("../registry")` |
 
 ## Registry stub contents
@@ -116,5 +116,7 @@ Short yaml includes only what the registry needs:
 
 - `paper` summary fields (doi/handle, title, journal, year, authors, materials pointers)
 - `repo`, `maintainer`, `collections`, `languages`
+- optional `notes:` (`data_unavailable` / `missing_engine`) for the Shiny Studies list
 
 No `steps:` block in the stub — the study repo yaml is authoritative for the DAG.
+`build_registry_index()` also writes `shiny_studies.json` (Studies tab cache).

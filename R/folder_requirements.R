@@ -109,7 +109,7 @@ registry_stub_from_folder_meta <- function(meta, study_folder = NULL, study_root
   )
 }
 
-#' Maintainer, collections, and languages copied into registry study stubs
+#' Maintainer, collections, languages, and notes copied into registry study stubs
 #' @keywords internal
 registry_stub_summary_fields <- function(meta) {
   out <- list()
@@ -135,6 +135,22 @@ registry_stub_summary_fields <- function(meta) {
   languages <- study_declared_languages(meta)
   if (length(languages) > 0L) {
     out$languages <- as.list(languages)
+  }
+  # Studies-tab padlock / hammer signals — baked at sync so Shiny never fetches
+  # study yaml just to paint the list.
+  gaps <- tryCatch(
+    study_gap_flags_from_entries(meta),
+    error = function(e) list(data_unavailable = FALSE, missing_engine = FALSE)
+  )
+  langs_lower <- tolower(as.character(languages))
+  if (any(langs_lower %in% c("mathematica", "wolfram", "wolframscript"))) {
+    gaps$missing_engine <- TRUE
+  }
+  if (isTRUE(gaps$data_unavailable) || isTRUE(gaps$missing_engine)) {
+    out$notes <- list(
+      data_unavailable = isTRUE(gaps$data_unavailable),
+      missing_engine = isTRUE(gaps$missing_engine)
+    )
   }
   out
 }
