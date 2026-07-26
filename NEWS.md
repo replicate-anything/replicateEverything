@@ -1,19 +1,24 @@
 # replicateEverything 0.7.18
 
-## Shiny: cold-paste deep links open study/step
+## Shiny: study-only deep links (dropdown first)
 
-* **Bug fix:** Initial load with `?doi=` / `?handle=` (optional `what`,
-  `language`) now waits for the deferred Studies cache before selecting the
-  study. Previously the deep-link queue could apply before
-  `shiny_studies.json` was ready, so `updateSelectInput(selected=)` missed and
-  the session stayed on the main Studies page (click-through Go still worked).
-* **Bug fix:** `?what=` (table/figure) could still be dropped after the study
-  opened: `updateSelectInput` echoed the same DOI asynchronously and
-  re-ran `load_study`, which reset to the first Display-ready step. Skip that
-  duplicate reload when the study is already selected, and re-apply pending
-  `what` once the per-study step list (`replications_df` from yaml) is ready.
-  The Studies index still lists DOIs/handles only — steps are not required
-  there.
+* **Simplify:** Deep links are study-only (`?doi=` / optional `handle=`).
+  Legacy `what=` / `language=` in old URLs are ignored and never re-emitted.
+  Opening a study prefers the first Display-ready step (existing behaviour).
+* **Bug fix / control flow:** Manual Studies dropdown always loads the selected
+  study (highest priority). Removed `pending_deep_link_what`,
+  `study_keys_match` same-DOI skip, and related guards that could block the
+  dropdown while a cold-paste `?doi=` was pending. Cold paste still queues
+  once and applies after `registry_ready`; URL sync writes `?doi=` only and
+  does not re-queue.
+
+## Shiny: cold-paste deep links open study
+
+* **Bug fix:** Initial load with `?doi=` / `?handle=` now waits for the
+  deferred Studies cache before selecting the study. Previously the deep-link
+  queue could apply before `shiny_studies.json` was ready, so
+  `updateSelectInput(selected=)` missed and the session stayed on the main
+  Studies page (click-through Go still worked).
 * Preserves the pending / current study when rebuilding the DOI dropdown;
   does not strip inbound query params while a deep link is pending.
 * Accepts `handle=` as a study key; re-reads the query on `popstate`

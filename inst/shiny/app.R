@@ -2756,21 +2756,12 @@ filter_index_by_collection <- function(index_df, collection = "") {
   index_df[keep, , drop = FALSE]
 }
 
-shiny_deep_link_query_list <- function(doi, what = NULL, language = NULL) {
+shiny_deep_link_query_list <- function(doi) {
   doi_norm <- tryCatch(
     replicate_fn("normalize_doi", doi),
     error = function(e) trimws(as.character(doi))
   )
-  out <- list(doi = doi_norm)
-  what <- trimws(as.character(what %||% ""))
-  if (nzchar(what)) {
-    out$what <- what
-  }
-  lang <- tolower(trimws(as.character(language %||% "")))
-  if (nzchar(lang) && !identical(lang, "r")) {
-    out$language <- lang
-  }
-  out
+  list(doi = doi_norm)
 }
 
 parse_shiny_deep_link_from_search <- function(url_search) {
@@ -5369,7 +5360,7 @@ ui <- tagList(
       function sendUrlDeepLinkFromQuery() {
         try {
           if (!window.Shiny || !window.Shiny.setInputValue) return;
-          // Query contract: ?doi=...|&handle=...[&what=...][&language=...]
+          // Query contract: ?doi=... or ?handle=... (study-only; ignore legacy what/language).
           // Path prefixes (e.g. /ipi/replicate/) do not affect search params.
           var search = window.location.search;
           if (!search && window.location.href.indexOf('?') >= 0) {
@@ -5380,8 +5371,6 @@ ui <- tagList(
           if (!doi) return;
           Shiny.setInputValue('url_deep_link', {
             doi: doi,
-            what: params.get('what') || '',
-            language: params.get('language') || '',
             nonce: Date.now()
           }, {priority: 'event'});
         } catch (e) {}
@@ -6566,6 +6555,12 @@ server <- function(input, output, session) {
 
   # One-shot flags for onFlushed / observers. Environment so nested callbacks
   # mutate shared state (plain-list `$<-` rebinds only the local frame).
+  #
+  # Study deep links (study-only; ignore legacy ?what= / ?language=):
+  # 1. Parse URL once → pending study key (doi or handle).
+  # 2. When registry ready → select study + load_study once; clear pending.
+  # 3. User dropdown / Go → always load_study (clears any pending; no what= guards).
+  # 4. URL bar reflects current study (?doi= only); sync does not re-queue.
   deep_link_flags <- new.env(parent = emptyenv())
   deep_link_flags$url_deep_link_parsed <- FALSE
   deep_link_flags$welcome_shown <- FALSE
@@ -6590,14 +6585,12 @@ server <- function(input, output, session) {
     study_audit = NULL,
     study_audit_running = FALSE,
     pending_deep_link_doi = NULL,
-    pending_deep_link_what = NULL,
     code_viewer_stack = character(0),
     code_viewer_cache = list(),
     code_viewer_globals = character(0),
     code_viewer_lang = "r",
     code_viewer_root = NULL,
     code_viewer_entry = NULL,
-    pending_deep_link_language = NULL,
     suppress_url_sync = FALSE,
     partial_notice_doi = NULL
   )
@@ -6626,8 +6619,6 @@ server <- function(input, output, session) {
     isolate({
       state$suppress_url_sync <- TRUE
       state$pending_deep_link_doi <- doi
-      state$pending_deep_link_what <- trimws(as.character(link$what %||% ""))
-      state$pending_deep_link_language <- trimws(as.character(link$language %||% ""))
     })
     invisible(TRUE)
   }
@@ -6947,46 +6938,29 @@ server <- function(input, output, session) {
     }
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
-      # what is applied once the study yaml step index exists (not from
-      # shiny_studies.json). Prefer pending deep-link what; otherwise first
-      # Display-ready step.
-      pending_what <- state$pending_deep_link_what
-      applied_what <- FALSE
-      if (!is.null(pending_what) && nzchar(as.character(pending_what))) {
-        applied_what <- isTRUE(select_replication_by_group(
-          pending_what,
-          language = state$pending_deep_link_language
-        ))
-        # Clear only after steps were available to resolve against (success
-        # or unknown id). Leave pending if replications_df was empty above.
-        state$pending_deep_link_what <- NULL
-        state$pending_deep_link_language <- NULL
+      # Prefer first step where Display works (baked output, or normal
+      # runnable); skip data_unavailable / missing-engine / incomplete
+      # rows with nothing to show (e.g. Hahn fig_1 → fig_5).
+      first <- tryCatch(
+        replicate_fn(
+          "first_available_replication_row",
+          state$replications_df,
+          doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo,
+          language_for_row = function(row) default_row_engine(row),
+          resolve_id = function(row, engine) {
+            resolve_group_replication_id(row, engine)
+          }
+        ),
+        error = function(e) state$replications_df[1, , drop = FALSE]
+      )
+      if (is.null(first) || nrow(first) < 1L) {
+        first <- state$replications_df[1, , drop = FALSE]
       }
-      if (!isTRUE(applied_what)) {
-        # Prefer first step where Display works (baked output, or normal
-        # runnable); skip data_unavailable / missing-engine / incomplete
-        # rows with nothing to show (e.g. Hahn fig_1 → fig_5).
-        first <- tryCatch(
-          replicate_fn(
-            "first_available_replication_row",
-            state$replications_df,
-            doi,
-            folder = state$registry_folder,
-            repo = state$registry_repo,
-            language_for_row = function(row) default_row_engine(row),
-            resolve_id = function(row, engine) {
-              resolve_group_replication_id(row, engine)
-            }
-          ),
-          error = function(e) state$replications_df[1, , drop = FALSE]
-        )
-        if (is.null(first) || nrow(first) < 1L) {
-          first <- state$replications_df[1, , drop = FALSE]
-        }
-        state$selected_replication <- first$group[[1]]
-        state$selected_type <- first$type[[1]]
-        load_selected_artifact(fallback_live = FALSE)
-      }
+      state$selected_replication <- first$group[[1]]
+      state$selected_type <- first$type[[1]]
+      load_selected_artifact(fallback_live = FALSE)
     }
   }
 
@@ -6994,7 +6968,7 @@ server <- function(input, output, session) {
     if (isTRUE(state$suppress_url_sync)) {
       return(invisible(NULL))
     }
-    # Never strip an inbound deep link before it has been applied.
+    # Do not strip an inbound ?doi= before the pending study has been applied.
     pending <- isolate(state$pending_deep_link_doi)
     if (!is.null(pending) && nzchar(as.character(pending))) {
       return(invisible(NULL))
@@ -7003,16 +6977,7 @@ server <- function(input, output, session) {
       updateQueryString(query = "?", mode = "replace", session = session)
       return(invisible(NULL))
     }
-    if (is.null(state$selected_replication) || !nzchar(state$selected_replication)) {
-      params <- shiny_deep_link_query_list(state$doi)
-    } else {
-      target <- selected_replication_id_and_language()
-      params <- shiny_deep_link_query_list(
-        state$doi,
-        what = state$selected_replication,
-        language = target$language
-      )
-    }
+    params <- shiny_deep_link_query_list(state$doi)
     qs <- shiny_query_string(params)
     updateQueryString(
       query = if (nzchar(qs)) paste0("?", qs) else "?",
@@ -7045,43 +7010,6 @@ server <- function(input, output, session) {
     TRUE
   }
 
-  # Apply queued ?what= once the per-study step list exists (yaml via
-  # load_study / replications_df). Studies index has DOIs/handles only.
-  apply_pending_deep_link_what <- function() {
-    pending_what <- isolate(state$pending_deep_link_what)
-    if (is.null(pending_what) || !nzchar(as.character(pending_what))) {
-      return(FALSE)
-    }
-    reps <- isolate(state$replications_df)
-    if (is.null(reps) || nrow(reps) < 1L) {
-      return(FALSE)
-    }
-    ok <- isTRUE(select_replication_by_group(
-      pending_what,
-      language = isolate(state$pending_deep_link_language)
-    ))
-    if (ok) {
-      state$pending_deep_link_what <- NULL
-      state$pending_deep_link_language <- NULL
-    }
-    ok
-  }
-
-  study_keys_match <- function(a, b) {
-    a <- trimws(as.character(a %||% ""))
-    b <- trimws(as.character(b %||% ""))
-    if (!nzchar(a) || !nzchar(b)) {
-      return(FALSE)
-    }
-    if (identical(a, b)) {
-      return(TRUE)
-    }
-    identical(
-      tryCatch(replicate_fn("normalize_doi", a), error = function(e) a),
-      tryCatch(replicate_fn("normalize_doi", b), error = function(e) b)
-    )
-  }
-
   observeEvent(input$url_deep_link, {
     link <- input$url_deep_link
     link <- tryCatch(
@@ -7095,10 +7023,8 @@ server <- function(input, output, session) {
     deep_link_flags$url_deep_link_parsed <- TRUE
   }, ignoreInit = TRUE)
 
-  # Apply queued deep links only after Studies cache is ready so
+  # Apply queued ?doi= / ?handle= only after Studies cache is ready so
   # updateSelectInput(selected=doi) and registry_row_for() see real choices.
-  # Cold paste / first load often queues ?doi=&what= before onFlushed loads
-  # shiny_studies.json; applying early left the user on the main Studies page.
   observeEvent(list(state$pending_deep_link_doi, registry_ready()), {
     doi <- state$pending_deep_link_doi
     if (is.null(doi) || !nzchar(as.character(doi))) {
@@ -7134,7 +7060,6 @@ server <- function(input, output, session) {
       state$pending_deep_link_doi <- NULL
       state$suppress_url_sync <- FALSE
       updateNavbarPage(session, "main_nav", selected = "Replicate")
-      apply_pending_deep_link_what()
       sync_url_to_selection()
       return(invisible(NULL))
     }
@@ -7148,45 +7073,36 @@ server <- function(input, output, session) {
     sync_url_to_selection()
   }, ignoreInit = TRUE)
 
-  # Second gate for ?what=: step list is built from study yaml in load_study,
-  # not from the Studies index. If what was queued before replications_df
-  # existed (or a duplicate study_select reload left it pending), apply now.
-  observeEvent(
-    list(state$replications_df, state$pending_deep_link_what),
-    {
-      apply_pending_deep_link_what()
-    },
-    ignoreInit = TRUE
-  )
-
   observeEvent(input$study_select, {
     req(nzchar(input$study_select))
-    # Deep-link / Go path may updateSelectInput then load_study itself;
-    # skip the duplicate load so pending_deep_link_what is not cleared twice.
+    # Programmatic updateSelectInput + load_study (deep link / Go) already
+    # loaded; skip the duplicate. Manual dropdown always loads.
     if (isTRUE(deep_link_flags$applying_study)) {
       return(invisible(NULL))
     }
-    pending <- isolate(state$pending_deep_link_doi)
-    if (!is.null(pending) && nzchar(as.character(pending))) {
-      return(invisible(NULL))
-    }
-    # Cold paste: updateSelectInput(selected=doi) echoes asynchronously
-    # after load_study already applied ?what=. Reloading here would reset
-    # to the first Display-ready step and drop the deep-linked figure/table.
-    if (isTRUE(study_keys_match(input$study_select, isolate(state$doi)))) {
-      apply_pending_deep_link_what()
-      return(invisible(NULL))
-    }
+    # Dropdown wins over any cold-paste queue still waiting on registry.
+    isolate({
+      state$pending_deep_link_doi <- NULL
+      state$suppress_url_sync <- FALSE
+    })
     load_study(input$study_select, from_registry = TRUE)
   })
 
   observeEvent(input$doi_go, {
+    isolate({
+      state$pending_deep_link_doi <- NULL
+      state$suppress_url_sync <- FALSE
+    })
     load_study(input$study_doi, from_registry = FALSE)
   })
 
   observeEvent(input$go_to_study, {
     req(input$go_to_study)
     removeModal()
+    isolate({
+      state$pending_deep_link_doi <- NULL
+      state$suppress_url_sync <- FALSE
+    })
     deep_link_flags$applying_study <- TRUE
     updateSelectInput(session, "study_select", selected = input$go_to_study)
     load_study(input$go_to_study, from_registry = TRUE)
@@ -7691,10 +7607,10 @@ server <- function(input, output, session) {
         if (!is.null(state$doi) && nzchar(state$doi)) {
           tags$a(
             href = shiny_share_url(
-              shiny_deep_link_query_list(state$doi, what = group, language = engine)
+              shiny_deep_link_query_list(state$doi)
             ),
             class = "replication-share-link",
-            title = paste0("Link to ", label, " on the public server"),
+            title = paste0("Link to this study on the public server"),
             target = "_blank",
             rel = "noopener noreferrer",
             `aria-label` = paste0("Link to ", label),

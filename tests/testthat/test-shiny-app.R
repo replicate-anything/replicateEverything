@@ -120,40 +120,41 @@ test_that("parse_shiny_deep_link_from_search ignores empty search", {
 test_that("parse_shiny_deep_link_from_search extracts doi without base path", {
   link <- parse_shiny_deep_link_from_search("?doi=10.1017/s0003055426101749")
   expect_equal(link$doi, "10.1017/s0003055426101749")
-  expect_equal(link$what, "")
-  expect_equal(link$language, "")
+  expect_null(link$what)
+  expect_null(link$language)
 })
 
-test_that("parse_shiny_deep_link_from_search accepts handle and what", {
+test_that("parse_shiny_deep_link_from_search accepts handle and ignores legacy what", {
   link <- parse_shiny_deep_link_from_search(
     "?handle=rep-template&what=tab_1&language=stata"
   )
   expect_equal(link$doi, "rep-template")
-  expect_equal(link$what, "tab_1")
-  expect_equal(link$language, "stata")
+  expect_null(link$what)
+  expect_null(link$language)
 })
 
-test_that("parse_shiny_deep_link_from_search ignores path prefixes", {
+test_that("parse_shiny_deep_link_from_search ignores path prefixes and what", {
   # Host mounts under /ipi/replicate/; only the search string is parsed.
   link <- parse_shiny_deep_link_from_search(
     "?doi=10.1371%2Fjournal.pone.0278337&what=fig_1"
   )
   expect_equal(link$doi, "10.1371/journal.pone.0278337")
-  expect_equal(link$what, "fig_1")
+  expect_null(link$what)
 })
 
 test_that("extract_shiny_deep_link returns NULL without doi", {
   expect_null(extract_shiny_deep_link(list(what = "tab_1")))
 })
 
-test_that("extract_shiny_deep_link prefers doi over handle", {
+test_that("extract_shiny_deep_link prefers doi over handle and drops what", {
   link <- extract_shiny_deep_link(list(
     doi = "10.1017/s0003055426101749",
     handle = "ignored-handle",
     what = "fig_1"
   ))
   expect_equal(link$doi, "10.1017/s0003055426101749")
-  expect_equal(link$what, "fig_1")
+  expect_null(link$what)
+  expect_equal(names(link), "doi")
 })
 
 test_that("coerce_shiny_deep_link accepts list and named vector payloads", {
@@ -163,8 +164,8 @@ test_that("coerce_shiny_deep_link accepts list and named vector payloads", {
     language = "stata"
   ))
   expect_equal(from_list$doi, "10.1017/s0003055426101749")
-  expect_equal(from_list$what, "tab_1")
-  expect_equal(from_list$language, "stata")
+  expect_null(from_list$what)
+  expect_equal(names(from_list), "doi")
 
   from_named <- coerce_shiny_deep_link(c(
     doi = "10.1017/s0003055426101749",
@@ -172,15 +173,14 @@ test_that("coerce_shiny_deep_link accepts list and named vector payloads", {
     language = ""
   ))
   expect_equal(from_named$doi, "10.1017/s0003055426101749")
-  expect_equal(from_named$what, "tab_1")
-  expect_equal(from_named$language, "")
+  expect_null(from_named$what)
 
   from_scalar <- coerce_shiny_deep_link("10.1017/s0003055426101749")
   expect_equal(from_scalar$doi, "10.1017/s0003055426101749")
   expect_null(coerce_shiny_deep_link(list(what = "tab_1")))
   from_handle <- coerce_shiny_deep_link(list(handle = "rep-template", what = "tab_1"))
   expect_equal(from_handle$doi, "rep-template")
-  expect_equal(from_handle$what, "tab_1")
+  expect_null(from_handle$what)
 })
 
 test_that("app.R onFlushed callbacks do not call invalidateLater", {
@@ -285,7 +285,7 @@ test_that("app.R defers deep-link apply until Studies cache is ready", {
   skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
 
   text <- paste(readLines(file.path(src, "app.R"), warn = FALSE), collapse = "\n")
-  # Cold paste races: queue ?doi= before onFlushed loads shiny_studies.json.
+  # Cold paste: queue ?doi= before onFlushed loads shiny_studies.json.
   expect_match(
     text,
     "observeEvent\\s*\\(\\s*list\\s*\\(\\s*state\\$pending_deep_link_doi\\s*,\\s*registry_ready\\s*\\(\\s*\\)\\s*\\)",
@@ -297,18 +297,46 @@ test_that("app.R defers deep-link apply until Studies cache is ready", {
   expect_match(text, "params\\.get\\('handle'\\)")
 })
 
-test_that("app.R applies pending what after study steps are ready", {
+test_that("app.R study deep links are study-only and dropdown is not blocked", {
   src <- shiny_app_dir()
   skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
 
   text <- paste(readLines(file.path(src, "app.R"), warn = FALSE), collapse = "\n")
-  # Second gate: steps come from study yaml (replications_df), not Studies index.
-  expect_match(text, "apply_pending_deep_link_what\\s*<-\\s*function")
-  expect_match(text, "study_keys_match\\s*<-\\s*function")
+
+  # No table/figure deep-link race machinery.
+  expect_false(grepl("pending_deep_link_what", text, fixed = TRUE))
+  expect_false(grepl("pending_deep_link_language", text, fixed = TRUE))
+  expect_false(grepl("apply_pending_deep_link_what", text, fixed = TRUE))
+  expect_false(grepl("study_keys_match", text, fixed = TRUE))
+
+  # URL helper emits doi only (no what=/language= args).
   expect_match(
     text,
-    "observeEvent\\s*\\(\\s*list\\s*\\(\\s*state\\$replications_df\\s*,\\s*state\\$pending_deep_link_what\\s*\\)",
+    "shiny_deep_link_query_list\\s*<-\\s*function\\s*\\(\\s*doi\\s*\\)",
     perl = TRUE
   )
-  expect_match(text, "study_keys_match\\s*\\(\\s*input\\$study_select")
+  expect_false(grepl("shiny_deep_link_query_list\\([^)]*what\\s*=", text))
+
+  # Manual dropdown clears pending then always load_study (highest priority).
+  # Must not early-return when pending_deep_link_doi is set.
+  expect_match(
+    text,
+    paste0(
+      "observeEvent\\s*\\(\\s*input\\$study_select\\s*,\\s*\\{[\\s\\S]*?",
+      "state\\$pending_deep_link_doi\\s*<-\\s*NULL[\\s\\S]*?",
+      "load_study\\s*\\(\\s*input\\$study_select"
+    ),
+    perl = TRUE
+  )
+  expect_false(
+    grepl(
+      paste0(
+        "observeEvent\\s*\\(\\s*input\\$study_select\\s*,\\s*\\{[\\s\\S]*?",
+        "pending\\s*<-\\s*isolate\\s*\\(\\s*state\\$pending_deep_link_doi\\s*\\)[\\s\\S]*?",
+        "return\\s*\\(\\s*invisible\\s*\\(\\s*NULL\\s*\\)\\s*\\)"
+      ),
+      text,
+      perl = TRUE
+    )
+  )
 })

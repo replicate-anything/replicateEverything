@@ -294,10 +294,11 @@ parse_shiny_query_string <- function(query_string) {
 #' Coerce a Shiny client deep-link payload to a normalized list
 #'
 #' Accepts a list or named vector from \code{Shiny.setInputValue()} and a bare
-#' DOI string.
+#' DOI string. Study-only: \code{doi} or \code{handle}. Legacy \code{what} /
+#' \code{language} fields are ignored if present.
 #'
 #' @param x Client payload for \code{url_deep_link}.
-#' @return List with \code{doi}, \code{what}, \code{language}, or \code{NULL}.
+#' @return List with \code{doi} (study key), or \code{NULL}.
 #' @keywords internal
 coerce_shiny_deep_link <- function(x) {
   if (is.null(x)) {
@@ -308,7 +309,7 @@ coerce_shiny_deep_link <- function(x) {
     if (!nzchar(doi)) {
       return(NULL)
     }
-    return(list(doi = doi, what = "", language = ""))
+    return(list(doi = doi))
   }
   if (is.list(x) || (is.atomic(x) && !is.null(names(x)))) {
     doi <- trimws(as.character(x[["doi"]] %||% x$doi %||% ""))
@@ -318,29 +319,23 @@ coerce_shiny_deep_link <- function(x) {
     if (!nzchar(doi)) {
       return(NULL)
     }
-    return(list(
-      doi = doi,
-      what = trimws(as.character(x[["what"]] %||% x$what %||% "")),
-      language = trimws(as.character(x[["language"]] %||% x$language %||% ""))
-    ))
+    return(list(doi = doi))
   }
   NULL
 }
 
-#' Extract DOI deep-link fields from a parsed query list
+#' Extract study deep-link key from a parsed query list
 #'
 #' Query contract (path prefix such as \code{/ipi/replicate/} is irrelevant;
 #' only the search string matters):
 #' \itemize{
 #'   \item \code{doi} — study DOI (preferred), or
 #'   \item \code{handle} — registry handle / study key when there is no DOI
-#'   \item \code{what} — optional step / replication group id
-#'   \item \code{language} — optional engine (\code{r}, \code{stata}, \code{python})
 #' }
+#' Legacy \code{what} / \code{language} query params are ignored if present.
 #'
 #' @param query_list Named list from \code{parse_shiny_query_string()}.
-#' @return List with \code{doi}, \code{what}, \code{language}, or \code{NULL}.
-#'   The \code{doi} field holds the study key (DOI or handle).
+#' @return List with \code{doi} (study key: DOI or handle), or \code{NULL}.
 #' @keywords internal
 extract_shiny_deep_link <- function(query_list) {
   if (is.null(query_list) || !length(query_list)) {
@@ -353,11 +348,7 @@ extract_shiny_deep_link <- function(query_list) {
   if (!nzchar(doi)) {
     return(NULL)
   }
-  list(
-    doi = doi,
-    what = trimws(as.character(query_list$what %||% "")),
-    language = trimws(as.character(query_list$language %||% ""))
-  )
+  list(doi = doi)
 }
 
 #' Parse DOI deep-link fields from a URL search string
