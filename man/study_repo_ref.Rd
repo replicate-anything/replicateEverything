@@ -4,10 +4,13 @@
 \alias{study_repo_ref}
 \title{Git ref for folder-backed study materials}
 \usage{
-study_repo_ref(meta)
+study_repo_ref(meta, ctx = NULL)
 }
 \arguments{
 \item{meta}{Parsed replication.yml contents.}
+
+\item{ctx}{Optional paper / step context; when set, prefers
+\code{ctx$materials_ref} (parent ref for inherited steps).}
 }
 \value{
 Character branch, tag, or commit.
