@@ -18,7 +18,7 @@ validate_single_output(doi, what, repo = NULL, folder = NULL, language = NULL)
 \item{language}{Optional \code{"R"} or \code{"stata"}.}
 }
 \value{
-Invisibly \code{TRUE} on success.
+A \code{validate_outputs_result} on success (auto-prints a short report).
 }
 \description{
 Validate that a single precomputed output exists

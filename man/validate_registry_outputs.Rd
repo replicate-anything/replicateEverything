@@ -12,7 +12,7 @@ validate_registry_outputs(registry_root = NULL, folders = NULL)
 \item{folders}{Optional character vector of study folder names.}
 }
 \value{
-Invisibly \code{TRUE} if every study passes.
+A \code{validate_outputs_result} if every study passes.
 }
 \description{
 Validate precomputed outputs for every study in a registry checkout

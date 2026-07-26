@@ -39,7 +39,8 @@ outputs for that study repository (equivalent to passing its DOI with
 \item{language}{Optional engine language for multi-engine replications.}
 }
 \value{
-Invisibly \code{TRUE} on success.
+A \code{validate_outputs_result} on success (auto-prints PASS/FAIL,
+DOI/what, and checked paths). Use \code{$ok} for the logical flag.
 }
 \description{
 Maintainer helper: checks that declared table and figure outputs exist on

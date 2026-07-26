@@ -70,10 +70,102 @@ artifact_available <- function(doi, what, repo = NULL, folder = NULL, language =
   )))
 }
 
+#' Empty items table for [validate_outputs()] results
+#' @keywords internal
+#' @noRd
+empty_validate_outputs_items <- function() {
+  data.frame(
+    id = character(0),
+    path = character(0),
+    passed = logical(0),
+    message = character(0),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Build a [validate_outputs()] result object
+#' @keywords internal
+#' @noRd
+new_validate_outputs_result <- function(
+  ok,
+  scope = c("single", "paper", "registry"),
+  doi = NULL,
+  what = NULL,
+  n_studies = NULL,
+  items = empty_validate_outputs_items()
+) {
+  scope <- match.arg(scope)
+  structure(
+    list(
+      ok = isTRUE(ok),
+      scope = scope,
+      doi = doi,
+      what = what,
+      n_studies = n_studies,
+      items = items
+    ),
+    class = "validate_outputs_result"
+  )
+}
+
+#' @keywords internal
+#' @exportS3Method print validate_outputs_result
+print.validate_outputs_result <- function(x, ...) {
+  cat(if (isTRUE(x$ok)) "PASS" else "FAIL", " - output validation\n", sep = "")
+  doi <- x$doi
+  if (!is.null(doi) && length(doi) == 1L && !is.na(doi) && nzchar(as.character(doi))) {
+    cat("DOI: ", as.character(doi), "\n", sep = "")
+  }
+  what <- x$what
+  if (!is.null(what) && length(what) == 1L && !is.na(what) &&
+        nzchar(as.character(what)) && !identical(as.character(what), "everything")) {
+    cat("What: ", as.character(what), "\n", sep = "")
+  }
+  if (identical(x$scope, "registry") && !is.null(x$n_studies)) {
+    cat("Studies checked: ", as.integer(x$n_studies), "\n", sep = "")
+  }
+  items <- x$items
+  if (is.data.frame(items) && nrow(items) > 0L) {
+    for (i in seq_len(nrow(items))) {
+      mark <- if (isTRUE(items$passed[[i]])) "[ok]" else "[x]"
+      path_bit <- as.character(items$path[[i]] %||% "")
+      msg <- as.character(items$message[[i]] %||% "")
+      detail <- if (nzchar(path_bit)) {
+        if (nzchar(msg) && !identical(msg, path_bit)) {
+          paste0(path_bit, " (", msg, ")")
+        } else {
+          path_bit
+        }
+      } else if (nzchar(msg)) {
+        msg
+      } else {
+        "(no path)"
+      }
+      cat(" ", mark, " ", items$id[[i]], ": ", detail, "\n", sep = "")
+    }
+  } else if (identical(x$scope, "registry")) {
+    cat(" All declared outputs present.\n")
+  }
+  invisible(x)
+}
+
+#' One successful item row for [validate_outputs()]
+#' @keywords internal
+#' @noRd
+validate_outputs_item <- function(id, path = NA_character_, message = "present") {
+  data.frame(
+    id = as.character(id),
+    path = as.character(path %||% NA_character_),
+    passed = TRUE,
+    message = as.character(message %||% "present"),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Validate that a single precomputed output exists
 #'
 #' @inheritParams render_replication
-#' @return Invisibly \code{TRUE} on success.
+#' @return A \code{validate_outputs_result} on success (auto-prints a short report).
 #' @keywords internal
 validate_single_output <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
@@ -88,12 +180,32 @@ validate_single_output <- function(doi, what, repo = NULL, folder = NULL, langua
         call. = FALSE
       )
     }
-    return(invisible(TRUE))
+    pkg_path <- tryCatch(
+      get_artifact_path(doi, what, repo = repo, language = language),
+      error = function(e) NULL
+    )
+    return(new_validate_outputs_result(
+      ok = TRUE,
+      scope = "single",
+      doi = doi,
+      what = what,
+      items = validate_outputs_item(
+        what,
+        path = pkg_path %||% NA_character_,
+        message = "package artifact available"
+      )
+    ))
   }
 
-  local_path <- local_artifact_path(doi, what, repo = repo, language = language)
+  local_path <- local_artifact_path(doi, what, repo = repo, folder = folder, language = language)
   if (!is.null(local_path) && file.exists(local_path)) {
-    return(invisible(TRUE))
+    return(new_validate_outputs_result(
+      ok = TRUE,
+      scope = "single",
+      doi = doi,
+      what = what,
+      items = validate_outputs_item(what, path = local_path, message = "present")
+    ))
   }
   if (!is.null(local_path) && !file.exists(local_path)) {
     ctx <- tryCatch(paper_context(doi, repo = repo, folder = folder), error = function(e) NULL)
@@ -116,7 +228,17 @@ validate_single_output <- function(doi, what, repo = NULL, folder = NULL, langua
     )
   }
 
-  invisible(TRUE)
+  new_validate_outputs_result(
+    ok = TRUE,
+    scope = "single",
+    doi = doi,
+    what = what,
+    items = validate_outputs_item(
+      what,
+      path = NA_character_,
+      message = "artifact available"
+    )
+  )
 }
 
 #' Whether a step is exempt from baked Display-sink requirements
@@ -268,16 +390,18 @@ check_display_sink_rows <- function(meta, study_root) {
 #' @param doi Character. DOI of the paper.
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name.
-#' @return Invisibly \code{TRUE} if every replication has an artifact.
+#' @return A \code{validate_outputs_result} if every replication has an artifact.
 #' @keywords internal
 validate_paper_outputs <- function(doi, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   display_reps <- folder_display_replications(meta)
   missing <- character(0)
+  items <- empty_validate_outputs_items()
 
   for (rep in display_reps) {
     tryCatch({
-      validate_single_output(doi, rep$id, repo = repo, folder = folder)
+      one <- validate_single_output(doi, rep$id, repo = repo, folder = folder)
+      items <- rbind(items, one$items)
     }, error = function(e) {
       missing <<- c(missing, paste0(rep$id, ": ", conditionMessage(e)))
     })
@@ -291,14 +415,20 @@ validate_paper_outputs <- function(doi, repo = NULL, folder = NULL) {
     )
   }
 
-  invisible(TRUE)
+  new_validate_outputs_result(
+    ok = TRUE,
+    scope = "paper",
+    doi = doi,
+    what = "everything",
+    items = items
+  )
 }
 
 #' Validate precomputed outputs for every study in a registry checkout
 #'
 #' @param registry_root Path to the registry repository.
 #' @param folders Optional character vector of study folder names.
-#' @return Invisibly \code{TRUE} if every study passes.
+#' @return A \code{validate_outputs_result} if every study passes.
 #' @keywords internal
 validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
   if (is.null(registry_root) || !nzchar(registry_root)) {
@@ -321,6 +451,8 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
   }
 
   failures <- character(0)
+  n_checked <- 0L
+  items <- empty_validate_outputs_items()
   old_registry <- getOption("replicateEverything.registry_root", NULL)
   options(replicateEverything.registry_root = registry_root)
   on.exit(options(replicateEverything.registry_root = old_registry), add = TRUE)
@@ -351,12 +483,17 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
       }
     }
 
-    tryCatch(
-      validate_paper_outputs(lookup, folder = folder),
-      error = function(e) {
-        failures <<- c(failures, paste0(folder, ": ", conditionMessage(e)))
+    tryCatch({
+      paper_res <- validate_paper_outputs(lookup, folder = folder)
+      n_checked <- n_checked + 1L
+      if (is.data.frame(paper_res$items) && nrow(paper_res$items) > 0L) {
+        study_items <- paper_res$items
+        study_items$id <- paste0(folder, "/", study_items$id)
+        items <- rbind(items, study_items)
       }
-    )
+    }, error = function(e) {
+      failures <<- c(failures, paste0(folder, ": ", conditionMessage(e)))
+    })
   }
 
   if (length(failures) > 0) {
@@ -368,7 +505,14 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
     )
   }
 
-  invisible(TRUE)
+  new_validate_outputs_result(
+    ok = TRUE,
+    scope = "registry",
+    doi = "everywhere",
+    what = "everything",
+    n_studies = n_checked,
+    items = items
+  )
 }
 
 #' Validate precomputed outputs
@@ -391,7 +535,8 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name (for a single \code{doi}).
 #' @param language Optional engine language for multi-engine replications.
-#' @return Invisibly \code{TRUE} on success.
+#' @return A \code{validate_outputs_result} on success (auto-prints PASS/FAIL,
+#'   DOI/what, and checked paths). Use \code{$ok} for the logical flag.
 #' @seealso [check_replication()], [build_outputs()], [build_study_outputs()]
 #' @export
 #'

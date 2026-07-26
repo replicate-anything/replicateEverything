@@ -14,7 +14,7 @@ validate_paper_outputs(doi, repo = NULL, folder = NULL)
 \item{folder}{Optional registry folder name.}
 }
 \value{
-Invisibly \code{TRUE} if every replication has an artifact.
+A \code{validate_outputs_result} if every replication has an artifact.
 }
 \description{
 Validate all precomputed outputs for one paper

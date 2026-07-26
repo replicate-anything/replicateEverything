@@ -44,6 +44,73 @@ test_that("study_artifact_rel_candidates uses outputs paths only", {
   expect_false(any(grepl("^artifacts/", cands)))
 })
 
+test_that("validate_outputs prints a short PASS report", {
+  local_root <- withr::local_tempdir()
+  study_dir <- file.path(local_root, "rep-10.5555-print")
+  dir.create(file.path(study_dir, "outputs"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/print",
+      "steps:",
+      "  - id: fig_1",
+      "    type: figure",
+      "    code: code/fig_1.R",
+      "    outputs:",
+      "      - outputs/fig_1.png"
+    ),
+    file.path(study_dir, "replication.yml")
+  )
+  writeBin(as.raw(1:200), file.path(study_dir, "outputs", "fig_1.png"))
+  dir.create(file.path(local_root, "studies"), recursive = TRUE)
+  writeLines(
+    c(
+      "paper:",
+      "  doi: 10.5555/print",
+      "  materials: folder",
+      "  study_repo: replicate-anything/rep-10.5555-print",
+      "  study_folder: rep-10.5555-print",
+      "repo: replicate-anything/rep-10.5555-print"
+    ),
+    file.path(local_root, "studies", "10.5555_print.yml")
+  )
+  local_index <- data.frame(
+    folder = "10.5555_print",
+    doi = "10.5555/print",
+    title = "Print test",
+    journal = "",
+    year = 2026,
+    authors = "A",
+    repo = "replicate-anything/rep-10.5555-print",
+    stringsAsFactors = FALSE
+  )
+  withr::with_options(
+    list(
+      replicateEverything.registry_root = local_root,
+      replicateEverything.study_folders_root = local_root,
+      replicateEverything.use_sibling_packages = TRUE,
+      replicateEverything.index = local_index
+    ),
+    {
+      rm(list = ls(envir = .replication_meta_cache), envir = .replication_meta_cache)
+      out <- capture.output({
+        res <- validate_outputs(doi = "10.5555/print", what = "fig_1")
+        print(res)
+      })
+      text <- paste(out, collapse = "\n")
+      expect_true(inherits(res, "validate_outputs_result"))
+      expect_true(isTRUE(res$ok))
+      expect_match(text, "PASS")
+      expect_match(text, "fig_1")
+      expect_match(text, "output validation")
+      # Unassigned call auto-prints via the S3 print method
+      bare <- paste(capture.output(validate_outputs(doi = "10.5555/print", what = "fig_1")), collapse = "\n")
+      expect_match(bare, "PASS - output validation")
+      expect_match(bare, "fig_1")
+    }
+  )
+})
+
 test_that("get_artifact_path resolves figure png under local folder-backed study", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555-test")
