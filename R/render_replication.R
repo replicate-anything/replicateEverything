@@ -292,10 +292,18 @@ load_artifact_file_path <- function(path) {
       writeBin(httr::content(resp, as = "raw"), tmp)
       return(tmp)
     }
+    # Binary tabular sinks (prep .rds/.dta, etc.): materialize then preview.
+    if (ext %in% c("rds", "csv", "dta")) {
+      tmp <- tempfile(fileext = paste0(".", ext))
+      writeBin(httr::content(resp, as = "raw"), tmp)
+      on.exit(unlink(tmp), add = TRUE)
+      return(read_artifact_file(tmp, ext))
+    }
     txt <- httr::content(resp, as = "text", encoding = "UTF-8")
     if (ext == "html") {
       return(normalize_html_table(paste(txt, collapse = "\n")))
     }
+    return(paste(txt, collapse = "\n"))
   }
   if (!file.exists(path)) {
     return(NULL)
@@ -649,6 +657,10 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = 
     find_replication_entry(meta, what, language = NULL),
     error = function(e) NULL
   )
+  if (!is.null(rep)) {
+    # Inherited steps: Display sinks live under the parent study.
+    ctx <- step_run_context(rep, meta, ctx)
+  }
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
@@ -715,6 +727,10 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL
     find_replication_entry(meta, what, language = NULL),
     error = function(e) NULL
   )
+  if (!is.null(rep)) {
+    # Inherited steps: resolve Display against the parent study root/URL.
+    ctx <- step_run_context(rep, meta, ctx)
+  }
 
   if (is_package_replication(meta)) {
     pkg <- as.character(meta$paper$package[[1]])
@@ -829,6 +845,8 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
   if (is.null(rep)) {
     return(character(0))
   }
+  # Inherited steps: probe parent local_root / base_url (same as Run/Code).
+  ctx <- step_run_context(rep, meta, ctx)
   paths <- character(0)
   for (rel in study_artifact_rel_candidates(rep)) {
     if (!is.null(ctx$local_root)) {
@@ -837,7 +855,9 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
         paths <- c(paths, normalizePath(local, winslash = "/", mustWork = FALSE))
       }
     }
-    paths <- c(paths, registry_url(ctx$base_url, rel))
+    if (!is.null(ctx$base_url) && nzchar(as.character(ctx$base_url))) {
+      paths <- c(paths, registry_url(ctx$base_url, rel))
+    }
   }
   unique(paths[nzchar(paths)])
 }

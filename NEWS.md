@@ -26,6 +26,22 @@
   `extends.repo` / `extends.ref` (not only `materials_repo`).
 * **Bug fix:** `study_repo_ref()` honors `ctx$materials_ref` for parent refs.
 
+## Extension studies: Display resolves inherited sinks from the parent
+
+* **Bug fix:** Shiny **Display** was greyed out for inherited prep (e.g.
+  `analysis_data` on `--alt-1`) because `step_display_output_exists` /
+  `artifact_lookup_candidates` / `get_artifact_path` / `load_artifact` probed
+  the *extension* `outputs/` and URLs. They now use `step_run_context()` so
+  Display enablement and resolution match Run/Code (parent local root or
+  parent raw GitHub URL).
+* **Bug fix:** `load_prep_step_display()` applies the same parent context and
+  falls back to a remote parent sink when the file is not local.
+* **Bug fix:** remote `.rds`/`.csv`/`.dta` artifacts download via
+  `load_artifact_file_path()` (previously only html/png remote worked).
+* **Bug fix:** `check_display_sink_rows()` no longer fails extensions for
+  missing child copies of inherited prep sinks; it checks the parent study
+  root when available, otherwise passes as inherited.
+
 # replicateEverything 0.7.17
 
 ## Extension studies: inherited code/data resolve from the parent repo

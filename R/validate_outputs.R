@@ -267,7 +267,9 @@ step_exempt_from_display_sink <- function(entry) {
 #' Tables/figures need baked html/png. Pattern B Dataverse access steps need
 #' resolvable file-id wiring (Display uses a yaml summary; binary may be
 #' gitignored). Other transform steps with displayable \code{outputs:}
-#' (html/png/rds/svg) must have those files on disk.
+#' (html/png/rds/svg) must have those files on disk. Inherited steps are
+#' checked against the parent study root (or pass when the parent is not
+#' local) — extensions must not commit parent prep sinks.
 #'
 #' @param meta Parsed replication.yml.
 #' @param study_root Local study or package root.
@@ -294,6 +296,23 @@ check_display_sink_rows <- function(meta, study_root) {
         )
       )
       next
+    }
+    # Inherit prep, own claims: inherited sinks live in the parent study.
+    if (is_inherited_step(entry)) {
+      sink_root <- extended_study_base_root(meta)
+      if (is.null(sink_root) || !dir.exists(sink_root)) {
+        checks <- bind_check_results(
+          checks,
+          check_result(
+            paste0("display_sink_", rid),
+            TRUE,
+            "inherited — Display sink lives in parent study"
+          )
+        )
+        next
+      }
+    } else {
+      sink_root <- study_root
     }
     rtype <- tolower(as.character(entry$type %||% ""))
     if (rtype %in% c("table", "figure")) {
@@ -361,7 +380,7 @@ check_display_sink_rows <- function(meta, study_root) {
     }
     missing <- character(0)
     for (rel in displayable) {
-      path <- file.path(study_root, rel)
+      path <- file.path(sink_root, rel)
       if (!file.exists(path)) {
         missing <- c(missing, rel)
       }
@@ -372,10 +391,19 @@ check_display_sink_rows <- function(meta, study_root) {
         paste0("display_sink_", rid),
         length(missing) == 0L,
         if (length(missing) == 0L) {
-          paste(displayable, collapse = ", ")
+          if (is_inherited_step(entry)) {
+            paste0("inherited (parent): ", paste(displayable, collapse = ", "))
+          } else {
+            paste(displayable, collapse = ", ")
+          }
         } else {
           paste0(
             "Missing Display sink(s): ", paste(missing, collapse = ", "),
+            if (is_inherited_step(entry)) {
+              " in parent study"
+            } else {
+              ""
+            },
             " (Shiny would show 'not on disk' / 'No precomputed …'; bake or mark incomplete)"
           )
         }

@@ -836,6 +836,9 @@ is_dataverse_file_access_prep_step <- function(prep, meta = NULL) {
 #' Build a display object for a prep step when no HTML artifact exists
 #' @keywords internal
 load_prep_step_display <- function(meta, ctx, prep) {
+  if (!is.null(prep)) {
+    ctx <- step_run_context(prep, meta, ctx)
+  }
   if (is_dataverse_access_prep_step(prep, meta, ctx = ctx)) {
     return(summarize_dataverse_deposit(meta, ctx, prep = prep))
   }
@@ -856,14 +859,25 @@ load_prep_step_display <- function(meta, ctx, prep) {
       class = "prep_output_preview"
     ))
   }
-  # Pattern B: yaml always supports a Display summary (never "not on disk" error).
-  if (is_dataverse_file_access_prep_step(prep, meta = meta)) {
-    return(summarize_dataverse_file_access(meta, ctx, prep = prep))
-  }
+  # Cold host / inherited parent: try remote Display sink under step context.
   rel <- if (!is.null(prep$outputs) && length(prep$outputs)) {
     as.character(prep$outputs[[1]][[1]] %||% prep$outputs[[1]])
   } else {
     NA_character_
+  }
+  if (
+    isTRUE(nzchar(rel)) &&
+      !is.null(ctx$base_url) &&
+      nzchar(as.character(ctx$base_url))
+  ) {
+    remote <- load_artifact_file_path(registry_url(ctx$base_url, rel))
+    if (!artifact_content_missing(remote)) {
+      return(remote)
+    }
+  }
+  # Pattern B: yaml always supports a Display summary (never "not on disk" error).
+  if (is_dataverse_file_access_prep_step(prep, meta = meta)) {
+    return(summarize_dataverse_file_access(meta, ctx, prep = prep))
   }
   structure(
     list(
