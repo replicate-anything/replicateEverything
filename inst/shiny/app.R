@@ -5765,7 +5765,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: minmax(0, 18rem) 4.5rem 3rem 5.5rem 4.75rem 2rem 2.75rem;
+      grid-template-columns: minmax(0, 27rem) 4.5rem 3rem 5.5rem 4.75rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
       justify-content: start;
