@@ -104,7 +104,7 @@ resolve_prep_display_object <- function(obj, n = 6L) {
   if (inherits(obj, "error")) {
     return(obj)
   }
-  if (is.list(obj) && !is.null(obj$object)) {
+  if (is.list(obj) && !is.data.frame(obj) && !is.null(obj$object)) {
     obj <- replicate_fn_result_object(obj)
   }
   if (is.data.frame(obj)) {

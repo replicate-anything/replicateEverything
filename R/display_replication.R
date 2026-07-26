@@ -34,10 +34,11 @@ resolve_display_value <- function(
   if (inherits(result, "error")) {
     return(result)
   }
-  if (is.list(result) && !is.null(result$display)) {
+  # data.frames/tibbles are lists; guard so $field does not warn on tibbles
+  if (is.list(result) && !is.data.frame(result) && !is.null(result$display)) {
     return(result$display)
   }
-  if (is.list(result) && identical(result$source, "package")) {
+  if (is.list(result) && !is.data.frame(result) && identical(result$source, "package")) {
     return(replication_object(result))
   }
   if (is.character(result) && length(result) == 1L && nzchar(result) && file.exists(result)) {
@@ -51,7 +52,7 @@ resolve_display_value <- function(
     return(result)
   }
 
-  analysis <- if (is.list(result) && !is.null(result$object)) {
+  analysis <- if (is.list(result) && !is.data.frame(result) && !is.null(result$object)) {
     replication_object(result)
   } else {
     result

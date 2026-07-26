@@ -104,7 +104,7 @@ replication_object <- function(x) {
     }
     return(x)
   }
-  if (is.list(x) && !is.null(x$object)) {
+  if (is.list(x) && !is.data.frame(x) && !is.null(x$object)) {
     obj <- x$object
     if (inherits(obj, "stata_replication_result")) {
       path <- obj$output_path %||% obj$smcl_path %||% NULL
