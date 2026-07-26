@@ -309,7 +309,9 @@ if (nrow(fails) == 0) {
   cat("All recorded runnable jobs succeeded (or were skipped).\n")
 } else {
   fails$seconds <- ifelse(is.na(fails$seconds), NA, round(fails$seconds, 2))
-  fails$status <- audit_result_status(fails$success, fails$timed_out, fails$skipped)
+  fails$status <- replicateEverything::audit_result_status(
+    fails$success, fails$timed_out, fails$skipped
+  )
   show <- fails[, c(
     "title", "object_label", "object", "engine",
     "status", "seconds", "error_snippet"
