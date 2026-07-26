@@ -5,7 +5,7 @@ Resolve a format function, falling back to a no-op default
 ## Usage
 
 ``` r
-resolve_format_function(env, rep, paper_meta = NULL)
+resolve_format_function(env, rep, paper_meta = NULL, meta = NULL)
 ```
 
 ## Arguments

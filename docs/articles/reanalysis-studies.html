@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -202,8 +202,13 @@ yet:</p>
 </h2>
 <p>Extension studies without a DOI use <code>paper.study_handle</code>
 in <code>replication.yml</code> and a registry stub keyed by that
-handle. Link to the original study in <code>paper.related</code> or the
-abstract. See
+handle. Link to the original study with <code>paper.related</code>
+and/or <code>paper.extends</code> (DOI / repo).
+<code><a href="../reference/build_registry_index.html">build_registry_index()</a></code> stores those as
+<code>related_upstream</code> on the reanalysis and reverses them into
+<code>related_downstream</code> on the original — the Shiny Studies
+<strong>Related</strong> column and <code>summary(get_study(...))</code>
+both use that map. See
 <code>registry/studies/rep-10.1017-S0003055403000534--alt-1.yml</code>
 for the stub template.</p>
 <p>Validate before opening a PR:</p>
@@ -229,7 +234,7 @@ for the stub template.</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Vermon Washington.</p>
+  <p>Developed by Macartan Humphreys, Vermon Washington, Cord Masche.</p>
 </div>
 
 <div class="pkgdown-footer-right">

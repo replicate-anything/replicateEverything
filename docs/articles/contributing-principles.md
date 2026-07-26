@@ -141,8 +141,11 @@ yaml; do not pretend they succeed in audit.
 | Missing Mathematica / MATLAB / similar | `incomplete: true` + `requires_engine:` + `blocked_reason:` | Shiny greys Display/Run; “not available” vs “not reproducible”; study partial-replication popup; audit **skips** |
 | Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` + `blocked_reason:` | Distinct icon + popup; DAG mark; audit **skips** (unavailable ≠ success/failure) |
 
-Search the deposit for precomputed gold before marking unavailable.
-Detail: folder checklist and package skills (`folder_replication.md`,
+Search the deposit for precomputed gold before marking unavailable. Put
+a step in the DAG only if it is a **replication claim** (Display /
+audit); proprietary prep or other blocked stages off that path belong in
+README / study popup — not as orphan Unavailable nodes. Detail: folder
+checklist and package skills (`folder_replication.md`,
 `openicpsr_to_replicateEverything.md`).
 
 If data lives **elsewhere** (author site, OSF, journal supplement):

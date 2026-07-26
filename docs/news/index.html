@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,7 +50,76 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.12" id="replicateeverything-0712">replicateEverything 0.7.12<a class="anchor" aria-label="anchor" href="#replicateeverything-0712"></a></h2>
+<div class="section level3">
+<h3 id="shiny-studies-polish--madsen-citation-0-7-12">Shiny Studies polish + Madsen citation<a class="anchor" aria-label="anchor" href="#shiny-studies-polish--madsen-citation-0-7-12"></a></h3>
+<ul><li>
+<strong>Study-types guide:</strong> renamed “Explore different types of study”; opens on first visit to the Studies tab (then only via the link); removed from the welcome popup; shorter example labels; bilingual row cites Acemoglu and Fearon &amp; Laitin; no Pattern/Example headers or lead paragraph.</li>
+<li>
+<strong>Studies table:</strong> narrower Study column; Related ↑/↓ icons merged into Notes with padlock/compass (Related column removed).</li>
+<li>
+<strong>Madsen/Voeten authors:</strong> registry stub + index use Last, First form so the citation label is Madsen et al (not “Rask Madsen” from the compound-surname heuristic on “Mikael Rask Madsen”).</li>
+<li>
+<strong>Default step on study open:</strong> selects the first <em>available</em> object (Display would work: baked output, or normal runnable), not the first blocked row. Skips missing-engine / <code>data_unavailable:</code> / incomplete steps with no displayable output (e.g. Hahn climate → Figure 5; other Hahn → Table 1).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.11" id="replicateeverything-0711">replicateEverything 0.7.11<a class="anchor" aria-label="anchor" href="#replicateeverything-0711"></a></h2>
+<div class="section level3">
+<h3 id="study-types-guide--teamab-labels-0-7-11">Study-types guide + Team 2026a/b labels<a class="anchor" aria-label="anchor" href="#study-types-guide--teamab-labels-0-7-11"></a></h3>
+<ul><li>
+<strong>Shiny:</strong> “Guide to study types” modal from the Studies tab and welcome screen (table of registry patterns with distinctive bits in bold).</li>
+<li>
+<strong>Registry years:</strong> paper years may use bibliography suffixes (<code>2026a</code>, <code>2026b</code>); index / <code><a href="../reference/get_study.html">get_study()</a></code> keep them as character labels.</li>
+<li>
+<strong>Studies Notes column:</strong> gap icons (padlock / compass) remain in Notes; Languages stays engine badges only.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="study-summary-api--related-column-0-7-11">Study summary API + Related column<a class="anchor" aria-label="anchor" href="#study-summary-api--related-column-0-7-11"></a></h3>
+<ul><li>
+<strong><code>get_study(doi)</code></strong> returns a compact <code>replicate_study</code> descriptor; <strong><code>summary(get_study(doi))</code></strong> / <strong><code>summary_study(doi)</code></strong> print title, DOI, citation, collections, languages, maintainer, step counts, upstream / downstream related studies, gap tags, and repo link.</li>
+<li>
+<strong>Registry index:</strong> <code><a href="../reference/build_registry_index.html">build_registry_index()</a></code> writes <code>related_upstream</code> and <code>related_downstream</code>. Upstream comes from stub <code>paper.related</code> / <code>paper.extends</code>; downstream is the reverse map across the registry.</li>
+<li>
+<strong>Shiny Studies list:</strong> new <strong>Related</strong> column (↑ teal upstream / ↓ blue downstream icons with hover labels). Notes stays padlock/compass.</li>
+<li>Registry stubs now preserve <code>paper.related</code> and <code>paper.extends</code> on sync.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.9" id="replicateeverything-079">replicateEverything 0.7.9<a class="anchor" aria-label="anchor" href="#replicateeverything-079"></a></h2>
+<div class="section level3">
+<h3 id="shiny-feedback-tab-only-on-wzb-server-0-7-9">Shiny Feedback tab only on WZB server<a class="anchor" aria-label="anchor" href="#shiny-feedback-tab-only-on-wzb-server-0-7-9"></a></h3>
+<ul><li>
+<strong>Feedback tab</strong> (and welcome-copy mention) shown only when [shiny_running_on_wzb()] is <code>TRUE</code>: path marker <code>/wzb/samba/user/ipi/</code> in working dir, app dir, <code><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths()</a></code>, or package install path. Override with <code>REPLICATE_SHINY_FEEDBACK=1</code> / <code>=0</code>. Local <code><a href="../reference/run_shiny_app.html">run_shiny_app()</a></code> hides it by default.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-ux-notes-column-unified-step-rows-tooltip-only-gaps-0-7-9">Shiny UX: Notes column, unified step rows, tooltip-only gaps<a class="anchor" aria-label="anchor" href="#shiny-ux-notes-column-unified-step-rows-tooltip-only-gaps-0-7-9"></a></h3>
+<ul><li>
+<strong>Studies list:</strong> dedicated <strong>Notes</strong> column for padlock / compass gap icons (Languages stays language badges only). Desktop grid and mobile card layout both include Notes.</li>
+<li>
+<strong>Step list:</strong> engine badges (R/Stata/Mathematica) sit <strong>left of Display/Run</strong> for all studies, including Hahn Mathematica gaps — same layout as dual-engine rows.</li>
+<li>
+<strong>Gap icons:</strong> hover <code>title</code> tooltip only; click no longer opens a second modal. Missing-engine mark is a <strong>compass</strong> (clearer than the small hammer).</li>
+<li>
+<strong>Paper links:</strong> [paper_article_url()] no longer treats <code>paper.study_url</code> (GitHub) as an article landing page. Shiny DOI/journal links prefer <code>article_url</code> / <code>doi.org/{doi}</code>; GitHub URLs that leaked into <code>article_url</code> are ignored.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.8" id="replicateeverything-078">replicateEverything 0.7.8<a class="anchor" aria-label="anchor" href="#replicateeverything-078"></a></h2>
+<div class="section level3">
+<h3 id="shiny-padlock-vs-hammer-run-slots--studies-list-0-7-8">Shiny: padlock vs hammer Run slots (+ Studies list)<a class="anchor" aria-label="anchor" href="#shiny-padlock-vs-hammer-run-slots--studies-list-0-7-8"></a></h3>
+<ul><li>
+<strong>UX:</strong> Steps with <code>data_unavailable:</code> keep a normal label and Code; the Run slot is a <strong>padlock</strong> (click → availability message). Engine gaps (<code>requires_engine</code> / audit missing-engine skip / live engine probe) use a <strong>hammer/tool</strong> in the Run slot with “not available” vs “not reproducible” messages. No separate Unavailable badge or strikethrough for those rows.</li>
+<li>
+<strong>Studies list:</strong> same padlock/hammer icons appear beside language badges when a study has data or missing-engine gaps. Narrow screens stack each study as a labeled card row instead of a broken multi-column grid.</li>
+<li>
+<strong>Helpers:</strong> [classify_shiny_run_gap()], [study_gap_flags_from_entries()], [lookup_replication_audit_engine_skip()].</li>
+</ul></div>
+<div class="section level3">
+<h3 id="latex-tabular-texdoc--html-0-7-8">LaTeX tabular (texdoc) → HTML<a class="anchor" aria-label="anchor" href="#latex-tabular-texdoc--html-0-7-8"></a></h3>
+<ul><li>
+<strong>Internal helper:</strong> <code><a href="../reference/latex_tabular_to_html.html">latex_tabular_to_html()</a></code> converts author <code>\begin{tabular}...\end{tabular}</code> fragments (Stata <code>texdoc</code> / booktabs) into HTML tables for Shiny Display — <code>\multicolumn</code>, <code>\hline</code>, <code>\textit</code> / <code>\textbf</code> supported; no LaTeX or pandoc required. Study format steps can call it via <code>replicateEverything:::latex_tabular_to_html()</code>.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="shiny-startup-auto-update-check-for-replicateeverything-0-7-8">Shiny startup: auto-update check for replicateEverything<a class="anchor" aria-label="anchor" href="#shiny-startup-auto-update-check-for-replicateeverything-0-7-8"></a></h3>
 <ul><li>
@@ -547,7 +616,7 @@
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Vermon Washington.</p>
+  <p>Developed by Macartan Humphreys, Vermon Washington, Cord Masche.</p>
 </div>
 
 <div class="pkgdown-footer-right">

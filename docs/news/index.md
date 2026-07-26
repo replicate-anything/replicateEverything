@@ -1,6 +1,110 @@
 # Changelog
 
+## replicateEverything 0.7.12
+
+### Shiny Studies polish + Madsen citation
+
+- **Study-types guide:** renamed “Explore different types of study”;
+  opens on first visit to the Studies tab (then only via the link);
+  removed from the welcome popup; shorter example labels; bilingual row
+  cites Acemoglu and Fearon & Laitin; no Pattern/Example headers or lead
+  paragraph.
+- **Studies table:** narrower Study column; Related ↑/↓ icons merged
+  into Notes with padlock/compass (Related column removed).
+- **Madsen/Voeten authors:** registry stub + index use Last, First form
+  so the citation label is Madsen et al (not “Rask Madsen” from the
+  compound-surname heuristic on “Mikael Rask Madsen”).
+- **Default step on study open:** selects the first *available* object
+  (Display would work: baked output, or normal runnable), not the first
+  blocked row. Skips missing-engine / `data_unavailable:` / incomplete
+  steps with no displayable output (e.g. Hahn climate → Figure 5; other
+  Hahn → Table 1).
+
+## replicateEverything 0.7.11
+
+### Study-types guide + Team 2026a/b labels
+
+- **Shiny:** “Guide to study types” modal from the Studies tab and
+  welcome screen (table of registry patterns with distinctive bits in
+  bold).
+- **Registry years:** paper years may use bibliography suffixes
+  (`2026a`, `2026b`); index /
+  [`get_study()`](https://replicate-anything.github.io/replicateEverything/reference/get_study.md)
+  keep them as character labels.
+- **Studies Notes column:** gap icons (padlock / compass) remain in
+  Notes; Languages stays engine badges only.
+
+### Study summary API + Related column
+
+- **`get_study(doi)`** returns a compact `replicate_study` descriptor;
+  **`summary(get_study(doi))`** / **`summary_study(doi)`** print title,
+  DOI, citation, collections, languages, maintainer, step counts,
+  upstream / downstream related studies, gap tags, and repo link.
+- **Registry index:**
+  [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
+  writes `related_upstream` and `related_downstream`. Upstream comes
+  from stub `paper.related` / `paper.extends`; downstream is the reverse
+  map across the registry.
+- **Shiny Studies list:** new **Related** column (↑ teal upstream / ↓
+  blue downstream icons with hover labels). Notes stays padlock/compass.
+- Registry stubs now preserve `paper.related` and `paper.extends` on
+  sync.
+
+## replicateEverything 0.7.9
+
+### Shiny Feedback tab only on WZB server
+
+- **Feedback tab** (and welcome-copy mention) shown only when
+  \[shiny_running_on_wzb()\] is `TRUE`: path marker
+  `/wzb/samba/user/ipi/` in working dir, app dir,
+  [`.libPaths()`](https://rdrr.io/r/base/libPaths.html), or package
+  install path. Override with `REPLICATE_SHINY_FEEDBACK=1` / `=0`. Local
+  [`run_shiny_app()`](https://replicate-anything.github.io/replicateEverything/reference/run_shiny_app.md)
+  hides it by default.
+
+### Shiny UX: Notes column, unified step rows, tooltip-only gaps
+
+- **Studies list:** dedicated **Notes** column for padlock / compass gap
+  icons (Languages stays language badges only). Desktop grid and mobile
+  card layout both include Notes.
+- **Step list:** engine badges (R/Stata/Mathematica) sit **left of
+  Display/Run** for all studies, including Hahn Mathematica gaps — same
+  layout as dual-engine rows.
+- **Gap icons:** hover `title` tooltip only; click no longer opens a
+  second modal. Missing-engine mark is a **compass** (clearer than the
+  small hammer).
+- **Paper links:** \[paper_article_url()\] no longer treats
+  `paper.study_url` (GitHub) as an article landing page. Shiny
+  DOI/journal links prefer `article_url` / `doi.org/{doi}`; GitHub URLs
+  that leaked into `article_url` are ignored.
+
 ## replicateEverything 0.7.8
+
+### Shiny: padlock vs hammer Run slots (+ Studies list)
+
+- **UX:** Steps with `data_unavailable:` keep a normal label and Code;
+  the Run slot is a **padlock** (click → availability message). Engine
+  gaps (`requires_engine` / audit missing-engine skip / live engine
+  probe) use a **hammer/tool** in the Run slot with “not available” vs
+  “not reproducible” messages. No separate Unavailable badge or
+  strikethrough for those rows.
+- **Studies list:** same padlock/hammer icons appear beside language
+  badges when a study has data or missing-engine gaps. Narrow screens
+  stack each study as a labeled card row instead of a broken
+  multi-column grid.
+- **Helpers:** \[classify_shiny_run_gap()\],
+  \[study_gap_flags_from_entries()\],
+  \[lookup_replication_audit_engine_skip()\].
+
+### LaTeX tabular (texdoc) → HTML
+
+- **Internal helper:**
+  [`latex_tabular_to_html()`](https://replicate-anything.github.io/replicateEverything/reference/latex_tabular_to_html.md)
+  converts author `\begin{tabular}...\end{tabular}` fragments (Stata
+  `texdoc` / booktabs) into HTML tables for Shiny Display —
+  `\multicolumn`, `\hline`, `\textit` / `\textbf` supported; no LaTeX or
+  pandoc required. Study format steps can call it via
+  `replicateEverything:::latex_tabular_to_html()`.
 
 ### Shiny startup: auto-update check for replicateEverything
 

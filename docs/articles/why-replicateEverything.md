@@ -10,20 +10,6 @@
 You can use it from `R` or your
 [browser](https://shiny2.wzb.eu/ipi/replicate/).
 
-**replicateEverything does not replace** long-term structured
-repositories such as ICPSR and Dataverse. It is an **access point**. We
-are not there yet, but an aim is for it to read those repositories
-directly.
-
-For preparing a deposit, follow the [AEA Data Editor
-guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)
-and the [Data and Code Availability
-Standard](https://datacodestandard.org/) (data–code separation and
-related rules). Beyond those, we ask for two things: a `replication.yml`
-file, and data/analysis packaged into **consumable steps**. Contributor
-walkthrough: **yaml → code/data → bake → share** — see [Contributing
-principles](https://replicate-anything.github.io/replicateEverything/articles/contributing-principles.md).
-
 TL;DR — just do this
 
 ``` r
@@ -40,7 +26,7 @@ replicateEverything::run_replication(
 ## Why bother?
 
 Computational replication has never been easier. But it is still a bit
-of a jungle. Archives are *ad hoc* in structure, paths shift,
+of a jungle. Archives are too often *ad hoc* in structure, paths shift,
 dependencies drift, and every new reader has to re-wrangle the
 collection of files they download from dataverse or osf. Plus there are
 no guarantees: Nobody runs a standing check that the archive still runs
@@ -57,6 +43,23 @@ inspect, not a fresh vibe-coded reimplementation. That case gets
 stronger, we think, as models get better at improvising.
 
 So this is an attempt to keep humans in the loop.
+
+Relation with existing repositories
+
+**replicateEverything does not replace** long-term structured
+repositories such as ICPSR and Dataverse. You can think of it as an
+**access point**. Though we are not there yet, we would love to get to
+the point where `replicateEverything` simply reads from existing
+repositories directly.
+
+For preparing a deposit, the guidance in [AEA Data Editor
+guidance](https://aeadataeditor.github.io/aea-de-guidance/preparing-for-data-deposit.html)
+and the [Data and Code Availability
+Standard](https://datacodestandard.org/) (data–code separation and
+related rules) is excellent. However, in addition we want to be sure we
+have want a common, machine-readable layout that is legible to humans.
+For this, we ask for two things: data/analysis packaged into consumable
+steps and a `replication.yml` that provides a machine readable roadmap.
 
 Here’s a walk through of the main elements plus the bells and whistles.
 
@@ -115,9 +118,9 @@ shows what you can run from a given study:
 
 list_replications("10.1017/S0003055403000534")
 # Replications: Ethnicity, Insurgency, and Civil War [10.1017/s0003055403000534]
-#        id   type engine                      label
-#     tab_1  table      r                     Table 1
-# tab_1_stata table  stata                     Table 1
+# id          type   engine  label
+# tab_1       table  r       Table 1
+# tab_1_stata table  stata   Table 1
 ```
 
 Run from top to bottom to get a list of all objects created including

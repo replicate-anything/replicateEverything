@@ -129,9 +129,11 @@ data, etc.):
 [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
 (neither success nor failure). Prefer structured `requires_engine:` /
 `data_unavailable:` so Shiny can show the right icon and
-partial-replication popup. Recover DAGs at **wrapper granularity** from
-author README tables — especially OpenICPSR AER packages. See
-[Contributing
+partial-replication popup. Put a step in `steps:` only if it is a
+**replication claim**; blocked prep off the claim path stays in README /
+popup — not as orphan Unavailable nodes. Recover DAGs at **wrapper
+granularity** from author README tables — especially OpenICPSR AER
+packages. See [Contributing
 principles](https://replicate-anything.github.io/replicateEverything/articles/contributing-principles.md).
 
 ### Data patterns (short)

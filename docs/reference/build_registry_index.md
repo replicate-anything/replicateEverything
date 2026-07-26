@@ -1,8 +1,10 @@
 # Compile registry index.csv from study stub yaml files
 
 Reads every `studies/*.yml` under a registry checkout and writes
-`index.csv` with `collections`, `maintainer_*`, and `languages` taken
-from each stub (no fetch from individual study repos).
+`index.csv` with `collections`, `maintainer_*`, `languages`, and related
+study columns. Upstream links come from stub `paper.related` /
+`paper.extends`; `related_downstream` is inferred by reversing those
+pointers across the registry.
 
 ## Usage
 

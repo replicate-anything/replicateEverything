@@ -11,20 +11,31 @@ as studies, data, and dependencies change over time.
 
 Key behaviour:
 
-- **`patience`** (default `20` seconds) — each table or figure is halted
-  after this limit; the audit **continues** with the next object.
+- **`patience`** (default `20` seconds; registry reports often use `60`)
+  — each table or figure is halted after this audit cap; the audit
+  **continues** with the next object. Timeout rows record
+  `timeout_seconds` and an explicit “Timed out after N seconds (audit
+  cap)” message.
 - **Failures do not stop the run** — results are collected in a data
   frame.
 - **Incomplete / unavailable steps are skipped** — yaml
   `incomplete: true` (including `requires_engine:` / `data_unavailable:`
-  gaps) is **not** attempted and is **not** counted as success or
-  failure. Distinct from fail/timeout.
-- **Report fields** — study, object id, engine, success, elapsed
-  seconds, timed-out flag, and a short error snippet on failure.
+  gaps) is **not** attempted. Rows are recorded with status **Skipped**
+  and a reason, and are **not** counted as success or failure. Distinct
+  from fail/timeout.
+- **Report fields** — study, object id, engine, success, skipped flag,
+  elapsed seconds, timeout_seconds (audit cap), timed-out flag, and a
+  short error / skip-reason snippet.
 - **Substantive checks** (default `substantive = TRUE`) — when a study
   defines `tests/substantive/<step_id>.R`, the audit compares replicated
   estimates to published benchmarks (see Fearon & Laitin `tab_1`).
   Failures appear as `[substantive]` in the printed summary.
+- **Related studies** are compiled when the registry index is rebuilt
+  ([`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)):
+  upstream from `paper.related` / `paper.extends`, downstream by
+  reversing those pointers. Use `summary(get_study(doi))` for a quick
+  console view; the audit itself does not re-fetch related links per
+  run.
 
 ``` r
 
@@ -115,30 +126,33 @@ results <- audit$results
 | Successful                    |               79 |
 | Failed                        |                0 |
 | Timed out                     |                0 |
+| Skipped                       |                0 |
 | Audit started                 | 2026-07-15 21:41 |
 | Audit finished                | 2026-07-15 21:45 |
 
 ``` r
 
-if (sm$runs > 0) {
-  pct <- round(100 * sm$success / sm$runs, 1)
-  cat(sprintf("**Pass rate:** %s%%\n", pct))
+attempted <- sm$runs - (sm$skipped %||% 0L)
+if (attempted > 0) {
+  pct <- round(100 * sm$success / attempted, 1)
+  cat(sprintf("**Pass rate (excluding skipped):** %s%%\n", pct))
 }
-#> **Pass rate:** 100%
+#> **Pass rate (excluding skipped):** 100%
 ```
 
 ### Results by study
 
 ``` r
 
+if (!"skipped" %in% names(results)) {
+  results$skipped <- FALSE
+}
 studies <- unique(results$title)
 for (study in studies) {
   cat("\n\n#### ", study, "\n\n", sep = "")
   sub <- results[results$title == study, , drop = FALSE]
-  sub$status <- ifelse(
-    sub$success,
-    "OK",
-    ifelse(sub$timed_out, "Timed out", "Failed")
+  sub$status <- replicateEverything::audit_result_status(
+    sub$success, sub$timed_out, sub$skipped
   )
   sub$seconds <- ifelse(is.na(sub$seconds), NA, round(sub$seconds, 2))
   show <- sub[, c(
@@ -287,12 +301,15 @@ for (study in studies) {
 
 ``` r
 
-fails <- results[!results$success, , drop = FALSE]
+if (!"skipped" %in% names(results)) {
+  results$skipped <- FALSE
+}
+fails <- results[results$success %in% FALSE & !results$skipped %in% TRUE, , drop = FALSE]
 if (nrow(fails) == 0) {
-  cat("All recorded runs succeeded.\n")
+  cat("All recorded runnable jobs succeeded (or were skipped).\n")
 } else {
   fails$seconds <- ifelse(is.na(fails$seconds), NA, round(fails$seconds, 2))
-  fails$status <- ifelse(fails$timed_out, "Timed out", "Failed")
+  fails$status <- audit_result_status(fails$success, fails$timed_out, fails$skipped)
   show <- fails[, c(
     "title", "object_label", "object", "engine",
     "status", "seconds", "error_snippet"
@@ -302,7 +319,30 @@ if (nrow(fails) == 0) {
   )
   knitr::kable(show, row.names = FALSE)
 }
-#> All recorded runs succeeded.
+#> All recorded runnable jobs succeeded (or were skipped).
+```
+
+### Skipped (incomplete / unavailable)
+
+``` r
+
+if (!"skipped" %in% names(results)) {
+  results$skipped <- FALSE
+}
+skips <- results[results$skipped %in% TRUE, , drop = FALSE]
+if (nrow(skips) == 0) {
+  cat("No steps were skipped as incomplete / unavailable.\n")
+} else {
+  skips$status <- "Skipped"
+  show <- skips[, c(
+    "title", "object_label", "object", "engine", "status", "error_snippet"
+  )]
+  names(show) <- c(
+    "Study", "Object", "ID", "Engine", "Status", "Reason"
+  )
+  knitr::kable(show, row.names = FALSE)
+}
+#> No steps were skipped as incomplete / unavailable.
 ```
 
 ## Interpreting failures
@@ -315,8 +355,12 @@ Common reasons a run fails or times out:
   found; see the *Stata replications* vignette.
 - **Network / data** — folder-backed studies may need data files
   downloaded on first run.
-- **Patience too low** — slow tables may need a higher `patience` value
-  without indicating a true failure.
+- **Patience / audit cap** — slow jobs may time out under the configured
+  `patience` (e.g. 60s in the registry report). That is recorded as
+  **Timed out** with `timeout_seconds` and an explicit audit-cap
+  message, not as a silent failure.
+- **Skipped steps** — Mathematica / proprietary / incomplete yaml steps
+  appear as **Skipped**, not Failed or Timed out.
 
 Re-run locally and refresh the package vignette snapshot:
 

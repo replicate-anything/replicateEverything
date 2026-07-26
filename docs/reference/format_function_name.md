@@ -5,7 +5,7 @@ Resolve the format function name for a replication entry
 ## Usage
 
 ``` r
-format_function_name(rep, paper_meta = NULL)
+format_function_name(rep, paper_meta = NULL, meta = NULL)
 ```
 
 ## Arguments
@@ -17,3 +17,7 @@ format_function_name(rep, paper_meta = NULL)
 - paper_meta:
 
   Optional paper-level metadata (used for Stata format names).
+
+- meta:
+
+  Optional full study metadata (for format children).

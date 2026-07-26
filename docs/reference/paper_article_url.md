@@ -2,9 +2,9 @@
 
 Some publisher DOI links (notably older Cambridge Core / APSR entries)
 do not resolve reliably. Study metadata may therefore include an
-explicit landing page via `paper.article_url` (or `paper.landing_url`).
-When no override is set, the function falls back to
-`https://doi.org/...`.
+explicit landing page via `paper.article_url` (or `paper.landing_url` /
+`paper.publisher_url`). When no override is set, the function falls back
+to `https://doi.org/...`.
 
 ## Usage
 
@@ -29,6 +29,12 @@ paper_article_url(doi = NULL, paper = NULL, meta = NULL)
 ## Value
 
 Character URL, or `NULL` when no link can be formed.
+
+## Details
+
+`paper.study_url` is the GitHub study repository and is intentionally
+ignored here — use the Shiny Repo column / study materials link for
+that.
 
 ## Examples
 

@@ -55,6 +55,18 @@ Example output:
     #>                              doi                                  title
     #> 1 10.1017/S0003055403000534 Ethnicity, Insurgency, and Civil War
 
+For a one-screen overview of a study (metadata, step counts, related
+upstream/downstream studies, gap tags), use
+[`get_study()`](https://replicate-anything.github.io/replicateEverything/reference/get_study.md)
+with [`summary()`](https://rdrr.io/r/base/summary.html):
+
+``` r
+
+st <- get_study("10.1017/S0003055403000534")
+summary(st)
+# or: summary_study("10.1017/S0003055403000534")
+```
+
 For one paper,
 [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
 lists every registered table and figure, including engine (`r` /
@@ -348,6 +360,7 @@ for the latest snapshot table shipped with the package.
 | **Consumer** |  |
 | Use the study in the cwd (no registry) | `doi = "local"` (e.g. `list_replications("local")`) |
 | Browse registry | [`load_index()`](https://replicate-anything.github.io/replicateEverything/reference/load_index.md), [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md) |
+| Study overview | `summary(get_study(doi))`, `summary_study(doi)` |
 | What can I replicate? | [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md), `list_replications(..., grouped = TRUE)` |
 | Run one result | [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md) |
 | Run whole paper | `run_replication(doi, "everything")` |

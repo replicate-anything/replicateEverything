@@ -16,6 +16,14 @@ Find studies and inspect replication metadata.
   : Load the replication registry index
 - [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md)
   : Search replicated papers
+- [`get_study()`](https://replicate-anything.github.io/replicateEverything/reference/get_study.md)
+  : Load a study descriptor for summary and related links
+- [`summary_study()`](https://replicate-anything.github.io/replicateEverything/reference/summary_study.md)
+  : Summarize a study by DOI / handle (constructs then summarizes)
+- [`summary(`*`<replicate_study>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/summary.replicate_study.md)
+  : Study overview (metadata, steps, related, gaps)
+- [`print(`*`<replicate_study>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/print.replicate_study.md)
+  : Compact print for a study descriptor
 - [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
   : List available replications for a paper
 - [`paper_article_url()`](https://replicate-anything.github.io/replicateEverything/reference/paper_article_url.md)
@@ -64,6 +72,8 @@ Register studies, sync stubs, rebuild the index, and audit the registry.
   : Compile registry index.csv from study stub yaml files
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
   : Audit all registry replications
+- [`audit_result_status()`](https://replicate-anything.github.io/replicateEverything/reference/audit_result_status.md)
+  : User-facing status label for one audit result row
 
 ## Maintainer: setup & diagnostics
 

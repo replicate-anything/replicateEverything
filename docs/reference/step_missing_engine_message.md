@@ -1,7 +1,7 @@
 # User-facing blocked-step message, distinguishing absent vs baked-but-blocked
 
-User-facing blocked-step message, distinguishing absent vs
-baked-but-blocked
+Prefers `requires_engine:` phrasing, then `data_unavailable:`, then
+free-text `blocked_reason:`.
 
 ## Usage
 

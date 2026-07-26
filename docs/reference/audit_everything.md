@@ -2,8 +2,13 @@
 
 Walks the replication registry and attempts every table and figure in
 each available engine (R and Stata where defined). Failures do not stop
-the audit; results are returned in a concise data frame. For a full HTML
-report, render `audit_everything.qmd` in the [registry
+the audit; results are returned in a concise data frame. Yaml steps
+marked `incomplete: true` (or blocked by a missing `requires_engine:` /
+`data_unavailable:` gap) are recorded as **Skipped** with a reason and
+are not executed. Each runnable job is halted after `patience` seconds
+(the audit cap); timeout rows record `timeout_seconds` and an explicit
+audit-cap message. For a full HTML report, render `audit_everything.qmd`
+in the [registry
 repository](https://github.com/replicate-anything/registry) (see
 [`audit_everything_qmd()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything_qmd.md)).
 
@@ -27,7 +32,7 @@ audit_everything(
 - patience:
 
   Seconds to allow each table or figure before halting that run.
-  Defaults to `20`.
+  Defaults to `20`. Registry reports often use `60`.
 
 - index:
 

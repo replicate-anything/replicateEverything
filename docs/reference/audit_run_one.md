@@ -29,7 +29,9 @@ audit_run_one(
 
 - patience:
 
-  Seconds before halting the run (default 20).
+  Seconds before halting the run (default 20). This is the audit cap
+  applied via `setTimeLimit`; for Stata, the processx wait is also
+  aligned to this cap so overdue batch jobs are killed cleanly.
 
 - install_deps:
 
@@ -46,4 +48,5 @@ audit_run_one(
 
 ## Value
 
-List with `success`, `seconds`, `timed_out`, and `error`.
+List with `success`, `seconds`, `timed_out`, `timeout_seconds`, and
+`error`.

@@ -10,8 +10,8 @@ registry](https://github.com/replicate-anything/registry), retrieves
 replication materials (metadata, processed data, and analysis code), and
 reproduces figures and tables from published studies in a standardized
 workflow. The package also bundles a **Shiny demo app** for browsing
-studies and running replications interactively — try the [live
-demo](https://shiny2.wzb.eu/ipi/replicate/).
+studies and running replications interactively — try the [online
+portal](https://shiny2.wzb.eu/ipi/replicate/).
 
 **Start here:** [Why
 replicateEverything?](https://replicate-anything.github.io/replicateEverything/articles/why-replicateEverything.html)
@@ -63,8 +63,10 @@ run replications.
 ## Project status
 
 The project is under active development. Feedback is welcome — contact
-[Vermon Washington](mailto:vermon.washington@wzb.eu) or [Macartan
-Humphreys](mailto:macartan.humphreys@wzb.eu).
+[Macartan Humphreys](mailto:macartan.humphreys@wzb.eu), post an issue on
+[git](https://github.com/replicate-anything/replicateEverything/issues),
+or use the feedback form on the [shiny
+app](https://shiny2.wzb.eu/ipi/replicate/).
 
 ## Installation
 

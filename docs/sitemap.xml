@@ -25,6 +25,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ai_skills_dir.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/ai_skill_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/allow_dependency_install.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/annotate_index_related.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/annotate_replication_code_for_display.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/append_shiny_feedback_log.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/append_substantive_check_rows.html</loc></url>
@@ -40,13 +41,17 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_everything.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_everything_qmd.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_jobs_from_replications.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_reason_is_missing_engine.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_replication_engine.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_replication_group.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_replication_label.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_result_status.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_runtime_advice.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_runtime_category.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/AUDIT_RUNTIME_SHORT_MAX.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_run_one.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_step_skip_reason.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/audit_timeout_message.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/author_name_has_comma_form.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/auto_detect_monorepo_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/auto_detect_registry_root.html</loc></url>
@@ -71,6 +76,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/check_result.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/check_study_compatibility.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/clamp_stata_path_globals_to_study.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/classify_shiny_run_gap.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/clean_replication_source_lines.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/code_link_diagnostics.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/code_path_language.html</loc></url>
@@ -117,6 +123,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/download_registry_file.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/download_url_to_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/emit_get_code_usage_message.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/encode_related_keys.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/engine_display_name.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/enrich_folder_study_replication_meta.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/enrich_package_replication_meta.html</loc></url>
@@ -157,6 +164,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/find_repo.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/find_stata_executable.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/first_author_surname.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/first_available_replication_row.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/folder_display_replications.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/folder_manifest_metadata.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/folder_registry_index_row.html</loc></url>
@@ -178,6 +186,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/format_function_candidates.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/format_function_name.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/format_get_code_advice_items.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/format_partial_replication_message.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/format_script_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/format_specified.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/get_analysis_function.html</loc></url>
@@ -191,6 +200,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/get_doi_metadata.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/get_package_namespace_fn.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/get_replication_meta_impl.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/get_study.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/get_study_package_object.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/github_package_outdated.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/github_ref_sha.html</loc></url>
@@ -203,6 +213,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/html_escape_text.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/index.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/index_row_field.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/index_row_related_key.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/infer_folder_study_stub.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/infer_result_format.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/infer_stata_source_paths.html</loc></url>
@@ -236,6 +247,12 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/is_study_package_error.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/is_study_path_query.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/is_study_root_usable.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/latex_inline_to_html.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/latex_inline_to_text.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/latex_read_braced.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/latex_split_cells.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/latex_split_rows.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/latex_tabular_to_html.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/link_or_copy_study_data_file.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/list_prep_steps.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/list_replications.html</loc></url>
@@ -256,6 +273,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/local_artifact_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/looks_like_doi_location.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/looks_like_study_alias.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/lookup_replication_audit_engine_skip.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/lookup_replication_audit_runtime.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/lookup_study_folders_option.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/maintainer_dependency_hint.html</loc></url>
@@ -264,6 +282,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/manifest_row_use_original.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/mark_stata_deps_installed.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/mark_study_cache_verified.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/match_related_ref_to_index.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/materialize_declared_data.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/materialize_declared_data_for_paths.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/materialize_folder_study_from_github.html</loc></url>
@@ -271,6 +290,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/merge_extended_study_meta.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/merge_extended_study_steps.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/merge_folder_study_meta_fields.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/missing_data_message.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/missing_engine_message.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/missing_replication_steps_message.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/monorepo_root_from_path.html</loc></url>
@@ -278,18 +298,22 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/non_analytical_step_types.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_code_from_file.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_dataverse_persistent_id.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_data_unavailable_label.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_doi.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_engine_display_name.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_given_argument.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_html_table.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_path_slashes.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_registry_year.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_replication_language.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_repo_rel_path.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_repo_slug.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_stata_globals.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_stata_result_object.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_step_entry.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/normalize_study_steps.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/output_path_ready.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/oxford_join.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_build_info.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_bundled_sha.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/package_deploy_diagnostics.html</loc></url>
@@ -316,6 +340,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_author_names.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_github_slug.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_inherit_reference.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_related_keys.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_shiny_deep_link_from_search.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_shiny_query_string.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/parse_stata_globals.html</loc></url>
@@ -335,6 +360,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/prep_step_display_caption.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/preview_data_file.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/print.package_replication_check.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/print.replicate_study.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/print.replication_list.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/probe_python_from_yaml.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/probe_r_packages.html</loc></url>
@@ -374,6 +400,8 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_study_yaml_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_study_yaml_url.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/registry_url.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/related_studies_for_index_row.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/related_summary_line.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/render_code_html_with_links.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/render_for_display.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/render_linked_code_file.html</loc></url>
@@ -407,6 +435,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_prep_display_object.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_registry_artifact_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_registry_handle.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_related_studies.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_replication_display.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_replication_language.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_replication_package_path.html</loc></url>
@@ -421,6 +450,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_study_location.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_study_repo_local_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_study_root.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/resolve_upstream_keys_for_meta.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/retry_with_missing_package.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/run_build_prep_steps.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/run_dataverse_access_step.html</loc></url>
@@ -459,6 +489,8 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_feedback_in_app_enabled.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_feedback_log_enabled.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_live_run_enabled.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_running_on_wzb.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/shiny_step_default_available.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/short_build_sha.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/sibling_monorepo_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/sibling_packages_enabled.html</loc></url>
@@ -480,6 +512,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/stata_global_lookup.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/stata_install_scripts_enabled.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/stata_log_suggests_missing_dependency.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/stata_output_mtime_snapshot.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/stata_output_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/stata_probe_command.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/stata_reghdfe_stack_install_lines.html</loc></url>
@@ -491,6 +524,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/step_ancestors.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/step_blocked_reason.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/step_code_context.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/step_data_unavailable.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/step_declared_input_paths.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/step_declared_output_paths.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/step_direct_parents.html</loc></url>
@@ -528,6 +562,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_data_folder_name.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_data_not_found_message.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_data_root.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_data_unavailable_classes.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_declared_languages.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_declared_python_packages.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_declared_r_packages.html</loc></url>
@@ -537,6 +572,8 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_folder_candidates.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_folder_from_doi.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_folder_map_keys.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_gap_flags_from_entries.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_gap_step_counts.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_has_extension.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_inheritance.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_input_error_message.html</loc></url>
@@ -548,6 +585,7 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_package_error.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_package_install_info.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_package_install_message.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_partial_replication_notice.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_produced_output_paths.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_registry_audit_results.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_relative_path.html</loc></url>
@@ -556,17 +594,23 @@
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_repo_folder_name.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_repo_ref.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_repo_slug.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_required_system_engines.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_step_entries.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_step_graph.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_step_labels.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_step_type_counts.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_system_compatibility.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/study_upstream_refs_from_meta.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/substantive_check_path.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/substantive_check_study_root.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/substitute_stata_globals.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/suggest_data_load_expr.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/summarize_dataverse_deposit.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/summarize_rds_prep_output.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/summary.replicate_study.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/summary_study.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.html</loc></url>
+<url><loc>https://replicate-anything.github.io/replicateEverything/reference/system_engine_available.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/table_artifact_file_ok.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/tag_inherited_step.html</loc></url>
 <url><loc>https://replicate-anything.github.io/replicateEverything/reference/topological_step_sort.html</loc></url>

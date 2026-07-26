@@ -5,7 +5,7 @@ Candidate format function names for a replication entry
 ## Usage
 
 ``` r
-format_function_candidates(rep, paper_meta = NULL)
+format_function_candidates(rep, paper_meta = NULL, meta = NULL)
 ```
 
 ## Arguments
@@ -17,3 +17,7 @@ format_function_candidates(rep, paper_meta = NULL)
 - paper_meta:
 
   Optional paper-level metadata.
+
+- meta:
+
+  Optional full study metadata (for format children).

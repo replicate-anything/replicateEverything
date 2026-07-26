@@ -72,11 +72,12 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Vermon Washington <vermon.washington@wzb.eu>
-\[contributor\]
+**Maintainer**: Macartan Humphreys <macartan.humphreys@wzb.eu>
 
-Other contributors:
+Authors:
 
-- Macartan Humphreys <macartan.humphreys@wzb.eu> \[contributor\]
+- Macartan Humphreys <macartan.humphreys@wzb.eu>
 
-- Cord Masche <cord.masche@wzb.eu> \[contributor\]
+- Vermon Washington <vermon.washington@wzb.eu>
+
+- Cord Masche <cord.masche@wzb.eu>

@@ -103,7 +103,11 @@ run_replication("rep-10.1017-S0003055403000534--alt-1", "tab_1")
 
 Extension studies without a DOI use `paper.study_handle` in
 `replication.yml` and a registry stub keyed by that handle. Link to the
-original study in `paper.related` or the abstract. See
+original study with `paper.related` and/or `paper.extends` (DOI / repo).
+[`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
+stores those as `related_upstream` on the reanalysis and reverses them
+into `related_downstream` on the original — the Shiny Studies
+**Related** column and `summary(get_study(...))` both use that map. See
 `registry/studies/rep-10.1017-S0003055403000534--alt-1.yml` for the stub
 template.
 
