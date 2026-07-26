@@ -2169,8 +2169,8 @@ engine_icon_data_unavailable <- function() {
   )
 }
 
-# Compass / tool mark for missing system engine (Mathematica, MATLAB, …).
-# Larger and clearer than a tiny hammer at badge size.
+# Wrench / tool mark for missing system engine (Mathematica, MATLAB, …).
+# Reads as tooling (not navigation); clearer than the former compass.
 engine_icon_missing_engine <- function() {
   tags$svg(
     xmlns = "http://www.w3.org/2000/svg",
@@ -2179,24 +2179,19 @@ engine_icon_missing_engine <- function() {
     height = "20",
     `aria-hidden` = "true",
     tags$circle(cx = "12", cy = "12", r = "11", fill = "#B45309"),
-    tags$circle(
-      cx = "12",
-      cy = "12",
-      r = "7.25",
+    # Open-end wrench (Lucide-style path), white on amber
+    tags$path(
+      d = paste(
+        "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0",
+        "l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3",
+        "l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+      ),
       fill = "none",
       stroke = "#ffffff",
-      `stroke-width` = "1.5"
-    ),
-    # Compass needle (N/S)
-    tags$polygon(
-      points = "12,5.5 14.2,12 12,10.6 9.8,12",
-      fill = "#ffffff"
-    ),
-    tags$polygon(
-      points = "12,18.5 9.8,12 12,13.4 14.2,12",
-      fill = "#FDE68A"
-    ),
-    tags$circle(cx = "12", cy = "12", r = "1.35", fill = "#ffffff")
+      `stroke-width` = "1.75",
+      `stroke-linecap` = "round",
+      `stroke-linejoin` = "round"
+    )
   )
 }
 
@@ -2258,7 +2253,7 @@ study_languages_icons_display <- function(
   )
 }
 
-#' Notes column: padlock / compass gap flags and related ↑/↓ icons
+#' Notes column: padlock / wrench gap flags and related ↑/↓ icons
 study_notes_icons_display <- function(
   has_data_gap = FALSE,
   has_engine_gap = FALSE,

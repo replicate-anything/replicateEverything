@@ -1,5 +1,18 @@
 # replicateEverything 0.7.18
 
+## validate_outputs(): print a short report
+
+* **UX:** [validate_outputs()] now returns a `validate_outputs_result` that
+  auto-prints PASS/FAIL, DOI/what, and checked paths (same style as
+  [check_replication()]). Previously success returned `invisible(TRUE)`, so an
+  unassigned call printed nothing. Use `$ok` for the logical flag.
+
+## Shiny: missing-engine icon is a wrench
+
+* **UX:** Missing-engine / tool-gap mark is a **wrench** (amber circle) instead
+  of a navigational compass — legend, Studies Notes, and Run-slot chrome. Padlock
+  for data unavailable is unchanged. Internal gap kind remains `"hammer"`.
+
 ## Extension studies: cold-host inherited steps use parent URLs
 
 * **Bug fix:** `step_run_context()` always sets parent `base_url` /
