@@ -5369,12 +5369,14 @@ ui <- tagList(
       function sendUrlDeepLinkFromQuery() {
         try {
           if (!window.Shiny || !window.Shiny.setInputValue) return;
+          // Query contract: ?doi=...|&handle=...[&what=...][&language=...]
+          // Path prefixes (e.g. /ipi/replicate/) do not affect search params.
           var search = window.location.search;
           if (!search && window.location.href.indexOf('?') >= 0) {
             search = window.location.href.substring(window.location.href.indexOf('?'));
           }
           var params = new URLSearchParams(search || '');
-          var doi = params.get('doi');
+          var doi = params.get('doi') || params.get('handle');
           if (!doi) return;
           Shiny.setInputValue('url_deep_link', {
             doi: doi,
@@ -5388,6 +5390,10 @@ ui <- tagList(
       if (window.Shiny && window.Shiny.shinyapp && window.Shiny.shinyapp.isConnected()) {
         sendUrlDeepLinkFromQuery();
       }
+      // Back/forward: re-read search after history navigation.
+      window.addEventListener('popstate', function() {
+        setTimeout(sendUrlDeepLinkFromQuery, 0);
+      });
       Shiny.addCustomMessageHandler('maybeShowStudyTypesGuide', function(msg) {
         try {
           var key = 'replicateEverything_study_types_guide_seen';
@@ -6523,6 +6529,21 @@ server <- function(input, output, session) {
     registry_index <<- data$index
     shiny_studies_cache_global <<- data$cache
     studies_cache_rv(data$cache)
+    # Preserve inbound deep-link / current study when rebuilding choices.
+    # Cold paste queues ?doi= before this runs; resetting to "" drops the key.
+    preserve_selected <- isolate({
+      pending <- state$pending_deep_link_doi
+      if (!is.null(pending) && nzchar(as.character(pending))) {
+        tryCatch(
+          replicate_fn("normalize_doi", pending),
+          error = function(e) trimws(as.character(pending))
+        )
+      } else if (!is.null(state$doi) && nzchar(as.character(state$doi))) {
+        as.character(state$doi)
+      } else {
+        ""
+      }
+    })
     updateSelectInput(
       session,
       "study_select",
@@ -6530,7 +6551,8 @@ server <- function(input, output, session) {
         "Choose a study…" = "",
         local_study_select_choice(),
         nice_doi_choices(registry_index)
-      )
+      ),
+      selected = preserve_selected
     )
     updateSelectInput(
       session,
@@ -6547,6 +6569,7 @@ server <- function(input, output, session) {
   deep_link_flags <- new.env(parent = emptyenv())
   deep_link_flags$url_deep_link_parsed <- FALSE
   deep_link_flags$welcome_shown <- FALSE
+  deep_link_flags$applying_study <- FALSE
 
   state <- reactiveValues(
     doi = NULL,
@@ -6964,6 +6987,11 @@ server <- function(input, output, session) {
     if (isTRUE(state$suppress_url_sync)) {
       return(invisible(NULL))
     }
+    # Never strip an inbound deep link before it has been applied.
+    pending <- isolate(state$pending_deep_link_doi)
+    if (!is.null(pending) && nzchar(as.character(pending))) {
+      return(invisible(NULL))
+    }
     if (is.null(state$doi) || !nzchar(state$doi)) {
       updateQueryString(query = "?", mode = "replace", session = session)
       return(invisible(NULL))
@@ -7023,22 +7051,64 @@ server <- function(input, output, session) {
     deep_link_flags$url_deep_link_parsed <- TRUE
   }, ignoreInit = TRUE)
 
-  observeEvent(state$pending_deep_link_doi, {
+  # Apply queued deep links only after Studies cache is ready so
+  # updateSelectInput(selected=doi) and registry_row_for() see real choices.
+  # Cold paste / first load often queues ?doi=&what= before onFlushed loads
+  # shiny_studies.json; applying early left the user on the main Studies page.
+  observeEvent(list(state$pending_deep_link_doi, registry_ready()), {
     doi <- state$pending_deep_link_doi
-    req(nzchar(doi))
+    if (is.null(doi) || !nzchar(as.character(doi))) {
+      return(invisible(NULL))
+    }
+    if (!isTRUE(registry_ready())) {
+      return(invisible(NULL))
+    }
     norm_doi <- tryCatch(
       replicate_fn("normalize_doi", doi),
-      error = function(e) doi
+      error = function(e) trimws(as.character(doi))
     )
+    # Resolve handle-only keys via the loaded index when needed.
+    row <- tryCatch(
+      registry_index_row_for(norm_doi, registry_index),
+      error = function(e) NULL
+    )
+    if (!is.null(row) && nrow(row) > 0L) {
+      row_doi <- trimws(as.character(row$doi[[1]] %||% ""))
+      if (nzchar(row_doi)) {
+        norm_doi <- tryCatch(
+          replicate_fn("normalize_doi", row_doi),
+          error = function(e) row_doi
+        )
+      } else {
+        handle_key <- trimws(as.character(row$handle[[1]] %||% row$folder[[1]] %||% ""))
+        if (nzchar(handle_key)) {
+          norm_doi <- handle_key
+        }
+      }
+    }
     if (!is.null(state$doi) && identical(state$doi, norm_doi)) {
       state$pending_deep_link_doi <- NULL
       state$suppress_url_sync <- FALSE
       updateNavbarPage(session, "main_nav", selected = "Replicate")
+      if (!is.null(state$pending_deep_link_what) &&
+          nzchar(state$pending_deep_link_what) &&
+          !is.null(state$replications_df) &&
+          nrow(state$replications_df) > 0) {
+        select_replication_by_group(
+          state$pending_deep_link_what,
+          language = state$pending_deep_link_language
+        )
+        state$pending_deep_link_what <- NULL
+        state$pending_deep_link_language <- NULL
+      }
+      sync_url_to_selection()
       return(invisible(NULL))
     }
     updateNavbarPage(session, "main_nav", selected = "Replicate")
+    deep_link_flags$applying_study <- TRUE
     updateSelectInput(session, "study_select", selected = norm_doi)
     load_study(norm_doi, from_registry = TRUE)
+    deep_link_flags$applying_study <- FALSE
     state$pending_deep_link_doi <- NULL
     state$suppress_url_sync <- FALSE
     sync_url_to_selection()
@@ -7046,6 +7116,15 @@ server <- function(input, output, session) {
 
   observeEvent(input$study_select, {
     req(nzchar(input$study_select))
+    # Deep-link / Go path may updateSelectInput then load_study itself;
+    # skip the duplicate load so pending_deep_link_what is not cleared twice.
+    if (isTRUE(deep_link_flags$applying_study)) {
+      return(invisible(NULL))
+    }
+    pending <- isolate(state$pending_deep_link_doi)
+    if (!is.null(pending) && nzchar(as.character(pending))) {
+      return(invisible(NULL))
+    }
     load_study(input$study_select, from_registry = TRUE)
   })
 
@@ -7056,8 +7135,10 @@ server <- function(input, output, session) {
   observeEvent(input$go_to_study, {
     req(input$go_to_study)
     removeModal()
+    deep_link_flags$applying_study <- TRUE
     updateSelectInput(session, "study_select", selected = input$go_to_study)
     load_study(input$go_to_study, from_registry = TRUE)
+    deep_link_flags$applying_study <- FALSE
     updateNavbarPage(session, "main_nav", selected = "Replicate")
     sync_url_to_selection()
   })

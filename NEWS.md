@@ -1,5 +1,17 @@
 # replicateEverything 0.7.18
 
+## Shiny: cold-paste deep links open study/step
+
+* **Bug fix:** Initial load with `?doi=` / `?handle=` (optional `what`,
+  `language`) now waits for the deferred Studies cache before selecting the
+  study. Previously the deep-link queue could apply before
+  `shiny_studies.json` was ready, so `updateSelectInput(selected=)` missed and
+  the session stayed on the main Studies page (click-through Go still worked).
+* Preserves the pending / current study when rebuilding the DOI dropdown;
+  does not strip inbound query params while a deep link is pending.
+* Accepts `handle=` as a study key; re-reads the query on `popstate`
+  (back/forward).
+
 ## validate_outputs(): print a short report
 
 * **UX:** [validate_outputs()] now returns a `validate_outputs_result` that
