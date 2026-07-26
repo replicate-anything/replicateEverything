@@ -1146,6 +1146,7 @@ read_replication_source_code <- function(doi, what, language = NULL, repo = NULL
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
   rep <- find_replication_entry(meta, what, language = language)
+  ctx <- step_code_context(rep, meta, ctx)
   read_fn <- study_code_reader(ctx, meta)
   read_fn(rep$code)
 }
@@ -1165,7 +1166,7 @@ study_code_reader <- function(ctx, meta) {
         grepl("raw\\.githubusercontent\\.com", ctx$base_url, fixed = TRUE)
     ) {
       remote_lines <- tryCatch(
-        read_lines_url(paste0(ctx$base_url, path)),
+        read_lines_url(registry_url(ctx$base_url, path)),
         error = function(e) NULL
       )
       if (length(remote_lines)) {
@@ -1181,7 +1182,7 @@ study_code_reader <- function(ctx, meta) {
         }
       }
     }
-    read_lines_url(paste0(ctx$base_url, "/", path))
+    read_lines_url(registry_url(ctx$base_url, path))
   }
 }
 

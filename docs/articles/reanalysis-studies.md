@@ -21,10 +21,10 @@ The worked example pairs:
 
 The base study declares a transform step and downstream tables:
 
-    raw data/repdata.dta  →  prep_data  →  tab_1 (R) / tab_1_stata (Stata)
+    raw data/repdata.dta  →  analysis_data  →  tab_1 (R) / tab_1_stata (Stata)
 
-`prep_data` renames `lpopl1` to `lpopl` and recodes onset indicators.
-Both analysis engines read `outputs/prep_data/repdata.rds` or `.dta`.
+`analysis_data` renames `lpopl1` to `lpopl` and recodes onset indicators.
+Both analysis engines read `outputs/analysis_data.rds` or `.dta`.
 
 ## Extension study layout
 
@@ -35,12 +35,12 @@ scripts:
 
 ``` yaml
 steps:
-  - inherit: prep_data
+  - inherit: analysis_data
 
   - id: tab_1
     type: table
-    parents: [prep_data]
-    data: outputs/prep_data/repdata.rds
+    parents: [analysis_data]
+    data: outputs/analysis_data.rds
     code: code/tab_1.R
     format: format_tab_1
 
@@ -54,20 +54,20 @@ reanalysis models. Only add a `code:` override when the extension
 formatter lives at a different path.
 
 In the base Fearon & Laitin study, Stata table steps read
-`data/repdata.dta` directly; R steps use the shared `prep_data` output.
+`data/repdata.dta` directly; R steps use the shared `analysis_data` output.
 
 ## Execution semantics
 
 | `given` | Behaviour |
 |----|----|
-| `"parents"` | Requires `prep_data` outputs in the **base** repo (`outputs/prep_data/`) |
-| `"nothing"` | Runs inherited `prep_data` in the base checkout, then the extension analysis locally |
+| `"parents"` | Requires `analysis_data` outputs in the **base** repo (`outputs/analysis_data.rds`) |
+| `"nothing"` | Runs inherited `analysis_data` in the base checkout, then the extension analysis locally |
 
 Inherited steps execute in the base study root; extension steps run in
 the extension root but may read base `outputs/`.
 
 `run_replication(handle, "everything", given = "nothing")` returns a
-named list with one entry per non-format step (`prep_data`, `tab_1`, …).
+named list with one entry per non-format step (`analysis_data`, `tab_1`, …).
 Use `format = FALSE` (default) for raw model objects; `format = TRUE`
 for display HTML.
 
@@ -81,9 +81,9 @@ devtools::load_all("replicateEverything")
 configure_local_monorepo()
 
 # Base study (once)
-run_replication("10.1017/S0003055403000534", "prep_data", given = "nothing")
+run_replication("10.1017/S0003055403000534", "analysis_data", given = "nothing")
 
-# Reanalysis (uses base prep_data outputs)
+# Reanalysis (uses base analysis_data outputs)
 run_replication(
   "rep-10.1017-S0003055403000534--alt-1",
   "tab_1",

@@ -359,5 +359,5 @@ resolve_registry_file <- function(path, ctx, meta = NULL, local_only = FALSE) {
   if (isTRUE(local_only)) {
     return(NULL)
   }
-  download_registry_file(paste0(ctx$base_url, "/", path))
+  download_registry_file(registry_url(ctx$base_url, path))
 }

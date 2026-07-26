@@ -1,3 +1,23 @@
+# replicateEverything 0.7.17
+
+## Extension studies: inherited code/data resolve from the parent repo
+
+* **Bug fix:** `get_code()` / Code-tab readers now use `step_code_context()` so
+  inherited steps (e.g. `analysis_data` on alt-1) fetch from the base study
+  repo instead of looking for `code/steps/...` under the extension slug.
+* **Bug fix:** remote path joins use `registry_url()` everywhere
+  (`get_code`, `resolve_registry_file`, `load_replication_data`, code-link
+  readers) so `base_url` values that already end in `/` no longer produce
+  `.../main//code/...` URLs.
+* **Bug fix:** `study_repo_slug()` prefers `ctx$materials_repo` when set, so
+  materializing an inherited step downloads the base checkout, not the
+  extension.
+* **Bug fix:** extension `tab_1` runs that need parent `outputs/*.rds` fall
+  back to `.extends_context$base_url` when the base study is not local
+  (Shiny / fresh machines).
+* **Docs:** reanalysis vignette and step-inheritance notes use `analysis_data`
+  (current Fearon & Laitin pipeline), not the retired `prep_data` name.
+
 # replicateEverything 0.7.16
 
 ## Code tab: clearer run-tips header

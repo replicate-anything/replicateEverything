@@ -89,6 +89,8 @@ get_code <- function(
   }
 
   rep <- find_replication_entry(meta, what, language = language)
+  # Inherited steps live in the base study repo, not the extension.
+  ctx <- step_code_context(rep, meta, ctx)
   engine <- replication_engine(rep, meta$paper)
 
   read_code_file <- function(path) {
@@ -107,7 +109,7 @@ get_code <- function(
       grepl("raw\\.githubusercontent\\.com", ctx$base_url, fixed = TRUE)
     ) {
       remote_lines <- tryCatch(
-        read_lines_url(paste0(ctx$base_url, path)),
+        read_lines_url(registry_url(ctx$base_url, path)),
         error = function(e) NULL
       )
       if (length(remote_lines)) {
@@ -124,8 +126,7 @@ get_code <- function(
         }
       }
     }
-    code_url <- paste0(ctx$base_url, "/", path)
-    read_lines_url(code_url)
+    read_lines_url(registry_url(ctx$base_url, path))
   }
 
   if (is_stata_replication(rep, meta$paper)) {

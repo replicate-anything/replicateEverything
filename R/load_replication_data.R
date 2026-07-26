@@ -81,7 +81,31 @@ read_data_file <- function(path, ctx, meta = NULL) {
     }
   }
 
-  url <- paste0(ctx$base_url, "/", path)
+  # Extension studies often read base outputs/ that are not in the extension repo.
+  parent_base <- if (!is.null(meta)) {
+    meta$.extends_context$base_url %||% NULL
+  } else {
+    NULL
+  }
+  if (!is.null(parent_base) && nzchar(as.character(parent_base))) {
+    parent_hit <- tryCatch(
+      {
+        url <- registry_url(parent_base, path)
+        tmp <- tempfile(fileext = paste0(".", ext))
+        mode <- if (ext %in% c("rds", "dta")) "wb" else "wt"
+        utils::download.file(url, tmp, quiet = TRUE, mode = mode)
+        obj <- read_data_path(tmp, ext)
+        unlink(tmp)
+        obj
+      },
+      error = function(e) NULL
+    )
+    if (!is.null(parent_hit)) {
+      return(parent_hit)
+    }
+  }
+
+  url <- registry_url(ctx$base_url, path)
   tmp <- tempfile(fileext = paste0(".", ext))
   mode <- if (ext %in% c("rds", "dta")) "wb" else "wt"
   utils::download.file(url, tmp, quiet = TRUE, mode = mode)

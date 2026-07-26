@@ -16,12 +16,12 @@ paper:
 
 ```yaml
 steps:
-  - inherit: prep_data
+  - inherit: analysis_data
 
   - id: tab_1
     type: table
-    parents: [prep_data]
-    data: outputs/prep_data/repdata.rds
+    parents: [analysis_data]
+    data: outputs/analysis_data.rds
     code: code/tab_1.R
     outputs:
       - outputs/tab_1.html

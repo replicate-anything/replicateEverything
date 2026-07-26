@@ -139,3 +139,52 @@ test_that("step_run_context routes inherited steps to base local_root", {
   expect_equal(run_ctx$local_root, "/base/path")
   expect_equal(run_ctx$base_url, "https://example.com/base/")
 })
+
+test_that("registry_url avoids double slashes when base ends with /", {
+  expect_equal(
+    registry_url("https://raw.githubusercontent.com/org/repo/main/", "code/steps/a.R"),
+    "https://raw.githubusercontent.com/org/repo/main/code/steps/a.R"
+  )
+  expect_equal(
+    registry_url("https://raw.githubusercontent.com/org/repo/main", "/code/steps/a.R"),
+    "https://raw.githubusercontent.com/org/repo/main/code/steps/a.R"
+  )
+})
+
+test_that("study_repo_slug prefers materials_repo from inherited run context", {
+  meta <- list(repo = "replicate-anything/rep-extension")
+  ctx <- list(materials_repo = "replicate-anything/rep-base")
+  expect_equal(study_repo_slug(meta, ctx), "replicate-anything/rep-base")
+  expect_equal(
+    study_repo_slug(meta, list(materials_repo = DEFAULT_REGISTRY_REPO)),
+    "replicate-anything/rep-extension"
+  )
+})
+
+test_that("step_code_context keeps extension-local overrides on inherited format steps", {
+  ext_dir <- file.path(tempdir(), paste0("ext-override-", sample.int(1e6, 1)))
+  on.exit(unlink(ext_dir, recursive = TRUE), add = TRUE)
+  dir.create(file.path(ext_dir, "code"), recursive = TRUE)
+  writeLines("format_tab_1 <- function(x) x", file.path(ext_dir, "code/tab_1.R"))
+
+  meta <- list(
+    .extends_context = list(
+      local_root = "/base/path",
+      base_url = "https://example.com/base/",
+      materials_repo = "replicate-anything/rep-base"
+    )
+  )
+  step <- list(
+    id = "tab_1_format",
+    code = "code/tab_1.R",
+    .inherited = TRUE
+  )
+  ctx <- list(
+    local_root = ext_dir,
+    base_url = "https://example.com/ext/",
+    materials_repo = "replicate-anything/rep-extension"
+  )
+  code_ctx <- step_code_context(step, meta, ctx)
+  expect_equal(code_ctx$local_root, ext_dir)
+  expect_equal(code_ctx$base_url, "https://example.com/ext/")
+})

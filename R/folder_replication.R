@@ -778,6 +778,17 @@ is_folder_study_replication <- function(meta, ctx = NULL) {
 #' @return Character repo slug.
 #' @keywords internal
 study_repo_slug <- function(meta, ctx = NULL) {
+  # Inherited-step run contexts set materials_repo to the base study; prefer that
+  # over extension meta$repo when materializing or fetching remote files.
+  if (!is.null(ctx)) {
+    mat <- ctx$materials_repo %||% NULL
+    if (!is.null(mat)) {
+      mat <- as.character(mat[[1]] %||% mat)
+      if (nzchar(mat) && !identical(mat, DEFAULT_REGISTRY_REPO)) {
+        return(mat)
+      }
+    }
+  }
   from_meta <- meta$repo %||% meta$paper$study_repo %||% NULL
   if (!is.null(from_meta) && nzchar(as.character(from_meta[[1]]))) {
     return(as.character(from_meta[[1]]))
