@@ -2,8 +2,12 @@
 #'
 #' Some publisher DOI links (notably older Cambridge Core / APSR entries) do
 #' not resolve reliably. Study metadata may therefore include an explicit
-#' landing page via \code{paper.article_url} (or \code{paper.landing_url}).
-#' When no override is set, the function falls back to \code{https://doi.org/...}.
+#' landing page via \code{paper.article_url} (or \code{paper.landing_url} /
+#' \code{paper.publisher_url}). When no override is set, the function falls
+#' back to \code{https://doi.org/...}.
+#'
+#' \code{paper.study_url} is the GitHub study repository and is intentionally
+#' ignored here — use the Shiny Repo column / study materials link for that.
 #'
 #' @param doi Optional DOI string or URL.
 #' @param paper Optional \code{paper} list from \code{replication.yml} or the
@@ -31,7 +35,9 @@ paper_article_url <- function(doi = NULL, paper = NULL, meta = NULL) {
     paper <- meta$paper %||% NULL
   }
   if (!is.null(paper) && length(paper) > 0L) {
-    for (field in c("article_url", "landing_url", "publisher_url", "study_url")) {
+    # Paper landing pages only — never paper.study_url (that is the GitHub
+    # study repo and belongs in the Repo column, not DOI / journal links).
+    for (field in c("article_url", "landing_url", "publisher_url")) {
       val <- paper[[field]] %||% NULL
       if (is.null(val)) {
         next

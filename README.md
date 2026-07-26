@@ -28,7 +28,7 @@
 
 ## Project status
 
-The project is under active development. Feedback is welcome — contact [Vermon Washington](mailto:vermon.washington@wzb.eu) or [Macartan Humphreys](mailto:macartan.humphreys@wzb.eu).
+The project is under active development. Feedback is welcome — contact [Macartan Humphreys](mailto:macartan.humphreys@wzb.eu), post an issue on [git](https://github.com/replicate-anything/replicateEverything/issues), or use the feedback form on the [shiny app](https://shiny2.wzb.eu/ipi/replicate/).
 
 ## Installation
 

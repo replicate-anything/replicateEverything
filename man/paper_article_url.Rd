@@ -20,8 +20,13 @@ Character URL, or \code{NULL} when no link can be formed.
 \description{
 Some publisher DOI links (notably older Cambridge Core / APSR entries) do
 not resolve reliably. Study metadata may therefore include an explicit
-landing page via \code{paper.article_url} (or \code{paper.landing_url}).
-When no override is set, the function falls back to \code{https://doi.org/...}.
+landing page via \code{paper.article_url} (or \code{paper.landing_url} /
+\code{paper.publisher_url}). When no override is set, the function falls
+back to \code{https://doi.org/...}.
+}
+\details{
+\code{paper.study_url} is the GitHub study repository and is intentionally
+ignored here — use the Shiny Repo column / study materials link for that.
 }
 \examples{
 \dontrun{

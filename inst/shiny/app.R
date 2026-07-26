@@ -908,14 +908,25 @@ resolve_study_doi_input <- function(doi_input, from_registry = FALSE) {
 }
 
 doi_resolved_url <- function(doi, paper = NULL) {
+  if (!is.null(paper) && length(paper) > 0L) {
+    # Drop GitHub study_url values that may have leaked into article_url.
+    for (field in c("article_url", "landing_url", "publisher_url", "study_url")) {
+      if (is.null(paper[[field]])) next
+      val <- trimws(as.character(paper[[field]][[1]] %||% paper[[field]]))
+      if (nzchar(val) && grepl("github\\.com", val, ignore.case = TRUE)) {
+        paper[[field]] <- NULL
+      }
+    }
+  }
   if (!is.null(paper) || (!is.null(doi) && length(doi) && nzchar(trimws(as.character(doi))))) {
     url <- tryCatch(
       replicate_fn("paper_article_url", doi = doi, paper = paper),
       error = function(e) NULL
     )
-    if (!is.null(url) && nzchar(url)) {
+    if (!is.null(url) && nzchar(url) && !grepl("github\\.com", url, ignore.case = TRUE)) {
       return(url)
     }
+    # If paper_article_url returned a GitHub URL, fall through to doi.org.
   }
   if (is.null(doi) || !length(doi) || !nzchar(trimws(as.character(doi)))) {
     return(NULL)
@@ -1671,6 +1682,7 @@ partial_replication_modal <- function(message, engines = character(0), data_unav
 }
 
 #' Modal for a single data-unavailable / proprietary step (padlock click)
+#' @deprecated Prefer title-tooltip on the padlock; kept for rare call sites.
 data_unavailable_step_modal <- function(message, data_token = "") {
   msg <- trimws(as.character(message %||% ""))
   if (!nzchar(msg)) {
@@ -1699,7 +1711,7 @@ data_unavailable_step_modal <- function(message, data_token = "") {
   invisible(TRUE)
 }
 
-#' Run-slot control: padlock that reports why data are unavailable
+#' Run-slot control: padlock with hover tooltip (no click modal)
 run_unavailable_padlock_button <- function(step_key, message, data_token = "") {
   msg <- trimws(as.character(message %||% ""))
   tok <- tolower(trimws(as.character(data_token %||% "")))
@@ -1710,22 +1722,17 @@ run_unavailable_padlock_button <- function(step_key, message, data_token = "") {
   } else {
     "Data not available"
   }
-  safe_key <- gsub("\\\\", "\\\\\\\\", as.character(step_key), fixed = FALSE)
-  safe_key <- gsub("'", "\\'", safe_key, fixed = TRUE)
-  tags$button(
-    type = "button",
-    class = "btn btn-sm run-unavailable-lock",
+  tags$span(
+    class = "run-unavailable-lock",
     title = title,
+    role = "img",
     `aria-label` = title,
-    onclick = sprintf(
-      "Shiny.setInputValue('unavailable_step_info', '%s', {priority: 'event'})",
-      safe_key
-    ),
     tags$span(class = "engine-badge", engine_icon_data_unavailable())
   )
 }
 
-#' Modal for a missing-engine / not-reproducible step (hammer click)
+#' Modal for a missing-engine / not-reproducible step (tool click)
+#' @deprecated Prefer title-tooltip on the tool icon; kept for rare call sites.
 engine_gap_step_modal <- function(message, engine = "") {
   msg <- trimws(as.character(message %||% ""))
   if (!nzchar(msg)) {
@@ -1754,7 +1761,7 @@ engine_gap_step_modal <- function(message, engine = "") {
   invisible(TRUE)
 }
 
-#' Run-slot control: hammer/tool that reports a missing-engine gap
+#' Run-slot control: missing-engine tool icon with hover tooltip (no click modal)
 run_unavailable_hammer_button <- function(step_key, message, engine = "") {
   msg <- trimws(as.character(message %||% ""))
   eng <- trimws(as.character(engine %||% ""))
@@ -1765,17 +1772,11 @@ run_unavailable_hammer_button <- function(step_key, message, engine = "") {
   } else {
     "Missing engine"
   }
-  safe_key <- gsub("\\\\", "\\\\\\\\", as.character(step_key), fixed = FALSE)
-  safe_key <- gsub("'", "\\'", safe_key, fixed = TRUE)
-  tags$button(
-    type = "button",
-    class = "btn btn-sm run-unavailable-hammer",
+  tags$span(
+    class = "run-unavailable-hammer",
     title = title,
+    role = "img",
     `aria-label` = title,
-    onclick = sprintf(
-      "Shiny.setInputValue('engine_gap_step_info', '%s', {priority: 'event'})",
-      safe_key
-    ),
     tags$span(class = "engine-badge", engine_icon_missing_engine())
   )
 }
@@ -2048,24 +2049,34 @@ engine_icon_data_unavailable <- function() {
   )
 }
 
-# Tool / hammer mark for missing system engine (Mathematica, MATLAB, …).
+# Compass / tool mark for missing system engine (Mathematica, MATLAB, …).
+# Larger and clearer than a tiny hammer at badge size.
 engine_icon_missing_engine <- function() {
   tags$svg(
     xmlns = "http://www.w3.org/2000/svg",
     viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
+    width = "20",
+    height = "20",
     `aria-hidden` = "true",
     tags$circle(cx = "12", cy = "12", r = "11", fill = "#B45309"),
-    tags$path(
-      d = paste(
-        "M14.7 6.3 a1 1 0 0 1 1.4 0 l1.6 1.6 a1 1 0 0 1 0 1.4",
-        "l-1.1 1.1 -3 -3 1.1 -1.1 z",
-        "M13.2 8.8 L7 15 a1.5 1.5 0 0 0 0 2.1 l0.9 0.9",
-        "a1.5 1.5 0 0 0 2.1 0 l6.2 -6.2 -3 -3 z"
-      ),
+    tags$circle(
+      cx = "12",
+      cy = "12",
+      r = "7.25",
+      fill = "none",
+      stroke = "#ffffff",
+      `stroke-width` = "1.5"
+    ),
+    # Compass needle (N/S)
+    tags$polygon(
+      points = "12,5.5 14.2,12 12,10.6 9.8,12",
       fill = "#ffffff"
-    )
+    ),
+    tags$polygon(
+      points = "12,18.5 9.8,12 12,13.4 14.2,12",
+      fill = "#FDE68A"
+    ),
+    tags$circle(cx = "12", cy = "12", r = "1.35", fill = "#ffffff")
   )
 }
 
@@ -2089,6 +2100,51 @@ engine_icons_display <- function(
     if (has_mathematica) {
       tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
     },
+    if (isTRUE(has_data_gap)) {
+      tags$span(
+        class = "engine-badge",
+        title = "Proprietary or unavailable data",
+        engine_icon_data_unavailable()
+      )
+    },
+    if (isTRUE(has_engine_gap)) {
+      tags$span(
+        class = "engine-badge",
+        title = "Missing system engine",
+        engine_icon_missing_engine()
+      )
+    }
+  )
+}
+
+#' Languages column only (no gap notes)
+study_languages_icons_display <- function(
+  has_r = FALSE,
+  has_stata = FALSE,
+  has_python = FALSE,
+  has_mathematica = FALSE
+) {
+  if (!has_r && !has_stata && !has_python && !has_mathematica) {
+    return(tags$span(class = "text-muted small", "—"))
+  }
+  tags$div(
+    class = "engine-icons-cell",
+    if (has_r) tags$span(class = "engine-badge", title = "R", engine_icon_r()),
+    if (has_stata) tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
+    if (has_python) tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
+    if (has_mathematica) {
+      tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+    }
+  )
+}
+
+#' Notes column: padlock / compass gap flags for the Studies list
+study_notes_icons_display <- function(has_data_gap = FALSE, has_engine_gap = FALSE) {
+  if (!isTRUE(has_data_gap) && !isTRUE(has_engine_gap)) {
+    return(tags$span(class = "text-muted small", "—"))
+  }
+  tags$div(
+    class = "engine-icons-cell study-notes-icons",
     if (isTRUE(has_data_gap)) {
       tags$span(
         class = "engine-badge",
@@ -2889,31 +2945,58 @@ format_study_citation <- function(row) {
   } else {
     ""
   }
-  journal_raw <- strip_html_entities(row$journal[[1]])
-  journal_line <- tagList(
-    if (nzchar(journal_raw)) {
-      tags$em(journal_raw)
-    } else {
-      tags$em("Working paper")
-    },
-    if (nzchar(doi)) {
-      paper_link <- list(doi = doi_raw)
-      if (nzchar(article_url)) {
-        paper_link$article_url <- article_url
-      }
-      tagList(" ", doi_link_ui(doi_raw %||% doi, paper = paper_link))
-    } else if (nzchar(article_url)) {
-      tagList(
-        " ",
-        tags$a(
-          href = article_url,
-          target = "_blank",
-          rel = "noopener noreferrer",
-          "Study repository"
-        )
-      )
-    }
+  # Never treat a GitHub study_url that leaked into article_url as the paper page.
+  if (nzchar(article_url) && grepl("github\\.com", article_url, ignore.case = TRUE)) {
+    article_url <- ""
+  }
+  paper_link <- list()
+  if (nzchar(doi_raw)) {
+    paper_link$doi <- doi_raw
+  }
+  if (nzchar(article_url)) {
+    paper_link$article_url <- article_url
+  }
+  paper_url <- doi_resolved_url(
+    if (nzchar(doi_raw)) doi_raw else NULL,
+    paper = if (length(paper_link)) paper_link else NULL
   )
+  journal_raw <- strip_html_entities(row$journal[[1]])
+  journal_em <- if (nzchar(journal_raw)) {
+    tags$em(journal_raw)
+  } else if (nzchar(doi) || nzchar(article_url)) {
+    tags$em("Working paper")
+  } else {
+    NULL
+  }
+  journal_bit <- if (is.null(journal_em)) {
+    NULL
+  } else if (!is.null(paper_url) && nzchar(paper_url)) {
+    tags$a(
+      href = paper_url,
+      target = "_blank",
+      rel = "noopener noreferrer",
+      title = "Open article / DOI page",
+      journal_em
+    )
+  } else {
+    journal_em
+  }
+  doi_bit <- if (nzchar(doi)) {
+    tagList(" ", doi_link_ui(doi_raw %||% doi, paper = paper_link))
+  } else if (!is.null(paper_url) && nzchar(paper_url) && nzchar(article_url)) {
+    tagList(
+      " ",
+      tags$a(
+        href = paper_url,
+        target = "_blank",
+        rel = "noopener noreferrer",
+        "Article"
+      )
+    )
+  } else {
+    NULL
+  }
+  journal_line <- tagList(journal_bit, doi_bit)
   list(
     line1 = if (nzchar(year)) {
       sprintf('%s (%s) "%s"', author, year, title)
@@ -5376,19 +5459,21 @@ ui <- tagList(
       cursor: not-allowed;
       pointer-events: none;
     }
-    /* data_unavailable / missing-engine: icon replaces Run; no row strikethrough */
+    /* data_unavailable / missing-engine: icon replaces Run; tooltip only */
     .replication-row .run-unavailable-lock,
     .replication-row .run-unavailable-hammer {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-width: 2.5rem;
+      min-height: 1.7rem;
       padding: 0.2rem 0.45rem;
       line-height: 1;
       border: 1px solid rgba(107, 114, 128, 0.35);
+      border-radius: 0.25rem;
       background: rgba(107, 114, 128, 0.08);
       color: #4b5563;
-      cursor: pointer;
+      cursor: help;
     }
     .replication-row .run-unavailable-hammer {
       border-color: rgba(180, 83, 9, 0.35);
@@ -5430,7 +5515,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 4.5rem 3rem 6.5rem 2rem 2.75rem;
+      grid-template-columns: minmax(0, 1fr) 4.5rem 3rem 5.5rem 3.25rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
     }
@@ -5443,6 +5528,7 @@ ui <- tagList(
       margin-bottom: 0.25rem;
     }
     .study-engine-col,
+    .study-notes-col,
     .study-run-col,
     .study-link-col {
       text-align: center;
@@ -5450,6 +5536,9 @@ ui <- tagList(
       display: flex;
       justify-content: center;
       align-items: center;
+    }
+    .study-notes-col {
+      min-height: 1.4rem;
     }
     .study-share-link {
       display: inline-flex;
@@ -5713,6 +5802,7 @@ ui <- tagList(
         color: #6c757d;
       }
       .study-engine-col,
+      .study-notes-col,
       .study-run-col,
       .study-link-col,
       .study-collections-col,
@@ -6575,11 +6665,17 @@ server <- function(input, output, session) {
           tags$div(
             class = "study-engine-col",
             tags$span(class = "study-citation-meta-label", "Languages"),
-            engine_icons_display(
+            study_languages_icons_display(
               engines$r,
               engines$stata,
               engines$python,
-              engines$mathematica %||% FALSE,
+              engines$mathematica %||% FALSE
+            )
+          ),
+          tags$div(
+            class = "study-notes-col",
+            tags$span(class = "study-citation-meta-label", "Notes"),
+            study_notes_icons_display(
               has_data_gap = isTRUE(gaps$data_unavailable),
               has_engine_gap = isTRUE(gaps$missing_engine)
             )
@@ -6616,6 +6712,7 @@ server <- function(input, output, session) {
         tags$div(class = "study-collections-col", "Collection"),
         tags$div(class = "study-repo-col", "Repo"),
         tags$div(class = "study-engine-col", "Languages"),
+        tags$div(class = "study-notes-col", "Notes"),
         tags$div(class = "study-link-col", "Link"),
         tags$div(class = "study-run-col", "Go")
       ),
@@ -6692,13 +6789,18 @@ server <- function(input, output, session) {
         tags$div(
           class = "d-flex align-items-start justify-content-between gap-2",
           h4(class = "mb-0", paper$title %||% state$doi),
-          engine_icons_display(
-            engines$r,
-            engines$stata,
-            engines$python,
-            engines$mathematica %||% FALSE,
-            has_data_gap = isTRUE(gaps$data_unavailable),
-            has_engine_gap = isTRUE(gaps$missing_engine)
+          tags$div(
+            class = "d-flex align-items-center gap-2",
+            study_languages_icons_display(
+              engines$r,
+              engines$stata,
+              engines$python,
+              engines$mathematica %||% FALSE
+            ),
+            study_notes_icons_display(
+              has_data_gap = isTRUE(gaps$data_unavailable),
+              has_engine_gap = isTRUE(gaps$missing_engine)
+            )
           )
         ),
         tags$details(
@@ -6851,12 +6953,12 @@ server <- function(input, output, session) {
       }
       return(tags$div(
         class = row_class,
-        if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
-          tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
-        },
         tags$span(label, class = "replication-label", title = label_full),
         tags$div(
           class = "replication-actions",
+          if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
+            tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+          },
           if (use_strikethrough) {
             tags$span(
               class = "blocked-reason-badge",
@@ -7140,10 +7242,10 @@ server <- function(input, output, session) {
                 },
                 if (step_strikethrough) "is-blocked" else ""
               ),
-              engine_badge,
               tags$span(row$label[[1]], class = "replication-label", title = row$label_full[[1]]),
               tags$div(
                 class = "replication-actions",
+                engine_badge,
                 if (step_strikethrough) {
                   tags$span(
                     class = "blocked-reason-badge",
@@ -7271,145 +7373,6 @@ server <- function(input, output, session) {
       load_selected_artifact(fallback_live = FALSE)
     }
     sync_url_to_selection()
-  }, ignoreInit = TRUE)
-
-  observeEvent(input$unavailable_step_info, {
-    req(input$unavailable_step_info, state$doi)
-    step_key <- as.character(input$unavailable_step_info[[1]] %||% input$unavailable_step_info)
-    req(nzchar(step_key))
-
-    data_tok <- ""
-    blocked_msg <- NULL
-    is_prep <- !is.null(state$prep_df) && nrow(state$prep_df) > 0 &&
-      step_key %in% state$prep_df$id
-
-    if (is_prep) {
-      prow <- state$prep_df[state$prep_df$id == step_key, , drop = FALSE]
-      data_tok <- tolower(as.character(prow$data_unavailable[[1]] %||% ""))
-      state$selected_replication <- step_key
-      state$selected_type <- "transform"
-      state$selected_result <- NULL
-      state$selected_source <- "artifact"
-      load_selected_artifact(fallback_live = FALSE)
-      updateTabsetPanel(session, "result_tabs", selected = "Code")
-    } else if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
-      row <- tryCatch(resolve_replication_row(step_key), error = function(e) NULL)
-      if (!is.null(row) && nrow(row) == 1L) {
-        data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
-        select_replication_by_group(step_key)
-        updateTabsetPanel(session, "result_tabs", selected = "Code")
-      }
-    }
-
-    blocked_msg <- tryCatch({
-      meta <- replicate_fn(
-        "get_replication_meta",
-        state$doi,
-        folder = state$registry_folder,
-        repo = state$registry_repo
-      )
-      replicate_fn(
-        "step_missing_engine_message",
-        meta,
-        step_key,
-        output_exists = FALSE
-      )
-    }, error = function(e) NULL)
-    if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
-      blocked_msg <- tryCatch({
-        if (is_prep) {
-          as.character(state$prep_df$blocked_reason[state$prep_df$id == step_key][[1]] %||% "")
-        } else {
-          row <- resolve_replication_row(step_key)
-          as.character(row$blocked_reason[[1]] %||% "")
-        }
-      }, error = function(e) "")
-    }
-    data_unavailable_step_modal(blocked_msg, data_tok)
-  }, ignoreInit = TRUE)
-
-  observeEvent(input$engine_gap_step_info, {
-    req(input$engine_gap_step_info, state$doi)
-    step_key <- as.character(input$engine_gap_step_info[[1]] %||% input$engine_gap_step_info)
-    req(nzchar(step_key))
-
-    req_eng <- ""
-    blocked_msg <- NULL
-    output_exists <- FALSE
-    is_prep <- !is.null(state$prep_df) && nrow(state$prep_df) > 0 &&
-      step_key %in% state$prep_df$id
-
-    if (is_prep) {
-      prow <- state$prep_df[state$prep_df$id == step_key, , drop = FALSE]
-      req_eng <- as.character(prow$requires_engine[[1]] %||% "")
-      step_eng <- prow$engine[[1]] %||% "r"
-      state$selected_replication <- step_key
-      state$selected_type <- "transform"
-      state$selected_result <- NULL
-      state$selected_source <- "artifact"
-      load_selected_artifact(fallback_live = FALSE)
-      updateTabsetPanel(session, "result_tabs", selected = "Code")
-      output_exists <- tryCatch(
-        replicate_fn(
-          "step_display_output_exists",
-          state$doi,
-          step_key,
-          folder = state$registry_folder,
-          repo = state$registry_repo,
-          language = step_eng
-        ),
-        error = function(e) FALSE
-      )
-    } else if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
-      row <- tryCatch(resolve_replication_row(step_key), error = function(e) NULL)
-      if (!is.null(row) && nrow(row) == 1L) {
-        req_eng <- as.character(row$requires_engine[[1]] %||% "")
-        eng <- group_engine(row$group[[1]], row)
-        select_replication_by_group(step_key)
-        updateTabsetPanel(session, "result_tabs", selected = "Code")
-        output_exists <- tryCatch(
-          replicate_fn(
-            "step_display_output_exists",
-            state$doi,
-            resolve_group_replication_id(row, eng),
-            folder = state$registry_folder,
-            repo = state$registry_repo,
-            language = eng
-          ),
-          error = function(e) FALSE
-        )
-      }
-    }
-
-    blocked_msg <- tryCatch({
-      meta <- replicate_fn(
-        "get_replication_meta",
-        state$doi,
-        folder = state$registry_folder,
-        repo = state$registry_repo
-      )
-      replicate_fn(
-        "step_missing_engine_message",
-        meta,
-        step_key,
-        output_exists = isTRUE(output_exists)
-      )
-    }, error = function(e) NULL)
-    if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
-      blocked_msg <- tryCatch({
-        if (is_prep) {
-          as.character(state$prep_df$blocked_reason[state$prep_df$id == step_key][[1]] %||% "")
-        } else {
-          row <- resolve_replication_row(step_key)
-          as.character(row$blocked_reason[[1]] %||% "")
-        }
-      }, error = function(e) "")
-    }
-    eng_label <- tryCatch(
-      replicate_fn("normalize_engine_display_name", req_eng),
-      error = function(e) req_eng
-    )
-    engine_gap_step_modal(blocked_msg, eng_label %||% req_eng)
   }, ignoreInit = TRUE)
 
   observeEvent(input$replication_action, {

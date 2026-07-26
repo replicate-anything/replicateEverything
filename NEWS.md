@@ -1,3 +1,20 @@
+# replicateEverything 0.7.9
+
+## Shiny UX: Notes column, unified step rows, tooltip-only gaps
+
+* **Studies list:** dedicated **Notes** column for padlock / compass gap icons
+  (Languages stays language badges only). Desktop grid and mobile card layout
+  both include Notes.
+* **Step list:** engine badges (R/Stata/Mathematica) sit **left of Display/Run**
+  for all studies, including Hahn Mathematica gaps — same layout as dual-engine
+  rows.
+* **Gap icons:** hover `title` tooltip only; click no longer opens a second
+  modal. Missing-engine mark is a **compass** (clearer than the small hammer).
+* **Paper links:** [paper_article_url()] no longer treats `paper.study_url`
+  (GitHub) as an article landing page. Shiny DOI/journal links prefer
+  `article_url` / `doi.org/{doi}`; GitHub URLs that leaked into `article_url`
+  are ignored.
+
 # replicateEverything 0.7.8
 
 ## Shiny: padlock vs hammer Run slots (+ Studies list)

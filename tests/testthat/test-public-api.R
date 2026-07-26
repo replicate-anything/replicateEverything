@@ -73,6 +73,16 @@ test_that("paper_article_url falls back to doi.org", {
   expect_equal(url, "https://doi.org/10.1177/00491241211036161")
 })
 
+test_that("paper_article_url ignores GitHub study_url", {
+  url <- paper_article_url(
+    doi = "10.1177/00491241211036161",
+    paper = list(
+      study_url = "https://github.com/replicate-anything/rep-template"
+    )
+  )
+  expect_equal(url, "https://doi.org/10.1177/00491241211036161")
+})
+
 test_that("get_code returns replication script text", {
   with_fixture_opts({
     withr::with_options(

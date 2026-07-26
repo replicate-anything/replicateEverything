@@ -85,7 +85,12 @@ registry_index_row_from_meta <- function(meta, study_root = NULL, folder = NULL)
   maintainer_email <- as.character(maintainer$email %||% maintainer$Email %||% "")
   languages <- study_declared_languages(meta)
   languages <- paste(languages[nzchar(languages)], collapse = ";")
-  article_url <- as.character(paper$article_url %||% paper$landing_url %||% paper$study_url %||% "")
+  # Publisher landing only — do not fold paper.study_url (GitHub) into this
+  # column; Shiny uses it for DOI/journal links and would send users to the
+  # repo instead of the article.
+  article_url <- as.character(
+    paper$article_url %||% paper$landing_url %||% paper$publisher_url %||% ""
+  )
   repo <- if (!is.null(study_root)) {
     infer_study_repo_slug(study_root, meta)
   } else {
