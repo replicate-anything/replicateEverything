@@ -86,10 +86,11 @@ Ideal: **yaml points at what is needed**; do not ship unused deposit material;
 the path to a claimed output belong in README / study popup — **not** as orphan
 Unavailable nodes.
 
-**Shiny UX (claimed but unavailable data):** show Code as usual; replace Run with a
-**padlock** that opens the data-availability message on click. Do not need a
-separate Unavailable badge or strikethrough when the padlock conveys the gap.
-Engine gaps (`requires_engine`) may keep Unavailable / Not reproducible badges.
+**Shiny UX (claimed but unavailable):** show Code as usual; replace Run with a
+**padlock** (data_unavailable) or **hammer/tool** (requires_engine / audit
+missing-engine skip) that opens the availability message on click. Do not add a
+separate Unavailable badge or strikethrough when the Run-slot icon conveys the
+gap. Studies list shows the same padlock/hammer next to language icons.
 
 ```
 - [ ] Steps that cannot run declare `incomplete: true` (audit must **skip** them — not fail)
@@ -98,6 +99,7 @@ Engine gaps (`requires_engine`) may keep Unavailable / Not reproducible badges.
 - [ ] No orphan Unavailable nodes — blocked prep off the claim path stays in docs/popup, not `steps:`
 - [ ] Wrapper-granularity DAG (README tables) — not one node per unused micro-script
 - [ ] Partial-replication popup drivers present when incomplete steps exist (`requires_engine` / `data_unavailable` / counts)
+- [ ] Shiny Run slot: padlock for `data_unavailable`, hammer for missing-engine (not Unavailable row badges)
 ```
 
 Grep helpers for heaviness (from study root):

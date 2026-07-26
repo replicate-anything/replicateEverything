@@ -396,6 +396,78 @@ lookup_replication_audit_runtime <- function(
   )
 }
 
+#' Whether registry audit skipped a step for a missing-engine reason
+#'
+#' Used by Shiny to prefer audit signals for hammer Run-slot chrome when
+#' display outputs are missing.
+#'
+#' @inheritParams lookup_replication_audit_runtime
+#' @return List with \code{skipped_engine} and \code{reason}.
+#' @keywords internal
+lookup_replication_audit_engine_skip <- function(
+  doi,
+  what,
+  engine = NULL,
+  registry_root = NULL
+) {
+  empty <- list(skipped_engine = FALSE, reason = "")
+  snap <- tryCatch(
+    load_registry_audit_snapshot(registry_root),
+    error = function(e) NULL
+  )
+  if (is.null(snap) || is.null(snap$results) || !nrow(snap$results)) {
+    return(empty)
+  }
+  if (!("skipped" %in% names(snap$results))) {
+    return(empty)
+  }
+  doi_norm <- normalize_doi(doi)
+  what <- as.character(what[[1L]] %||% what)
+  results <- snap$results
+  results$doi_norm <- vapply(results$doi, normalize_doi, character(1))
+  sub <- results[results$doi_norm == doi_norm, , drop = FALSE]
+  if (!nrow(sub)) {
+    return(empty)
+  }
+  objs <- as.character(sub$object)
+  hit <- sub[objs == what, , drop = FALSE]
+  if (!nrow(hit) && nzchar(what)) {
+    hit <- sub[
+      objs == paste0(what, "_stata") |
+        objs == paste0(what, "_python") |
+        startsWith(objs, paste0(what, "_")),
+      ,
+      drop = FALSE
+    ]
+  }
+  eng <- tolower(trimws(as.character(engine[[1L]] %||% "")))
+  if (nzchar(eng) && nrow(hit)) {
+    eng_hit <- hit[tolower(as.character(hit$engine)) == eng, , drop = FALSE]
+    if (nrow(eng_hit)) {
+      hit <- eng_hit
+    }
+  }
+  if (!nrow(hit)) {
+    return(empty)
+  }
+  skipped <- hit[as.logical(hit$skipped) %in% TRUE, , drop = FALSE]
+  if (!nrow(skipped)) {
+    return(empty)
+  }
+  reason <- ""
+  if ("error_snippet" %in% names(skipped)) {
+    reason <- as.character(skipped$error_snippet[[1L]] %||% "")
+  }
+  if (!nzchar(reason) && "skip_reason" %in% names(skipped)) {
+    reason <- as.character(skipped$skip_reason[[1L]] %||% "")
+  }
+  list(
+    skipped_engine = audit_reason_is_missing_engine(reason) ||
+      grepl("mathematica|wolfram|matlab|julia", reason, ignore.case = TRUE),
+    reason = reason
+  )
+}
+
 #' Truncate an error message for audit output
 #' @keywords internal
 audit_error_snippet <- function(x, max_chars = 240L) {

@@ -455,6 +455,157 @@ format_partial_replication_message <- function(
   )
 }
 
+#' Whether an audit skip / error snippet is a missing-engine reason
+#'
+#' @param reason Character snippet from audit \code{error_snippet} or skip reason.
+#' @return \code{TRUE} when the text matches missing-engine phrasing.
+#' @keywords internal
+audit_reason_is_missing_engine <- function(reason) {
+  txt <- as.character(reason[[1]] %||% reason %||% "")
+  if (!nzchar(txt)) {
+    return(FALSE)
+  }
+  grepl(
+    "missing[[:space:]].+[[:space:]]engine|because of missing[[:space:]]",
+    txt,
+    ignore.case = TRUE,
+    perl = TRUE
+  )
+}
+
+#' Classify Shiny Run-slot chrome: padlock (data) vs hammer (engine)
+#'
+#' Layered signals (first match wins for padlock):
+#' \enumerate{
+#'   \item \strong{Padlock:} yaml \code{data_unavailable:} (Shiny does not need audit).
+#'   \item \strong{Hammer (bake gap):} registry audit Skipped + missing-engine reason
+#'     when provided; else \code{requires_engine:} with missing display outputs
+#'     and/or \code{incomplete: true}.
+#'   \item \strong{Hammer (can't re-run):} outputs exist but live engine probe is
+#'     false (\code{engine_available = FALSE}).
+#' }
+#'
+#' @param entry Step list (yaml entry or Shiny row fields as a list).
+#' @param output_exists Whether a display artifact exists.
+#' @param audit_skipped_engine \code{TRUE} when registry audit marks this step
+#'   Skipped for a missing-engine reason.
+#' @param engine_available Live probe for the required system engine; \code{NULL}
+#'   means unknown (do not treat as missing).
+#' @return List with \code{kind} (\code{"padlock"}, \code{"hammer"}, or \code{NULL}),
+#'   \code{mode}, \code{message}, \code{data_token}, \code{engine}.
+#' @keywords internal
+classify_shiny_run_gap <- function(
+  entry,
+  output_exists = FALSE,
+  audit_skipped_engine = FALSE,
+  engine_available = NULL
+) {
+  empty <- list(
+    kind = NULL,
+    mode = NA_character_,
+    message = NULL,
+    data_token = NULL,
+    engine = NULL
+  )
+  if (is.null(entry) || !is.list(entry)) {
+    return(empty)
+  }
+
+  label <- as.character(
+    entry$label[[1]] %||% entry$label %||%
+      entry$description[[1]] %||% entry$description %||%
+      entry$id[[1]] %||% entry$id %||% "Output"
+  )
+  if (!nzchar(label)) {
+    label <- "Output"
+  }
+  mode <- if (isTRUE(output_exists)) "not_reproducible" else "not_available"
+  incomplete <- isTRUE(entry$incomplete[[1]] %||% entry$incomplete %||% FALSE)
+
+  data_tok <- step_data_unavailable(entry)
+  if (is.null(data_tok)) {
+    # Shiny may pass the token without going through incomplete: gating
+    raw <- tolower(trimws(as.character(
+      entry$data_unavailable[[1]] %||% entry$data_unavailable %||% ""
+    )))
+    if (nzchar(raw) && !raw %in% c("false", "no", "0", "na", "null", "none")) {
+      data_tok <- raw
+    }
+  }
+  if (!is.null(data_tok) && nzchar(data_tok)) {
+    return(list(
+      kind = "padlock",
+      mode = mode,
+      message = missing_data_message(label, data_tok, mode = mode),
+      data_token = data_tok,
+      engine = NULL
+    ))
+  }
+
+  eng <- step_required_engine(entry)
+  if (is.null(eng)) {
+    raw_eng <- tolower(trimws(as.character(
+      entry$requires_engine[[1]] %||% entry$requires_engine %||% ""
+    )))
+    if (nzchar(raw_eng)) {
+      eng <- normalize_engine_display_name(raw_eng)
+    }
+  }
+  has_system_engine <- !is.null(eng) && !eng %in% c("R", "Stata", "Python")
+  engine_missing_live <- isFALSE(engine_available)
+
+  # Hammer: audit bake-gap skip; yaml incomplete + requires_engine; or live
+  # probe says the system engine is missing (Display may still work).
+  show_hammer <- (isTRUE(audit_skipped_engine) && !isTRUE(output_exists)) ||
+    (has_system_engine && incomplete) ||
+    (has_system_engine && engine_missing_live)
+
+  if (!isTRUE(show_hammer)) {
+    return(empty)
+  }
+
+  if (is.null(eng) || !nzchar(as.character(eng))) {
+    eng <- "required"
+  }
+  list(
+    kind = "hammer",
+    mode = mode,
+    message = missing_engine_message(label, eng, mode = mode),
+    data_token = NULL,
+    engine = eng
+  )
+}
+
+#' Study-level padlock / hammer flags from step entries
+#'
+#' @param entries List of step entries (or parsed meta with \code{steps}).
+#' @return List with logical \code{data_unavailable} and \code{missing_engine}.
+#' @keywords internal
+study_gap_flags_from_entries <- function(entries) {
+  flags <- list(data_unavailable = FALSE, missing_engine = FALSE)
+  if (is.null(entries)) {
+    return(flags)
+  }
+  if (is.list(entries) && !is.null(entries$steps)) {
+    entries <- tryCatch(collect_study_step_entries(entries), error = function(e) list())
+  }
+  if (!is.list(entries) || !length(entries)) {
+    return(flags)
+  }
+  for (entry in entries) {
+    if (!is.list(entry)) {
+      next
+    }
+    gap <- classify_shiny_run_gap(entry, output_exists = FALSE)
+    if (identical(gap$kind, "padlock")) {
+      flags$data_unavailable <- TRUE
+    } else if (identical(gap$kind, "hammer")) {
+      flags$missing_engine <- TRUE
+    }
+  }
+  flags
+}
+
 #' Summarize why a study offers only partial replication (yaml + optional audit)
 #'
 #' Driven by step \code{incomplete:} / \code{requires_engine:} /

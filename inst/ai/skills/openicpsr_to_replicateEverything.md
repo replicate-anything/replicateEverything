@@ -127,8 +127,8 @@ Empty placeholders are common — that is not the same as “no gold anywhere.�
 
 | Class | Yaml | Shiny / audit |
 |-------|------|----------------|
-| Missing system engine | `incomplete: true` + `requires_engine: mathematica` (+ `blocked_reason:`) | Grey Display/Run; “not available” vs “not reproducible”; partial-replication popup; **audit skips** |
-| Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` (+ `blocked_reason:`) | Distinct icon + study popup; DAG mark; **audit skips** (unavailable ≠ success/failure) |
+| Missing system engine | `incomplete: true` + `requires_engine: mathematica` (+ `blocked_reason:`) | Hammer in Run slot; “not available” vs “not reproducible”; partial-replication popup; **audit skips** |
+| Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` (+ `blocked_reason:`) | Padlock in Run slot + study popup; DAG mark; **audit skips** (unavailable ≠ success/failure) |
 | Ordinary incomplete | `incomplete: true` + `blocked_reason:` only | Same skip / grey behavior; generic message |
 
 ```yaml

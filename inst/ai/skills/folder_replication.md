@@ -184,8 +184,8 @@ Three **distinct** classes — do not conflate them with audit fail/timeout:
 
 | Class | Declare | Messages / UX | Audit |
 |-------|---------|---------------|-------|
-| Missing system engine | `incomplete: true` + `requires_engine: mathematica` (+ `blocked_reason:`) | “`{output} not available because of missing {Engine} engine`” vs “`… not reproducible …`” when baked; Shiny greys Display/Run; Mathematica (etc.) icon; study **partial-replication** popup | Skipped |
-| Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` (+ `blocked_reason:`) | Distinct data-unavailable icon + study popup; DAG mark | Skipped (unavailable ≠ success/failure) |
+| Missing system engine | `incomplete: true` + `requires_engine: mathematica` (+ `blocked_reason:`) | “`{output} not available because of missing {Engine} engine`” vs “`… not reproducible …`” when baked; Shiny **hammer** in Run slot; Mathematica (etc.) icon; study **partial-replication** popup | Skipped |
+| Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` (+ `blocked_reason:`) | **Padlock** in Run slot + study popup; DAG mark | Skipped (unavailable ≠ success/failure) |
 | Other incomplete | `incomplete: true` + `blocked_reason:` | Generic not available / not reproducible | Skipped |
 
 **Rule of thumb — DAG membership:** put a step in `steps:` **only if it is a
@@ -205,8 +205,9 @@ Partial-replication study popup is driven by yaml `incomplete:` /
 registry audit snapshot (failures/timeouts) — see Shiny + `run_replication.R`.
 For **unavailable claimed** steps in Shiny with `data_unavailable:`: still show
 Code; replace Run with a **padlock** (click → availability message); no separate
-Unavailable badge or strikethrough needed. Engine gaps may keep Unavailable /
-Not reproducible badges (`check_study_submission.md`).
+Unavailable badge or strikethrough needed. Engine gaps (`requires_engine` /
+audit missing-engine skip): same pattern with a **hammer/tool** in the Run slot
+(`check_study_submission.md`). Studies list shows padlock/hammer beside languages.
 
 **Edges:** `parents: [step_a, step_b]` only — `requires:` / `depends_on:` are a hard error. Raw files are not parents — list them under `inputs:`.
 

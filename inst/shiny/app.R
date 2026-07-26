@@ -1725,6 +1725,61 @@ run_unavailable_padlock_button <- function(step_key, message, data_token = "") {
   )
 }
 
+#' Modal for a missing-engine / not-reproducible step (hammer click)
+engine_gap_step_modal <- function(message, engine = "") {
+  msg <- trimws(as.character(message %||% ""))
+  if (!nzchar(msg)) {
+    msg <- "This output cannot be replicated because a required system engine is not available."
+  }
+  eng <- trimws(as.character(engine %||% ""))
+  title_bit <- if (nzchar(eng)) {
+    paste0("Missing engine (", eng, ")")
+  } else {
+    "Missing engine"
+  }
+  showModal(modalDialog(
+    title = title_bit,
+    tags$div(
+      class = "d-flex align-items-start gap-2",
+      tags$span(
+        class = "engine-badge mt-1",
+        title = title_bit,
+        engine_icon_missing_engine()
+      ),
+      tags$p(class = "mb-0", msg)
+    ),
+    easyClose = TRUE,
+    footer = modalButton("OK")
+  ))
+  invisible(TRUE)
+}
+
+#' Run-slot control: hammer/tool that reports a missing-engine gap
+run_unavailable_hammer_button <- function(step_key, message, engine = "") {
+  msg <- trimws(as.character(message %||% ""))
+  eng <- trimws(as.character(engine %||% ""))
+  title <- if (nzchar(msg)) {
+    msg
+  } else if (nzchar(eng)) {
+    paste0("Missing ", eng, " engine")
+  } else {
+    "Missing engine"
+  }
+  safe_key <- gsub("\\\\", "\\\\\\\\", as.character(step_key), fixed = FALSE)
+  safe_key <- gsub("'", "\\'", safe_key, fixed = TRUE)
+  tags$button(
+    type = "button",
+    class = "btn btn-sm run-unavailable-hammer",
+    title = title,
+    `aria-label` = title,
+    onclick = sprintf(
+      "Shiny.setInputValue('engine_gap_step_info', '%s', {priority: 'event'})",
+      safe_key
+    ),
+    tags$span(class = "engine-badge", engine_icon_missing_engine())
+  )
+}
+
 registry_health_bar_ui <- function(summary) {
   if (is.null(summary)) {
     return(NULL)
@@ -1993,13 +2048,37 @@ engine_icon_data_unavailable <- function() {
   )
 }
 
+# Tool / hammer mark for missing system engine (Mathematica, MATLAB, …).
+engine_icon_missing_engine <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    tags$circle(cx = "12", cy = "12", r = "11", fill = "#B45309"),
+    tags$path(
+      d = paste(
+        "M14.7 6.3 a1 1 0 0 1 1.4 0 l1.6 1.6 a1 1 0 0 1 0 1.4",
+        "l-1.1 1.1 -3 -3 1.1 -1.1 z",
+        "M13.2 8.8 L7 15 a1.5 1.5 0 0 0 0 2.1 l0.9 0.9",
+        "a1.5 1.5 0 0 0 2.1 0 l6.2 -6.2 -3 -3 z"
+      ),
+      fill = "#ffffff"
+    )
+  )
+}
+
 engine_icons_display <- function(
   has_r = FALSE,
   has_stata = FALSE,
   has_python = FALSE,
-  has_mathematica = FALSE
+  has_mathematica = FALSE,
+  has_data_gap = FALSE,
+  has_engine_gap = FALSE
 ) {
-  if (!has_r && !has_stata && !has_python && !has_mathematica) {
+  if (!has_r && !has_stata && !has_python && !has_mathematica &&
+      !has_data_gap && !has_engine_gap) {
     return(tags$span(class = "text-muted small", "—"))
   }
   tags$div(
@@ -2009,6 +2088,20 @@ engine_icons_display <- function(
     if (has_python) tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
     if (has_mathematica) {
       tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+    },
+    if (isTRUE(has_data_gap)) {
+      tags$span(
+        class = "engine-badge",
+        title = "Proprietary or unavailable data",
+        engine_icon_data_unavailable()
+      )
+    },
+    if (isTRUE(has_engine_gap)) {
+      tags$span(
+        class = "engine-badge",
+        title = "Missing system engine",
+        engine_icon_missing_engine()
+      )
     }
   )
 }
@@ -2096,33 +2189,53 @@ parse_languages_engine_flags <- function(langs) {
 }
 
 study_engine_availability_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO) {
+  chrome <- study_row_chrome_for_row(row, repo = repo)
+  chrome$engines
+}
+
+#' Engines + padlock/hammer gap flags for one Studies-list row
+study_row_chrome_for_row <- function(row, repo = DEFAULT_REGISTRY_REPO) {
   langs <- row$languages[[1]] %||% ""
   flags <- parse_languages_engine_flags(langs)
-  if (any(unlist(flags))) {
-    # languages: may omit system engines (e.g. Mathematica via requires_engine).
-    # When a study folder is available, enrich from step metadata.
-    folder <- row$folder[[1]] %||% NULL
-    if (!is.null(folder) && nzchar(folder) && !isTRUE(flags$mathematica)) {
-      reps <- tryCatch(
-        fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
-        error = function(e) NULL
-      )
-      if (!is.null(reps) && length(reps)) {
-        from_steps <- study_engine_availability(reps)
-        flags$mathematica <- isTRUE(from_steps$mathematica)
-      }
-    }
-    return(flags)
-  }
-  folder <- row$folder[[1]] %||% NULL
-  if (is.null(folder) || !nzchar(folder)) {
-    return(list(r = TRUE, stata = FALSE, python = FALSE, mathematica = FALSE))
-  }
-  reps <- tryCatch(
-    fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
-    error = function(e) NULL
+  gaps <- list(
+    data_unavailable = FALSE,
+    missing_engine = isTRUE(flags$mathematica)
   )
-  study_engine_availability(reps)
+  folder <- row$folder[[1]] %||% NULL
+  if (!is.null(folder) && nzchar(as.character(folder))) {
+    reps <- tryCatch(
+      fetch_study_replications_index(folder, repo %||% DEFAULT_REGISTRY_REPO),
+      error = function(e) NULL
+    )
+    if (!is.null(reps) && length(reps)) {
+      from_steps <- study_engine_availability(reps)
+      flags$r <- isTRUE(flags$r) || isTRUE(from_steps$r)
+      flags$stata <- isTRUE(flags$stata) || isTRUE(from_steps$stata)
+      flags$python <- isTRUE(flags$python) || isTRUE(from_steps$python)
+      flags$mathematica <- isTRUE(flags$mathematica) || isTRUE(from_steps$mathematica)
+      gap_from <- tryCatch(
+        replicate_fn("study_gap_flags_from_entries", reps),
+        error = function(e) {
+          # Fallback without package helper
+          list(
+            data_unavailable = any(vapply(reps, function(x) {
+              nzchar(entry_data_unavailable_token(x))
+            }, logical(1))),
+            missing_engine = any(vapply(reps, function(x) {
+              tok <- entry_requires_engine_token(x)
+              nzchar(tok) && !tok %in% c("r", "stata", "python")
+            }, logical(1)))
+          )
+        }
+      )
+      gaps$data_unavailable <- isTRUE(gap_from$data_unavailable)
+      gaps$missing_engine <- isTRUE(gaps$missing_engine) || isTRUE(gap_from$missing_engine)
+    }
+  }
+  if (!any(unlist(flags))) {
+    flags <- list(r = TRUE, stata = FALSE, python = FALSE, mathematica = FALSE)
+  }
+  list(engines = flags, gaps = gaps)
 }
 
 entry_requires_engine_token <- function(x) {
@@ -5263,8 +5376,9 @@ ui <- tagList(
       cursor: not-allowed;
       pointer-events: none;
     }
-    /* data_unavailable: padlock replaces Run; click shows availability message */
-    .replication-row .run-unavailable-lock {
+    /* data_unavailable / missing-engine: icon replaces Run; no row strikethrough */
+    .replication-row .run-unavailable-lock,
+    .replication-row .run-unavailable-hammer {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -5276,14 +5390,27 @@ ui <- tagList(
       color: #4b5563;
       cursor: pointer;
     }
+    .replication-row .run-unavailable-hammer {
+      border-color: rgba(180, 83, 9, 0.35);
+      background: rgba(180, 83, 9, 0.08);
+      color: #92400e;
+    }
     .replication-row .run-unavailable-lock:hover,
     .replication-row .run-unavailable-lock:focus {
       background: rgba(107, 114, 128, 0.16);
       border-color: rgba(107, 114, 128, 0.55);
       color: #374151;
     }
+    .replication-row .run-unavailable-hammer:hover,
+    .replication-row .run-unavailable-hammer:focus {
+      background: rgba(180, 83, 9, 0.16);
+      border-color: rgba(180, 83, 9, 0.55);
+      color: #78350f;
+    }
     .replication-row .run-unavailable-lock .engine-badge,
-    .replication-row .run-unavailable-lock svg {
+    .replication-row .run-unavailable-lock svg,
+    .replication-row .run-unavailable-hammer .engine-badge,
+    .replication-row .run-unavailable-hammer svg {
       pointer-events: none;
     }
     .blocked-reason-badge {
@@ -5303,7 +5430,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: 1fr 4.5rem 3rem 5.5rem 2rem 2.75rem;
+      grid-template-columns: minmax(0, 1fr) 4.5rem 3rem 6.5rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
     }
@@ -5543,6 +5670,58 @@ ui <- tagList(
       border-bottom: 1px solid #eee;
       line-height: 1.35;
       font-size: 0.95rem;
+    }
+    .study-citation-main {
+      min-width: 0;
+    }
+    .study-citation-meta {
+      display: contents;
+    }
+    .study-citation-meta-label {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .study-list-header {
+        display: none;
+      }
+      .study-citation {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        padding: 0.75rem 0;
+      }
+      .study-citation-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.45rem 0.75rem;
+        align-items: start;
+      }
+      .study-citation-meta > div {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+        text-align: left;
+        white-space: normal;
+      }
+      .study-citation-meta-label {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: #6c757d;
+      }
+      .study-engine-col,
+      .study-run-col,
+      .study-link-col,
+      .study-collections-col,
+      .study-repo-col {
+        justify-content: flex-start;
+      }
+      .study-run-col {
+        grid-column: 1 / -1;
+      }
     }
     .contribute-step-title {
       font-weight: 600;
@@ -6370,47 +6549,60 @@ server <- function(input, output, session) {
     rows <- lapply(seq_len(nrow(idx)), function(i) {
       row <- idx[i, , drop = FALSE]
       cite <- format_study_citation(row)
-      engines <- study_engine_availability_for_row(row)
+      chrome <- study_row_chrome_for_row(row)
+      engines <- chrome$engines
+      gaps <- chrome$gaps
       collections <- parse_index_collections(row)
       tags$div(
         class = "study-citation",
         tags$div(
+          class = "study-citation-main",
           tags$div(cite$line1),
           tags$div(class = "text-muted", style = "font-size: 0.9rem;", cite$line2)
         ),
         tags$div(
-          class = "study-collections-col",
-          collections_column_ui(collections)
-        ),
-        tags$div(
-          class = "study-repo-col",
-          repo_link_display(study_repo_url_for_row(row))
-        ),
-        tags$div(
-          class = "study-engine-col",
-          engine_icons_display(
-            engines$r,
-            engines$stata,
-            engines$python,
-            engines$mathematica %||% FALSE
-          )
-        ),
-        tags$div(
-          class = "study-link-col",
-          share_link_ui(
-            shiny_deep_link_query_list(study_index_key_for_row(row)),
-            title = "Link to this study on the public server"
-          )
-        ),
-        tags$div(
-          class = "study-run-col",
-          actionButton(
-            paste0("study_", i),
-            "Go",
-            class = "btn-primary btn-sm study-go-btn",
-            onclick = sprintf(
-              "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
-              study_index_key_for_row(row)
+          class = "study-citation-meta",
+          tags$div(
+            class = "study-collections-col",
+            tags$span(class = "study-citation-meta-label", "Collection"),
+            collections_column_ui(collections)
+          ),
+          tags$div(
+            class = "study-repo-col",
+            tags$span(class = "study-citation-meta-label", "Repo"),
+            repo_link_display(study_repo_url_for_row(row))
+          ),
+          tags$div(
+            class = "study-engine-col",
+            tags$span(class = "study-citation-meta-label", "Languages"),
+            engine_icons_display(
+              engines$r,
+              engines$stata,
+              engines$python,
+              engines$mathematica %||% FALSE,
+              has_data_gap = isTRUE(gaps$data_unavailable),
+              has_engine_gap = isTRUE(gaps$missing_engine)
+            )
+          ),
+          tags$div(
+            class = "study-link-col",
+            tags$span(class = "study-citation-meta-label", "Link"),
+            share_link_ui(
+              shiny_deep_link_query_list(study_index_key_for_row(row)),
+              title = "Link to this study on the public server"
+            )
+          ),
+          tags$div(
+            class = "study-run-col",
+            tags$span(class = "study-citation-meta-label", "Go"),
+            actionButton(
+              paste0("study_", i),
+              "Go",
+              class = "btn-primary btn-sm study-go-btn",
+              onclick = sprintf(
+                "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
+                study_index_key_for_row(row)
+              )
             )
           )
         )
@@ -6479,6 +6671,17 @@ server <- function(input, output, session) {
     } else {
       study_engine_availability(c(state$replications %||% list(), state$prep_steps %||% list()))
     }
+    gaps <- if (nrow(row) > 0) {
+      study_row_chrome_for_row(row)$gaps
+    } else {
+      tryCatch(
+        replicate_fn(
+          "study_gap_flags_from_entries",
+          c(state$replications %||% list(), state$prep_steps %||% list())
+        ),
+        error = function(e) list(data_unavailable = FALSE, missing_engine = FALSE)
+      )
+    }
     tagList(
       card(
         card_header(if (!is.null(state$local_study_meta) && nrow(row) == 0) {
@@ -6493,7 +6696,9 @@ server <- function(input, output, session) {
             engines$r,
             engines$stata,
             engines$python,
-            engines$mathematica %||% FALSE
+            engines$mathematica %||% FALSE,
+            has_data_gap = isTRUE(gaps$data_unavailable),
+            has_engine_gap = isTRUE(gaps$missing_engine)
           )
         ),
         tags$details(
@@ -6559,18 +6764,11 @@ server <- function(input, output, session) {
     }
     req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
     data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
-    is_data_gap <- is_blocked && nzchar(data_tok)
-    row_class <- paste(
-      "replication-row d-flex align-items-center rounded",
-      if (!is.null(active_id) && (identical(group, active_id) || identical(resolved_id, active_id))) {
-        "bg-light border border-primary"
-      } else {
-        ""
-      },
-      # Strikethrough / grey only for engine gaps; data gaps use a Run padlock.
-      if (is_blocked && !is_data_gap) "is-blocked" else ""
-    )
-    if (is_blocked) {
+
+    output_exists <- FALSE
+    audit_engine_skip <- FALSE
+    engine_available <- NULL
+    if (is_blocked || nzchar(req_eng) || nzchar(data_tok)) {
       output_exists <- tryCatch(
         replicate_fn(
           "step_display_output_exists",
@@ -6582,24 +6780,75 @@ server <- function(input, output, session) {
         ),
         error = function(e) FALSE
       )
-      blocked_msg <- tryCatch({
-        meta <- replicate_fn(
-          "get_replication_meta",
-          state$doi,
-          folder = state$registry_folder,
-          repo = state$registry_repo
+      if (nzchar(req_eng) && !req_eng %in% c("r", "stata", "python")) {
+        engine_available <- tryCatch(
+          replicate_fn("system_engine_available", req_eng),
+          error = function(e) NULL
         )
-        replicate_fn(
-          "step_missing_engine_message",
-          meta,
-          resolved_id,
-          output_exists = isTRUE(output_exists)
+        audit_hit <- tryCatch(
+          replicate_fn(
+            "lookup_replication_audit_engine_skip",
+            state$doi,
+            resolved_id,
+            engine = engine
+          ),
+          error = function(e) NULL
         )
-      }, error = function(e) NULL)
+        audit_engine_skip <- isTRUE(audit_hit$skipped_engine)
+      }
+    }
+
+    gap <- tryCatch(
+      replicate_fn(
+        "classify_shiny_run_gap",
+        list(
+          id = resolved_id,
+          label = label,
+          incomplete = is_blocked,
+          requires_engine = req_eng,
+          data_unavailable = data_tok,
+          blocked_reason = blocked_reason
+        ),
+        output_exists = isTRUE(output_exists),
+        audit_skipped_engine = isTRUE(audit_engine_skip),
+        engine_available = engine_available
+      ),
+      error = function(e) list(kind = NULL)
+    )
+    is_data_gap <- identical(gap$kind, "padlock")
+    is_engine_gap <- identical(gap$kind, "hammer")
+    # Strikethrough only for generic incomplete (neither padlock nor hammer).
+    use_strikethrough <- is_blocked && !is_data_gap && !is_engine_gap
+    row_class <- paste(
+      "replication-row d-flex align-items-center rounded",
+      if (!is.null(active_id) && (identical(group, active_id) || identical(resolved_id, active_id))) {
+        "bg-light border border-primary"
+      } else {
+        ""
+      },
+      if (use_strikethrough) "is-blocked" else ""
+    )
+    if (is_blocked || is_data_gap || is_engine_gap) {
+      blocked_msg <- gap$message
+      if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
+        blocked_msg <- tryCatch({
+          meta <- replicate_fn(
+            "get_replication_meta",
+            state$doi,
+            folder = state$registry_folder,
+            repo = state$registry_repo
+          )
+          replicate_fn(
+            "step_missing_engine_message",
+            meta,
+            resolved_id,
+            output_exists = isTRUE(output_exists)
+          )
+        }, error = function(e) NULL)
+      }
       if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
         blocked_msg <- blocked_reason
       }
-      badge_text <- if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
       return(tags$div(
         class = row_class,
         if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
@@ -6608,11 +6857,11 @@ server <- function(input, output, session) {
         tags$span(label, class = "replication-label", title = label_full),
         tags$div(
           class = "replication-actions",
-          if (!is_data_gap) {
+          if (use_strikethrough) {
             tags$span(
               class = "blocked-reason-badge",
               title = blocked_msg,
-              badge_text
+              if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
             )
           },
           if (isTRUE(output_exists)) {
@@ -6637,6 +6886,12 @@ server <- function(input, output, session) {
           },
           if (is_data_gap) {
             run_unavailable_padlock_button(group, blocked_msg, data_tok)
+          } else if (is_engine_gap) {
+            run_unavailable_hammer_button(
+              group,
+              blocked_msg,
+              gap$engine %||% req_eng
+            )
           } else if (shiny_live_run_enabled()) {
             actionButton(
               paste0("replicate_", safe_group),
@@ -6798,12 +7053,14 @@ server <- function(input, output, session) {
               }
             )
             step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
-            step_data_gap <- step_blocked && nzchar(data_tok)
             step_blocked_reason <- as.character(row$blocked_reason[[1]] %||% "")
             if (!nzchar(step_blocked_reason)) {
               step_blocked_reason <- "This step cannot be run for this study - see the study notes."
             }
-            if (step_blocked) {
+            step_out_exists <- FALSE
+            step_engine_available <- NULL
+            step_audit_skip <- FALSE
+            if (step_blocked || nzchar(req_eng) || nzchar(data_tok)) {
               step_out_exists <- tryCatch(
                 replicate_fn(
                   "step_display_output_exists",
@@ -6815,6 +7072,46 @@ server <- function(input, output, session) {
                 ),
                 error = function(e) FALSE
               )
+              if (nzchar(req_eng) && !req_eng %in% c("r", "stata", "python")) {
+                step_engine_available <- tryCatch(
+                  replicate_fn("system_engine_available", req_eng),
+                  error = function(e) NULL
+                )
+                audit_hit <- tryCatch(
+                  replicate_fn(
+                    "lookup_replication_audit_engine_skip",
+                    state$doi,
+                    step_id,
+                    engine = step_engine
+                  ),
+                  error = function(e) NULL
+                )
+                step_audit_skip <- isTRUE(audit_hit$skipped_engine)
+              }
+            }
+            step_gap <- tryCatch(
+              replicate_fn(
+                "classify_shiny_run_gap",
+                list(
+                  id = step_id,
+                  label = row$label[[1]],
+                  incomplete = step_blocked,
+                  requires_engine = req_eng,
+                  data_unavailable = data_tok,
+                  blocked_reason = step_blocked_reason
+                ),
+                output_exists = isTRUE(step_out_exists),
+                audit_skipped_engine = isTRUE(step_audit_skip),
+                engine_available = step_engine_available
+              ),
+              error = function(e) list(kind = NULL)
+            )
+            step_data_gap <- identical(step_gap$kind, "padlock")
+            step_engine_gap <- identical(step_gap$kind, "hammer")
+            step_strikethrough <- step_blocked && !step_data_gap && !step_engine_gap
+            if (!is.null(step_gap$message) && nzchar(as.character(step_gap$message))) {
+              step_blocked_reason <- as.character(step_gap$message)
+            } else if (step_blocked || step_data_gap || step_engine_gap) {
               eng_msg <- tryCatch({
                 meta <- replicate_fn(
                   "get_replication_meta",
@@ -6832,8 +7129,6 @@ server <- function(input, output, session) {
               if (!is.null(eng_msg) && nzchar(as.character(eng_msg))) {
                 step_blocked_reason <- as.character(eng_msg)
               }
-            } else {
-              step_out_exists <- FALSE
             }
             tags$div(
               class = paste(
@@ -6843,13 +7138,13 @@ server <- function(input, output, session) {
                 } else {
                   ""
                 },
-                if (step_blocked && !step_data_gap) "is-blocked" else ""
+                if (step_strikethrough) "is-blocked" else ""
               ),
               engine_badge,
               tags$span(row$label[[1]], class = "replication-label", title = row$label_full[[1]]),
               tags$div(
                 class = "replication-actions",
-                if (step_blocked && !step_data_gap) {
+                if (step_strikethrough) {
                   tags$span(
                     class = "blocked-reason-badge",
                     title = step_blocked_reason,
@@ -6860,16 +7155,26 @@ server <- function(input, output, session) {
                   paste0("data_display_", safe_id),
                   "Display",
                   class = "btn-outline-secondary btn-sm",
-                  disabled = if (step_blocked && !isTRUE(step_out_exists)) "disabled" else NULL,
-                  title = if (step_blocked) step_blocked_reason else NULL,
-                  onclick = if (!(step_blocked && !isTRUE(step_out_exists))) {
+                  disabled = if ((step_blocked || step_data_gap || step_engine_gap) &&
+                    !isTRUE(step_out_exists)) {
+                    "disabled"
+                  } else {
+                    NULL
+                  },
+                  title = if (step_blocked || step_data_gap || step_engine_gap) {
+                    step_blocked_reason
+                  } else {
+                    NULL
+                  },
+                  onclick = if (!((step_blocked || step_data_gap || step_engine_gap) &&
+                    !isTRUE(step_out_exists))) {
                     sprintf(
                       "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
                       step_id
                     )
                   }
                 ),
-                if (shiny_live_run_enabled() && !step_blocked) {
+                if (shiny_live_run_enabled() && !step_blocked && !step_data_gap && !step_engine_gap) {
                   step_run_title <- "Run live replication"
                   step_rt <- tryCatch(
                     replicate_fn(
@@ -6894,8 +7199,14 @@ server <- function(input, output, session) {
                       step_id
                     )
                   )
-                } else if (step_blocked && step_data_gap) {
+                } else if (step_data_gap) {
                   run_unavailable_padlock_button(step_id, step_blocked_reason, data_tok)
+                } else if (step_engine_gap) {
+                  run_unavailable_hammer_button(
+                    step_id,
+                    step_blocked_reason,
+                    step_gap$engine %||% req_eng
+                  )
                 } else if (shiny_live_run_enabled() && step_blocked) {
                   actionButton(
                     paste0("data_run_", safe_id),
@@ -7015,6 +7326,90 @@ server <- function(input, output, session) {
       }, error = function(e) "")
     }
     data_unavailable_step_modal(blocked_msg, data_tok)
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$engine_gap_step_info, {
+    req(input$engine_gap_step_info, state$doi)
+    step_key <- as.character(input$engine_gap_step_info[[1]] %||% input$engine_gap_step_info)
+    req(nzchar(step_key))
+
+    req_eng <- ""
+    blocked_msg <- NULL
+    output_exists <- FALSE
+    is_prep <- !is.null(state$prep_df) && nrow(state$prep_df) > 0 &&
+      step_key %in% state$prep_df$id
+
+    if (is_prep) {
+      prow <- state$prep_df[state$prep_df$id == step_key, , drop = FALSE]
+      req_eng <- as.character(prow$requires_engine[[1]] %||% "")
+      step_eng <- prow$engine[[1]] %||% "r"
+      state$selected_replication <- step_key
+      state$selected_type <- "transform"
+      state$selected_result <- NULL
+      state$selected_source <- "artifact"
+      load_selected_artifact(fallback_live = FALSE)
+      updateTabsetPanel(session, "result_tabs", selected = "Code")
+      output_exists <- tryCatch(
+        replicate_fn(
+          "step_display_output_exists",
+          state$doi,
+          step_key,
+          folder = state$registry_folder,
+          repo = state$registry_repo,
+          language = step_eng
+        ),
+        error = function(e) FALSE
+      )
+    } else if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
+      row <- tryCatch(resolve_replication_row(step_key), error = function(e) NULL)
+      if (!is.null(row) && nrow(row) == 1L) {
+        req_eng <- as.character(row$requires_engine[[1]] %||% "")
+        eng <- group_engine(row$group[[1]], row)
+        select_replication_by_group(step_key)
+        updateTabsetPanel(session, "result_tabs", selected = "Code")
+        output_exists <- tryCatch(
+          replicate_fn(
+            "step_display_output_exists",
+            state$doi,
+            resolve_group_replication_id(row, eng),
+            folder = state$registry_folder,
+            repo = state$registry_repo,
+            language = eng
+          ),
+          error = function(e) FALSE
+        )
+      }
+    }
+
+    blocked_msg <- tryCatch({
+      meta <- replicate_fn(
+        "get_replication_meta",
+        state$doi,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      )
+      replicate_fn(
+        "step_missing_engine_message",
+        meta,
+        step_key,
+        output_exists = isTRUE(output_exists)
+      )
+    }, error = function(e) NULL)
+    if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
+      blocked_msg <- tryCatch({
+        if (is_prep) {
+          as.character(state$prep_df$blocked_reason[state$prep_df$id == step_key][[1]] %||% "")
+        } else {
+          row <- resolve_replication_row(step_key)
+          as.character(row$blocked_reason[[1]] %||% "")
+        }
+      }, error = function(e) "")
+    }
+    eng_label <- tryCatch(
+      replicate_fn("normalize_engine_display_name", req_eng),
+      error = function(e) req_eng
+    )
+    engine_gap_step_modal(blocked_msg, eng_label %||% req_eng)
   }, ignoreInit = TRUE)
 
   observeEvent(input$replication_action, {

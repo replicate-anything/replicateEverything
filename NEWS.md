@@ -1,11 +1,17 @@
 # replicateEverything 0.7.8
 
-## Shiny: padlock Run for data-unavailable steps
+## Shiny: padlock vs hammer Run slots (+ Studies list)
 
-* **UX:** Steps with `data_unavailable:` (e.g. proprietary) keep a normal label
-  and Code; the Run slot is a **padlock** that opens the availability message on
-  click. No separate Unavailable badge or strikethrough for those rows.
-  `requires_engine` gaps still use Unavailable / Not reproducible badges.
+* **UX:** Steps with `data_unavailable:` keep a normal label and Code; the Run
+  slot is a **padlock** (click → availability message). Engine gaps
+  (`requires_engine` / audit missing-engine skip / live engine probe) use a
+  **hammer/tool** in the Run slot with “not available” vs “not reproducible”
+  messages. No separate Unavailable badge or strikethrough for those rows.
+* **Studies list:** same padlock/hammer icons appear beside language badges when
+  a study has data or missing-engine gaps. Narrow screens stack each study as a
+  labeled card row instead of a broken multi-column grid.
+* **Helpers:** [classify_shiny_run_gap()], [study_gap_flags_from_entries()],
+  [lookup_replication_audit_engine_skip()].
 
 ## LaTeX tabular (texdoc) → HTML
 
