@@ -36,3 +36,11 @@ To update: **edit the file here and commit.** Nothing else to propagate — the
 pointer resolves the path at run time (workspace `inst/ai/skills/` in the
 monorepo, or `system.file("ai/skills", package = "replicateEverything")` from an
 installed package).
+
+## Package releases (agents editing replicateEverything)
+
+Do **not** auto-bump `DESCRIPTION` / `NEWS` on every tiny change. Bump when
+releasing a **coherent set** of changes; prefer **patch** (`0.7.y`); stay on
+`0.x` until a deliberate 1.0. Minor (`0.8.0`) only for larger coherent
+releases, sparingly. Batch when possible. See README **Project status** and
+`NEWS.md` (0.7.17 versioning note).

@@ -18,6 +18,16 @@
 * **Docs:** reanalysis vignette and step-inheritance notes use `analysis_data`
   (current Fearon & Laitin pipeline), not the retired `prep_data` name.
 
+## Versioning (going forward)
+
+* Stay on `0.x.y` until a deliberate 1.0 decision. Recent `0.7.y` patches
+  (through 0.7.17) were fine; **future bumps should be rarer and batched**.
+* Prefer patch (`0.7.y`) for most fixes and small UX/engine changes; minor
+  (`0.8.0`) only for larger coherent releases, used sparingly.
+* Bump `DESCRIPTION` / `NEWS` when releasing a coherent set of changes — not
+  on every tiny commit when batching is possible. Stick to ordinary semver-style
+  `0.MAJOR_FEEL.PATCH` (no schemes like `0.07.17`).
+
 # replicateEverything 0.7.16
 
 ## Code tab: clearer run-tips header
