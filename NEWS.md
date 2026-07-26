@@ -1,3 +1,14 @@
+# replicateEverything 0.7.15
+
+## Shiny: study links use the same Go handler
+
+* Studies table **citation title**, **Link** chain icon, related-study icons,
+  and **Explore different types of study** example citations all fire
+  `go_to_study` (select study, load, switch to Replicate, close modal) —
+  the same path as the **Go** button. Journal / DOI on the citation second
+  line remain external article links. Link keeps a public deep-link `href`
+  for right-click copy only.
+
 # replicateEverything 0.7.14
 
 ## Shiny Display/Run: no “missing output” errors for registered studies

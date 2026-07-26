@@ -18,8 +18,9 @@ MACARTAN_URL <- "https://macartan.github.io/"
 PKG_GITHUB <- "https://github.com/replicate-anything/replicateEverything"
 PKG_GITHUB_ISSUES <- paste0(PKG_GITHUB, "/issues")
 REGISTRY_GITHUB_ISSUES <- paste0(REGISTRY_GITHUB, "/issues")
-# Share links (Studies table, replication sidebar) always use the public server URL above.
-# Override without editing app.R: REPLICATE_SHINY_BASE_URL in local.R / server env.
+# Studies table Link/Go and related icons use in-app go_to_study navigation.
+# Public deep-link base (replication share icons, right-click copy on Link):
+# LIVE_DEMO_URL above, or REPLICATE_SHINY_BASE_URL in local.R / server env.
 DEFAULT_REGISTRY_REPO <- "replicate-anything/registry"
 
 registry_stub_yaml_url <- function(folder) {
@@ -96,8 +97,46 @@ app_welcome_intro <- function() {
   )
 }
 
+#' JS onclick for the same Shiny input as the Studies table Go button
+go_to_study_onclick <- function(study_key) {
+  key <- trimws(as.character(study_key %||% ""))
+  sprintf(
+    "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'}); return false;",
+    gsub("'", "\\\\'", key, fixed = TRUE)
+  )
+}
+
+#' In-app study navigation control (same handler as Go)
+study_go_link_ui <- function(
+  study_key,
+  ...,
+  class = "study-go-link",
+  title = "Open this study",
+  href = "#"
+) {
+  key <- trimws(as.character(study_key %||% ""))
+  if (!nzchar(key)) {
+    return(tags$span(class = class, ...))
+  }
+  tags$a(
+    href = href,
+    class = class,
+    title = title,
+    onclick = go_to_study_onclick(key),
+    ...
+  )
+}
+
 #' Guide to different types of studies in the registry (modal body)
 study_types_guide_ui <- function() {
+  cite <- function(label, key) {
+    study_go_link_ui(
+      key,
+      label,
+      class = "study-types-guide-cite",
+      title = paste0("Open ", label)
+    )
+  }
   row <- function(kind, example) {
     tags$tr(
       tags$td(htmltools::HTML(kind)),
@@ -111,47 +150,51 @@ study_types_guide_ui <- function() {
       tags$tbody(
         row(
           "The <strong>simplest</strong> folder-backed repo",
-          "Team (2026a)"
+          cite("Team (2026a)", "rep-template")
         ),
         row(
           "A <strong>simple bilingual</strong> (R + Stata) repo",
-          "Acemoglu et al (2001) and Fearon & Laitin (2003)"
+          tagList(
+            cite("Acemoglu et al (2001)", "10.1257/aer.91.5.1369"),
+            " and ",
+            cite("Fearon & Laitin (2003)", "10.1017/s0003055403000534")
+          )
         ),
         row(
           "Code that <strong>pulls from Dataverse</strong>",
-          "Blair et al (2022)"
+          cite("Blair et al (2022)", "10.1017/s0003055422000284")
         ),
         row(
           "A study with <strong>multiple prep steps</strong>",
-          "Solís Arce et al (2021)"
+          cite("Solís Arce et al (2021)", "10.1038/s41591-021-01454-y")
         ),
         row(
           "A <strong>World Bank archive</strong> deposit",
-          "Bertoli et al (2023)"
+          cite("Bertoli et al (2023)", "10.1596/1813-9450-10626")
         ),
         row(
           "A study with <strong>mixed languages</strong> (Stata, Python, R)",
-          "Jiang and Yang (2026)"
+          cite("Jiang and Yang (2026)", "10.1017/s0003055426101749")
         ),
         row(
           "Code present, but <strong>some data not accessible</strong>",
-          "García-Hombrados et al (2026)"
+          cite("García-Hombrados et al (2026)", "10.1257/aer.20240673")
         ),
         row(
           "Code present, but <strong>missing engines here</strong>",
-          "Hahn et al (2026)"
+          cite("Hahn et al (2026)", "10.1257/aer.20250166")
         ),
         row(
           "Backed by an <strong>R package</strong> rather than a folder",
-          "Geissler et al (2022)"
+          cite("Geissler et al (2022)", "10.1371/journal.pone.0278337")
         ),
         row(
           "Code present, but <strong>no data</strong>",
-          "Dawid et al (2022)"
+          cite("Dawid et al (2022)", "10.1177/00491241211036161")
         ),
         row(
           "A repo that <strong>reanalyses another repo</strong>",
-          "Team (2026b)"
+          cite("Team (2026b)", "rep-10.1017-S0003055403000534--alt-1")
         )
       )
     )
@@ -2307,15 +2350,11 @@ related_study_icon_link <- function(item, direction = c("upstream", "downstream"
     related_icon_downstream()
   }
   if (isTRUE(item$in_registry) && nzchar(key)) {
-    return(tags$a(
-      href = "#",
+    return(study_go_link_ui(
+      key,
+      icon,
       class = "study-related-link",
-      title = label,
-      onclick = sprintf(
-        "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'}); return false;",
-        gsub("'", "\\\\'", key, fixed = TRUE)
-      ),
-      icon
+      title = label
     ))
   }
   if (nzchar(href)) {
@@ -3187,7 +3226,7 @@ strip_html_entities <- function(x) {
   trimws(x)
 }
 
-format_study_citation <- function(row) {
+format_study_citation <- function(row, study_key = NULL) {
   author <- format_author_label(row$authors[[1]])
   year <- row$year[[1]] %||% ""
   if (length(year) != 1L || is.na(year) || !nzchar(as.character(year))) {
@@ -3230,6 +3269,7 @@ format_study_citation <- function(row) {
   } else {
     NULL
   }
+  # Journal / DOI stay external article links; primary citation opens the study.
   journal_bit <- if (is.null(journal_em)) {
     NULL
   } else if (!is.null(paper_url) && nzchar(paper_url)) {
@@ -3259,12 +3299,24 @@ format_study_citation <- function(row) {
     NULL
   }
   journal_line <- tagList(journal_bit, doi_bit)
+  line1_text <- if (nzchar(year)) {
+    sprintf('%s (%s) "%s"', author, year, title)
+  } else {
+    sprintf('%s "%s"', author, title)
+  }
+  nav_key <- trimws(as.character(study_key %||% ""))
+  line1 <- if (nzchar(nav_key)) {
+    study_go_link_ui(
+      nav_key,
+      line1_text,
+      class = "study-citation-go-link",
+      title = "Open this study"
+    )
+  } else {
+    line1_text
+  }
   list(
-    line1 = if (nzchar(year)) {
-      sprintf('%s (%s) "%s"', author, year, title)
-    } else {
-      sprintf('%s "%s"', author, title)
-    },
+    line1 = line1,
     line2 = journal_line
   )
 }
@@ -4168,10 +4220,11 @@ display_object <- function(doi, what, obj, install_deps = FALSE, folder = NULL, 
   if (inherits(obj, "error")) {
     return(obj)
   }
-  if (is.list(obj) && !is.null(obj$display)) {
+  # data.frames/tibbles are lists; guard so $field does not warn on tibbles
+  if (is.list(obj) && !is.data.frame(obj) && !is.null(obj$display)) {
     return(obj$display)
   }
-  if (is.list(obj) && identical(obj$source, "package")) {
+  if (is.list(obj) && !is.data.frame(obj) && identical(obj$source, "package")) {
     return(replicate_fn("replication_object", obj))
   }
   if (is.character(obj) && length(obj) == 1 && nzchar(obj) && file.exists(obj)) {
@@ -4180,7 +4233,7 @@ display_object <- function(doi, what, obj, install_deps = FALSE, folder = NULL, 
   if (is.character(obj) && length(obj) == 1 && grepl("<table|<html|<!DOCTYPE|<pre", obj, ignore.case = TRUE)) {
     return(obj)
   }
-  analysis <- if (is.list(obj) && !is.null(obj$object)) {
+  analysis <- if (is.list(obj) && !is.data.frame(obj) && !is.null(obj$object)) {
     replicate_fn("replication_object", obj)
   } else {
     obj
@@ -4207,7 +4260,7 @@ as_table_ui <- function(result) {
     return(replication_error_ui(result))
   }
 
-  obj <- if (is.list(result) && !is.null(result$object)) {
+  obj <- if (is.list(result) && !is.data.frame(result) && !is.null(result$object)) {
     replicate_fn("replication_object", result)
   } else {
     result
@@ -5638,6 +5691,16 @@ ui <- tagList(
     .study-types-guide-table td {
       vertical-align: top;
     }
+    .study-types-guide-cite,
+    .study-citation-go-link {
+      color: #0d6efd;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .study-types-guide-cite:hover,
+    .study-citation-go-link:hover {
+      text-decoration: underline;
+    }
     .sidebar-panel-compact .shiny-input-container { margin-bottom: 0.55rem; }
     .sidebar-panel-compact h4, .sidebar-panel-compact h5 {
       margin-top: 0.35rem;
@@ -6997,6 +7060,7 @@ server <- function(input, output, session) {
 
   observeEvent(input$go_to_study, {
     req(input$go_to_study)
+    removeModal()
     updateSelectInput(session, "study_select", selected = input$go_to_study)
     load_study(input$go_to_study, from_registry = TRUE)
     updateNavbarPage(session, "main_nav", selected = "Replicate")
@@ -7086,8 +7150,8 @@ server <- function(input, output, session) {
         article_url = as.character(rec$article_url %||% ""),
         stringsAsFactors = FALSE
       )
-      cite <- format_study_citation(fake_row)
       study_key <- as.character(rec$key %||% rec$doi %||% rec$handle %||% "")
+      cite <- format_study_citation(fake_row, study_key = study_key)
       tags$div(
         class = "study-citation",
         tags$div(
@@ -7129,9 +7193,13 @@ server <- function(input, output, session) {
           tags$div(
             class = "study-link-col",
             tags$span(class = "study-citation-meta-label", "Link"),
-            share_link_ui(
-              shiny_deep_link_query_list(study_key),
-              title = "Link to this study on the public server"
+            # Same handler as Go; href kept for right-click copy of the public URL.
+            study_go_link_ui(
+              study_key,
+              link_icon_svg(),
+              class = "study-share-link",
+              title = "Open this study",
+              href = shiny_share_url(shiny_deep_link_query_list(study_key))
             )
           ),
           tags$div(
@@ -7141,10 +7209,7 @@ server <- function(input, output, session) {
               paste0("study_", i),
               "Go",
               class = "btn-primary btn-sm study-go-btn",
-              onclick = sprintf(
-                "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'})",
-                gsub("'", "\\\\'", study_key, fixed = TRUE)
-              )
+              onclick = go_to_study_onclick(study_key)
             )
           )
         )
@@ -8098,12 +8163,13 @@ server <- function(input, output, session) {
       raw <- state$selected_result
       status <- NULL
       output_path <- NULL
-      if (is.list(raw) && !is.null(raw$object)) {
+      # data.frames/tibbles are lists; guard so $field does not warn on tibbles
+      if (is.list(raw) && !is.data.frame(raw) && !is.null(raw$object)) {
         status <- raw$status %||% NULL
         output_path <- raw$output_path %||% NULL
       }
       obj <- replicate_fn("resolve_prep_display_object", raw)
-      if (is.list(raw) && is.null(output_path)) {
+      if (is.list(raw) && !is.data.frame(raw) && is.null(output_path)) {
         output_path <- raw$output_path %||% NULL
       }
       state$prep_download_path <- output_path
