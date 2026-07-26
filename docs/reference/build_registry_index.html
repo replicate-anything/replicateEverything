@@ -3,11 +3,15 @@
 index.csv with collections, maintainer_*, languages, and related
 study columns. Upstream links come from stub
 paper.related / paper.extends; related_downstream is
-inferred by reversing those pointers across the registry."><meta property="og:description" content="Reads every studies/*.yml under a registry checkout and writes
+inferred by reversing those pointers across the registry. Also writes
+build_shiny_studies_cache() → shiny_studies.json for the Shiny
+Studies tab (no live yaml at list time)."><meta property="og:description" content="Reads every studies/*.yml under a registry checkout and writes
 index.csv with collections, maintainer_*, languages, and related
 study columns. Upstream links come from stub
 paper.related / paper.extends; related_downstream is
-inferred by reversing those pointers across the registry."><meta property="og:image" content="https://replicate-anything.github.io/replicateEverything/logo.png"><script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script></head><body>
+inferred by reversing those pointers across the registry. Also writes
+build_shiny_studies_cache() → shiny_studies.json for the Shiny
+Studies tab (no live yaml at list time)."><meta property="og:image" content="https://replicate-anything.github.io/replicateEverything/logo.png"><script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({ startOnLoad: true });</script></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -15,7 +19,7 @@ inferred by reversing those pointers across the registry."><meta property="og:im
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.13</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +67,9 @@ inferred by reversing those pointers across the registry."><meta property="og:im
 <code>index.csv</code> with <code>collections</code>, <code>maintainer_*</code>, <code>languages</code>, and related
 study columns. Upstream links come from stub
 <code>paper.related</code> / <code>paper.extends</code>; <code>related_downstream</code> is
-inferred by reversing those pointers across the registry.</p>
+inferred by reversing those pointers across the registry. Also writes
+<code><a href="build_shiny_studies_cache.html">build_shiny_studies_cache()</a></code> → <code>shiny_studies.json</code> for the Shiny
+Studies tab (no live yaml at list time).</p>
     </div>
 
     <div class="section level2">
@@ -82,7 +88,8 @@ inferred by reversing those pointers across the registry.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly, a list with <code>index_path</code>, <code>index</code>, and <code>n</code>.</p>
+    <p>Invisibly, a list with <code>index_path</code>, <code>index</code>, <code>n</code>, and
+<code>shiny_studies_path</code>.</p>
     </div>
 
     <div class="section level2">

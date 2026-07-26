@@ -1,5 +1,24 @@
 # Changelog
 
+## replicateEverything 0.7.13
+
+### Shiny Studies performance (registry-baked cache)
+
+- **[`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)**
+  now also writes **`shiny_studies.json`**: citation, collections,
+  languages/engines, notes flags (data unavailable / missing engine),
+  related upstream/downstream (titles + urls), article and study urls.
+  Helpers: \[build_shiny_studies_cache()\],
+  \[load_shiny_studies_cache()\], \[studies_table_data()\].
+- **Shiny Studies tab** reads only that cache (session-memoized by
+  mtime); no live study-yaml fetch on the list. Full yaml /
+  [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
+  still runs when a study is opened.
+- **Startup:** UI shell paints first; studies cache, audit health bar,
+  and version auto-update run in `session$onFlushed`.
+- **Registry stubs** gain optional `notes:` (padlock / hammer) from
+  study yaml on \[sync_study_to_registry()\].
+
 ## replicateEverything 0.7.12
 
 ### Shiny Studies polish + Madsen citation

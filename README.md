@@ -161,7 +161,7 @@ a fully commented gold example.
 
 ## Writing replication scripts
 
-Replication scripts define an analysis function named `make_<id>()` (for example `make_fig_1()`) and, optionally, a `format_<id>()` for display. Scripts are pure definitions — no interactive footer, no `sys.nframe()` guard. Yaml (`steps:`) is what decides when and with what inputs each function runs.
+Replication scripts define an analysis function named `make_<id>()` (for example `make_fig_1()`) and, optionally, a `format_<id>()` for display. Yaml (`steps:`) is what decides when and with what inputs each function runs.
 
 ### Figures
 
@@ -191,7 +191,7 @@ When `replication.yml` lists a `format` field, the package passes the analysis o
 
 Authors write `make_*` / `format_*` only. [run_replication()] loads data from
 yaml `data:` / `inputs:`, calls `make_*`, and applies `format_*` when requested.
-No interactive footer is required. For a copy-pasteable recipe, use
+ For a copy-pasteable recipe, use
 `get_code(doi, what, mode = "run")` (appends the yaml-implied call) or prefer
 `run_replication(doi, what)` directly.
 

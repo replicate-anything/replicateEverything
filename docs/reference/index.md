@@ -70,6 +70,12 @@ Register studies, sync stubs, rebuild the index, and audit the registry.
   (maintainer)
 - [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
   : Compile registry index.csv from study stub yaml files
+- [`build_shiny_studies_cache()`](https://replicate-anything.github.io/replicateEverything/reference/build_shiny_studies_cache.md)
+  : Build and write the Shiny Studies cache artifact
+- [`load_shiny_studies_cache()`](https://replicate-anything.github.io/replicateEverything/reference/load_shiny_studies_cache.md)
+  : Load the Shiny Studies cache (session-memoized by file mtime)
+- [`studies_table_data()`](https://replicate-anything.github.io/replicateEverything/reference/studies_table_data.md)
+  : Filter / sort studies from the precomputed Shiny cache
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
   : Audit all registry replications
 - [`audit_result_status()`](https://replicate-anything.github.io/replicateEverything/reference/audit_result_status.md)

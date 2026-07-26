@@ -208,9 +208,8 @@ entirely — never write `parents: []`. A step that reads another step’s
 
 Replication scripts define an analysis function named `make_<id>()` (for
 example `make_fig_1()`) and, optionally, a `format_<id>()` for display.
-Scripts are pure definitions — no interactive footer, no
-[`sys.nframe()`](https://rdrr.io/r/base/sys.parent.html) guard. Yaml
-(`steps:`) is what decides when and with what inputs each function runs.
+Yaml (`steps:`) is what decides when and with what inputs each function
+runs.
 
 ### Figures
 
@@ -244,9 +243,9 @@ display or artifact export.
 
 Authors write `make_*` / `format_*` only. \[run_replication()\] loads
 data from yaml `data:` / `inputs:`, calls `make_*`, and applies
-`format_*` when requested. No interactive footer is required. For a
-copy-pasteable recipe, use `get_code(doi, what, mode = "run")` (appends
-the yaml-implied call) or prefer `run_replication(doi, what)` directly.
+`format_*` when requested. For a copy-pasteable recipe, use
+`get_code(doi, what, mode = "run")` (appends the yaml-implied call) or
+prefer `run_replication(doi, what)` directly.
 
 ## Folder-backed replications
 

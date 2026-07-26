@@ -1,6 +1,7 @@
-# Maintainer, collections, and languages copied into registry study stubs
+# Maintainer, collections, languages, and notes copied into registry study stubs
 
-Maintainer, collections, and languages copied into registry study stubs
+Maintainer, collections, languages, and notes copied into registry study
+stubs
 
 ## Usage
 

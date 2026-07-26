@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.13</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,20 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.13" id="replicateeverything-0713">replicateEverything 0.7.13<a class="anchor" aria-label="anchor" href="#replicateeverything-0713"></a></h2>
+<div class="section level3">
+<h3 id="shiny-studies-performance-registry-baked-cache-0-7-13">Shiny Studies performance (registry-baked cache)<a class="anchor" aria-label="anchor" href="#shiny-studies-performance-registry-baked-cache-0-7-13"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/build_registry_index.html">build_registry_index()</a></code></strong> now also writes <strong><code>shiny_studies.json</code></strong>: citation, collections, languages/engines, notes flags (data unavailable / missing engine), related upstream/downstream (titles + urls), article and study urls. Helpers: [build_shiny_studies_cache()], [load_shiny_studies_cache()], [studies_table_data()].</li>
+<li>
+<strong>Shiny Studies tab</strong> reads only that cache (session-memoized by mtime); no live study-yaml fetch on the list. Full yaml / <code><a href="../reference/list_replications.html">list_replications()</a></code> still runs when a study is opened.</li>
+<li>
+<strong>Startup:</strong> UI shell paints first; studies cache, audit health bar, and version auto-update run in <code>session$onFlushed</code>.</li>
+<li>
+<strong>Registry stubs</strong> gain optional <code>notes:</code> (padlock / hammer) from study yaml on [sync_study_to_registry()].</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.12" id="replicateeverything-0712">replicateEverything 0.7.12<a class="anchor" aria-label="anchor" href="#replicateeverything-0712"></a></h2>
 <div class="section level3">

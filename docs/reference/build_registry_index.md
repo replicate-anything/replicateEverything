@@ -4,7 +4,10 @@ Reads every `studies/*.yml` under a registry checkout and writes
 `index.csv` with `collections`, `maintainer_*`, `languages`, and related
 study columns. Upstream links come from stub `paper.related` /
 `paper.extends`; `related_downstream` is inferred by reversing those
-pointers across the registry.
+pointers across the registry. Also writes
+[`build_shiny_studies_cache()`](https://replicate-anything.github.io/replicateEverything/reference/build_shiny_studies_cache.md)
+→ `shiny_studies.json` for the Shiny Studies tab (no live yaml at list
+time).
 
 ## Usage
 
@@ -22,7 +25,8 @@ build_registry_index(registry_root = NULL)
 
 ## Value
 
-Invisibly, a list with `index_path`, `index`, and `n`.
+Invisibly, a list with `index_path`, `index`, `n`, and
+`shiny_studies_path`.
 
 ## Examples
 
