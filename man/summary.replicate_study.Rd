@@ -15,11 +15,16 @@
 \code{object}, invisibly.
 }
 \description{
-Study overview (metadata, steps, related, gaps)
+Console overview for a \code{\link[=get_study]{get_study()}} handle: citation fields, step counts,
+related upstream/downstream studies, and gap tags. For programmatic access
+to the same information, read fields on the handle (e.g. \code{object$doi},
+\code{object$step_counts}) rather than parsing this printout.
 }
 \examples{
 \dontrun{
 summary(get_study("10.1017/S0003055403000534"))
+summary(get_study("10.1257/aer.91.5.1369"))
+summary(get_study("rep-template"))
 }
 
 }

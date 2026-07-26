@@ -43,6 +43,8 @@ envelope suitable for Shiny display or artifact generation.
 \dontrun{
 render_replication("10.1177/00491241211036161", "fig_1")
 render_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
+render_replication("10.1017/S0003055422000284", "tab_1")
+render_replication("rep-template", "tab_1")
 }
 
 }

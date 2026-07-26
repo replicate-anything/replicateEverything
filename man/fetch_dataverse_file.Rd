@@ -37,3 +37,14 @@ Downloads one file by Dataverse file id (or absolute URL) into the study
 tree. Prefer this over full-dataset zip downloads and over study-local
 download helpers. Typical Pattern B: write under \code{outputs/}.
 }
+\examples{
+\dontrun{
+# Blair et al. APSR analysis .dta (Harvard Dataverse file id)
+fetch_dataverse_file(
+  file_id = "14058927",
+  path = "outputs/analysis.dta",
+  study_root = "../rep-10.1017-s0003055422000284"
+)
+}
+
+}

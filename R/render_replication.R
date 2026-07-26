@@ -345,6 +345,8 @@ package_replication_entries <- function(meta) {
 #' \dontrun{
 #' render_replication("10.1177/00491241211036161", "fig_1")
 #' render_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
+#' render_replication("10.1017/S0003055422000284", "tab_1")
+#' render_replication("rep-template", "tab_1")
 #' }
 #'
 #' @keywords internal
@@ -635,6 +637,8 @@ render_replication <- function(
 #' @examples
 #' \dontrun{
 #' get_artifact_path("10.1177/00491241211036161", "fig_1")
+#' get_artifact_path("10.1017/S0003055403000534", "tab_1")
+#' get_artifact_path("rep-template", "tab_1")
 #' }
 #'
 #' @keywords internal
@@ -698,6 +702,9 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = 
 #' @examples
 #' \dontrun{
 #' load_artifact("10.1177/00491241211036161", "fig_1")
+#' load_artifact("10.1017/S0003055403000534", "tab_1")
+#' load_artifact("10.1017/S0003055422000284", "tab_1")
+#' load_artifact("rep-template", "tab_1")
 #' }
 #'
 #' @keywords internal

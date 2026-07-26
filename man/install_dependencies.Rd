@@ -39,7 +39,10 @@ for every study in the registry index (see \code{\link[=load_index]{load_index()
 }
 \examples{
 \dontrun{
-install_dependencies("10.1017/S0003055426101749")
+install_dependencies("10.1017/S0003055403000534")
+install_dependencies("10.1017/S0003055422000284")
+install_dependencies("10.1257/aer.91.5.1369")
+install_dependencies("rep-template")
 install_dependencies("path/to/study-repo")
 options(replicateEverything.registry_root = "../registry")
 install_dependencies("everywhere")

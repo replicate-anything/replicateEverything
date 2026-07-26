@@ -70,9 +70,11 @@ registered \code{format_*} step when \code{replication.yml} defines one
 \examples{
 \dontrun{
 run_replication("10.1177/00491241211036161", "fig_1", format = TRUE)
-run_replication("bounding-causes", "fig_1")
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 run_replication("10.1017/S0003055403000534", "tab_1", language = "stata")
+run_replication("10.1017/S0003055422000284", "tab_1")
+run_replication("10.1257/aer.91.5.1369", "tab_1", language = "stata", format = TRUE)
+run_replication("rep-template", "tab_1", format = TRUE)
 run_replication("10.1177/00491241211036161", "everything")
 
 # setwd() to a checked-out study repo (or open its RStudio project) and

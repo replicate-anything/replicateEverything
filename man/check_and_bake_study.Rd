@@ -47,6 +47,8 @@ describe_study_dag("local")
 run_replication("local", "tab_1")  # one light step
 
 check_and_bake_study(".")
+check_and_bake_study("../rep-10.1017-S0003055403000534")
+check_and_bake_study("../rep-template", build_artifacts = TRUE)
 }
 
 }

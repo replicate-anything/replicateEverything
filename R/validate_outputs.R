@@ -48,6 +48,8 @@ local_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language 
 #' @examples
 #' \dontrun{
 #' artifact_available("10.1177/00491241211036161", "fig_1")
+#' artifact_available("10.1017/S0003055403000534", "tab_1")
+#' artifact_available("rep-template", "tab_1")
 #' }
 #'
 #' @keywords internal
@@ -396,11 +398,13 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
 #' @examples
 #' \dontrun{
 #' validate_outputs(doi = "10.1177/00491241211036161", what = "fig_1")
-#' validate_outputs(doi = "10.1177/00491241211036161", what = "everything")
+#' validate_outputs(doi = "10.1017/S0003055403000534", what = "tab_1")
+#' validate_outputs(doi = "10.1017/S0003055422000284", what = "everything")
+#' validate_outputs(doi = "rep-template", what = "tab_1")
 #' validate_outputs(location = ".")
 #' options(replicateEverything.registry_root = "../registry")
 #' validate_outputs(doi = "everywhere", what = "everything")
-#' validate_outputs(doi = "everywhere", folders = "10.1177_00491241211036161")
+#' validate_outputs(doi = "everywhere", folders = "10.1017_s0003055403000534")
 #' }
 validate_outputs <- function(
   doi = NULL,

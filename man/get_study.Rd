@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_study.R
 \name{get_study}
 \alias{get_study}
-\title{Load a study descriptor for summary and related links}
+\title{Resolve a study handle (metadata once)}
 \usage{
 get_study(doi, repo = NULL, folder = NULL)
 }
@@ -18,18 +18,50 @@ get_study(doi, repo = NULL, folder = NULL)
 An object of class \code{replicate_study}.
 }
 \description{
-Returns a compact \code{replicate_study} object from the registry index and
-study \code{replication.yml}. Use with \code{\link{summary.replicate_study}}
-for a console overview (metadata, step counts, related studies, gap tags).
+Returns a compact \code{replicate_study} \strong{handle}: registry index fields plus
+step counts, related studies, and gap tags from the study
+\code{replication.yml}, resolved once. Pass a journal DOI, registry handle
+(e.g. \code{"rep-template"}), or \code{"local"} / a study path (see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}).
+}
+\details{
+Besides \code{\link{summary.replicate_study}} / \code{\link[=summary_study]{summary_study()}} for a
+console overview, use the handle to:
+\itemize{
+\item Inspect fields programmatically (\code{st$doi}, \code{st$handle},
+\code{st$title}, \code{st$languages}, \code{st$step_counts},
+\code{st$related}, \code{st$gaps}, \code{st$repo}, \ldots).
+\item Feed DOI / handle strings into other consumer verbs — e.g.
+\code{\link[=list_replications]{list_replications()}}, \code{\link[=run_replication]{run_replication()}}, \code{\link[=check_replication]{check_replication()}}
+(via a local path), \code{\link[=describe_study_dag]{describe_study_dag()}}, \code{\link[=get_code]{get_code()}} — which take
+character keys, not the handle object itself:
+\code{list_replications(st$doi)} or \code{describe_study_dag(st$handle)}.
+\item Filter or join against \code{\link[=load_index]{load_index()}} / \code{\link[=search_papers]{search_papers()}} results,
+or share the same resolved context with Shiny / reports.
+}
 }
 \examples{
 \dontrun{
+# Fearon & Laitin (APSR 2003)
 st <- get_study("10.1017/S0003055403000534")
 summary(st)
+st$doi
+st$languages
+st$step_counts
+list_replications(st$doi)
+describe_study_dag(st$doi)
+
+# Blair et al. (APSR 2022); Acemoglu et al. (AER 2001); template handle
+get_study("10.1017/S0003055422000284")
+get_study("10.1257/aer.91.5.1369")
+get_study("rep-template")
+
+# Reanalysis handle (no journal DOI on the extension itself)
 summary_study("rep-10.1017-S0003055403000534--alt-1")
 }
 
 }
 \seealso{
-\code{\link[=summary.replicate_study]{summary.replicate_study()}}, \code{\link[=list_replications]{list_replications()}}, \code{\link[=load_index]{load_index()}}
+\code{\link[=summary.replicate_study]{summary.replicate_study()}}, \code{\link[=summary_study]{summary_study()}}, \code{\link[=list_replications]{list_replications()}},
+\code{\link[=describe_study_dag]{describe_study_dag()}}, \code{\link[=run_replication]{run_replication()}}, \code{\link[=load_index]{load_index()}}
 }

@@ -52,8 +52,12 @@ package-backed studies (\verb{inst/report/outputs/} or \verb{inst/report/artifac
 setwd("path/to/rep-my-study")
 list_replications("local")  # sanity-check before baking
 build_study_outputs(".", install_deps = TRUE)
-build_study_outputs("rep1371journalpone0278337", install_deps = TRUE)
 build_study_outputs(".", only_missing = TRUE)
+
+# Sibling checkouts in a monorepo:
+build_study_outputs("../rep-10.1017-S0003055403000534", install_deps = TRUE)
+build_study_outputs("../rep-10.1017-s0003055422000284", install_deps = TRUE)
+build_study_outputs("../rep-template", install_deps = TRUE)
 }
 
 }

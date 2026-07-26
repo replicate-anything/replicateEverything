@@ -26,6 +26,8 @@ Check whether a precomputed artifact is available
 \examples{
 \dontrun{
 artifact_available("10.1177/00491241211036161", "fig_1")
+artifact_available("10.1017/S0003055403000534", "tab_1")
+artifact_available("rep-template", "tab_1")
 }
 
 }

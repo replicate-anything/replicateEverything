@@ -18,17 +18,12 @@
 #'
 #' @examples
 #' \dontrun{
-#' paper_article_url(
-#'   doi = "10.1017/S0003055403000534",
-#'   paper = list(
-#'     article_url = paste0(
-#'       "https://www.cambridge.org/core/journals/",
-#'       "american-political-science-review/article/abs/",
-#'       "ethnicity-insurgency-and-civil-war/",
-#'       "B1D5D0E7C782483C5D7E102A61AD6605"
-#'     )
-#'   )
-#' )
+#' # Fearon & Laitin: registry stub supplies paper.article_url
+#' paper_article_url(doi = "10.1017/S0003055403000534")
+#' paper_article_url(doi = "10.1017/S0003055422000284")
+#' paper_article_url(doi = "10.1257/aer.91.5.1369")
+#' st <- get_study("10.1017/S0003055403000534")
+#' paper_article_url(doi = st$doi)
 #' }
 paper_article_url <- function(doi = NULL, paper = NULL, meta = NULL) {
   if (is.null(paper) && !is.null(meta)) {

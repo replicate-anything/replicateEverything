@@ -15,7 +15,7 @@ back to https://doi.org/...."><meta property="og:image" content="https://replica
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,17 +101,12 @@ ignored here — use the Shiny Repo column / study materials link for that.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu">paper_article_url</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  doi <span class="op">=</span> <span class="st">"10.1017/S0003055403000534"</span>,</span></span>
-<span class="r-in"><span>  paper <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    article_url <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>      <span class="st">"https://www.cambridge.org/core/journals/"</span>,</span></span>
-<span class="r-in"><span>      <span class="st">"american-political-science-review/article/abs/"</span>,</span></span>
-<span class="r-in"><span>      <span class="st">"ethnicity-insurgency-and-civil-war/"</span>,</span></span>
-<span class="r-in"><span>      <span class="st">"B1D5D0E7C782483C5D7E102A61AD6605"</span></span></span>
-<span class="r-in"><span>    <span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Fearon &amp; Laitin: registry stub supplies paper.article_url</span></span></span>
+<span class="r-in"><span><span class="fu">paper_article_url</span><span class="op">(</span>doi <span class="op">=</span> <span class="st">"10.1017/S0003055403000534"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">paper_article_url</span><span class="op">(</span>doi <span class="op">=</span> <span class="st">"10.1017/S0003055422000284"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">paper_article_url</span><span class="op">(</span>doi <span class="op">=</span> <span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">st</span> <span class="op">&lt;-</span> <span class="fu"><a href="get_study.html">get_study</a></span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">paper_article_url</span><span class="op">(</span>doi <span class="op">=</span> <span class="va">st</span><span class="op">$</span><span class="va">doi</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

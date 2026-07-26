@@ -36,6 +36,8 @@ suitable for \code{stop()} or display.
 }
 \examples{
 \dontrun{
+maintainer_dependency_hint("10.1017/S0003055403000534")
+maintainer_dependency_hint("10.1017/S0003055422000284")
 maintainer_dependency_hint("10.1017/S0003055426101749")
 }
 

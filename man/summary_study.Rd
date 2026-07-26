@@ -20,5 +20,20 @@ summary_study(doi, repo = NULL, folder = NULL, ...)
 Invisibly, the \code{replicate_study} object.
 }
 \description{
-Convenience wrapper around \code{summary(get_study(doi))}.
+Convenience wrapper around \code{summary(get_study(doi))}. Prefer
+\code{\link[=get_study]{get_study()}} when you need the handle for field access or downstream
+verbs; use this when you only want the printed overview.
+}
+\examples{
+\dontrun{
+summary_study("10.1017/S0003055403000534")
+summary_study("10.1017/S0003055422000284")
+summary_study("10.1257/aer.91.5.1369")
+summary_study("rep-template")
+summary_study("rep-10.1017-S0003055403000534--alt-1")
+}
+
+}
+\seealso{
+\code{\link[=get_study]{get_study()}}, \code{\link[=summary.replicate_study]{summary.replicate_study()}}
 }

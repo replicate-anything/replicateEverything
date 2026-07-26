@@ -24,6 +24,8 @@ Get artifact URL or local path for a replication
 \examples{
 \dontrun{
 get_artifact_path("10.1177/00491241211036161", "fig_1")
+get_artifact_path("10.1017/S0003055403000534", "tab_1")
+get_artifact_path("rep-template", "tab_1")
 }
 
 }

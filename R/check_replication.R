@@ -32,7 +32,12 @@
 #'
 #' check_replication(".")
 #' check_replication(".", full_replication = TRUE)
-#' check_replication("../rep-10.1371-journal.pone.0278337")
+#'
+#' # Or pass a sibling study checkout / GitHub slug by path:
+#' check_replication("../rep-10.1017-S0003055403000534")
+#' check_replication("../rep-10.1017-s0003055422000284")
+#' check_replication("../rep-10.1257-aer.91.5.1369")
+#' check_replication("../rep-template")
 #' }
 #'
 #' @export

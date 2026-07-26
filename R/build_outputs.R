@@ -290,12 +290,14 @@ build_registry_outputs <- function(
 #' @examples
 #' \dontrun{
 #' build_outputs(doi = "10.1177/00491241211036161", what = "fig_1")
-#' build_outputs(doi = "10.1177/00491241211036161", what = "everything")
+#' build_outputs(doi = "10.1017/S0003055403000534", what = "tab_1")
+#' build_outputs(doi = "10.1017/S0003055422000284", what = "everything")
+#' build_outputs(doi = "rep-template", what = "tab_1")
 #' build_outputs(location = ".")
-#' build_outputs(doi = "10.1177/00491241211036161", what = "tab_1", only_missing = TRUE)
+#' build_outputs(doi = "10.1257/aer.91.5.1369", what = "tab_1", only_missing = TRUE)
 #' options(replicateEverything.registry_root = "../registry")
 #' build_outputs(doi = "everywhere", what = "everything")
-#' build_outputs(doi = "everywhere", folders = "10.1177_00491241211036161")
+#' build_outputs(doi = "everywhere", folders = "10.1017_s0003055403000534")
 #' }
 build_outputs <- function(
   doi = NULL,

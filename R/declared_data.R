@@ -114,6 +114,14 @@ download_url_to_path <- function(url, dest, force = FALSE, timeout = 600) {
 #' @param paths Optional character vector of relative paths to materialize;
 #'   when set, only matching declared entries are fetched.
 #' @return Invisibly, character vector of absolute paths written or already present.
+#'
+#' @examples
+#' \dontrun{
+#' # Blair et al. APSR: surgical Dataverse file wiring in replication.yml
+#' materialize_declared_data("10.1017/S0003055422000284")
+#' materialize_declared_data("10.1017/S0003055403000534")
+#' }
+#'
 #' @export
 materialize_declared_data <- function(
   meta,

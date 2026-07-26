@@ -66,6 +66,8 @@ reading \code{code/*.R} from the registry repo).
 \dontrun{
 head(get_code("10.1177/00491241211036161", "fig_1"))
 get_code("10.1017/S0003055403000534", "tab_1", language = "stata")
+get_code("10.1017/S0003055422000284", "tab_1")
+get_code("10.1257/aer.91.5.1369", "tab_1", language = "stata")
 get_code("rep-template", "tab_1", mode = "run")
 
 # setwd() to a checked-out study repo (or open its RStudio project):

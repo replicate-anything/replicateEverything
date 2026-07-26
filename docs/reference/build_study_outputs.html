@@ -13,7 +13,7 @@ package-backed studies (inst/report/outputs/ or inst/report/artifacts/)."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -132,8 +132,12 @@ already exist (see <code><a href="artifact_available.html">artifact_available()<
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"path/to/rep-my-study"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span>  <span class="co"># sanity-check before baking</span></span></span>
 <span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"."</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"rep1371journalpone0278337"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"."</span>, only_missing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Sibling checkouts in a monorepo:</span></span></span>
+<span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"../rep-10.1017-S0003055403000534"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"../rep-10.1017-s0003055422000284"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">build_study_outputs</span><span class="op">(</span><span class="st">"../rep-template"</span>, install_deps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

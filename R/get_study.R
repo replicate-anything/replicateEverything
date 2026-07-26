@@ -1,8 +1,25 @@
-#' Load a study descriptor for summary and related links
+#' Resolve a study handle (metadata once)
 #'
-#' Returns a compact \code{replicate_study} object from the registry index and
-#' study \code{replication.yml}. Use with \code{\link{summary.replicate_study}}
-#' for a console overview (metadata, step counts, related studies, gap tags).
+#' Returns a compact \code{replicate_study} **handle**: registry index fields plus
+#' step counts, related studies, and gap tags from the study
+#' \code{replication.yml}, resolved once. Pass a journal DOI, registry handle
+#' (e.g. \code{"rep-template"}), or \code{"local"} / a study path (see
+#' [resolve_doi_input()]).
+#'
+#' Besides \code{\link{summary.replicate_study}} / [summary_study()] for a
+#' console overview, use the handle to:
+#' \itemize{
+#'   \item Inspect fields programmatically (\code{st$doi}, \code{st$handle},
+#'     \code{st$title}, \code{st$languages}, \code{st$step_counts},
+#'     \code{st$related}, \code{st$gaps}, \code{st$repo}, \ldots).
+#'   \item Feed DOI / handle strings into other consumer verbs — e.g.
+#'     [list_replications()], [run_replication()], [check_replication()]
+#'     (via a local path), [describe_study_dag()], [get_code()] — which take
+#'     character keys, not the handle object itself:
+#'     \code{list_replications(st$doi)} or \code{describe_study_dag(st$handle)}.
+#'   \item Filter or join against [load_index()] / [search_papers()] results,
+#'     or share the same resolved context with Shiny / reports.
+#' }
 #'
 #' @param doi Character. DOI, registry handle, or \code{"local"} / study path
 #'   (see [resolve_doi_input()]).
@@ -12,12 +29,26 @@
 #'
 #' @examples
 #' \dontrun{
+#' # Fearon & Laitin (APSR 2003)
 #' st <- get_study("10.1017/S0003055403000534")
 #' summary(st)
+#' st$doi
+#' st$languages
+#' st$step_counts
+#' list_replications(st$doi)
+#' describe_study_dag(st$doi)
+#'
+#' # Blair et al. (APSR 2022); Acemoglu et al. (AER 2001); template handle
+#' get_study("10.1017/S0003055422000284")
+#' get_study("10.1257/aer.91.5.1369")
+#' get_study("rep-template")
+#'
+#' # Reanalysis handle (no journal DOI on the extension itself)
 #' summary_study("rep-10.1017-S0003055403000534--alt-1")
 #' }
 #'
-#' @seealso [summary.replicate_study()], [list_replications()], [load_index()]
+#' @seealso [summary.replicate_study()], [summary_study()], [list_replications()],
+#'   [describe_study_dag()], [run_replication()], [load_index()]
 #' @export
 get_study <- function(doi, repo = NULL, folder = NULL) {
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
@@ -156,11 +187,24 @@ get_study <- function(doi, repo = NULL, folder = NULL) {
 
 #' Summarize a study by DOI / handle (constructs then summarizes)
 #'
-#' Convenience wrapper around \code{summary(get_study(doi))}.
+#' Convenience wrapper around \code{summary(get_study(doi))}. Prefer
+#' [get_study()] when you need the handle for field access or downstream
+#' verbs; use this when you only want the printed overview.
 #'
 #' @inheritParams get_study
 #' @param ... Passed to \code{\link{summary.replicate_study}}.
 #' @return Invisibly, the \code{replicate_study} object.
+#'
+#' @examples
+#' \dontrun{
+#' summary_study("10.1017/S0003055403000534")
+#' summary_study("10.1017/S0003055422000284")
+#' summary_study("10.1257/aer.91.5.1369")
+#' summary_study("rep-template")
+#' summary_study("rep-10.1017-S0003055403000534--alt-1")
+#' }
+#'
+#' @seealso [get_study()], [summary.replicate_study()]
 #' @export
 summary_study <- function(doi, repo = NULL, folder = NULL, ...) {
   st <- get_study(doi, repo = repo, folder = folder)
@@ -230,9 +274,19 @@ study_gap_step_counts <- function(entries) {
 
 #' Compact print for a study descriptor
 #'
+#' Prints title and DOI/handle; points to \code{summary()} for the full
+#' overview. See [get_study()] for field access and passing keys to other verbs.
+#'
 #' @param x A \code{replicate_study} object.
 #' @param ... Ignored.
 #' @return \code{x}, invisibly.
+#'
+#' @examples
+#' \dontrun{
+#' get_study("10.1017/S0003055403000534")
+#' get_study("rep-template")
+#' }
+#'
 #' @export
 #' @exportS3Method print replicate_study
 print.replicate_study <- function(x, ...) {
@@ -253,6 +307,11 @@ print.replicate_study <- function(x, ...) {
 
 #' Study overview (metadata, steps, related, gaps)
 #'
+#' Console overview for a [get_study()] handle: citation fields, step counts,
+#' related upstream/downstream studies, and gap tags. For programmatic access
+#' to the same information, read fields on the handle (e.g. \code{object$doi},
+#' \code{object$step_counts}) rather than parsing this printout.
+#'
 #' @param object A \code{replicate_study} from \code{\link{get_study}}.
 #' @param ... Ignored.
 #' @return \code{object}, invisibly.
@@ -260,6 +319,8 @@ print.replicate_study <- function(x, ...) {
 #' @examples
 #' \dontrun{
 #' summary(get_study("10.1017/S0003055403000534"))
+#' summary(get_study("10.1257/aer.91.5.1369"))
+#' summary(get_study("rep-template"))
 #' }
 #'
 #' @export

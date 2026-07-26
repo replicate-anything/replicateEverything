@@ -15,5 +15,13 @@
 \code{x}, invisibly.
 }
 \description{
-Compact print for a study descriptor
+Prints title and DOI/handle; points to \code{summary()} for the full
+overview. See \code{\link[=get_study]{get_study()}} for field access and passing keys to other verbs.
+}
+\examples{
+\dontrun{
+get_study("10.1017/S0003055403000534")
+get_study("rep-template")
+}
+
 }
