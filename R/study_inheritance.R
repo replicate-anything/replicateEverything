@@ -35,7 +35,13 @@ parse_inherit_reference <- function(ref, default_repo = NULL) {
 #' Repo folder name from a GitHub slug
 #' @keywords internal
 study_repo_folder_name <- function(repo_slug) {
-  repo_slug <- as.character(repo_slug)
+  if (is.null(repo_slug) || length(repo_slug) == 0L) {
+    return("")
+  }
+  repo_slug <- as.character(repo_slug[[1]] %||% repo_slug)
+  if (!nzchar(repo_slug)) {
+    return("")
+  }
   repo_slug <- sub("^https?://github.com/", "", repo_slug, ignore.case = TRUE)
   repo_slug <- sub("^replicate-anything/", "", repo_slug, ignore.case = TRUE)
   basename(repo_slug)
@@ -93,31 +99,37 @@ load_extended_base_meta <- function(extends) {
 #' Build paper context for the base study of an extension
 #' @keywords internal
 extended_base_paper_context <- function(extends, base_meta = NULL) {
+  repo <- as.character(extends$repo[[1]] %||% extends$repo)
+  ref <- as.character(extends$ref[[1]] %||% extends$ref %||% "main")
+  parent_base_url <- registry_url(
+    paste0("https://raw.githubusercontent.com/", repo),
+    paste0(ref, "/")
+  )
   doi <- extends$doi %||% base_meta$paper$doi %||% NULL
   if (!is.null(doi) && nzchar(as.character(doi[[1]] %||% doi))) {
     ctx <- paper_context(normalize_doi(doi))
     if (is.null(ctx$local_root) || !dir.exists(ctx$local_root)) {
-      local_root <- base_meta$.local_root %||% resolve_study_repo_local_root(extends$repo)
+      local_root <- base_meta$.local_root %||% resolve_study_repo_local_root(repo)
       if (!is.null(local_root)) {
         ctx$local_root <- local_root
       }
     }
-    ctx$materials_repo <- as.character(extends$repo[[1]] %||% extends$repo)
+    # Always pin materials to extends.repo — paper_context(doi) can resolve the
+    # registry stub, but raw URLs must hit the declared parent study repo.
+    ctx$materials_repo <- repo
+    ctx$base_url <- parent_base_url
     return(ctx)
   }
-  local_root <- base_meta$.local_root %||% resolve_study_repo_local_root(extends$repo)
+  local_root <- base_meta$.local_root %||% resolve_study_repo_local_root(repo)
   list(
     doi = NA_character_,
     repo = DEFAULT_REGISTRY_REPO,
-    folder = study_repo_folder_name(extends$repo),
-    base_url = registry_url(
-      paste0("https://raw.githubusercontent.com/", extends$repo),
-      paste0(ref <- as.character(extends$ref[[1]] %||% extends$ref %||% "main"), "/")
-    ),
+    folder = study_repo_folder_name(repo),
+    base_url = parent_base_url,
     local_root = local_root,
     registry_stub_path = NULL,
     registry_local_root = NULL,
-    materials_repo = as.character(extends$repo[[1]] %||% extends$repo),
+    materials_repo = repo,
     is_folder_study = TRUE,
     is_package_study = FALSE
   )
@@ -255,24 +267,43 @@ extended_study_base_root <- function(meta) {
   if (!is.null(root) && nzchar(root) && dir.exists(root)) {
     return(root)
   }
-  resolve_study_repo_local_root(ctx$repo)
+  repo <- ctx$repo %||% ctx$materials_repo %||% NULL
+  if (is.null(repo) || !nzchar(as.character(repo[[1]] %||% repo))) {
+    return(NULL)
+  }
+  resolve_study_repo_local_root(repo)
 }
 
 #' Paper context to use when running or checking a step
+#'
+#' Inherited steps always redirect \code{base_url} / \code{materials_repo} to
+#' the parent study — including on cold hosts where the parent is not checked
+#' out locally (Shiny). Only \code{local_root} is conditional on a local base.
 #' @keywords internal
 step_run_context <- function(step, meta, ctx) {
-  if (is_inherited_step(step)) {
-    base <- meta$.extends_context %||% list()
-    base_root <- base$local_root %||% extended_study_base_root(meta)
-    if (!is.null(base_root) && nzchar(base_root)) {
-      ctx <- modifyList(ctx, list(
-        local_root = base_root,
-        base_url = base$base_url %||% ctx$base_url,
-        materials_repo = base$materials_repo %||% ctx$materials_repo,
-        is_folder_study = TRUE
-      ))
-    }
+  if (!is_inherited_step(step)) {
+    return(ctx)
   }
+  base <- meta$.extends_context %||% list()
+  base_root <- base$local_root %||% extended_study_base_root(meta)
+  if (!is.null(base_root) && nzchar(as.character(base_root)) && !dir.exists(base_root)) {
+    base_root <- NULL
+  }
+  updates <- list(
+    base_url = base$base_url %||% ctx$base_url,
+    materials_repo = base$materials_repo %||% ctx$materials_repo,
+    materials_ref = base$ref %||% ctx$materials_ref %||% "main",
+    is_folder_study = TRUE
+  )
+  if (!is.null(base_root) && nzchar(as.character(base_root))) {
+    updates$local_root <- base_root
+    return(modifyList(ctx, updates))
+  }
+  # Cold host: drop extension local_root so remote readers / materialize use
+  # parent. (Assigning NULL via `$<-` deletes the name from a list, so clear
+  # after modifyList rather than putting local_root = NULL in updates.)
+  ctx <- modifyList(ctx, updates)
+  ctx$local_root <- NULL
   ctx
 }
 

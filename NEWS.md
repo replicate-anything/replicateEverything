@@ -1,3 +1,18 @@
+# replicateEverything 0.7.18
+
+## Extension studies: cold-host inherited steps use parent URLs
+
+* **Bug fix:** `step_run_context()` always sets parent `base_url` /
+  `materials_repo` for inherited steps, even when the parent study is not
+  checked out locally (Shiny / cold hosts). Previously those fields were only
+  rewritten when a local parent `local_root` existed, so Code/Run still fetched
+  `.../--alt-1/.../analysis_data.R`.
+* **Bug fix:** `materials_repo_override` narrows folder candidates / map keys to
+  the parent slug so materialize does not fall back to the extension checkout.
+* **Bug fix:** `extended_base_paper_context()` always pins `base_url` to
+  `extends.repo` / `extends.ref` (not only `materials_repo`).
+* **Bug fix:** `study_repo_ref()` honors `ctx$materials_ref` for parent refs.
+
 # replicateEverything 0.7.17
 
 ## Extension studies: inherited code/data resolve from the parent repo
@@ -21,7 +36,7 @@
 ## Versioning (going forward)
 
 * Stay on `0.x.y` until a deliberate 1.0 decision. Recent `0.7.y` patches
-  (through 0.7.17) were fine; **future bumps should be rarer and batched**.
+  (through 0.7.18) were fine; **future bumps should be rarer and batched**.
 * Prefer patch (`0.7.y`) for most fixes and small UX/engine changes; minor
   (`0.8.0`) only for larger coherent releases, used sparingly.
 * Bump `DESCRIPTION` / `NEWS` when releasing a coherent set of changes — not

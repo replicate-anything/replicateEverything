@@ -127,17 +127,70 @@ test_that("study_everything_step_ids excludes format children", {
 })
 
 test_that("step_run_context routes inherited steps to base local_root", {
+  base_dir <- file.path(tempdir(), paste0("base-run-", sample.int(1e6, 1)))
+  on.exit(unlink(base_dir, recursive = TRUE), add = TRUE)
+  dir.create(base_dir, recursive = TRUE)
   meta <- list(
     .extends_context = list(
-      local_root = "/base/path",
-      base_url = "https://example.com/base/"
+      local_root = base_dir,
+      base_url = "https://example.com/base/",
+      materials_repo = "replicate-anything/rep-base",
+      ref = "main"
     )
   )
   step <- list(id = "analysis_data", .inherited = TRUE)
   ctx <- list(local_root = "/ext/path", base_url = "https://example.com/ext/")
   run_ctx <- step_run_context(step, meta, ctx)
-  expect_equal(run_ctx$local_root, "/base/path")
+  expect_equal(run_ctx$local_root, base_dir)
   expect_equal(run_ctx$base_url, "https://example.com/base/")
+  expect_equal(run_ctx$materials_repo, "replicate-anything/rep-base")
+})
+
+test_that("step_run_context cold host still pins parent base_url and materials_repo", {
+  meta <- list(
+    repo = "replicate-anything/rep-extension",
+    .extends_context = list(
+      repo = "replicate-anything/rep-base",
+      local_root = NULL,
+      base_url = "https://raw.githubusercontent.com/replicate-anything/rep-base/main/",
+      materials_repo = "replicate-anything/rep-base",
+      ref = "main"
+    )
+  )
+  step <- list(id = "analysis_data", .inherited = TRUE, code = "code/steps/analysis_data.R")
+  ctx <- list(
+    local_root = "/ext/path",
+    base_url = "https://raw.githubusercontent.com/replicate-anything/rep-extension/main/",
+    materials_repo = "replicate-anything/rep-extension",
+    is_folder_study = TRUE
+  )
+  run_ctx <- step_run_context(step, meta, ctx)
+  expect_null(run_ctx$local_root)
+  expect_equal(
+    run_ctx$base_url,
+    "https://raw.githubusercontent.com/replicate-anything/rep-base/main/"
+  )
+  expect_equal(run_ctx$materials_repo, "replicate-anything/rep-base")
+  expect_equal(run_ctx$materials_ref, "main")
+
+  code_ctx <- step_code_context(step, meta, ctx)
+  expect_equal(
+    registry_url(code_ctx$base_url, step$code),
+    "https://raw.githubusercontent.com/replicate-anything/rep-base/main/code/steps/analysis_data.R"
+  )
+  expect_false(grepl("--alt-1|rep-extension", registry_url(code_ctx$base_url, step$code)))
+})
+
+test_that("materials_repo_override narrows folder candidates to parent only", {
+  meta <- list(
+    repo = "replicate-anything/rep-10.1017-S0003055403000534--alt-1",
+    paper = list(study_handle = "rep-10.1017-S0003055403000534--alt-1")
+  )
+  ctx <- list(materials_repo = "replicate-anything/rep-10.1017-S0003055403000534")
+  expect_true(materials_repo_override(meta, ctx))
+  cands <- study_folder_candidates(meta, ctx)
+  expect_equal(cands, "rep-10.1017-S0003055403000534")
+  expect_false(any(grepl("--alt-1", cands)))
 })
 
 test_that("registry_url avoids double slashes when base ends with /", {
@@ -158,6 +211,15 @@ test_that("study_repo_slug prefers materials_repo from inherited run context", {
   expect_equal(
     study_repo_slug(meta, list(materials_repo = DEFAULT_REGISTRY_REPO)),
     "replicate-anything/rep-extension"
+  )
+})
+
+test_that("study_repo_ref prefers materials_ref from inherited run context", {
+  meta <- list(paper = list(study_ref = "extension-branch"))
+  expect_equal(study_repo_ref(meta), "extension-branch")
+  expect_equal(
+    study_repo_ref(meta, list(materials_ref = "parent-branch")),
+    "parent-branch"
   )
 })
 

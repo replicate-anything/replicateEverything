@@ -799,12 +799,44 @@ study_repo_slug <- function(meta, ctx = NULL) {
   DEFAULT_REGISTRY_REPO
 }
 
+#' Whether ctx redirects materials to a different repo than meta$repo
+#'
+#' Used for inherited steps on extension studies: \code{materials_repo} points
+#' at the parent while \code{meta$repo} remains the extension slug.
+#' @keywords internal
+materials_repo_override <- function(meta, ctx) {
+  if (is.null(ctx)) {
+    return(FALSE)
+  }
+  mat <- ctx$materials_repo %||% NULL
+  if (is.null(mat)) {
+    return(FALSE)
+  }
+  mat <- as.character(mat[[1]] %||% mat)
+  if (!nzchar(mat) || identical(mat, DEFAULT_REGISTRY_REPO)) {
+    return(FALSE)
+  }
+  from_meta <- meta$repo %||% meta$paper$study_repo %||% NULL
+  if (is.null(from_meta) || !nzchar(as.character(from_meta[[1]] %||% from_meta))) {
+    return(TRUE)
+  }
+  !identical(mat, as.character(from_meta[[1]] %||% from_meta))
+}
+
 #' Git ref for folder-backed study materials
 #'
 #' @param meta Parsed replication.yml contents.
+#' @param ctx Optional paper / step context; when set, prefers
+#'   \code{ctx$materials_ref} (parent ref for inherited steps).
 #' @return Character branch, tag, or commit.
 #' @keywords internal
-study_repo_ref <- function(meta) {
+study_repo_ref <- function(meta, ctx = NULL) {
+  if (!is.null(ctx)) {
+    mr <- ctx$materials_ref %||% NULL
+    if (!is.null(mr) && nzchar(as.character(mr[[1]] %||% mr))) {
+      return(as.character(mr[[1]] %||% mr))
+    }
+  }
   ref <- meta$paper$study_ref %||% meta$study_ref %||% "main"
   as.character(ref[[1]])
 }
@@ -847,7 +879,7 @@ fetch_folder_study_replication_yaml <- function(meta, ctx = NULL) {
   if (identical(repo, DEFAULT_REGISTRY_REPO)) {
     return(NULL)
   }
-  ref <- study_repo_ref(meta)
+  ref <- study_repo_ref(meta, ctx)
   for (meta_url in folder_study_yaml_urls(repo, ref)) {
     parsed <- read_yaml_url(meta_url)
     if (!is.null(parsed)) {
@@ -999,6 +1031,14 @@ enrich_folder_study_replication_meta <- function(meta, ctx) {
 #' @return Character vector of folder names (no duplicates).
 #' @keywords internal
 study_folder_candidates <- function(meta, ctx = NULL) {
+  # Inherited-step contexts pin materials_repo to the parent; do not also
+  # search extension study_handle / DOI aliases (cold Shiny would hit the
+  # extension checkout and fetch the wrong code).
+  if (isTRUE(materials_repo_override(meta, ctx))) {
+    slug <- as.character(ctx$materials_repo[[1]] %||% ctx$materials_repo)
+    return(unique(basename(slug)[nzchar(basename(slug))]))
+  }
+
   explicit <- c(
     meta$paper$study_folder %||% NULL,
     meta$paper$study_path %||% NULL,
@@ -1040,6 +1080,10 @@ study_folder_candidates <- function(meta, ctx = NULL) {
 #' @return Character vector of non-empty keys (no duplicates).
 #' @keywords internal
 study_folder_map_keys <- function(meta, ctx = NULL) {
+  if (isTRUE(materials_repo_override(meta, ctx))) {
+    slug <- as.character(ctx$materials_repo[[1]] %||% ctx$materials_repo)
+    return(unique(c(slug, basename(slug))[nzchar(c(slug, basename(slug)))]))
+  }
   keys <- character(0)
   if (!is.null(ctx) && is.list(ctx) && !is.null(ctx$folder) && nzchar(ctx$folder)) {
     keys <- c(keys, as.character(ctx$folder))
@@ -1456,32 +1500,43 @@ ensure_study_folder_local <- function(meta, ctx = NULL) {
     )
   }
 
-  paper_doi <- meta$paper$doi %||% NULL
-  if (is.null(paper_doi) && !is.null(ctx) && !is.null(ctx$doi)) {
-    paper_doi <- ctx$doi
-  }
+  materials_override <- isTRUE(materials_repo_override(meta, ctx))
 
-  if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
-    local <- resolve_local_study_folder(normalize_doi(as.character(paper_doi[[1]])))
-    if (!is.null(local)) {
-      return(local)
+  # When materials_repo points at a parent study, skip DOI / extension-local
+  # fallbacks that would return the extension checkout.
+  if (!materials_override) {
+    paper_doi <- meta$paper$doi %||% NULL
+    if (is.null(paper_doi) && !is.null(ctx) && !is.null(ctx$doi)) {
+      paper_doi <- ctx$doi
     }
-  }
 
-  if (!is.null(ctx) && !is.null(ctx$local_root) && dir.exists(ctx$local_root)) {
-    marker <- file.path(ctx$local_root, "replication.yml")
-    if (file.exists(marker)) {
-      cached <- normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE)
-      if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
-        sibling <- resolve_local_study_folder(normalize_doi(as.character(paper_doi[[1]])))
-        if (!is.null(sibling)) {
-          sibling_norm <- normalizePath(sibling, winslash = "/", mustWork = FALSE)
-          if (!identical(cached, sibling_norm)) {
-            return(sibling_norm)
+    if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
+      local <- resolve_local_study_folder(normalize_doi(as.character(paper_doi[[1]])))
+      if (!is.null(local)) {
+        return(local)
+      }
+    }
+
+    if (!is.null(ctx) && !is.null(ctx$local_root) && dir.exists(ctx$local_root)) {
+      marker <- file.path(ctx$local_root, "replication.yml")
+      if (file.exists(marker)) {
+        cached <- normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE)
+        if (!is.null(paper_doi) && length(paper_doi) > 0L && nzchar(as.character(paper_doi[[1]]))) {
+          sibling <- resolve_local_study_folder(normalize_doi(as.character(paper_doi[[1]])))
+          if (!is.null(sibling)) {
+            sibling_norm <- normalizePath(sibling, winslash = "/", mustWork = FALSE)
+            if (!identical(cached, sibling_norm)) {
+              return(sibling_norm)
+            }
           }
         }
+        return(cached)
       }
-      return(cached)
+    }
+  } else if (!is.null(ctx) && !is.null(ctx$local_root) && dir.exists(ctx$local_root)) {
+    marker <- file.path(ctx$local_root, "replication.yml")
+    if (file.exists(marker)) {
+      return(normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE))
     }
   }
 
@@ -1502,7 +1557,7 @@ ensure_study_folder_local <- function(meta, ctx = NULL) {
     return(NULL)
   }
 
-  ref <- study_repo_ref(meta)
+  ref <- study_repo_ref(meta, ctx)
   tryCatch(
     materialize_folder_study_from_github(repo, ref),
     error = function(e) {
