@@ -61,6 +61,8 @@ reference:
   - search_papers
   - get_study
   - summary_study
+  - summary.replicate_study
+  - print.replicate_study
   - list_replications
   - paper_article_url
 - title: Run & inspect

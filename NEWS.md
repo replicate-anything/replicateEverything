@@ -1,3 +1,22 @@
+# replicateEverything 0.7.12
+
+## Shiny Studies polish + Madsen citation
+
+* **Study-types guide:** renamed "Explore different types of study"; opens on
+  first visit to the Studies tab (then only via the link); removed from the
+  welcome popup; shorter example labels; bilingual row cites Acemoglu and
+  Fearon & Laitin; no Pattern/Example headers or lead paragraph.
+* **Studies table:** narrower Study column; Related ↑/↓ icons merged into Notes
+  with padlock/compass (Related column removed).
+* **Madsen/Voeten authors:** registry stub + index use Last, First form so the
+  citation label is Madsen et al (not "Rask Madsen" from the compound-surname
+  heuristic on "Mikael Rask Madsen").
+* **Default step on study open:** selects the first *available* object
+  (Display would work: baked output, or normal runnable), not the first
+  blocked row. Skips missing-engine / `data_unavailable:` / incomplete steps
+  with no displayable output (e.g. Hahn climate → Figure 5; other Hahn →
+  Table 1).
+
 # replicateEverything 0.7.11
 
 ## Study-types guide + Team 2026a/b labels

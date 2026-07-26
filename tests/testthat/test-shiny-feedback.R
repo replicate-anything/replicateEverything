@@ -8,6 +8,7 @@ test_that("all Shiny feedback helpers referenced from app.R exist in namespace",
     "sanitize_shiny_feedback_email",
     "shiny_feedback_log_enabled",
     "shiny_feedback_in_app_enabled",
+    "shiny_running_on_wzb",
     "append_shiny_feedback_log",
     "shiny_feedback_github_issue_url",
     "shiny_feedback_github_category_url",
@@ -29,6 +30,30 @@ test_that("shiny_feedback_in_app_enabled is false by default", {
     replicate_shiny.feedback_enabled = NULL
   ))
   expect_false(shiny_feedback_in_app_enabled())
+})
+
+test_that("shiny_running_on_wzb respects REPLICATE_SHINY_FEEDBACK override", {
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK = "1"))
+  expect_true(shiny_running_on_wzb())
+
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK = "0"))
+  expect_false(shiny_running_on_wzb())
+})
+
+test_that("shiny_running_on_wzb detects /wzb/samba/user/ipi/ app dir", {
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK = ""))
+  withr::local_options(list(
+    replicate_shiny.app_dir = "/wzb/samba/user/ipi/ShinyApps/replicate"
+  ))
+  expect_true(shiny_running_on_wzb())
+})
+
+test_that("shiny_running_on_wzb is false for non-WZB app dir when override unset", {
+  withr::local_envvar(c(REPLICATE_SHINY_FEEDBACK = "0"))
+  withr::local_options(list(
+    replicate_shiny.app_dir = tempfile("local-shiny-")
+  ))
+  expect_false(shiny_running_on_wzb())
 })
 
 test_that("shiny_feedback_in_app_enabled follows feedback_enabled when unset", {

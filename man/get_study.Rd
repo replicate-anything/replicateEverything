@@ -19,8 +19,8 @@ An object of class \code{replicate_study}.
 }
 \description{
 Returns a compact \code{replicate_study} object from the registry index and
-study \code{replication.yml}. Use with \code{\link[=summary.replicate_study]{summary.replicate_study()}} for a
-console overview (metadata, step counts, related studies, gap tags).
+study \code{replication.yml}. Use with \code{\link{summary.replicate_study}}
+for a console overview (metadata, step counts, related studies, gap tags).
 }
 \examples{
 \dontrun{

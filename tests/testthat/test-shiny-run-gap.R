@@ -100,3 +100,80 @@ test_that("audit_reason_is_missing_engine detects phrasing", {
     "Table H.1 not available because of proprietary data"
   ))
 })
+
+test_that("shiny_step_default_available skips blocked steps without baked output", {
+  expect_false(shiny_step_default_available(
+    list(
+      id = "fig_1",
+      label = "Figure 1",
+      incomplete = TRUE,
+      requires_engine = "mathematica"
+    ),
+    output_exists = FALSE
+  ))
+  expect_true(shiny_step_default_available(
+    list(
+      id = "fig_1",
+      label = "Figure 1",
+      incomplete = TRUE,
+      requires_engine = "mathematica"
+    ),
+    output_exists = TRUE
+  ))
+  expect_false(shiny_step_default_available(
+    list(
+      id = "tab_h1",
+      label = "Table H.1",
+      incomplete = TRUE,
+      data_unavailable = "proprietary"
+    ),
+    output_exists = FALSE
+  ))
+  expect_true(shiny_step_default_available(
+    list(id = "fig_5", label = "Figure 5", incomplete = FALSE),
+    output_exists = FALSE
+  ))
+  expect_false(shiny_step_default_available(
+    list(id = "tab_x", label = "Table X", incomplete = TRUE),
+    output_exists = FALSE
+  ))
+})
+
+test_that("first_available_replication_row skips Hahn-style blocked leads", {
+  df <- data.frame(
+    group = c("fig_1", "fig_5", "tab_1"),
+    id = c("fig_1", "fig_5", "tab_1"),
+    r_id = c("fig_1", "fig_5", "tab_1"),
+    stata_id = NA_character_,
+    python_id = NA_character_,
+    label = c("Figure 1", "Figure 5", "Table 1"),
+    label_full = c("Figure 1", "Figure 5", "Table 1"),
+    type = c("figure", "figure", "table"),
+    incomplete = c(TRUE, FALSE, FALSE),
+    blocked_reason = c("Mathematica", "", ""),
+    requires_engine = c("mathematica", "", ""),
+    data_unavailable = c("", "", ""),
+    stringsAsFactors = FALSE
+  )
+  # No DOI → blocked rows stay unavailable (no artifact probe); pick fig_5
+  pick <- first_available_replication_row(df, doi = NULL)
+  expect_identical(pick$group[[1]], "fig_5")
+
+  df2 <- data.frame(
+    group = c("tab_h1", "tab_1"),
+    id = c("tab_h1", "tab_1"),
+    r_id = c("tab_h1", "tab_1"),
+    stata_id = NA_character_,
+    python_id = NA_character_,
+    label = c("Table H.1", "Table 1"),
+    label_full = c("Table H.1", "Table 1"),
+    type = c("table", "table"),
+    incomplete = c(TRUE, FALSE),
+    blocked_reason = c("proprietary", ""),
+    requires_engine = c("", ""),
+    data_unavailable = c("proprietary", ""),
+    stringsAsFactors = FALSE
+  )
+  pick2 <- first_available_replication_row(df2, doi = NULL)
+  expect_identical(pick2$group[[1]], "tab_1")
+})

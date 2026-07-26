@@ -7,7 +7,7 @@
 \method{summary}{replicate_study}(object, ...)
 }
 \arguments{
-\item{object}{A \code{replicate_study} from \code{\link[=get_study]{get_study()}}.}
+\item{object}{A \code{replicate_study} from \code{\link{get_study}}.}
 
 \item{...}{Ignored.}
 }

@@ -14,7 +14,7 @@ summary_study(doi, repo = NULL, folder = NULL, ...)
 
 \item{folder}{Optional registry folder name from \code{index.csv}.}
 
-\item{...}{Passed to \code{\link[=summary.replicate_study]{summary.replicate_study()}}.}
+\item{...}{Passed to \code{\link{summary.replicate_study}}.}
 }
 \value{
 Invisibly, the \code{replicate_study} object.

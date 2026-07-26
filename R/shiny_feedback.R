@@ -4,11 +4,57 @@
 # from save_local_shiny(feedback_enabled = ...). Interactive run_shiny_app()
 # leaves feedback OFF by default. GitHub issue links keep hardcoded fallbacks
 # when package helpers are missing from a stale worker. See FEEDBACK_TODO.md.
+# The Feedback *tab* itself is shown only when shiny_running_on_wzb() is TRUE.
 
 #' Allowed Shiny feedback categories
 #'
 #' @keywords internal
 SHINY_FEEDBACK_CATEGORIES <- c("bug", "feature", "other")
+
+#' Whether the Shiny app appears to be running on the WZB IPI host
+#'
+#' Returns \code{TRUE} when any checked path contains the durable host marker
+#' \code{/wzb/samba/user/ipi/} (covers both the package library and
+#' \code{ShinyApps/replicate}). Override with \code{REPLICATE_SHINY_FEEDBACK=1}
+#' (force on) or \code{=0} (force off) for local testing.
+#'
+#' @return Logical scalar.
+#' @keywords internal
+shiny_running_on_wzb <- function() {
+  env <- Sys.getenv("REPLICATE_SHINY_FEEDBACK", unset = "")
+  if (length(env) == 1L && nzchar(env)) {
+    return(tolower(env) %in% c("1", "true", "yes", "on"))
+  }
+
+  # /wzb/samba/user/ipi/ is the durable WZB host marker (lib + ShinyApps).
+  marker <- "/wzb/samba/user/ipi/"
+  paths <- character(0)
+
+  add_path <- function(p) {
+    if (is.null(p) || length(p) < 1L) {
+      return(invisible(NULL))
+    }
+    for (x in as.character(p)) {
+      if (length(x) != 1L || is.na(x) || !nzchar(x)) {
+        next
+      }
+      paths <<- c(paths, normalizePath(x, winslash = "/", mustWork = FALSE))
+    }
+    invisible(NULL)
+  }
+
+  add_path(tryCatch(getwd(), error = function(e) NULL))
+  add_path(getOption("replicate_shiny.app_dir", NULL))
+  add_path(Sys.getenv("SHINY_APP_DIR", unset = ""))
+  if (requireNamespace("shiny", quietly = TRUE)) {
+    add_path(tryCatch(shiny::getShinyOption("appDir"), error = function(e) NULL))
+  }
+  add_path(.libPaths())
+  add_path(tryCatch(system.file(package = "replicateEverything"), error = function(e) ""))
+
+  paths <- unique(paths[nzchar(paths)])
+  any(grepl(marker, paths, fixed = TRUE))
+}
 
 #' Default GitHub repo for Shiny feedback issue links
 #'

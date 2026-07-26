@@ -60,12 +60,13 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Vermon Washington \email{vermon.washington@wzb.eu} [contributor]
+\strong{Maintainer}: Macartan Humphreys \email{macartan.humphreys@wzb.eu}
 
-Other contributors:
+Authors:
 \itemize{
-  \item Macartan Humphreys \email{macartan.humphreys@wzb.eu} [contributor]
-  \item Cord Masche \email{cord.masche@wzb.eu} [contributor]
+  \item Macartan Humphreys \email{macartan.humphreys@wzb.eu}
+  \item Vermon Washington \email{vermon.washington@wzb.eu}
+  \item Cord Masche \email{cord.masche@wzb.eu}
 }
 
 }

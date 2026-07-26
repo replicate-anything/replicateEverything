@@ -10,6 +10,10 @@ not `local.R`.
 | `run_shiny_app()` | TRUE (interactive) | OFF |
 | `save_local_shiny()` | TRUE (arg) | **TRUE** (server-friendly default) |
 
+The **Feedback** navbar tab itself is shown only when `shiny_running_on_wzb()`
+is true (path marker `/wzb/samba/user/ipi/`, or `REPLICATE_SHINY_FEEDBACK=1`).
+Local interactive runs hide the tab by default.
+
 ## Server deploy (one-liner)
 
 ```r

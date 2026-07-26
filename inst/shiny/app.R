@@ -80,15 +80,6 @@ app_welcome_intro <- function() {
           " to rerun the analysis in R."
         ),
         p(
-          "Studies come in several shapes — see the ",
-          actionLink(
-            "show_study_types_guide_welcome",
-            "guide to study types",
-            class = "welcome-guide-link"
-          ),
-          " (also on the Studies tab)."
-        ),
-        p(
           "Help us develop the app by contributing your own study to the ",
           tags$a(
             href = REGISTRY_GITHUB,
@@ -115,27 +106,16 @@ study_types_guide_ui <- function() {
   }
   tags$div(
     class = "study-types-guide",
-    tags$p(
-      class = "study-types-guide-lead text-muted",
-      "The registry mixes a few study shapes. Distinctive patterns are in bold; ",
-      "examples use short citation labels from the Studies list."
-    ),
     tags$table(
       class = "table table-sm study-types-guide-table",
-      tags$thead(
-        tags$tr(
-          tags$th("Pattern"),
-          tags$th("Example")
-        )
-      ),
       tags$tbody(
         row(
           "The <strong>simplest</strong> folder-backed repo",
-          "Team (2026a), Minimal folder-backed template study"
+          "Team (2026a)"
         ),
         row(
           "A <strong>simple bilingual</strong> (R + Stata) repo",
-          "Acemoglu et al (2001)"
+          "Acemoglu et al (2001) and Fearon & Laitin (2003)"
         ),
         row(
           "Code that <strong>pulls from Dataverse</strong>",
@@ -171,7 +151,7 @@ study_types_guide_ui <- function() {
         ),
         row(
           "A repo that <strong>reanalyses another repo</strong>",
-          "Team (2026b), Minimal reanalysis template repo"
+          "Team (2026b)"
         )
       )
     )
@@ -180,7 +160,7 @@ study_types_guide_ui <- function() {
 
 show_study_types_guide_modal <- function() {
   showModal(modalDialog(
-    title = "Guide to study types",
+    title = "Explore different types of study",
     study_types_guide_ui(),
     size = "l",
     easyClose = TRUE,
@@ -2232,27 +2212,45 @@ study_languages_icons_display <- function(
   )
 }
 
-#' Notes column: padlock / compass gap flags for the Studies list
-study_notes_icons_display <- function(has_data_gap = FALSE, has_engine_gap = FALSE) {
-  if (!isTRUE(has_data_gap) && !isTRUE(has_engine_gap)) {
+#' Notes column: padlock / compass gap flags and related ↑/↓ icons
+study_notes_icons_display <- function(
+  has_data_gap = FALSE,
+  has_engine_gap = FALSE,
+  related_ui = NULL
+) {
+  gap_bits <- list()
+  if (isTRUE(has_data_gap)) {
+    gap_bits <- c(
+      gap_bits,
+      list(tags$span(
+        class = "engine-badge",
+        title = "Proprietary or unavailable data",
+        engine_icon_data_unavailable()
+      ))
+    )
+  }
+  if (isTRUE(has_engine_gap)) {
+    gap_bits <- c(
+      gap_bits,
+      list(tags$span(
+        class = "engine-badge",
+        title = "Missing system engine",
+        engine_icon_missing_engine()
+      ))
+    )
+  }
+  related_bits <- if (is.null(related_ui)) {
+    list()
+  } else {
+    list(related_ui)
+  }
+  if (!length(gap_bits) && !length(related_bits)) {
     return(tags$span(class = "text-muted small", "—"))
   }
   tags$div(
     class = "engine-icons-cell study-notes-icons",
-    if (isTRUE(has_data_gap)) {
-      tags$span(
-        class = "engine-badge",
-        title = "Proprietary or unavailable data",
-        engine_icon_data_unavailable()
-      )
-    },
-    if (isTRUE(has_engine_gap)) {
-      tags$span(
-        class = "engine-badge",
-        title = "Missing system engine",
-        engine_icon_missing_engine()
-      )
-    }
+    gap_bits,
+    related_bits
   )
 }
 
@@ -2330,7 +2328,7 @@ related_study_icon_link <- function(item, direction = c("upstream", "downstream"
   tags$span(class = "study-related-link", title = label, icon)
 }
 
-#' Related column: upstream / downstream icons for the Studies list
+#' Related study ↑/↓ icons (embedded in Notes; NULL when none)
 study_related_icons_display <- function(row, index_df = NULL) {
   related <- tryCatch(
     replicate_fn("related_studies_for_index_row", row, index = index_df),
@@ -2358,10 +2356,10 @@ study_related_icons_display <- function(row, index_df = NULL) {
   up <- related$upstream %||% list()
   down <- related$downstream %||% list()
   if (!length(up) && !length(down)) {
-    return(tags$span(class = "text-muted small", "—"))
+    return(NULL)
   }
-  tags$div(
-    class = "engine-icons-cell study-related-icons",
+  tags$span(
+    class = "study-related-icons",
     lapply(up, function(item) related_study_icon_link(item, "upstream")),
     lapply(down, function(item) related_study_icon_link(item, "downstream"))
   )
@@ -5283,6 +5281,15 @@ ui <- tagList(
       if (window.Shiny && window.Shiny.shinyapp && window.Shiny.shinyapp.isConnected()) {
         sendUrlDeepLinkFromQuery();
       }
+      Shiny.addCustomMessageHandler('maybeShowStudyTypesGuide', function(msg) {
+        try {
+          var key = 'replicateEverything_study_types_guide_seen';
+          if (window.localStorage && !localStorage.getItem(key)) {
+            localStorage.setItem(key, '1');
+            Shiny.setInputValue('study_types_guide_first_visit', Date.now(), {priority: 'event'});
+          }
+        } catch (e) {}
+      });
     ")),
     tags$style(HTML("
     .replication-table table { display: table; width: auto; max-width: 100%; margin-bottom: 1rem; }
@@ -5566,11 +5573,6 @@ ui <- tagList(
     .study-types-guide-link {
       font-weight: 600;
     }
-    .study-types-guide-lead {
-      margin-bottom: 0.85rem;
-      font-size: 0.95rem;
-    }
-    .study-types-guide-table th:first-child,
     .study-types-guide-table td:first-child {
       width: 58%;
     }
@@ -5757,9 +5759,10 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 4.5rem 3rem 5.5rem 3.25rem 3.25rem 2rem 2.75rem;
+      grid-template-columns: minmax(0, 18rem) 4.5rem 3rem 5.5rem 4.75rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
+      justify-content: start;
     }
     .study-list-header {
       font-size: 0.82rem;
@@ -5771,7 +5774,6 @@ ui <- tagList(
     }
     .study-engine-col,
     .study-notes-col,
-    .study-related-col,
     .study-run-col,
     .study-link-col {
       text-align: center;
@@ -5780,8 +5782,7 @@ ui <- tagList(
       justify-content: center;
       align-items: center;
     }
-    .study-notes-col,
-    .study-related-col {
+    .study-notes-col {
       min-height: 1.4rem;
     }
     .study-related-link {
@@ -6060,7 +6061,6 @@ ui <- tagList(
       }
       .study-engine-col,
       .study-notes-col,
-      .study-related-col,
       .study-run-col,
       .study-link-col,
       .study-collections-col,
@@ -6287,7 +6287,7 @@ ui <- tagList(
           class = "d-flex align-items-end justify-content-end pb-2",
           actionLink(
             "show_study_types_guide",
-            "Guide to study types",
+            "Explore different types of study",
             class = "study-types-guide-link"
           )
         )
@@ -6730,7 +6730,6 @@ server <- function(input, output, session) {
     }
 
     if (!is.null(state$replications_df) && nrow(state$replications_df) > 0) {
-      first <- state$replications_df[1, , drop = FALSE]
       if (!is.null(state$pending_deep_link_what) &&
           nzchar(state$pending_deep_link_what)) {
         select_replication_by_group(
@@ -6740,6 +6739,26 @@ server <- function(input, output, session) {
         state$pending_deep_link_what <- NULL
         state$pending_deep_link_language <- NULL
       } else {
+        # Prefer first step where Display works (baked output, or normal
+        # runnable); skip data_unavailable / missing-engine / incomplete
+        # rows with nothing to show (e.g. Hahn fig_1 → fig_5).
+        first <- tryCatch(
+          replicate_fn(
+            "first_available_replication_row",
+            state$replications_df,
+            doi,
+            folder = state$registry_folder,
+            repo = state$registry_repo,
+            language_for_row = function(row) default_row_engine(row),
+            resolve_id = function(row, engine) {
+              resolve_group_replication_id(row, engine)
+            }
+          ),
+          error = function(e) state$replications_df[1, , drop = FALSE]
+        )
+        if (is.null(first) || nrow(first) < 1L) {
+          first <- state$replications_df[1, , drop = FALSE]
+        }
         state$selected_replication <- first$group[[1]]
         state$selected_type <- first$type[[1]]
         load_selected_artifact(fallback_live = FALSE)
@@ -6946,13 +6965,9 @@ server <- function(input, output, session) {
             tags$span(class = "study-citation-meta-label", "Notes"),
             study_notes_icons_display(
               has_data_gap = isTRUE(gaps$data_unavailable),
-              has_engine_gap = isTRUE(gaps$missing_engine)
+              has_engine_gap = isTRUE(gaps$missing_engine),
+              related_ui = study_related_icons_display(row, index_df = registry_index)
             )
-          ),
-          tags$div(
-            class = "study-related-col",
-            tags$span(class = "study-citation-meta-label", "Related"),
-            study_related_icons_display(row, index_df = registry_index)
           ),
           tags$div(
             class = "study-link-col",
@@ -6987,7 +7002,6 @@ server <- function(input, output, session) {
         tags$div(class = "study-repo-col", "Repo"),
         tags$div(class = "study-engine-col", "Languages"),
         tags$div(class = "study-notes-col", "Notes"),
-        tags$div(class = "study-related-col", "Related"),
         tags$div(class = "study-link-col", "Link"),
         tags$div(class = "study-run-col", "Go")
       ),
@@ -8395,7 +8409,14 @@ server <- function(input, output, session) {
     show_study_types_guide_modal()
   })
 
-  observeEvent(input$show_study_types_guide_welcome, {
+  observeEvent(input$main_nav, {
+    if (!identical(input$main_nav, "Studies")) {
+      return()
+    }
+    session$sendCustomMessage("maybeShowStudyTypesGuide", list())
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$study_types_guide_first_visit, {
     show_study_types_guide_modal()
   })
 

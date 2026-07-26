@@ -685,6 +685,153 @@ study_partial_replication_notice <- function(
   )
 }
 
+#' Whether a Shiny step is suitable for default selection on study open
+#'
+#' Prefer steps where Display would work: baked output present, or a normal
+#' runnable step (not \code{data_unavailable:} / missing-engine / incomplete
+#' with no displayable output).
+#'
+#' @param entry Step list (yaml entry or Shiny row fields as a list).
+#' @param output_exists Whether a display artifact exists.
+#' @param audit_skipped_engine Passed to [classify_shiny_run_gap()].
+#' @param engine_available Passed to [classify_shiny_run_gap()].
+#' @return Logical.
+#' @keywords internal
+shiny_step_default_available <- function(
+  entry,
+  output_exists = FALSE,
+  audit_skipped_engine = FALSE,
+  engine_available = NULL
+) {
+  if (isTRUE(output_exists)) {
+    return(TRUE)
+  }
+  gap <- classify_shiny_run_gap(
+    entry,
+    output_exists = FALSE,
+    audit_skipped_engine = isTRUE(audit_skipped_engine),
+    engine_available = engine_available
+  )
+  if (!is.null(gap$kind)) {
+    return(FALSE)
+  }
+  incomplete <- isTRUE(entry$incomplete[[1]] %||% entry$incomplete %||% FALSE)
+  !incomplete
+}
+
+#' First replication row suitable for Shiny default selection
+#'
+#' Walks \code{replications_df} in order and returns the first row where
+#' \code{shiny_step_default_available()} is true. Falls back to row 1 when none
+#' qualify (or the frame is empty / NULL).
+#'
+#' @param replications_df Data frame from Shiny \code{replications_to_df()}.
+#' @param doi Study DOI / key (for artifact lookup).
+#' @param folder Optional local registry / study folder.
+#' @param repo Optional study repo slug.
+#' @param language_for_row Optional function \code{function(row) -> engine}.
+#' @param resolve_id Optional function \code{function(row, engine) -> step id}.
+#' @return One-row data frame, or \code{NULL}.
+#' @keywords internal
+first_available_replication_row <- function(
+  replications_df,
+  doi,
+  folder = NULL,
+  repo = NULL,
+  language_for_row = NULL,
+  resolve_id = NULL
+) {
+  if (is.null(replications_df) || !is.data.frame(replications_df) ||
+      nrow(replications_df) < 1L) {
+    return(NULL)
+  }
+  if (!is.function(resolve_id)) {
+    resolve_id <- function(row, engine) {
+      as.character(row$id[[1]] %||% row$id %||% "")
+    }
+  }
+  if (!is.function(language_for_row)) {
+    language_for_row <- function(row) {
+      if (!is.na(row$r_id[[1]] %||% NA_character_) &&
+          nzchar(as.character(row$r_id[[1]]))) {
+        return("r")
+      }
+      if (!is.na(row$stata_id[[1]] %||% NA_character_) &&
+          nzchar(as.character(row$stata_id[[1]]))) {
+        return("stata")
+      }
+      if (!is.na(row$python_id[[1]] %||% NA_character_) &&
+          nzchar(as.character(row$python_id[[1]]))) {
+        return("python")
+      }
+      "r"
+    }
+  }
+
+  for (i in seq_len(nrow(replications_df))) {
+    row <- replications_df[i, , drop = FALSE]
+    eng <- language_for_row(row)
+    resolved_id <- as.character(resolve_id(row, eng) %||% "")
+    if (!nzchar(resolved_id)) {
+      resolved_id <- as.character(row$id[[1]] %||% row$group[[1]] %||% "")
+    }
+    incomplete <- isTRUE(row$incomplete[[1]] %||% FALSE)
+    req_eng <- tolower(trimws(as.character(row$requires_engine[[1]] %||% "")))
+    data_tok <- tolower(trimws(as.character(row$data_unavailable[[1]] %||% "")))
+    needs_probe <- incomplete || nzchar(req_eng) || nzchar(data_tok)
+
+    output_exists <- FALSE
+    audit_engine_skip <- FALSE
+    engine_available <- NULL
+    if (needs_probe && nzchar(as.character(doi %||% ""))) {
+      output_exists <- tryCatch(
+        step_display_output_exists(
+          doi,
+          resolved_id,
+          folder = folder,
+          repo = repo,
+          language = eng
+        ),
+        error = function(e) FALSE
+      )
+      if (nzchar(req_eng) && !req_eng %in% c("r", "stata", "python")) {
+        engine_available <- tryCatch(
+          system_engine_available(req_eng),
+          error = function(e) NULL
+        )
+        audit_hit <- tryCatch(
+          lookup_replication_audit_engine_skip(
+            doi,
+            resolved_id,
+            engine = eng
+          ),
+          error = function(e) NULL
+        )
+        audit_engine_skip <- isTRUE(audit_hit$skipped_engine)
+      }
+    }
+
+    entry <- list(
+      id = resolved_id,
+      label = as.character(row$label[[1]] %||% row$group[[1]] %||% resolved_id),
+      incomplete = incomplete,
+      requires_engine = req_eng,
+      data_unavailable = data_tok,
+      blocked_reason = as.character(row$blocked_reason[[1]] %||% "")
+    )
+    if (shiny_step_default_available(
+      entry,
+      output_exists = isTRUE(output_exists),
+      audit_skipped_engine = isTRUE(audit_engine_skip),
+      engine_available = engine_available
+    )) {
+      return(row)
+    }
+  }
+
+  replications_df[1, , drop = FALSE]
+}
+
 #' Whether any declared display output for a step already exists
 #' @keywords internal
 step_display_output_exists <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {

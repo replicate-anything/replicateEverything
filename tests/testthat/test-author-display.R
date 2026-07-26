@@ -12,6 +12,16 @@ test_that("first_author_surname reads Last, First form", {
   expect_equal(first_author_surname("Velez, Yamil Ricardo"), "Velez")
 })
 
+test_that("first_author_surname uses Madsen from Last, First (not Rask Madsen)", {
+  expect_equal(first_author_surname("Madsen, Mikael Rask"), "Madsen")
+  expect_equal(
+    format_author_label("Madsen, Mikael Rask, Mayoral, Juan, Strezhnev, Anton, Voeten, Erik"),
+    "Madsen et al"
+  )
+  # First Middle Last without comma triggers compound-surname heuristic
+  expect_equal(first_author_surname("Mikael Rask Madsen"), "Rask Madsen")
+})
+
 test_that("parse_author_names preserves Last, First pairs", {
   authors <- parse_author_names("Velez, Yamil Ricardo, Liu, Patrick, Clifford, Scott")
   expect_equal(
