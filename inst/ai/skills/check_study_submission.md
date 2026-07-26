@@ -115,7 +115,9 @@ git ls-files "data/**" "outputs/**/*.dta" "outputs/**/*.csv" 2>/dev/null | head
 
 ```
 - [ ] Every **runnable** table/figure step has a committed display sink under `outputs/` (`.html` / `.png`)
+- [ ] Claimed Dataverse access steps (`engine: dataverse`) have `file_id` + `outputs:` (Display uses yaml summary; binary may stay gitignored)
 - [ ] Incomplete / `data_unavailable` / `requires_engine` steps may lack sinks — that is expected; do not force-bake them
+- [ ] `check_and_bake_study` / `check_display_sink_rows` would fail if Display would show “not on disk yet” for a non-gap step
 - [ ] `outputs/manifest.json` matches files that actually exist
 - [ ] Intermediate RDS/DTA under `outputs/<step_id>/` either committed (if needed for `given = "parents"`) or rebuildable via DAG
 - [ ] `build_study_outputs()` / `check_and_bake_study(".")` clean (incomplete steps skipped)

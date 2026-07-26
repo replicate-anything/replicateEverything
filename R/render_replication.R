@@ -203,6 +203,30 @@ resolve_registry_artifact_path <- function(what, ctx, rep = NULL, doi = NULL) {
   NULL
 }
 
+#' Remote GitHub raw URLs for a package-backed artifact
+#' @keywords internal
+package_artifact_remote_candidates <- function(what, meta, ctx, rep = NULL) {
+  repo <- tryCatch(package_repo_slug(meta, ctx), error = function(e) NULL)
+  if (is.null(repo) || !nzchar(as.character(repo))) {
+    return(character(0))
+  }
+  ref <- package_repo_ref(meta)
+  base <- paste0("https://raw.githubusercontent.com/", repo, "/", ref, "/")
+  cands <- character(0)
+  if (!is.null(rep)) {
+    for (rel in study_artifact_rel_candidates(rep)) {
+      rel <- gsub("^/+", "", gsub("\\\\", "/", as.character(rel)))
+      if (nzchar(rel)) {
+        cands <- c(cands, paste0(base, rel))
+      }
+    }
+  }
+  for (ext in c("html", "png", "rds", "svg")) {
+    cands <- c(cands, paste0(base, "inst/report/artifacts/", what, ".", ext))
+  }
+  unique(cands[nzchar(cands)])
+}
+
 #' @keywords internal
 package_installed_artifact_path <- function(what, pkg, meta = NULL, ctx = NULL) {
   if (!is.null(meta) && !is.null(ctx)) {
@@ -637,7 +661,19 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = 
         return(path)
       }
     }
-    return(package_installed_artifact_path(what, pkg, meta = meta, ctx = ctx))
+    installed <- package_installed_artifact_path(what, pkg, meta = meta, ctx = ctx)
+    if (!is.null(installed)) {
+      return(installed)
+    }
+    rep <- tryCatch(
+      find_replication_entry(meta, what, language = NULL),
+      error = function(e) NULL
+    )
+    remotes <- package_artifact_remote_candidates(what, meta, ctx, rep = rep)
+    if (length(remotes)) {
+      return(remotes[[1]])
+    }
+    return(NULL)
   }
 
   if (is.null(rep)) {
@@ -690,7 +726,20 @@ load_artifact <- function(doi, what, repo = NULL, folder = NULL, language = NULL
     }
     path <- package_installed_artifact_path(what, pkg, meta = meta, ctx = ctx)
     if (!is.null(path)) {
-      return(load_artifact_file_path(path))
+      loaded <- load_artifact_file_path(path)
+      if (!artifact_content_missing(loaded)) {
+        return(loaded)
+      }
+    }
+    rep <- tryCatch(
+      find_replication_entry(meta, what, language = NULL),
+      error = function(e) NULL
+    )
+    for (url in package_artifact_remote_candidates(what, meta, ctx, rep = rep)) {
+      loaded <- load_artifact_file_path(url)
+      if (!artifact_content_missing(loaded)) {
+        return(loaded)
+      }
     }
     return(NULL)
   }
@@ -758,6 +807,11 @@ artifact_lookup_candidates <- function(doi, what, repo = NULL, folder = NULL, la
     if (!is.null(installed)) {
       paths <- c(paths, installed)
     }
+    rep <- tryCatch(
+      find_replication_entry(meta, what, language = NULL),
+      error = function(e) NULL
+    )
+    paths <- c(paths, package_artifact_remote_candidates(what, meta, ctx, rep = rep))
     return(unique(paths[nzchar(paths)]))
   }
 

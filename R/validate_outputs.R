@@ -117,6 +117,150 @@ validate_single_output <- function(doi, what, repo = NULL, folder = NULL, langua
   invisible(TRUE)
 }
 
+#' Whether a step is exempt from baked Display-sink requirements
+#'
+#' Gap steps (\code{incomplete} / \code{data_unavailable} / \code{requires_engine})
+#' may omit display sinks; Shiny shows Code + a clean gap message instead.
+#' @keywords internal
+step_exempt_from_display_sink <- function(entry) {
+  if (is.null(entry) || !is.list(entry)) {
+    return(FALSE)
+  }
+  if (isTRUE(entry$incomplete %||% FALSE)) {
+    return(TRUE)
+  }
+  if (nzchar(as.character(step_data_unavailable(entry) %||% ""))) {
+    return(TRUE)
+  }
+  req <- tolower(trimws(as.character(
+    entry$requires_engine[[1]] %||% entry$requires_engine %||% ""
+  )))
+  nzchar(req) && !req %in% c("r", "stata", "python", "dataverse")
+}
+
+#' Check that claimed steps have Display sinks Shiny can show without errors
+#'
+#' Tables/figures need baked html/png. Pattern B Dataverse access steps need
+#' resolvable file-id wiring (Display uses a yaml summary; binary may be
+#' gitignored). Other transform steps with displayable \code{outputs:}
+#' (html/png/rds/svg) must have those files on disk.
+#'
+#' @param meta Parsed replication.yml.
+#' @param study_root Local study or package root.
+#' @return Data frame of check rows (same shape as [check_result()] binds).
+#' @keywords internal
+check_display_sink_rows <- function(meta, study_root) {
+  checks <- bind_check_results()
+  entries <- tryCatch(collect_replication_entries(meta), error = function(e) list())
+  if (!length(entries)) {
+    return(checks)
+  }
+  for (entry in entries) {
+    rid <- as.character(entry$id[[1]] %||% entry$id %||% "")
+    if (!nzchar(rid) || identical(as.character(entry$type %||% ""), "format")) {
+      next
+    }
+    if (step_exempt_from_display_sink(entry)) {
+      checks <- bind_check_results(
+        checks,
+        check_result(
+          paste0("display_sink_", rid),
+          TRUE,
+          "gap step — Display sink optional"
+        )
+      )
+      next
+    }
+    rtype <- tolower(as.character(entry$type %||% ""))
+    if (rtype %in% c("table", "figure")) {
+      # Already covered by artifact_* checks; skip duplicate.
+      next
+    }
+    if (is_dataverse_file_access_prep_step(entry, meta = meta) ||
+        is_dataverse_replication(entry, meta$paper %||% NULL)) {
+      entries_dv <- tryCatch(
+        dataverse_access_step_entries(entry, meta = meta),
+        error = function(e) list()
+      )
+      ok <- length(entries_dv) > 0L &&
+        all(vapply(entries_dv, function(e) {
+          nzchar(as.character(e$id %||% e$file_id %||% e$url %||% "")) &&
+            nzchar(as.character(e$path %||% ""))
+        }, logical(1)))
+      checks <- bind_check_results(
+        checks,
+        check_result(
+          paste0("display_sink_", rid),
+          ok,
+          if (ok) {
+            "Dataverse access Display summary wired"
+          } else {
+            paste0(
+              "engine: dataverse step '", rid,
+              "' needs file_id (or files:/url) + outputs: so Display/Run work without ",
+              "'output not on disk' / 'not available for language' errors"
+            )
+          }
+        )
+      )
+      next
+    }
+    if (is_dataverse_access_prep_step(entry, meta, ctx = NULL)) {
+      checks <- bind_check_results(
+        checks,
+        check_result(
+          paste0("display_sink_", rid),
+          TRUE,
+          "Dataverse deposit Display summary wired"
+        )
+      )
+      next
+    }
+    outs <- character(0)
+    if (!is.null(entry$outputs) && length(entry$outputs)) {
+      outs <- vapply(entry$outputs, function(x) as.character(x[[1]] %||% x), character(1))
+      outs <- outs[nzchar(outs)]
+    }
+    displayable <- outs[grepl("\\.(html|png|rds|svg)$", outs, ignore.case = TRUE)]
+    if (!length(displayable)) {
+      # Non-display transform (e.g. intermediate .dta only) — OK for Display gap
+      # as long as Shiny does not claim a precomputed table/figure.
+      checks <- bind_check_results(
+        checks,
+        check_result(
+          paste0("display_sink_", rid),
+          TRUE,
+          "no html/png/rds/svg display sink declared"
+        )
+      )
+      next
+    }
+    missing <- character(0)
+    for (rel in displayable) {
+      path <- file.path(study_root, rel)
+      if (!file.exists(path)) {
+        missing <- c(missing, rel)
+      }
+    }
+    checks <- bind_check_results(
+      checks,
+      check_result(
+        paste0("display_sink_", rid),
+        length(missing) == 0L,
+        if (length(missing) == 0L) {
+          paste(displayable, collapse = ", ")
+        } else {
+          paste0(
+            "Missing Display sink(s): ", paste(missing, collapse = ", "),
+            " (Shiny would show 'not on disk' / 'No precomputed …'; bake or mark incomplete)"
+          )
+        }
+      )
+    )
+  }
+  checks
+}
+
 #' Validate all precomputed outputs for one paper
 #'
 #' @param doi Character. DOI of the paper.

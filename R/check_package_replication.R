@@ -336,6 +336,8 @@ check_package_replication <- function(location, full_replication = FALSE) {
     }
   }
 
+  checks <- bind_check_results(checks, check_display_sink_rows(meta, pkg_root))
+
   if (isTRUE(full_replication)) {
     live_objects <- list()
     pkg_meta <- tryCatch(

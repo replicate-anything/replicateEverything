@@ -1,3 +1,20 @@
+# replicateEverything 0.7.14
+
+## Shiny Display/Run: no “missing output” errors for registered studies
+
+* **Blair / `engine: dataverse`:** Live Run with language `r` resolves surgical
+  access steps (no “not available for language r”). Display shows a Dataverse
+  file-access summary when `outputs/*.dta` is gitignored / absent — not
+  “Output not on disk yet … Use Live Run”.
+* **Package-backed Display (Geissler):** `load_artifact` /
+  `artifact_lookup_candidates` fall back to GitHub raw
+  `inst/report/artifacts/` when the study package is not installed locally.
+* **Shiny gap icons:** padlock / compass click selects the step and opens
+  **Code** (Display stays available when a sink or gap message is displayable).
+* **Validation:** `check_display_sink_rows()` in folder/package
+  `check_replication` — claimed non-gap steps must have Display wiring (baked
+  table/figure sinks, or Dataverse access summary fields).
+
 # replicateEverything 0.7.13
 
 ## Shiny Studies performance (registry-baked cache)

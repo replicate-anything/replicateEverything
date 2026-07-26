@@ -113,6 +113,9 @@ resolve_prep_display_object <- function(obj, n = 6L) {
   if (inherits(obj, "dataverse_deposit_summary")) {
     return(obj)
   }
+  if (inherits(obj, "dataverse_file_access_summary")) {
+    return(obj)
+  }
   if (inherits(obj, "prep_output_preview")) {
     path <- obj$path %||% NULL
     if (!is.null(path) && nzchar(path) && file.exists(path)) {

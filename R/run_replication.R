@@ -835,6 +835,23 @@ first_available_replication_row <- function(
 #' Whether any declared display output for a step already exists
 #' @keywords internal
 step_display_output_exists <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  meta <- tryCatch(
+    get_replication_meta(doi, repo = repo, folder = folder),
+    error = function(e) NULL
+  )
+  if (!is.null(meta)) {
+    entry <- tryCatch(
+      find_replication_entry(meta, what, language = language),
+      error = function(e) NULL
+    )
+    # Pattern B Dataverse access: Display always has a yaml-backed summary.
+    if (!is.null(entry) && is_dataverse_file_access_prep_step(entry, meta = meta)) {
+      return(TRUE)
+    }
+    if (!is.null(entry) && is_dataverse_access_prep_step(entry, meta, ctx = NULL)) {
+      return(TRUE)
+    }
+  }
   cands <- tryCatch(
     artifact_lookup_candidates(doi, what, repo = repo, folder = folder, language = language),
     error = function(e) character(0)

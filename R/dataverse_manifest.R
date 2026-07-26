@@ -385,7 +385,7 @@ dataverse_access_step_entries <- function(rep, meta = NULL) {
     outs <- outs[nzchar(outs)]
   }
   fid <- as.character(
-    rep$file_id %||% rep$id %||%
+    rep$file_id %||%
       rep$dataverse$file_id %||% rep$dataverse$id %||%
       meta$dataverse$file_id %||% meta$dataverse$id %||% ""
   )
@@ -716,6 +716,112 @@ is_dataverse_access_prep_step <- function(prep, meta, ctx = NULL) {
   FALSE
 }
 
+#' Summarize a Pattern B surgical Dataverse file access for Display
+#'
+#' Always available from yaml (file id + destination path) even when the
+#' fetched binary is gitignored and not on disk in this session.
+#' @keywords internal
+summarize_dataverse_file_access <- function(meta, ctx, prep = NULL) {
+  entries <- dataverse_access_step_entries(prep %||% list(), meta = meta)
+  dv <- meta$dataverse %||% list()
+  server <- as.character(
+    prep$server %||% prep$dataverse$server %||% dv$server %||% "dataverse.harvard.edu"
+  )
+  dataset <- as.character(dv$dataset %||% dv$doi %||% "")
+  rows <- lapply(entries, function(entry) {
+    fid <- as.character(entry$id %||% entry$file_id %||% "")
+    path <- as.character(entry$path %||% "")
+    original <- isTRUE(entry$original) ||
+      identical(tolower(as.character(entry$original %||% "")), "true") ||
+      (is.null(entry$original) && !nzchar(as.character(entry$url %||% "")))
+    url <- as.character(entry$url %||% "")
+    if (!nzchar(url) && nzchar(fid)) {
+      url <- paste0(
+        "https://", server, "/api/access/datafile/", fid,
+        if (isTRUE(original)) "?format=original" else ""
+      )
+    }
+    local_path <- if (!is.null(ctx$local_root) && nzchar(path)) {
+      file.path(ctx$local_root, path)
+    } else {
+      path
+    }
+    list(
+      file_id = fid,
+      path = path,
+      url = url,
+      original = isTRUE(original),
+      present = nzchar(as.character(local_path %||% "")) &&
+        file.exists(as.character(local_path))
+    )
+  })
+  structure(
+    list(
+      step_type = "dataverse_file_access",
+      dataset = dataset,
+      server = server,
+      files = rows,
+      n_expected = length(rows),
+      n_present = sum(vapply(rows, function(r) isTRUE(r$present), logical(1))),
+      ready = length(rows) > 0L &&
+        all(vapply(rows, function(r) isTRUE(r$present), logical(1)))
+    ),
+    class = c("dataverse_file_access_summary", "prep_output_preview")
+  )
+}
+
+#' @keywords internal
+#' @exportS3Method format dataverse_file_access_summary
+format.dataverse_file_access_summary <- function(x, ...) {
+  lines <- c(
+    "Dataverse surgical file access",
+    if (nzchar(x$dataset %||% "")) paste0("Dataset: ", x$dataset),
+    if (nzchar(x$server %||% "")) paste0("Server: ", x$server),
+    paste0(
+      "Files: ", x$n_present, " of ", x$n_expected,
+      " present on disk in this session"
+    )
+  )
+  for (f in x$files %||% list()) {
+    lines <- c(
+      lines,
+      paste0(
+        "  - ", f$path %||% "?",
+        if (nzchar(f$file_id %||% "")) paste0(" (file id ", f$file_id, ")") else "",
+        if (isTRUE(f$present)) " [present]" else " [fetch on Run]"
+      )
+    )
+    if (nzchar(f$url %||% "")) {
+      lines <- c(lines, paste0("    ", f$url))
+    }
+  }
+  paste(lines, collapse = "\n")
+}
+
+#' @keywords internal
+#' @exportS3Method print dataverse_file_access_summary
+print.dataverse_file_access_summary <- function(x, ...) {
+  cat(format(x, ...), "\n")
+  invisible(x)
+}
+
+#' Whether a prep step is a Pattern B surgical Dataverse file access
+#' @keywords internal
+is_dataverse_file_access_prep_step <- function(prep, meta = NULL) {
+  if (is.null(prep) || !is.list(prep)) {
+    return(FALSE)
+  }
+  if (is_dataverse_replication(prep, meta$paper %||% NULL)) {
+    return(TRUE)
+  }
+  fid <- as.character(
+    prep$file_id %||% prep$dataverse$file_id %||%
+      meta$dataverse$file_id %||% ""
+  )
+  outs <- tolower(paste(unlist(prep$outputs %||% list()), collapse = " "))
+  nzchar(fid) && grepl("\\.(dta|csv|rds|tab)$", outs)
+}
+
 #' Build a display object for a prep step when no HTML artifact exists
 #' @keywords internal
 load_prep_step_display <- function(meta, ctx, prep) {
@@ -723,35 +829,39 @@ load_prep_step_display <- function(meta, ctx, prep) {
     return(summarize_dataverse_deposit(meta, ctx, prep = prep))
   }
   path <- prep_output_path(prep, ctx, meta = meta)
-  if (is.null(path) || !file.exists(path)) {
-    rel <- if (!is.null(prep$outputs) && length(prep$outputs)) {
-      as.character(prep$outputs[[1]][[1]] %||% prep$outputs[[1]])
-    } else {
-      NA_character_
+  if (!is.null(path) && file.exists(path)) {
+    ext <- tolower(tools::file_ext(path))
+    if (ext %in% c("html", "png", "svg")) {
+      return(load_artifact_file_path(path))
+    }
+    if (ext %in% c("rds", "csv", "dta")) {
+      return(preview_data_file(path))
     }
     return(structure(
       list(
-        path = path %||% NA_character_,
-        note = paste0(
-          "Output not on disk yet",
-          if (isTRUE(nzchar(rel))) paste0(": ", rel) else "",
-          ". Use Live Run on this step or build_study_outputs()."
-        )
+        path = path,
+        note = paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
       ),
       class = "prep_output_preview"
     ))
   }
-  ext <- tolower(tools::file_ext(path))
-  if (ext %in% c("html", "png", "svg")) {
-    return(load_artifact_file_path(path))
+  # Pattern B: yaml always supports a Display summary (never "not on disk" error).
+  if (is_dataverse_file_access_prep_step(prep, meta = meta)) {
+    return(summarize_dataverse_file_access(meta, ctx, prep = prep))
   }
-  if (ext %in% c("rds", "csv", "dta")) {
-    return(preview_data_file(path))
+  rel <- if (!is.null(prep$outputs) && length(prep$outputs)) {
+    as.character(prep$outputs[[1]][[1]] %||% prep$outputs[[1]])
+  } else {
+    NA_character_
   }
   structure(
     list(
-      path = path,
-      note = paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+      path = path %||% NA_character_,
+      note = paste0(
+        "Output not prepared for display yet",
+        if (isTRUE(nzchar(rel))) paste0(": ", rel) else "",
+        ". This step is registered; rebuild study outputs or mark it incomplete."
+      )
     ),
     class = "prep_output_preview"
   )

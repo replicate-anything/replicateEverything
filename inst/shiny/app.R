@@ -1064,7 +1064,7 @@ entry_engine <- function(x) {
   eng <- tolower(as.character(x$engine %||% ""))
   if (identical(eng, "stata")) return("stata")
   if (identical(eng, "python") || identical(eng, "py")) return("python")
-  if (identical(eng, "r")) return("r")
+  if (identical(eng, "r") || identical(eng, "dataverse")) return("r")
   id <- as.character(x$id %||% "")
   code <- as.character(x$code %||% "")
   if (grepl("_stata$", id, ignore.case = TRUE) || grepl("\\.do$", code, ignore.case = TRUE)) {
@@ -1345,7 +1345,8 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
     }, error = function(e) NULL)
   }
 
-  headline <- if (!is.null(blocked_message) && nzchar(as.character(blocked_message))) {
+  is_gap <- !is.null(blocked_message) && nzchar(as.character(blocked_message))
+  headline <- if (is_gap) {
     as.character(blocked_message)
   } else {
     paste0("No precomputed ", kind, " available.")
@@ -1363,22 +1364,26 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
           "Likely causes: a transient network/proxy/TLS problem reaching ",
           tags$code("raw.githubusercontent.com"),
           ", or the running app is on a stale build. ",
-          "Reload the page; if it persists, reinstall the package and relaunch, or click ",
-          tags$strong("Run"), " to regenerate it live."
+          "Reload the page; if it persists, reinstall the package and relaunch."
         )
       },
-      if (is.null(blocked_message) || !nzchar(as.character(blocked_message))) {
+      if (is_gap) {
         tags$p(
-          "The registry lists this replication, but the artifact file is not available yet.",
-          " Click ", tags$strong("Run"), " to generate it live."
+          class = "mb-0",
+          "This step is marked unavailable in ",
+          tags$code("replication.yml"),
+          ". Open the ",
+          tags$strong("Code"),
+          " tab to inspect the replication script; Display cannot produce this output here."
         )
       } else {
         tags$p(
-          class = "mb-0",
-          "This step is marked incomplete in ",
-          tags$code("replication.yml"),
-          ". Display works only when a baked output is already present; ",
-          tags$strong("Run"), " stays disabled until the missing engine is available."
+          "The registry lists this replication, but the artifact file is not available yet.",
+          " Maintainer: bake via ",
+          tags$code("build_study_outputs()"),
+          " / ",
+          tags$code("check_and_bake_study()"),
+          " so Display never reaches this state for registered studies."
         )
       },
       tags$p(
@@ -1775,7 +1780,7 @@ data_unavailable_step_modal <- function(message, data_token = "") {
   invisible(TRUE)
 }
 
-#' Run-slot control: padlock with hover tooltip (no click modal)
+#' Run-slot control: padlock selects step and opens Code
 run_unavailable_padlock_button <- function(step_key, message, data_token = "") {
   msg <- trimws(as.character(message %||% ""))
   tok <- tolower(trimws(as.character(data_token %||% "")))
@@ -1786,11 +1791,15 @@ run_unavailable_padlock_button <- function(step_key, message, data_token = "") {
   } else {
     "Data not available"
   }
-  tags$span(
+  tags$button(
+    type = "button",
     class = "run-unavailable-lock",
-    title = title,
-    role = "img",
-    `aria-label` = title,
+    title = paste0(title, " — click to view Code"),
+    `aria-label` = paste0(title, "; open Code"),
+    onclick = sprintf(
+      "Shiny.setInputValue('replication_action', 'code:%s', {priority: 'event'})",
+      gsub("'", "\\\\'", step_key, fixed = TRUE)
+    ),
     tags$span(class = "engine-badge", engine_icon_data_unavailable())
   )
 }
@@ -1825,7 +1834,7 @@ engine_gap_step_modal <- function(message, engine = "") {
   invisible(TRUE)
 }
 
-#' Run-slot control: missing-engine tool icon with hover tooltip (no click modal)
+#' Run-slot control: missing-engine tool icon selects step and opens Code
 run_unavailable_hammer_button <- function(step_key, message, engine = "") {
   msg <- trimws(as.character(message %||% ""))
   eng <- trimws(as.character(engine %||% ""))
@@ -1836,11 +1845,15 @@ run_unavailable_hammer_button <- function(step_key, message, engine = "") {
   } else {
     "Missing engine"
   }
-  tags$span(
+  tags$button(
+    type = "button",
     class = "run-unavailable-hammer",
-    title = title,
-    role = "img",
-    `aria-label` = title,
+    title = paste0(title, " — click to view Code"),
+    `aria-label` = paste0(title, "; open Code"),
+    onclick = sprintf(
+      "Shiny.setInputValue('replication_action', 'code:%s', {priority: 'event'})",
+      gsub("'", "\\\\'", step_key, fixed = TRUE)
+    ),
     tags$span(class = "engine-badge", engine_icon_missing_engine())
   )
 }
@@ -5749,7 +5762,7 @@ ui <- tagList(
       cursor: not-allowed;
       pointer-events: none;
     }
-    /* data_unavailable / missing-engine: icon replaces Run; tooltip only */
+    /* data_unavailable / missing-engine: icon replaces Run; click opens Code */
     .replication-row .run-unavailable-lock,
     .replication-row .run-unavailable-hammer {
       display: inline-flex;
@@ -5763,7 +5776,7 @@ ui <- tagList(
       border-radius: 0.25rem;
       background: rgba(107, 114, 128, 0.08);
       color: #4b5563;
-      cursor: help;
+      cursor: pointer;
     }
     .replication-row .run-unavailable-hammer {
       border-color: rgba(180, 83, 9, 0.35);
@@ -7307,21 +7320,20 @@ server <- function(input, output, session) {
     req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
     data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
 
-    output_exists <- FALSE
+    output_exists <- tryCatch(
+      replicate_fn(
+        "step_display_output_exists",
+        state$doi,
+        resolved_id,
+        folder = state$registry_folder,
+        repo = state$registry_repo,
+        language = engine
+      ),
+      error = function(e) FALSE
+    )
     audit_engine_skip <- FALSE
     engine_available <- NULL
     if (is_blocked || nzchar(req_eng) || nzchar(data_tok)) {
-      output_exists <- tryCatch(
-        replicate_fn(
-          "step_display_output_exists",
-          state$doi,
-          resolved_id,
-          folder = state$registry_folder,
-          repo = state$registry_repo,
-          language = engine
-        ),
-        error = function(e) FALSE
-      )
       if (nzchar(req_eng) && !req_eng %in% c("r", "stata", "python")) {
         engine_available <- tryCatch(
           replicate_fn("system_engine_available", req_eng),
@@ -7361,6 +7373,8 @@ server <- function(input, output, session) {
     is_engine_gap <- identical(gap$kind, "hammer")
     # Strikethrough only for generic incomplete (neither padlock nor hammer).
     use_strikethrough <- is_blocked && !is_data_gap && !is_engine_gap
+    # Display is enabled when a sink exists, or for gap steps (clean gap message).
+    displayable <- isTRUE(output_exists) || is_data_gap || is_engine_gap || use_strikethrough
     row_class <- paste(
       "replication-row d-flex align-items-center rounded",
       if (!is.null(active_id) && (identical(group, active_id) || identical(resolved_id, active_id))) {
@@ -7370,6 +7384,21 @@ server <- function(input, output, session) {
       },
       if (use_strikethrough) "is-blocked" else ""
     )
+    display_btn <- function(disabled = FALSE, title = NULL) {
+      actionButton(
+        paste0("display_", safe_group),
+        "Display",
+        class = "btn-outline-secondary btn-sm",
+        disabled = if (isTRUE(disabled)) "disabled" else NULL,
+        title = title,
+        onclick = if (!isTRUE(disabled)) {
+          sprintf(
+            "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
+            group
+          )
+        }
+      )
+    }
     if (is_blocked || is_data_gap || is_engine_gap) {
       blocked_msg <- gap$message
       if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
@@ -7406,26 +7435,14 @@ server <- function(input, output, session) {
               if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
             )
           },
-          if (isTRUE(output_exists)) {
-            actionButton(
-              paste0("display_", safe_group),
-              "Display",
-              class = "btn-outline-secondary btn-sm",
-              title = paste0(blocked_msg, " (baked output can still be shown)"),
-              onclick = sprintf(
-                "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
-                group
-              )
-            )
-          } else {
-            actionButton(
-              paste0("display_", safe_group),
-              "Display",
-              class = "btn-outline-secondary btn-sm",
-              disabled = "disabled",
-              title = blocked_msg
-            )
-          },
+          display_btn(
+            disabled = !isTRUE(displayable),
+            title = if (isTRUE(output_exists)) {
+              paste0(blocked_msg, " (baked output can still be shown)")
+            } else {
+              blocked_msg
+            }
+          ),
           if (is_data_gap) {
             run_unavailable_padlock_button(group, blocked_msg, data_tok)
           } else if (is_engine_gap) {
@@ -7599,21 +7616,20 @@ server <- function(input, output, session) {
             if (!nzchar(step_blocked_reason)) {
               step_blocked_reason <- "This step cannot be run for this study - see the study notes."
             }
-            step_out_exists <- FALSE
+            step_out_exists <- tryCatch(
+              replicate_fn(
+                "step_display_output_exists",
+                state$doi,
+                step_id,
+                folder = state$registry_folder,
+                repo = state$registry_repo,
+                language = step_engine
+              ),
+              error = function(e) FALSE
+            )
             step_engine_available <- NULL
             step_audit_skip <- FALSE
             if (step_blocked || nzchar(req_eng) || nzchar(data_tok)) {
-              step_out_exists <- tryCatch(
-                replicate_fn(
-                  "step_display_output_exists",
-                  state$doi,
-                  step_id,
-                  folder = state$registry_folder,
-                  repo = state$registry_repo,
-                  language = step_engine
-                ),
-                error = function(e) FALSE
-              )
               if (nzchar(req_eng) && !req_eng %in% c("r", "stata", "python")) {
                 step_engine_available <- tryCatch(
                   replicate_fn("system_engine_available", req_eng),
@@ -7651,6 +7667,8 @@ server <- function(input, output, session) {
             step_data_gap <- identical(step_gap$kind, "padlock")
             step_engine_gap <- identical(step_gap$kind, "hammer")
             step_strikethrough <- step_blocked && !step_data_gap && !step_engine_gap
+            step_displayable <- isTRUE(step_out_exists) ||
+              step_data_gap || step_engine_gap || step_strikethrough
             if (!is.null(step_gap$message) && nzchar(as.character(step_gap$message))) {
               step_blocked_reason <- as.character(step_gap$message)
             } else if (step_blocked || step_data_gap || step_engine_gap) {
@@ -7697,19 +7715,13 @@ server <- function(input, output, session) {
                   paste0("data_display_", safe_id),
                   "Display",
                   class = "btn-outline-secondary btn-sm",
-                  disabled = if ((step_blocked || step_data_gap || step_engine_gap) &&
-                    !isTRUE(step_out_exists)) {
-                    "disabled"
-                  } else {
-                    NULL
-                  },
+                  disabled = if (!isTRUE(step_displayable)) "disabled" else NULL,
                   title = if (step_blocked || step_data_gap || step_engine_gap) {
                     step_blocked_reason
                   } else {
                     NULL
                   },
-                  onclick = if (!((step_blocked || step_data_gap || step_engine_gap) &&
-                    !isTRUE(step_out_exists))) {
+                  onclick = if (isTRUE(step_displayable)) {
                     sprintf(
                       "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
                       step_id
@@ -7838,10 +7850,13 @@ server <- function(input, output, session) {
           group_or_id,
           prep_step_language(group_or_id, state$prep_steps)
         )
+        updateTabsetPanel(session, "result_tabs", selected = "Output")
       } else if (action == "display") {
         load_selected_artifact(fallback_live = FALSE)
+        updateTabsetPanel(session, "result_tabs", selected = "Output")
+      } else if (action == "code") {
+        updateTabsetPanel(session, "result_tabs", selected = "Code")
       }
-      updateTabsetPanel(session, "result_tabs", selected = "Output")
       return()
     }
 
@@ -7855,6 +7870,7 @@ server <- function(input, output, session) {
     if (action == "display") {
       state$selected_source <- "artifact"
       load_selected_artifact(fallback_live = FALSE)
+      updateTabsetPanel(session, "result_tabs", selected = "Output")
     } else if (action == "replicate") {
       tryCatch(
         {
@@ -7866,9 +7882,10 @@ server <- function(input, output, session) {
           state$selected_source <- "live"
         }
       )
+      updateTabsetPanel(session, "result_tabs", selected = "Output")
+    } else if (action == "code") {
+      updateTabsetPanel(session, "result_tabs", selected = "Code")
     }
-
-    updateTabsetPanel(session, "result_tabs", selected = "Output")
   }, ignoreInit = TRUE)
 
   load_selected_artifact <- function(fallback_live = TRUE) {
@@ -8111,6 +8128,23 @@ server <- function(input, output, session) {
                 tags$span(class = "badge bg-success ms-2", "Ready")
               } else {
                 tags$span(class = "badge bg-secondary ms-2", "Not downloaded here")
+              }
+            ),
+            tags$pre(
+              class = "mb-0",
+              style = "white-space: pre-wrap;",
+              format(obj)
+            )
+          )
+        } else if (inherits(obj, "dataverse_file_access_summary")) {
+          tagList(
+            tags$div(
+              class = "alert alert-info mb-2",
+              tags$strong("Dataverse file access"),
+              if (isTRUE(obj$ready)) {
+                tags$span(class = "badge bg-success ms-2", "Present on disk")
+              } else {
+                tags$span(class = "badge bg-secondary ms-2", "Fetch on Run")
               }
             ),
             tags$pre(

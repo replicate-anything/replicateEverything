@@ -266,6 +266,8 @@ check_folder_replication <- function(
     }
   }
 
+  checks <- bind_check_results(checks, check_display_sink_rows(meta, study_root))
+
   manifest_path <- file.path(artifact_dir, "manifest.json")
   checks <- bind_check_results(
     checks,

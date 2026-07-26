@@ -20,7 +20,27 @@ normalize_replication_language <- function(language) {
   if (lang %in% c("python", "py")) {
     return("python")
   }
-  stop('language must be "R", "stata", or "python"', call. = FALSE)
+  if (lang %in% c("dataverse")) {
+    return("dataverse")
+  }
+  stop('language must be "R", "stata", "python", or "dataverse"', call. = FALSE)
+}
+
+#' Whether a step engine satisfies a language selector
+#'
+#' Surgical Dataverse access steps (\code{engine: dataverse}) are hosted in R
+#' helpers, so they match both \code{"dataverse"} and \code{"r"}.
+#' @keywords internal
+replication_engine_matches_language <- function(engine, language) {
+  if (is.null(language) || !nzchar(as.character(language))) {
+    return(TRUE)
+  }
+  eng <- tolower(as.character(engine[[1]] %||% engine))
+  lang <- tolower(as.character(language[[1]] %||% language))
+  if (identical(eng, lang)) {
+    return(TRUE)
+  }
+  identical(eng, "dataverse") && identical(lang, "r")
 }
 
 #' Infer replication language when only one engine implements \code{what}
@@ -134,7 +154,10 @@ find_replication_entry <- function(meta, what, language = NULL, paper_meta = NUL
   ]
   if (length(exact) == 1L) {
     rep <- exact[[1]]
-    if (is.null(language) || identical(replication_engine(rep, paper_meta), language)) {
+    if (replication_engine_matches_language(
+      replication_engine(rep, paper_meta),
+      language
+    )) {
       return(rep)
     }
   }
@@ -169,7 +192,10 @@ find_replication_entry <- function(meta, what, language = NULL, paper_meta = NUL
   lang <- language %||% default_replication_language(group_matches, paper_meta)
   engine_matches <- group_matches[
     vapply(group_matches, function(x) {
-      identical(replication_engine(x, paper_meta), lang)
+      replication_engine_matches_language(
+        replication_engine(x, paper_meta),
+        lang
+      )
     }, logical(1))
   ]
 
