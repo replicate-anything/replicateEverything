@@ -1,4 +1,27 @@
+# replicateEverything 0.7.10
+
+## Study summary API + Related column
+
+* **`get_study(doi)`** returns a compact `replicate_study` descriptor;
+  **`summary(get_study(doi))`** / **`summary_study(doi)`** print title, DOI,
+  citation, collections, languages, maintainer, step counts, upstream /
+  downstream related studies, gap tags, and repo link.
+* **Registry index:** `build_registry_index()` writes `related_upstream` and
+  `related_downstream`. Upstream comes from stub `paper.related` /
+  `paper.extends`; downstream is the reverse map across the registry.
+* **Shiny Studies list:** new **Related** column (↑ teal upstream /
+  ↓ blue downstream icons with hover labels). Notes stays padlock/compass.
+* Registry stubs now preserve `paper.related` and `paper.extends` on sync.
+
 # replicateEverything 0.7.9
+
+## Shiny Feedback tab only on WZB server
+
+* **Feedback tab** (and welcome-copy mention) shown only when
+  [shiny_running_on_wzb()] is `TRUE`: path marker `/wzb/samba/user/ipi/` in
+  working dir, app dir, `.libPaths()`, or package install path. Override with
+  `REPLICATE_SHINY_FEEDBACK=1` / `=0`. Local `run_shiny_app()` hides it by
+  default.
 
 ## Shiny UX: Notes column, unified step rows, tooltip-only gaps
 

@@ -59,6 +59,8 @@ reference:
   contents:
   - load_index
   - search_papers
+  - get_study
+  - summary_study
   - list_replications
   - paper_article_url
 - title: Run & inspect

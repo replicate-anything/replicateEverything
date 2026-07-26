@@ -11,7 +11,8 @@ test_that("ensure_index_handles adds metadata columns", {
   )
   out <- replicateEverything:::ensure_index_handles(idx)
   expect_true(all(c(
-    "handle", "collections", "maintainer_name", "maintainer_email", "languages"
+    "handle", "collections", "maintainer_name", "maintainer_email", "languages",
+    "related_upstream", "related_downstream"
   ) %in% names(out)))
   expect_equal(out$handle[[1]], "10.1177_00491241211036161")
 })

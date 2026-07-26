@@ -88,7 +88,9 @@ app_welcome_intro <- function() {
           ),
           "."
         ),
-        p("Or use the Feedback tab to give us feedback.")
+        if (shiny_feedback_tab_visible()) {
+          p("Or use the Feedback tab to give us feedback.")
+        }
       )
     )
   )
@@ -2159,6 +2161,117 @@ study_notes_icons_display <- function(has_data_gap = FALSE, has_engine_gap = FAL
         engine_icon_missing_engine()
       )
     }
+  )
+}
+
+#' Upstream related-study icon (arrow up into a box)
+related_icon_upstream <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#0f766e",
+    `stroke-width` = "2",
+    `stroke-linecap` = "round",
+    `stroke-linejoin` = "round",
+    tags$path(d = "M12 19V7"),
+    tags$path(d = "M7 11l5-5 5 5"),
+    tags$path(d = "M5 19h14")
+  )
+}
+
+#' Downstream related-study icon (arrow down from a box)
+related_icon_downstream <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#1d4ed8",
+    `stroke-width` = "2",
+    `stroke-linecap` = "round",
+    `stroke-linejoin` = "round",
+    tags$path(d = "M12 5v12"),
+    tags$path(d = "M7 13l5 5 5-5"),
+    tags$path(d = "M5 5h14")
+  )
+}
+
+#' One Related-column icon link (upstream or downstream)
+related_study_icon_link <- function(item, direction = c("upstream", "downstream")) {
+  direction <- match.arg(direction)
+  label <- as.character(item$label %||% item$key %||% "Related study")
+  key <- trimws(as.character(item$key %||% ""))
+  href <- trimws(as.character(item$href %||% ""))
+  icon <- if (identical(direction, "upstream")) {
+    related_icon_upstream()
+  } else {
+    related_icon_downstream()
+  }
+  if (isTRUE(item$in_registry) && nzchar(key)) {
+    return(tags$a(
+      href = "#",
+      class = "study-related-link",
+      title = label,
+      onclick = sprintf(
+        "Shiny.setInputValue('go_to_study', '%s', {priority: 'event'}); return false;",
+        gsub("'", "\\\\'", key, fixed = TRUE)
+      ),
+      icon
+    ))
+  }
+  if (nzchar(href)) {
+    return(tags$a(
+      href = href,
+      target = "_blank",
+      rel = "noopener",
+      class = "study-related-link",
+      title = label,
+      icon
+    ))
+  }
+  tags$span(class = "study-related-link", title = label, icon)
+}
+
+#' Related column: upstream / downstream icons for the Studies list
+study_related_icons_display <- function(row, index_df = NULL) {
+  related <- tryCatch(
+    replicate_fn("related_studies_for_index_row", row, index = index_df),
+    error = function(e) {
+      up_keys <- as.character(row$related_upstream[[1]] %||% row$related_upstream %||% "")
+      down_keys <- as.character(row$related_downstream[[1]] %||% row$related_downstream %||% "")
+      list(
+        upstream = if (nzchar(trimws(up_keys))) {
+          lapply(strsplit(up_keys, "|", fixed = TRUE)[[1]], function(k) {
+            list(key = trimws(k), label = paste0("Upstream: ", trimws(k)), in_registry = FALSE, href = NA_character_)
+          })
+        } else {
+          list()
+        },
+        downstream = if (nzchar(trimws(down_keys))) {
+          lapply(strsplit(down_keys, "|", fixed = TRUE)[[1]], function(k) {
+            list(key = trimws(k), label = paste0("Downstream: ", trimws(k)), in_registry = FALSE, href = NA_character_)
+          })
+        } else {
+          list()
+        }
+      )
+    }
+  )
+  up <- related$upstream %||% list()
+  down <- related$downstream %||% list()
+  if (!length(up) && !length(down)) {
+    return(tags$span(class = "text-muted small", "—"))
+  }
+  tags$div(
+    class = "engine-icons-cell study-related-icons",
+    lapply(up, function(item) related_study_icon_link(item, "upstream")),
+    lapply(down, function(item) related_study_icon_link(item, "downstream"))
   )
 }
 
@@ -4485,6 +4598,28 @@ feedback_pkg_fn_aliases <- function(name) {
   )
 }
 
+# Feedback tab is WZB-server only (see shiny_running_on_wzb()).
+shiny_feedback_tab_visible <- function() {
+  fn <- feedback_pkg_fn("shiny_running_on_wzb", required = FALSE)
+  if (!is.null(fn)) {
+    return(isTRUE(fn()))
+  }
+  # Inline fallback for stale workers missing the package helper.
+  env <- Sys.getenv("REPLICATE_SHINY_FEEDBACK", unset = "")
+  if (length(env) == 1L && nzchar(env)) {
+    return(tolower(env) %in% c("1", "true", "yes", "on"))
+  }
+  # /wzb/samba/user/ipi/ is the durable WZB host marker (lib + ShinyApps).
+  marker <- "/wzb/samba/user/ipi/"
+  candidates <- c(
+    tryCatch(normalizePath(getwd(), winslash = "/", mustWork = FALSE), error = function(e) ""),
+    tryCatch(shiny_runtime_app_dir(), error = function(e) ""),
+    normalizePath(.libPaths(), winslash = "/", mustWork = FALSE),
+    tryCatch(system.file(package = "replicateEverything"), error = function(e) "")
+  )
+  any(grepl(marker, candidates, fixed = TRUE))
+}
+
 feedback_pkg_fn <- function(name, required = FALSE) {
   if (!requireNamespace("replicateEverything", quietly = TRUE)) {
     if (isTRUE(required)) {
@@ -5515,7 +5650,7 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 4.5rem 3rem 5.5rem 3.25rem 2rem 2.75rem;
+      grid-template-columns: minmax(0, 1fr) 4.5rem 3rem 5.5rem 3.25rem 3.25rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
     }
@@ -5529,6 +5664,7 @@ ui <- tagList(
     }
     .study-engine-col,
     .study-notes-col,
+    .study-related-col,
     .study-run-col,
     .study-link-col {
       text-align: center;
@@ -5537,8 +5673,22 @@ ui <- tagList(
       justify-content: center;
       align-items: center;
     }
-    .study-notes-col {
+    .study-notes-col,
+    .study-related-col {
       min-height: 1.4rem;
+    }
+    .study-related-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+      padding: 0.1rem;
+      border-radius: 4px;
+      color: inherit;
+      text-decoration: none;
+    }
+    .study-related-link:hover {
+      background: #eef4ff;
     }
     .study-share-link {
       display: inline-flex;
@@ -5803,6 +5953,7 @@ ui <- tagList(
       }
       .study-engine-col,
       .study-notes-col,
+      .study-related-col,
       .study-run-col,
       .study-link-col,
       .study-collections-col,
@@ -6032,10 +6183,12 @@ ui <- tagList(
     "Contribute",
     contribute_tab_ui()
   ),
-  tabPanel(
-    "Feedback",
-    feedback_tab_ui()
-  ),
+  if (shiny_feedback_tab_visible()) {
+    tabPanel(
+      "Feedback",
+      feedback_tab_ui()
+    )
+  },
   tabPanel(
     "About",
     fluidPage(
@@ -6681,6 +6834,11 @@ server <- function(input, output, session) {
             )
           ),
           tags$div(
+            class = "study-related-col",
+            tags$span(class = "study-citation-meta-label", "Related"),
+            study_related_icons_display(row, index_df = registry_index)
+          ),
+          tags$div(
             class = "study-link-col",
             tags$span(class = "study-citation-meta-label", "Link"),
             share_link_ui(
@@ -6713,6 +6871,7 @@ server <- function(input, output, session) {
         tags$div(class = "study-repo-col", "Repo"),
         tags$div(class = "study-engine-col", "Languages"),
         tags$div(class = "study-notes-col", "Notes"),
+        tags$div(class = "study-related-col", "Related"),
         tags$div(class = "study-link-col", "Link"),
         tags$div(class = "study-run-col", "Go")
       ),

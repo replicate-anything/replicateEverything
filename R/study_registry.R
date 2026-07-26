@@ -118,6 +118,8 @@ registry_index_row_from_meta <- function(meta, study_root = NULL, folder = NULL)
     maintainer_email = maintainer_email,
     languages = languages,
     article_url = article_url,
+    related_upstream = "",
+    related_downstream = "",
     stringsAsFactors = FALSE
   )
 }

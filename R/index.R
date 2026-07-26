@@ -85,7 +85,14 @@ ensure_index_handles <- function(index) {
   }
   index$handle <- as.character(index$handle)
   index$handle[!nzchar(index$handle)] <- index$folder[!nzchar(index$handle)]
-  for (col in c("collections", "maintainer_name", "maintainer_email", "languages")) {
+  for (col in c(
+    "collections",
+    "maintainer_name",
+    "maintainer_email",
+    "languages",
+    "related_upstream",
+    "related_downstream"
+  )) {
     if (!col %in% names(index)) {
       index[[col]] <- ""
     }
@@ -106,13 +113,14 @@ compile_registry_index_from_stubs <- function(registry_root) {
   if (length(yml_files) == 0L) {
     return(NULL)
   }
-  rows <- lapply(yml_files, function(path) {
-    meta <- yaml::read_yaml(path)
-    stub_folder <- sub("\\.yml$", "", basename(path), ignore.case = TRUE)
-    registry_index_row_from_meta(meta, study_root = NULL, folder = stub_folder)
+  metas <- lapply(yml_files, yaml::read_yaml)
+  rows <- lapply(seq_along(yml_files), function(i) {
+    stub_folder <- sub("\\.yml$", "", basename(yml_files[[i]]), ignore.case = TRUE)
+    registry_index_row_from_meta(metas[[i]], study_root = NULL, folder = stub_folder)
   })
   index <- do.call(rbind, rows)
-  ensure_index_handles(index)
+  index <- ensure_index_handles(index)
+  annotate_index_related(index, metas = metas)
 }
 
 #' @keywords internal
@@ -187,8 +195,10 @@ resolve_registry_handle <- function(x) {
 #' Compile registry index.csv from study stub yaml files
 #'
 #' Reads every `studies/*.yml` under a registry checkout and writes
-#' `index.csv` with `collections`, `maintainer_*`, and `languages` taken from
-#' each stub (no fetch from individual study repos).
+#' `index.csv` with `collections`, `maintainer_*`, `languages`, and related
+#' study columns. Upstream links come from stub
+#' \code{paper.related} / \code{paper.extends}; \code{related_downstream} is
+#' inferred by reversing those pointers across the registry.
 #'
 #' @param registry_root Path to the registry repository. Defaults to
 #'   `getOption("replicateEverything.registry_root")` or [auto_detect_registry_root()].

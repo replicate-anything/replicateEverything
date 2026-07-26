@@ -38,6 +38,7 @@ Key behaviour:
 - **Incomplete / unavailable steps are skipped** — yaml `incomplete: true` (including `requires_engine:` / `data_unavailable:` gaps) is **not** attempted. Rows are recorded with status **Skipped** and a reason, and are **not** counted as success or failure. Distinct from fail/timeout.
 - **Report fields** — study, object id, engine, success, skipped flag, elapsed seconds, timeout_seconds (audit cap), timed-out flag, and a short error / skip-reason snippet.
 - **Substantive checks** (default `substantive = TRUE`) — when a study defines `tests/substantive/<step_id>.R`, the audit compares replicated estimates to published benchmarks (see Fearon & Laitin `tab_1`). Failures appear as `[substantive]` in the printed summary.
+- **Related studies** are compiled when the registry index is rebuilt (`build_registry_index()`): upstream from `paper.related` / `paper.extends`, downstream by reversing those pointers. Use `summary(get_study(doi))` for a quick console view; the audit itself does not re-fetch related links per run.
 
 ```{r, eval = FALSE}
 library(replicateEverything)

@@ -15,8 +15,10 @@ Invisibly, a list with \code{index_path}, \code{index}, and \code{n}.
 }
 \description{
 Reads every \verb{studies/*.yml} under a registry checkout and writes
-\code{index.csv} with \code{collections}, \verb{maintainer_*}, and \code{languages} taken from
-each stub (no fetch from individual study repos).
+\code{index.csv} with \code{collections}, \verb{maintainer_*}, \code{languages}, and related
+study columns. Upstream links come from stub
+\code{paper.related} / \code{paper.extends}; \code{related_downstream} is
+inferred by reversing those pointers across the registry.
 }
 \examples{
 \dontrun{
