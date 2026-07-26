@@ -3038,7 +3038,7 @@ contribute_template_yaml_text <- function() {
     "steps:\n",
     "  - id: tab_1\n",
     "    type: table\n",
-    "    label: Simple table showing from template repo\n",
+    "    label: Simple table\n",
     "    description: OLS of Y on X with robust SEs (estimatr::lm_robust)\n",
     "    engine: r\n",
     "    data: data/data.csv\n",
