@@ -34,8 +34,8 @@
   in the folded study-info panel (icon may still appear in the summary icon
   row). Registry stubs / `shiny_studies.json` carry the field for list-time
   display. Icon marks: Dataverse hollow two-ring brand (#C55B28), GitHub
-  Octocat, ICPSR serif I in linking-widget blue (#115BFB), plus compact
-  OSF / WB / personal / recycle icons.
+  Octicons mark-github, ICPSR serif I in linking-widget blue (#115BFB), plus
+  compact OSF / WB / personal / recycle icons.
 
 ## Shiny: study-only deep links (dropdown first)
 
