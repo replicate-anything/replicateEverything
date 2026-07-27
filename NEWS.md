@@ -11,9 +11,12 @@
 * **Checks / audit:** [check_replication()] requires
   `paper.source_repository`. [audit_everything()] summary lists
   `missing_source_repository` keys via [registry_source_repository_gaps()].
-* **Shiny:** Study details show **Source repository** as a link; Studies list
-  and study header show a kind icon inferred from the URL. Registry stubs /
-  `shiny_studies.json` carry the field for list-time display.
+* **Shiny:** Studies table has a dedicated **Source** column (kind icons) beside
+  **Repo**; Study column is ~20% wider. Labeled **Source repository** link lives
+  in the folded study-info panel (icon may still appear in the summary icon
+  row). Registry stubs / `shiny_studies.json` carry the field for list-time
+  display. Icon marks: Dataverse brand (two orange discs), ICPSR favicon
+  (serif I), plus compact OSF / WB / Git / personal / recycle icons.
 
 ## Shiny: study-only deep links (dropdown first)
 

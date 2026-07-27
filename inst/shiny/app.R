@@ -2417,30 +2417,38 @@ repo_icon_folder <- function() {
   )
 }
 
-#' Source-repository kind icons (URL heuristics → kind in package helpers)
-source_repo_icon_dataverse <- function() {
+#' Source-repository kind icons (URL heuristics → kind in package helpers).
+#' Marks prefer authentic host brands where practical (Dataverse brand icon;
+#' ICPSR tab favicon); others are compact line icons in the same 18×18 frame.
+
+source_repo_icon_svg <- function(..., viewBox = "0 0 24 24", width = "18", height = "18") {
   tags$svg(
     xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
+    viewBox = viewBox,
+    width = width,
+    height = height,
     `aria-hidden` = "true",
-    fill = "none",
-    stroke = "#c65d00",
-    `stroke-width` = "1.8",
-    tags$ellipse(cx = "12", cy = "6", rx = "7", ry = "3"),
-    tags$path(d = "M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"),
-    tags$path(d = "M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6")
+    ...
+  )
+}
+
+#' Dataverse brand mark: two orange discs joined by a diagonal connector
+#' (IQSS Dataverse_brand_icon / Harvard Dataverse favicon; color #C55B28).
+source_repo_icon_dataverse <- function() {
+  source_repo_icon_svg(
+    fill = "#C55B28",
+    stroke = "#C55B28",
+    `stroke-width` = "4.2",
+    `stroke-linecap` = "round",
+    tags$line(x1 = "8.2", y1 = "7.2", x2 = "15.8", y2 = "16.8"),
+    tags$circle(cx = "8.2", cy = "7.2", r = "5.1", stroke = "none"),
+    tags$circle(cx = "15.8", cy = "16.8", r = "5.5", stroke = "none")
   )
 }
 
 source_repo_icon_osf <- function() {
-  tags$svg(
-    xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
-    `aria-hidden` = "true",
+  # Compact hexagon mark (OSF green)
+  source_repo_icon_svg(
     fill = "#2e7d32",
     tags$path(
       d = "M12 2.5l7.5 4.3v8.4L12 19.5l-7.5-4.3V6.8L12 2.5zm0 3.2L7.8 8v5.1L12 15.4l4.2-2.3V8L12 5.7z"
@@ -2449,12 +2457,7 @@ source_repo_icon_osf <- function() {
 }
 
 source_repo_icon_worldbank <- function() {
-  tags$svg(
-    xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
-    `aria-hidden` = "true",
+  source_repo_icon_svg(
     fill = "none",
     stroke = "#0071bc",
     `stroke-width` = "1.8",
@@ -2464,29 +2467,17 @@ source_repo_icon_worldbank <- function() {
   )
 }
 
+#' ICPSR / OpenICPSR: serif capital I from icpsr.umich.edu favicon
 source_repo_icon_icpsr <- function() {
-  tags$svg(
-    xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
-    `aria-hidden` = "true",
-    fill = "none",
-    stroke = "#6a1b9a",
-    `stroke-width` = "1.8",
-    tags$rect(x = "4", y = "4", width = "16", height = "5", rx = "1"),
-    tags$rect(x = "4", y = "10", width = "16", height = "5", rx = "1"),
-    tags$rect(x = "4", y = "16", width = "16", height = "4", rx = "1")
+  source_repo_icon_svg(
+    fill = "#1a1a2e",
+    # Slab-serif I approximating https://www.icpsr.umich.edu/favicon.ico
+    tags$path(d = "M5.5 3.8h13v2.4h-4.35v11.6H18.5v2.4h-13v-2.4h4.35V6.2H5.5V3.8z")
   )
 }
 
 source_repo_icon_git <- function() {
-  tags$svg(
-    xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
-    `aria-hidden` = "true",
+  source_repo_icon_svg(
     fill = "none",
     stroke = "#24292f",
     `stroke-width` = "1.8",
@@ -2500,12 +2491,7 @@ source_repo_icon_git <- function() {
 }
 
 source_repo_icon_personal <- function() {
-  tags$svg(
-    xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
-    `aria-hidden` = "true",
+  source_repo_icon_svg(
     fill = "#455a64",
     tags$circle(cx = "12", cy = "8", r = "3.5"),
     tags$path(d = "M5 19.5c0-3.6 3.1-6 7-6s7 2.4 7 6v.5H5v-.5z")
@@ -2513,12 +2499,7 @@ source_repo_icon_personal <- function() {
 }
 
 source_repo_icon_replicate_everything <- function() {
-  tags$svg(
-    xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
-    `aria-hidden` = "true",
+  source_repo_icon_svg(
     fill = "none",
     stroke = "#0f766e",
     `stroke-width` = "1.8",
@@ -2532,12 +2513,7 @@ source_repo_icon_replicate_everything <- function() {
 }
 
 source_repo_icon_other <- function() {
-  tags$svg(
-    xmlns = "http://www.w3.org/2000/svg",
-    viewBox = "0 0 24 24",
-    width = "18",
-    height = "18",
-    `aria-hidden` = "true",
+  source_repo_icon_svg(
     fill = "none",
     stroke = "#5c6b7a",
     `stroke-width` = "1.8",
@@ -2601,6 +2577,38 @@ source_repository_icon_ui <- function(
   } else {
     tags$span(class = class, title = tip, icon)
   }
+}
+
+#' Studies-table Source column cell (icon or em dash)
+source_repository_column_ui <- function(source_repository = NULL, kind = NULL) {
+  icon <- source_repository_icon_ui(source_repository, kind = kind)
+  if (is.null(icon)) {
+    return(tags$span(class = "text-muted small", "—"))
+  }
+  icon
+}
+
+#' Labeled Source repository link for folded study-info body
+source_repository_details_ui <- function(source_repository = NULL) {
+  src <- trimws(as.character(source_repository %||% ""))
+  if (!nzchar(src)) {
+    return(NULL)
+  }
+  src_href <- tryCatch(
+    replicate_fn("source_repository_href", src),
+    error = function(e) {
+      if (grepl("^https?://", src, ignore.case = TRUE)) src else NULL
+    }
+  )
+  tags$p(
+    class = "mb-2",
+    strong("Source repository: "),
+    if (!is.null(src_href) && nzchar(src_href)) {
+      tags$a(href = src_href, target = "_blank", rel = "noopener", src)
+    } else {
+      src
+    }
+  )
 }
 
 study_repo_url_for_row <- function(row) {
@@ -2851,7 +2859,7 @@ collections_legend_ui <- function() {
   )
 }
 
-#' Compact key for Studies table symbols (Notes, Languages, Repo, Link)
+#' Compact key for Studies table symbols (Notes, Languages, Repo, Link, Source)
 studies_symbols_legend_ui <- function() {
   item <- function(icon, label) {
     tags$span(
@@ -2890,7 +2898,7 @@ studies_symbols_legend_ui <- function() {
     ),
     tags$div(
       class = "studies-legend-row",
-      tags$span(class = "collections-legend-label", "Source: "),
+      tags$span(class = "collections-legend-label", "Source column: "),
       item(source_repo_icon_dataverse(), "Dataverse"),
       tags$span(class = "studies-legend-sep", "·"),
       item(source_repo_icon_osf(), "OSF"),
@@ -6075,7 +6083,8 @@ ui <- tagList(
     .study-list-header,
     .study-citation {
       display: grid;
-      grid-template-columns: minmax(0, 35rem) 4.5rem 3rem 5.5rem 4.75rem 2rem 2.75rem;
+      /* Study (~20% wider), Collection, Source, Repo, Languages, Notes, Link, Go */
+      grid-template-columns: minmax(0, 42rem) 4.5rem 2.25rem 3rem 5.5rem 4.75rem 2rem 2.75rem;
       gap: 12px;
       align-items: start;
       justify-content: start;
@@ -6091,7 +6100,8 @@ ui <- tagList(
     .study-engine-col,
     .study-notes-col,
     .study-run-col,
-    .study-link-col {
+    .study-link-col,
+    .study-source-col {
       text-align: center;
       white-space: nowrap;
       display: flex;
@@ -6349,6 +6359,9 @@ ui <- tagList(
       text-align: center;
       white-space: nowrap;
     }
+    .study-source-col .source-repo-badge {
+      margin: 0 auto;
+    }
     .study-repo-link {
       display: inline-flex;
       line-height: 0;
@@ -6365,15 +6378,6 @@ ui <- tagList(
     }
     .study-citation-main {
       min-width: 0;
-    }
-    .study-citation-title-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.4rem;
-    }
-    .study-source-repo-inline {
-      flex: 0 0 auto;
-      margin-top: 0.1rem;
     }
     .source-repo-badge {
       display: inline-flex;
@@ -6427,7 +6431,8 @@ ui <- tagList(
       .study-run-col,
       .study-link-col,
       .study-collections-col,
-      .study-repo-col {
+      .study-repo-col,
+      .study-source-col {
         justify-content: flex-start;
       }
       .study-run-col {
@@ -7418,21 +7423,11 @@ server <- function(input, output, session) {
       )
       study_key <- as.character(rec$key %||% rec$doi %||% rec$handle %||% "")
       cite <- format_study_citation(fake_row, study_key = study_key)
-      source_icon <- source_repository_icon_ui(
-        rec$source_repository %||% "",
-        kind = rec$source_repository_kind %||% NULL
-      )
       tags$div(
         class = "study-citation",
         tags$div(
           class = "study-citation-main",
-          tags$div(
-            class = "study-citation-title-row",
-            if (!is.null(source_icon)) {
-              tags$span(class = "study-source-repo-inline", source_icon)
-            },
-            tags$div(cite$line1)
-          ),
+          tags$div(cite$line1),
           tags$div(class = "text-muted", style = "font-size: 0.9rem;", cite$line2)
         ),
         tags$div(
@@ -7441,6 +7436,14 @@ server <- function(input, output, session) {
             class = "study-collections-col",
             tags$span(class = "study-citation-meta-label", "Collection"),
             collections_column_ui(collections)
+          ),
+          tags$div(
+            class = "study-source-col",
+            tags$span(class = "study-citation-meta-label", "Source"),
+            source_repository_column_ui(
+              rec$source_repository %||% "",
+              kind = rec$source_repository_kind %||% NULL
+            )
           ),
           tags$div(
             class = "study-repo-col",
@@ -7497,6 +7500,7 @@ server <- function(input, output, session) {
         class = "study-list-header",
         tags$div("Study"),
         tags$div(class = "study-collections-col", "Collection"),
+        tags$div(class = "study-source-col", "Source"),
         tags$div(class = "study-repo-col", "Repo"),
         tags$div(class = "study-engine-col", "Languages"),
         tags$div(class = "study-notes-col", "Notes"),
@@ -7646,32 +7650,6 @@ server <- function(input, output, session) {
             )
           )
         ),
-        if (nzchar(source_repository %||% "")) {
-          src_href <- tryCatch(
-            replicate_fn("source_repository_href", source_repository),
-            error = function(e) {
-              if (grepl("^https?://", source_repository, ignore.case = TRUE)) {
-                source_repository
-              } else {
-                NULL
-              }
-            }
-          )
-          tags$p(
-            class = "mb-2 mt-2",
-            strong("Source repository: "),
-            if (!is.null(src_href) && nzchar(src_href)) {
-              tags$a(
-                href = src_href,
-                target = "_blank",
-                rel = "noopener",
-                source_repository
-              )
-            } else {
-              source_repository
-            }
-          )
-        },
         tags$details(
           class = "study-details-expand",
           tags$summary(
@@ -7689,6 +7667,7 @@ server <- function(input, output, session) {
               },
               strong("Journal: "), journal_display
             ),
+            source_repository_details_ui(source_repository),
             if (!is.null(state$local_study_meta) && nrow(row) == 0) {
               p(
                 class = "text-muted small mb-2",
