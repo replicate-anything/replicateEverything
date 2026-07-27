@@ -74,9 +74,12 @@ for the Studies tab filter and maintainer link.
 
 **Also declare `paper.source_repository`:** URL of the original data / materials
 deposit (Dataverse, OpenICPSR, World Bank catalog, GitHub analysis repo, personal
-archive, etc.). Shiny shows it as **Source repository** with a kind icon inferred
-from the URL. Legacy aliases `source_url` / `source_repo` are still read.
-`check_replication()` fails when the field is missing; `audit_everything()`
+archive, etc.). Distinct from `paper.study_url` (this study’s GitHub materials
+repo); for a template with no external deposit they may be the same URL. Shiny
+shows **Source repository** with a kind icon inferred from the URL (Dataverse,
+OSF, World Bank, ICPSR/OpenICPSR, Git, replicateEverything); other http(s) URLs
+fall back to **personal**. Legacy aliases `source_url` / `source_repo` are still
+read. `check_replication()` fails when the field is missing; `audit_everything()`
 summarizes gaps via `registry_source_repository_gaps()`.
 
 
@@ -425,7 +428,10 @@ write products under `outputs/`.
 | `steps[].engine` | `r`, `stata`, or `python` — must match `code:` extension |
 | `steps[].dependencies` | **R only** — extra CRAN packages for that step |
 
-**Tables with external data:** add `data:` and/or `inputs:` on the step row.
+**Step inputs:** Prefer `inputs:` (list of paths this step reads). Optional
+`data:` is an older alias for the same execute paths — `replication_data_paths()`
+prefers `data:` when both are set; for simple studies list the file once under
+`inputs:` only (do not duplicate the same path under both).
 
 **Shiny Server (large files):** place files at `data/<study_folder>/<basename>` beside the app. Use the study repo folder name (`paper.study_folder` or `rep-<doi-with-hyphens>`), not the registry stub folder (`10.x_y`).
 

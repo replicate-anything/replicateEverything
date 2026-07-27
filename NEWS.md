@@ -1,3 +1,14 @@
+# replicateEverything 0.7.19
+
+## Template / Contribute exemplar alignment
+
+* **Shiny Contribute:** Gold `replication.yml` exemplar now matches
+  `rep-template` (includes `paper.source_repository`, `year: "2026a"`,
+  estimatr/knitr deps, `inputs:` only — no redundant `data:` duplicate).
+* **Skills:** `folder_replication.md` notes Source icon kinds (personal as
+  residual) and prefers `inputs:` over duplicating the same path under
+  `data:` and `inputs:`.
+
 # replicateEverything 0.7.18
 
 ## Shiny: authors visible above the study-info fold
