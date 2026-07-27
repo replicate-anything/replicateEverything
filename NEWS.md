@@ -13,6 +13,10 @@
   **everything** with recycle mark; left/right separator dots are orange
   (`#C55B28`). Shiny welcome modal places the hex centered below the copy
   (smaller) so text stays primary.
+* Hex PNGs (`man/figures/logo.png`, `docs/logo.png`, Shiny
+  `logo-hex.png`) now use a **transparent** exterior (true alpha) so the
+  sticker sits cleanly on the blue welcome UI and other non-white
+  backgrounds; the hex face is unchanged.
 
 ## Paper source repository credit
 
