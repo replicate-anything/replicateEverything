@@ -3,7 +3,7 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-<img src="man/figures/logo.png" align="right" height="139" alt="replicateEverything logo" />
+<img src="man/figures/logo.png" align="right" height="139" alt="replicateEverything logo" class="pkgdown-hide" />
 
 **Tools to discover, run, and contribute computational replications of empirical research papers.**
 

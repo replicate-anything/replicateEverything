@@ -1,5 +1,11 @@
 # replicateEverything 0.7.19
 
+## Docs home: no duplicate hex
+
+* README hex keeps `class="pkgdown-hide"` so GitHub still shows the
+  sticker, while the pkgdown home page relies on the navbar/header logo
+  only (no large duplicate at the top of `docs/index.html`).
+
 ## Template / Contribute exemplar alignment
 
 * **Shiny Contribute:** Gold `replication.yml` exemplar now matches
