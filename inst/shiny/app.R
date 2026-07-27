@@ -62,11 +62,6 @@ app_welcome_intro <- function() {
     class = "welcome-intro",
     tags$div(
       class = "welcome-intro-layout",
-      tags$img(
-        src = APP_HEX_LOGO,
-        alt = "Replicate Everything",
-        class = "welcome-logo"
-      ),
       tags$div(
         class = "welcome-copy",
         p(
@@ -92,6 +87,11 @@ app_welcome_intro <- function() {
         if (shiny_feedback_tab_visible()) {
           p("Or use the Feedback tab to give us feedback.")
         }
+      ),
+      tags$img(
+        src = APP_HEX_LOGO,
+        alt = "Replicate Everything",
+        class = "welcome-logo"
       )
     )
   )
@@ -2418,8 +2418,8 @@ repo_icon_folder <- function() {
 }
 
 #' Source-repository kind icons (URL heuristics → kind in package helpers).
-#' Marks prefer authentic host brands where practical (Dataverse brand icon;
-#' ICPSR tab favicon); others are compact line icons in the same 18×18 frame.
+#' Marks prefer authentic host brands where practical (Dataverse hollow rings;
+#' GitHub Octocat; ICPSR linking-widget blue); others stay compact in 18×18.
 
 source_repo_icon_svg <- function(..., viewBox = "0 0 24 24", width = "18", height = "18") {
   tags$svg(
@@ -2432,17 +2432,19 @@ source_repo_icon_svg <- function(..., viewBox = "0 0 24 24", width = "18", heigh
   )
 }
 
-#' Dataverse brand mark: two orange discs joined by a diagonal connector
-#' (IQSS Dataverse_brand_icon / Harvard Dataverse favicon; color #C55B28).
+#' Dataverse brand mark: two hollow rings + short connector (IQSS collection
+#' icon / style guide; burnt orange #C55B28). Not filled discs.
 source_repo_icon_dataverse <- function() {
   source_repo_icon_svg(
-    fill = "#C55B28",
+    fill = "none",
     stroke = "#C55B28",
-    `stroke-width` = "4.2",
-    `stroke-linecap` = "round",
-    tags$line(x1 = "8.2", y1 = "7.2", x2 = "15.8", y2 = "16.8"),
-    tags$circle(cx = "8.2", cy = "7.2", r = "5.1", stroke = "none"),
-    tags$circle(cx = "15.8", cy = "16.8", r = "5.5", stroke = "none")
+    `stroke-width` = "2.2",
+    `stroke-linecap` = "butt",
+    `stroke-linejoin` = "round",
+    # Smaller ring upper-left; larger lower-right; bar meets outer edges
+    tags$circle(cx = "8.0", cy = "7.2", r = "4.15"),
+    tags$circle(cx = "15.7", cy = "16.3", r = "5.15"),
+    tags$line(x1 = "10.55", y1 = "10.2", x2 = "12.65", y2 = "12.7")
   )
 }
 
@@ -2467,26 +2469,35 @@ source_repo_icon_worldbank <- function() {
   )
 }
 
-#' ICPSR / OpenICPSR: serif capital I from icpsr.umich.edu favicon
+#' ICPSR / OpenICPSR: slab-serif I in official linking-widget blue (#115BFB;
+#' from https://www.icpsr.umich.edu/…/promoting-icpsr/linking widgets).
 source_repo_icon_icpsr <- function() {
   source_repo_icon_svg(
-    fill = "#1a1a2e",
-    # Slab-serif I approximating https://www.icpsr.umich.edu/favicon.ico
+    fill = "#115BFB",
     tags$path(d = "M5.5 3.8h13v2.4h-4.35v11.6H18.5v2.4h-13v-2.4h4.35V6.2H5.5V3.8z")
   )
 }
 
+#' GitHub / git: official Octocat mark (github-mark silhouette; #24292f).
 source_repo_icon_git <- function() {
   source_repo_icon_svg(
-    fill = "none",
-    stroke = "#24292f",
-    `stroke-width` = "1.8",
-    `stroke-linecap` = "round",
-    tags$circle(cx = "6", cy = "18", r = "2.2"),
-    tags$circle(cx = "6", cy = "6", r = "2.2"),
-    tags$circle(cx = "18", cy = "12", r = "2.2"),
-    tags$path(d = "M6 8.2v7.6"),
-    tags$path(d = "M6 6c4 0 6 2.5 8.5 5.2")
+    fill = "#24292f",
+    tags$path(
+      # Compact Octocat / mark-github path (Simple Icons / GitHub logos)
+      d = paste0(
+        "M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385",
+        ".6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61",
+        "-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729",
+        ".084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305",
+        "3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93",
+        "0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005",
+        "-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405",
+        "2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84",
+        "1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81",
+        "2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092",
+        "24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+      )
+    )
   )
 }
 
@@ -2907,7 +2918,7 @@ studies_symbols_legend_ui <- function() {
       tags$span(class = "studies-legend-sep", "·"),
       item(source_repo_icon_icpsr(), "ICPSR"),
       tags$span(class = "studies-legend-sep", "·"),
-      item(source_repo_icon_git(), "Git"),
+      item(source_repo_icon_git(), "GitHub"),
       tags$span(class = "studies-legend-sep", "·"),
       item(source_repo_icon_personal(), "personal"),
       tags$span(class = "studies-legend-sep", "·"),
@@ -5868,18 +5879,21 @@ ui <- tagList(
     .welcome-intro { margin-bottom: 0.5rem; }
     .welcome-intro-layout {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       align-items: center;
-      gap: 1.25rem;
+      gap: 0.85rem;
     }
     .welcome-logo {
-      width: min(168px, 38vw);
+      width: min(96px, 28vw);
       height: auto;
       flex: 0 0 auto;
+      display: block;
+      margin-inline: auto;
     }
     .welcome-copy {
-      flex: 1 1 240px;
+      width: 100%;
       min-width: 0;
+      text-align: left;
     }
     .welcome-copy p { margin-bottom: 0.75rem; }
     .welcome-copy p:last-child { margin-bottom: 0; }

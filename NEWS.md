@@ -1,5 +1,12 @@
 # replicateEverything 0.7.18
 
+## Hex logo refresh
+
+* Package hex sticker promoted to circular upright **replicate** /
+  **everything** with recycle mark; left/right separator dots are orange
+  (`#C55B28`). Shiny welcome modal places the hex centered below the copy
+  (smaller) so text stays primary.
+
 ## Paper source repository credit
 
 * **Metadata:** Canonical field is `paper.source_repository` (URL preferred;
@@ -15,8 +22,9 @@
   **Repo**; Study column is ~20% wider. Labeled **Source repository** link lives
   in the folded study-info panel (icon may still appear in the summary icon
   row). Registry stubs / `shiny_studies.json` carry the field for list-time
-  display. Icon marks: Dataverse brand (two orange discs), ICPSR favicon
-  (serif I), plus compact OSF / WB / Git / personal / recycle icons.
+  display. Icon marks: Dataverse hollow two-ring brand (#C55B28), GitHub
+  Octocat, ICPSR serif I in linking-widget blue (#115BFB), plus compact
+  OSF / WB / personal / recycle icons.
 
 ## Shiny: study-only deep links (dropdown first)
 
