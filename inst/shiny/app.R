@@ -2416,6 +2416,192 @@ repo_icon_folder <- function() {
   )
 }
 
+#' Source-repository kind icons (URL heuristics → kind in package helpers)
+source_repo_icon_dataverse <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#c65d00",
+    `stroke-width` = "1.8",
+    tags$ellipse(cx = "12", cy = "6", rx = "7", ry = "3"),
+    tags$path(d = "M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6"),
+    tags$path(d = "M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6")
+  )
+}
+
+source_repo_icon_osf <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "#2e7d32",
+    tags$path(
+      d = "M12 2.5l7.5 4.3v8.4L12 19.5l-7.5-4.3V6.8L12 2.5zm0 3.2L7.8 8v5.1L12 15.4l4.2-2.3V8L12 5.7z"
+    )
+  )
+}
+
+source_repo_icon_worldbank <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#0071bc",
+    `stroke-width` = "1.8",
+    tags$circle(cx = "12", cy = "12", r = "8.5"),
+    tags$path(d = "M3.5 12h17"),
+    tags$path(d = "M12 3.5c2.5 2.4 3.8 5.2 3.8 8.5S14.5 18.1 12 20.5C9.5 18.1 8.2 15.3 8.2 12S9.5 5.9 12 3.5z")
+  )
+}
+
+source_repo_icon_icpsr <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#6a1b9a",
+    `stroke-width` = "1.8",
+    tags$rect(x = "4", y = "4", width = "16", height = "5", rx = "1"),
+    tags$rect(x = "4", y = "10", width = "16", height = "5", rx = "1"),
+    tags$rect(x = "4", y = "16", width = "16", height = "4", rx = "1")
+  )
+}
+
+source_repo_icon_git <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#24292f",
+    `stroke-width` = "1.8",
+    `stroke-linecap` = "round",
+    tags$circle(cx = "6", cy = "18", r = "2.2"),
+    tags$circle(cx = "6", cy = "6", r = "2.2"),
+    tags$circle(cx = "18", cy = "12", r = "2.2"),
+    tags$path(d = "M6 8.2v7.6"),
+    tags$path(d = "M6 6c4 0 6 2.5 8.5 5.2")
+  )
+}
+
+source_repo_icon_personal <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "#455a64",
+    tags$circle(cx = "12", cy = "8", r = "3.5"),
+    tags$path(d = "M5 19.5c0-3.6 3.1-6 7-6s7 2.4 7 6v.5H5v-.5z")
+  )
+}
+
+source_repo_icon_replicate_everything <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#0f766e",
+    `stroke-width` = "1.8",
+    `stroke-linecap` = "round",
+    `stroke-linejoin` = "round",
+    tags$path(d = "M7 8h8l-1.5-2.5"),
+    tags$path(d = "M17 16H9l1.5 2.5"),
+    tags$path(d = "M8.5 19.5A7.5 7.5 0 0 1 6.2 8.8"),
+    tags$path(d = "M15.5 4.5A7.5 7.5 0 0 1 17.8 15.2")
+  )
+}
+
+source_repo_icon_other <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    fill = "none",
+    stroke = "#5c6b7a",
+    `stroke-width` = "1.8",
+    tags$path(d = "M10 13a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 0 0-7.1-7.1L11 5"),
+    tags$path(d = "M14 11a5 5 0 0 0-7.1 0L4.8 13.1a5 5 0 0 0 7.1 7.1L13 19")
+  )
+}
+
+source_repository_icon_for_kind <- function(kind) {
+  switch(
+    as.character(kind %||% "other"),
+    dataverse = source_repo_icon_dataverse(),
+    osf = source_repo_icon_osf(),
+    worldbank = source_repo_icon_worldbank(),
+    icpsr = source_repo_icon_icpsr(),
+    git = source_repo_icon_git(),
+    personal = source_repo_icon_personal(),
+    replicateEverything = source_repo_icon_replicate_everything(),
+    source_repo_icon_other()
+  )
+}
+
+#' Icon (+ optional link) for a source repository credit
+source_repository_icon_ui <- function(
+  source_repository = NULL,
+  kind = NULL,
+  class = "engine-badge source-repo-badge"
+) {
+  src <- trimws(as.character(source_repository %||% ""))
+  if (!nzchar(src)) {
+    return(NULL)
+  }
+  kind_val <- trimws(as.character(kind %||% ""))
+  if (!nzchar(kind_val)) {
+    kind_val <- tryCatch(
+      replicate_fn("source_repository_kind", src),
+      error = function(e) "other"
+    )
+  }
+  label <- tryCatch(
+    replicate_fn("source_repository_kind_label", kind_val),
+    error = function(e) "Source repository"
+  )
+  href <- tryCatch(
+    replicate_fn("source_repository_href", src),
+    error = function(e) {
+      if (grepl("^https?://", src, ignore.case = TRUE)) src else NULL
+    }
+  )
+  tip <- paste0(label, ": ", src)
+  icon <- source_repository_icon_for_kind(kind_val)
+  if (!is.null(href) && nzchar(href)) {
+    tags$a(
+      href = href,
+      target = "_blank",
+      rel = "noopener",
+      class = class,
+      title = tip,
+      icon
+    )
+  } else {
+    tags$span(class = class, title = tip, icon)
+  }
+}
+
 study_repo_url_for_row <- function(row) {
   slug <- if ("repo" %in% names(row)) as.character(row$repo[[1]] %||% "") else ""
   if (length(slug) != 1L || is.na(slug) || !nzchar(slug)) {
@@ -2700,6 +2886,23 @@ studies_symbols_legend_ui <- function() {
       item(repo_icon_folder(), "study repo"),
       tags$span(class = "studies-legend-sep", "·"),
       item(link_icon_svg(), "share link")
+    ),
+    tags$div(
+      class = "studies-legend-row",
+      tags$span(class = "collections-legend-label", "Source: "),
+      item(source_repo_icon_dataverse(), "Dataverse"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(source_repo_icon_osf(), "OSF"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(source_repo_icon_worldbank(), "World Bank"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(source_repo_icon_icpsr(), "ICPSR"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(source_repo_icon_git(), "Git"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(source_repo_icon_personal(), "personal"),
+      tags$span(class = "studies-legend-sep", "·"),
+      item(source_repo_icon_replicate_everything(), "replicateEverything")
     )
   )
 }
@@ -6162,6 +6365,24 @@ ui <- tagList(
     .study-citation-main {
       min-width: 0;
     }
+    .study-citation-title-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+    .study-source-repo-inline {
+      flex: 0 0 auto;
+      margin-top: 0.1rem;
+    }
+    .source-repo-badge {
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      text-decoration: none;
+    }
+    .source-repo-badge:hover {
+      opacity: 0.85;
+    }
     .study-citation-meta {
       display: contents;
     }
@@ -7196,11 +7417,21 @@ server <- function(input, output, session) {
       )
       study_key <- as.character(rec$key %||% rec$doi %||% rec$handle %||% "")
       cite <- format_study_citation(fake_row, study_key = study_key)
+      source_icon <- source_repository_icon_ui(
+        rec$source_repository %||% "",
+        kind = rec$source_repository_kind %||% NULL
+      )
       tags$div(
         class = "study-citation",
         tags$div(
           class = "study-citation-main",
-          tags$div(cite$line1),
+          tags$div(
+            class = "study-citation-title-row",
+            if (!is.null(source_icon)) {
+              tags$span(class = "study-source-repo-inline", source_icon)
+            },
+            tags$div(cite$line1)
+          ),
           tags$div(class = "text-muted", style = "font-size: 0.9rem;", cite$line2)
         ),
         tags$div(
@@ -7304,6 +7535,54 @@ server <- function(input, output, session) {
     } else {
       tags$em("Working paper")
     }
+    source_repository <- NULL
+    source_kind <- NULL
+    cache_rec <- tryCatch({
+      cache <- studies_cache_rv()
+      studies <- if (is.list(cache)) cache$studies %||% list() else list()
+      hit <- Filter(function(s) {
+        key <- as.character(s$key %||% s$doi %||% s$handle %||% "")
+        identical(key, as.character(state$doi)) ||
+          identical(as.character(s$doi %||% ""), as.character(state$doi)) ||
+          identical(as.character(s$handle %||% ""), as.character(state$doi))
+      }, studies)
+      if (length(hit)) hit[[1]] else NULL
+    }, error = function(e) NULL)
+    if (!is.null(cache_rec)) {
+      source_repository <- trimws(as.character(cache_rec$source_repository %||% ""))
+      source_kind <- trimws(as.character(cache_rec$source_repository_kind %||% ""))
+    }
+    if (!nzchar(source_repository %||% "")) {
+      live_src <- tryCatch({
+        meta <- replicate_fn(
+          "get_replication_meta",
+          state$doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo
+        )
+        replicate_fn("paper_source_repository", meta = meta)
+      }, error = function(e) NULL)
+      if (!is.null(live_src) && nzchar(as.character(live_src))) {
+        source_repository <- as.character(live_src)
+        source_kind <- tryCatch(
+          replicate_fn("source_repository_kind", source_repository),
+          error = function(e) ""
+        )
+      }
+    }
+    if (!is.null(state$local_study_meta) && !nzchar(source_repository %||% "")) {
+      live_src <- tryCatch(
+        replicate_fn("paper_source_repository", paper = state$local_study_meta),
+        error = function(e) NULL
+      )
+      if (!is.null(live_src) && nzchar(as.character(live_src))) {
+        source_repository <- as.character(live_src)
+        source_kind <- tryCatch(
+          replicate_fn("source_repository_kind", source_repository),
+          error = function(e) ""
+        )
+      }
+    }
     doi_value <- if (nrow(row) > 0) {
       doi_raw <- trimws(as.character(row$doi[[1]] %||% ""))
       if (nzchar(doi_raw)) {
@@ -7353,6 +7632,7 @@ server <- function(input, output, session) {
           h4(class = "mb-0", paper$title %||% state$doi),
           tags$div(
             class = "d-flex align-items-center gap-2",
+            source_repository_icon_ui(source_repository, kind = source_kind),
             study_languages_icons_display(
               engines$r,
               engines$stata,
@@ -7365,6 +7645,32 @@ server <- function(input, output, session) {
             )
           )
         ),
+        if (nzchar(source_repository %||% "")) {
+          src_href <- tryCatch(
+            replicate_fn("source_repository_href", source_repository),
+            error = function(e) {
+              if (grepl("^https?://", source_repository, ignore.case = TRUE)) {
+                source_repository
+              } else {
+                NULL
+              }
+            }
+          )
+          tags$p(
+            class = "mb-2 mt-2",
+            strong("Source repository: "),
+            if (!is.null(src_href) && nzchar(src_href)) {
+              tags$a(
+                href = src_href,
+                target = "_blank",
+                rel = "noopener",
+                source_repository
+              )
+            } else {
+              source_repository
+            }
+          )
+        },
         tags$details(
           class = "study-details-expand",
           tags$summary(

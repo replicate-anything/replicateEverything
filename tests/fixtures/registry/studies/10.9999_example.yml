@@ -5,6 +5,7 @@ paper:
   journal: Test Journal
   year: 2025
   authors: Test Author
+  source_repository: https://github.com/replicate-anything/replicateEverything
   materials: folder
   study_repo: replicate-anything/rep-10.9999-example
   study_folder: rep-10.9999-example

@@ -95,6 +95,8 @@ check_package_replication <- function(location, full_replication = FALSE) {
     )
   }
 
+  checks <- bind_check_results(checks, check_paper_source_repository(paper))
+
   yml_pkg <- paper$package %||% NULL
   if (is.null(yml_pkg) || !nzchar(as.character(yml_pkg[[1]]))) {
     checks <- bind_check_results(

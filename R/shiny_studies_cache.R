@@ -29,14 +29,7 @@ shiny_studies_cache_url <- function() {
 #' Parse languages cell / list into engine flags for the Studies table
 #' @noRd
 shiny_studies_engine_flags <- function(languages) {
-  parts <- if (is.list(languages) || (is.character(languages) && length(languages) > 1L)) {
-    tolower(trimws(as.character(unlist(languages, use.names = FALSE))))
-  } else {
-    raw <- as.character(languages %||% "")
-    parts <- tolower(strsplit(raw, "[|;]", perl = TRUE)[[1]])
-    trimws(parts)
-  }
-  parts <- parts[nzchar(parts) & !is.na(parts)]
+  parts <- shiny_studies_languages_vec(languages)
   list(
     r = "r" %in% parts,
     stata = "stata" %in% parts,
@@ -48,11 +41,17 @@ shiny_studies_engine_flags <- function(languages) {
 #' Normalize languages to a character vector for the cache
 #' @noRd
 shiny_studies_languages_vec <- function(languages) {
+  if (is.null(languages) || length(languages) == 0L) {
+    return(character(0))
+  }
   if (is.list(languages) || (is.character(languages) && length(languages) > 1L)) {
     parts <- trimws(as.character(unlist(languages, use.names = FALSE)))
   } else {
-    raw <- as.character(languages %||% "")
-    parts <- trimws(strsplit(raw, "[|;]", perl = TRUE)[[1]])
+    raw <- as.character(languages[[1]] %||% languages %||% "")
+    if (!length(raw) || is.na(raw[[1]]) || !nzchar(raw[[1]])) {
+      return(character(0))
+    }
+    parts <- trimws(strsplit(raw[[1]], "[|;]", perl = TRUE)[[1]])
   }
   unique(parts[nzchar(parts) & !is.na(parts)])
 }
@@ -60,11 +59,17 @@ shiny_studies_languages_vec <- function(languages) {
 #' Normalize collections to a character vector for the cache
 #' @noRd
 shiny_studies_collections_vec <- function(collections) {
+  if (is.null(collections) || length(collections) == 0L) {
+    return(character(0))
+  }
   if (is.list(collections) || (is.character(collections) && length(collections) > 1L)) {
     parts <- trimws(as.character(unlist(collections, use.names = FALSE)))
   } else {
-    raw <- as.character(collections %||% "")
-    parts <- trimws(strsplit(raw, "[|;]", perl = TRUE)[[1]])
+    raw <- as.character(collections[[1]] %||% collections %||% "")
+    if (!length(raw) || is.na(raw[[1]]) || !nzchar(raw[[1]])) {
+      return(character(0))
+    }
+    parts <- trimws(strsplit(raw[[1]], "[|;]", perl = TRUE)[[1]])
   }
   unique(parts[nzchar(parts) & !is.na(parts)])
 }
@@ -298,11 +303,22 @@ shiny_studies_record_from_row <- function(
     ""
   }
   paper_study_url <- ""
+  source_repository <- ""
   if (is.list(meta) && is.list(meta$paper)) {
     paper_study_url <- trimws(as.character(meta$paper$study_url %||% ""))
+    source_repository <- paper_source_repository(paper = meta$paper) %||% ""
   }
   if (!nzchar(study_url) && nzchar(paper_study_url)) {
     study_url <- paper_study_url
+  }
+  # Prefer index column when present (future-proof); stubs remain the source of truth.
+  if (!nzchar(source_repository) && "source_repository" %in% names(row)) {
+    source_repository <- trimws(as.character(index_row_field(row, "source_repository", "")))
+  }
+  source_kind <- if (nzchar(source_repository)) {
+    source_repository_kind(source_repository)
+  } else {
+    ""
   }
 
   list(
@@ -324,6 +340,8 @@ shiny_studies_record_from_row <- function(
     article_url = article_url,
     repo = repo,
     study_url = study_url,
+    source_repository = source_repository,
+    source_repository_kind = source_kind,
     maintainer_name = index_row_field(row, "maintainer_name", ""),
     maintainer_email = index_row_field(row, "maintainer_email", "")
   )

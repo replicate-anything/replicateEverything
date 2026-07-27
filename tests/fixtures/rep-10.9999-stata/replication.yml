@@ -2,6 +2,7 @@ paper:
   doi: https://doi.org/10.9999/stata-fixture
   title: Stata Fixture Paper
   journal: Test Journal
+  source_repository: https://github.com/replicate-anything/replicateEverything
   year: 2025
   authors: Test Author
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny_app.R
 \name{extract_shiny_deep_link}
 \alias{extract_shiny_deep_link}
-\title{Extract DOI deep-link fields from a parsed query list}
+\title{Extract study deep-link key from a parsed query list}
 \usage{
 extract_shiny_deep_link(query_list)
 }
@@ -10,9 +10,15 @@ extract_shiny_deep_link(query_list)
 \item{query_list}{Named list from \code{parse_shiny_query_string()}.}
 }
 \value{
-List with \code{doi}, \code{what}, \code{language}, or \code{NULL}.
+List with \code{doi} (study key: DOI or handle), or \code{NULL}.
 }
 \description{
-Extract DOI deep-link fields from a parsed query list
+Query contract (path prefix such as \code{/ipi/replicate/} is irrelevant;
+only the search string matters):
+\itemize{
+\item \code{doi} — study DOI (preferred), or
+\item \code{handle} — registry handle / study key when there is no DOI
+}
+Legacy \code{what} / \code{language} query params are ignored if present.
 }
 \keyword{internal}

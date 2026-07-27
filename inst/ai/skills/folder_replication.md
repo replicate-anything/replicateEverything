@@ -67,7 +67,18 @@ registry/studies/<folder>.yml   # lightweight stub (DOI, title, study_repo link)
 
 Copy and track progress:
 
-**Every study repo must declare `maintainer:` (name + email) and should declare `collections:` (APSR, PED, World Bank, IPI, AER, …) in root `replication.yml`.** These fields copy into the registry stub and `index.csv` (via `build_registry_index()`) for the Studies tab filter and maintainer link.
+**Every study repo must declare `maintainer:` (name + email) and should declare
+`collections:` (APSR, PED, World Bank, IPI, AER, …) in root `replication.yml`.**
+These fields copy into the registry stub and `index.csv` (via `build_registry_index()`)
+for the Studies tab filter and maintainer link.
+
+**Also declare `paper.source_repository`:** URL of the original data / materials
+deposit (Dataverse, OpenICPSR, World Bank catalog, GitHub analysis repo, personal
+archive, etc.). Shiny shows it as **Source repository** with a kind icon inferred
+from the URL. Legacy aliases `source_url` / `source_repo` are still read.
+`check_replication()` fails when the field is missing; `audit_everything()`
+summarizes gaps via `registry_source_repository_gaps()`.
+
 
 ```
 - [ ] 1. Inventory delivered materials (scripts, data, outputs)
@@ -319,6 +330,7 @@ paper:
   year: 2022
   authors: "..."
   study_folder: rep-10.1177-00491241211036161
+  source_repository: https://macartan.github.io/code/2022_markov.html
   dependencies:
     - ggplot2
     - haven

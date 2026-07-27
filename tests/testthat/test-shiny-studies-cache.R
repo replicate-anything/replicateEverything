@@ -11,7 +11,8 @@ test_that("build_shiny_studies_cache writes schema with notes and related", {
         journal = "Test Journal",
         year = 2024,
         authors = "Lead, Author, Second, Author",
-        article_url = "https://example.org/article"
+        article_url = "https://example.org/article",
+        source_repository = "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EXAMPLE"
       ),
       repo = "org/example-study",
       maintainer = list(name = "Maintainer", email = "m@example.org"),
@@ -65,6 +66,11 @@ test_that("build_shiny_studies_cache writes schema with notes and related", {
   expect_true(nzchar(base$citation_label))
   expect_equal(base$study_url, "https://github.com/org/example-study")
   expect_equal(base$article_url, "https://example.org/article")
+  expect_equal(
+    base$source_repository,
+    "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EXAMPLE"
+  )
+  expect_equal(base$source_repository_kind, "dataverse")
   expect_true(length(base$related_downstream) >= 1L)
   expect_equal(base$related_downstream[[1]]$key, "reanalysis-example")
 

@@ -108,6 +108,8 @@ check_folder_replication <- function(
     )
   }
 
+  checks <- bind_check_results(checks, check_paper_source_repository(paper))
+
   study_repo <- infer_study_repo_slug(study_root, meta)
   if (is.null(study_repo) || !nzchar(as.character(study_repo[[1]]))) {
     checks <- bind_check_results(

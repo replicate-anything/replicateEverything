@@ -137,12 +137,14 @@ doi_to_registry_folder <- function(doi) {
 registry_stub_from_package_meta <- function(meta, package_folder = NULL) {
   paper <- meta$paper
   pkg_repo <- as.character((meta$repo %||% paper$package_repo)[[1]])
+  source_repository <- paper_source_repository(paper = paper)
   stub_paper <- list(
     doi = paper$doi,
     title = paper$title,
     journal = paper$journal %||% NULL,
     year = paper$year %||% NULL,
     authors = paper$authors %||% NULL,
+    source_repository = source_repository,
     package = paper$package,
     package_repo = pkg_repo,
     package_ref = as.character((paper$package_ref %||% "main")[[1]])

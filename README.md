@@ -120,6 +120,7 @@ paper:
   year: 2024
   doi: 1.2.3.4
   journal: Sample journal
+  source_repository: https://github.com/replicate-anything/replicateEverything
 
 maintainer:
   name: Jane Maintainer

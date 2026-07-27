@@ -1,5 +1,20 @@
 # replicateEverything 0.7.18
 
+## Paper source repository credit
+
+* **Metadata:** Canonical field is `paper.source_repository` (URL preferred;
+  bare `replicateEverything` also accepted). Legacy `source_url` /
+  `source_repo` are still read as aliases. [paper_source_repository()],
+  [source_repository_kind()], and [source_repository_href()] resolve and
+  classify credits (Dataverse, OSF, World Bank, ICPSR/OpenICPSR, Git,
+  personal archive, replicateEverything).
+* **Checks / audit:** [check_replication()] requires
+  `paper.source_repository`. [audit_everything()] summary lists
+  `missing_source_repository` keys via [registry_source_repository_gaps()].
+* **Shiny:** Study details show **Source repository** as a link; Studies list
+  and study header show a kind icon inferred from the URL. Registry stubs /
+  `shiny_studies.json` carry the field for list-time display.
+
 ## Shiny: study-only deep links (dropdown first)
 
 * **Simplify:** Deep links are study-only (`?doi=` / optional `handle=`).

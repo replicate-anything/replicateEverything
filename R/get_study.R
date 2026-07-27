@@ -143,6 +143,7 @@ get_study <- function(doi, repo = NULL, folder = NULL) {
   } else {
     as.character((meta$repo %||% paper$study_repo %||% paper$package_repo %||% "")[[1]])
   }
+  source_repository <- paper_source_repository(paper = paper)
 
   related <- if (!is.null(row)) {
     related_studies_for_index_row(row, index = index)
@@ -179,6 +180,12 @@ get_study <- function(doi, repo = NULL, folder = NULL) {
       gaps = gaps,
       gap_counts = gap_counts,
       related = related,
+      source_repository = source_repository %||% "",
+      source_repository_kind = if (!is.null(source_repository) && nzchar(source_repository)) {
+        source_repository_kind(source_repository)
+      } else {
+        ""
+      },
       folder = if (!is.null(row)) index_row_field(row, "folder", "") else ""
     ),
     class = "replicate_study"
@@ -379,6 +386,12 @@ summary.replicate_study <- function(object, ...) {
   }
   if (nzchar(repo)) {
     cat("Repo:        ", paste0("https://github.com/", repo), "\n", sep = "")
+  }
+  src <- trimws(as.character(object$source_repository %||% ""))
+  if (nzchar(src)) {
+    kind <- trimws(as.character(object$source_repository_kind %||% ""))
+    kind_bit <- if (nzchar(kind)) paste0(" [", kind, "]") else ""
+    cat("Source:      ", src, kind_bit, "\n", sep = "")
   }
 
   n_steps <- as.integer(counts$steps %||% 0L)

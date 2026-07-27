@@ -874,6 +874,12 @@ audit_everything <- function(
     na.rm = TRUE
   )
 
+  meta_root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
+  missing_source <- tryCatch(
+    registry_source_repository_gaps(registry_root = meta_root, index = index),
+    error = function(e) character(0)
+  )
+
   out <- structure(
     list(
       patience = patience,
@@ -889,7 +895,8 @@ audit_everything <- function(
         failed = n_fail,
         timed_out = n_timeout,
         skipped = n_skip,
-        substantive_failed = n_substantive_fail
+        substantive_failed = n_substantive_fail,
+        missing_source_repository = missing_source
       )
     ),
     class = "audit_everything"
@@ -948,6 +955,18 @@ print.audit_everything <- function(x, ...) {
     ),
     sep = ""
   )
+  missing_src <- sm$missing_source_repository %||% character(0)
+  if (length(missing_src) > 0L) {
+    cat(
+      "Metadata gaps — missing paper.source_repository (",
+      length(missing_src),
+      "):\n",
+      sep = ""
+    )
+    for (key in missing_src) {
+      cat("  - ", key, "\n", sep = "")
+    }
+  }
   if (isTRUE(sm$skipped > 0L)) {
     cat("\nSkipped (incomplete / unavailable):\n")
     skips <- x$results[x$results$skipped %in% TRUE, , drop = FALSE]
@@ -1066,7 +1085,8 @@ write_registry_audit_record <- function(audit, registry_root = NULL) {
     failed = sm$failed,
     timed_out = sm$timed_out,
     skipped = sm$skipped %||% 0L,
-    substantive_failed = sm$substantive_failed %||% 0L
+    substantive_failed = sm$substantive_failed %||% 0L,
+    missing_source_repository = as.list(sm$missing_source_repository %||% character(0))
   )
   jsonlite::write_json(
     payload,

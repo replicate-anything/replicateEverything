@@ -18,6 +18,8 @@ Data frame of check rows (same shape as \code{\link[=check_result]{check_result(
 Tables/figures need baked html/png. Pattern B Dataverse access steps need
 resolvable file-id wiring (Display uses a yaml summary; binary may be
 gitignored). Other transform steps with displayable \code{outputs:}
-(html/png/rds/svg) must have those files on disk.
+(html/png/rds/svg) must have those files on disk. Inherited steps are
+checked against the parent study root (or pass when the parent is not
+local) — extensions must not commit parent prep sinks.
 }
 \keyword{internal}

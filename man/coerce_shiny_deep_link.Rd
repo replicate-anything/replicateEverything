@@ -10,10 +10,11 @@ coerce_shiny_deep_link(x)
 \item{x}{Client payload for \code{url_deep_link}.}
 }
 \value{
-List with \code{doi}, \code{what}, \code{language}, or \code{NULL}.
+List with \code{doi} (study key), or \code{NULL}.
 }
 \description{
 Accepts a list or named vector from \code{Shiny.setInputValue()} and a bare
-DOI string.
+DOI string. Study-only: \code{doi} or \code{handle}. Legacy \code{what} /
+\code{language} fields are ignored if present.
 }
 \keyword{internal}

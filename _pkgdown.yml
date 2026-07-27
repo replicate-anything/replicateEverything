@@ -65,6 +65,10 @@ reference:
   - print.replicate_study
   - list_replications
   - paper_article_url
+  - paper_source_repository
+  - source_repository_kind
+  - source_repository_href
+  - registry_source_repository_gaps
 - title: Run & inspect
   desc: Run tables and figures and read the code behind them.
   contents:
