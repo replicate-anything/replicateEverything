@@ -6282,6 +6282,11 @@ ui <- tagList(
       align-items: center;
       justify-content: center;
     }
+    .study-authors-short {
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+      margin-bottom: 0.15rem;
+    }
     .study-details-expand {
       margin-top: 0.25rem;
     }
@@ -7664,6 +7669,12 @@ server <- function(input, output, session) {
             )
           )
         ),
+        {
+          authors_short <- format_author_label(paper$authors %||% "")
+          if (nzchar(authors_short) && !identical(authors_short, "Unknown")) {
+            tags$p(class = "study-authors-short text-muted mb-1", authors_short)
+          }
+        },
         tags$details(
           class = "study-details-expand",
           tags$summary(

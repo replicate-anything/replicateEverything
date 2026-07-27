@@ -1,5 +1,12 @@
 # replicateEverything 0.7.18
 
+## Shiny: authors visible above the study-info fold
+
+* **UX:** Study details shows a shortened author line
+  ([format_author_label()]) under the title (always visible). The folded
+  panel still lists the fuller [format_authors_summary()] string with year
+  and journal.
+
 ## Hex logo refresh
 
 * Package hex sticker promoted to circular upright **replicate** /
