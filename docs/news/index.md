@@ -1,5 +1,220 @@
 # Changelog
 
+## replicateEverything 0.7.19
+
+### Template / Contribute exemplar alignment
+
+- **Shiny Contribute:** Gold `replication.yml` exemplar now matches
+  `rep-template` (includes `paper.source_repository`, `year: "2026a"`,
+  estimatr/knitr deps, `inputs:` only — no redundant `data:` duplicate).
+- **Skills:** `folder_replication.md` notes Source icon kinds (personal
+  as residual) and prefers `inputs:` over duplicating the same path
+  under `data:` and `inputs:`.
+
+## replicateEverything 0.7.18
+
+### Shiny: authors visible above the study-info fold
+
+- **UX:** Study details shows a shortened author line
+  (\[format_author_label()\]) under the title (always visible). The
+  folded panel still lists the fuller \[format_authors_summary()\]
+  string with year and journal.
+
+### Hex logo refresh
+
+- Package hex sticker promoted to circular upright **replicate** /
+  **everything** with recycle mark; left/right separator dots are orange
+  (`#C55B28`). Shiny welcome modal places the hex centered below the
+  copy (smaller) so text stays primary.
+- Hex PNGs (`man/figures/logo.png`, `docs/logo.png`, Shiny
+  `logo-hex.png`) now use a **transparent** exterior (true alpha) so the
+  sticker sits cleanly on the blue welcome UI and other non-white
+  backgrounds; the hex face is unchanged.
+
+### Paper source repository credit
+
+- **Metadata:** Canonical field is `paper.source_repository` (URL
+  preferred; bare `replicateEverything` also accepted). Legacy
+  `source_url` / `source_repo` are still read as aliases.
+  \[paper_source_repository()\], \[source_repository_kind()\], and
+  \[source_repository_href()\] resolve and classify credits (Dataverse,
+  OSF, World Bank, ICPSR/OpenICPSR, Git, personal archive,
+  replicateEverything).
+- **Checks / audit:** \[check_replication()\] requires
+  `paper.source_repository`. \[audit_everything()\] summary lists
+  `missing_source_repository` keys via
+  \[registry_source_repository_gaps()\].
+- **Shiny:** Studies table has a dedicated **Source** column (kind
+  icons) beside **Repo**; Study column is ~20% wider. Labeled **Source
+  repository** link lives in the folded study-info panel (icon may still
+  appear in the summary icon row). Registry stubs / `shiny_studies.json`
+  carry the field for list-time display. Icon marks: Dataverse hollow
+  two-ring brand (#C55B28), GitHub Octicons mark-github, ICPSR serif I
+  in linking-widget blue
+  ([\#115](https://github.com/replicate-anything/replicateEverything/issues/115)BFB),
+  plus compact OSF / WB / personal / recycle icons.
+
+### Shiny: study-only deep links (dropdown first)
+
+- **Simplify:** Deep links are study-only (`?doi=` / optional
+  `handle=`). Legacy `what=` / `language=` in old URLs are ignored and
+  never re-emitted. Opening a study prefers the first Display-ready step
+  (existing behaviour).
+- **Bug fix / control flow:** Manual Studies dropdown always loads the
+  selected study (highest priority). Removed `pending_deep_link_what`,
+  `study_keys_match` same-DOI skip, and related guards that could block
+  the dropdown while a cold-paste `?doi=` was pending. Cold paste still
+  queues once and applies after `registry_ready`; URL sync writes
+  `?doi=` only and does not re-queue.
+
+### Shiny: cold-paste deep links open study
+
+- **Bug fix:** Initial load with `?doi=` / `?handle=` now waits for the
+  deferred Studies cache before selecting the study. Previously the
+  deep-link queue could apply before `shiny_studies.json` was ready, so
+  `updateSelectInput(selected=)` missed and the session stayed on the
+  main Studies page (click-through Go still worked).
+- Preserves the pending / current study when rebuilding the DOI
+  dropdown; does not strip inbound query params while a deep link is
+  pending.
+- Accepts `handle=` as a study key; re-reads the query on `popstate`
+  (back/forward).
+
+### validate_outputs(): print a short report
+
+- **UX:** \[validate_outputs()\] now returns a `validate_outputs_result`
+  that auto-prints PASS/FAIL, DOI/what, and checked paths (same style as
+  \[check_replication()\]). Previously success returned
+  `invisible(TRUE)`, so an unassigned call printed nothing. Use `$ok`
+  for the logical flag.
+
+### Shiny: missing-engine icon is a wrench
+
+- **UX:** Missing-engine / tool-gap mark is a **wrench** (amber circle)
+  instead of a navigational compass — legend, Studies Notes, and
+  Run-slot chrome. Padlock for data unavailable is unchanged. Internal
+  gap kind remains `"hammer"`.
+
+### Extension studies: cold-host inherited steps use parent URLs
+
+- **Bug fix:**
+  [`step_run_context()`](https://replicate-anything.github.io/replicateEverything/reference/step_run_context.md)
+  always sets parent `base_url` / `materials_repo` for inherited steps,
+  even when the parent study is not checked out locally (Shiny / cold
+  hosts). Previously those fields were only rewritten when a local
+  parent `local_root` existed, so Code/Run still fetched
+  `.../--alt-1/.../analysis_data.R`.
+- **Bug fix:** `materials_repo_override` narrows folder candidates / map
+  keys to the parent slug so materialize does not fall back to the
+  extension checkout.
+- **Bug fix:**
+  [`extended_base_paper_context()`](https://replicate-anything.github.io/replicateEverything/reference/extended_base_paper_context.md)
+  always pins `base_url` to `extends.repo` / `extends.ref` (not only
+  `materials_repo`).
+- **Bug fix:**
+  [`study_repo_ref()`](https://replicate-anything.github.io/replicateEverything/reference/study_repo_ref.md)
+  honors `ctx$materials_ref` for parent refs.
+
+### Extension studies: Display resolves inherited sinks from the parent
+
+- **Bug fix:** Shiny **Display** was greyed out for inherited prep (e.g.
+  `analysis_data` on `--alt-1`) because `step_display_output_exists` /
+  `artifact_lookup_candidates` / `get_artifact_path` / `load_artifact`
+  probed the *extension* `outputs/` and URLs. They now use
+  [`step_run_context()`](https://replicate-anything.github.io/replicateEverything/reference/step_run_context.md)
+  so Display enablement and resolution match Run/Code (parent local root
+  or parent raw GitHub URL).
+- **Bug fix:**
+  [`load_prep_step_display()`](https://replicate-anything.github.io/replicateEverything/reference/load_prep_step_display.md)
+  applies the same parent context and falls back to a remote parent sink
+  when the file is not local.
+- **Bug fix:** remote `.rds`/`.csv`/`.dta` artifacts download via
+  [`load_artifact_file_path()`](https://replicate-anything.github.io/replicateEverything/reference/load_artifact_file_path.md)
+  (previously only html/png remote worked).
+- **Bug fix:**
+  [`check_display_sink_rows()`](https://replicate-anything.github.io/replicateEverything/reference/check_display_sink_rows.md)
+  no longer fails extensions for missing child copies of inherited prep
+  sinks; it checks the parent study root when available, otherwise
+  passes as inherited.
+
+## replicateEverything 0.7.17
+
+### Extension studies: inherited code/data resolve from the parent repo
+
+- **Bug fix:**
+  [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  / Code-tab readers now use
+  [`step_code_context()`](https://replicate-anything.github.io/replicateEverything/reference/step_code_context.md)
+  so inherited steps (e.g. `analysis_data` on alt-1) fetch from the base
+  study repo instead of looking for `code/steps/...` under the extension
+  slug.
+- **Bug fix:** remote path joins use
+  [`registry_url()`](https://replicate-anything.github.io/replicateEverything/reference/registry_url.md)
+  everywhere (`get_code`, `resolve_registry_file`,
+  `load_replication_data`, code-link readers) so `base_url` values that
+  already end in `/` no longer produce `.../main//code/...` URLs.
+- **Bug fix:**
+  [`study_repo_slug()`](https://replicate-anything.github.io/replicateEverything/reference/study_repo_slug.md)
+  prefers `ctx$materials_repo` when set, so materializing an inherited
+  step downloads the base checkout, not the extension.
+- **Bug fix:** extension `tab_1` runs that need parent `outputs/*.rds`
+  fall back to `.extends_context$base_url` when the base study is not
+  local (Shiny / fresh machines).
+- **Docs:** reanalysis vignette and step-inheritance notes use
+  `analysis_data` (current Fearon & Laitin pipeline), not the retired
+  `prep_data` name.
+
+### Versioning (going forward)
+
+- Stay on `0.x.y` until a deliberate 1.0 decision. Recent `0.7.y`
+  patches (through 0.7.18) were fine; **future bumps should be rarer and
+  batched**.
+- Prefer patch (`0.7.y`) for most fixes and small UX/engine changes;
+  minor (`0.8.0`) only for larger coherent releases, used sparingly.
+- Bump `DESCRIPTION` / `NEWS` when releasing a coherent set of changes —
+  not on every tiny commit when batching is possible. Stick to ordinary
+  semver-style `0.MAJOR_FEEL.PATCH` (no schemes like `0.07.17`).
+
+## replicateEverything 0.7.16
+
+### Code tab: clearer run-tips header
+
+- R defs-only Code tab epilogue banner is now
+  `# --- Tips for running code (generated from replication.yml) ---`
+  (was `Execute via replication.yml (get_code mode=run)`).
+
+## replicateEverything 0.7.15
+
+### Shiny: study links use the same Go handler
+
+- Studies table **citation title**, **Link** chain icon, related-study
+  icons, and **Explore different types of study** example citations all
+  fire `go_to_study` (select study, load, switch to Replicate, close
+  modal) — the same path as the **Go** button. Journal / DOI on the
+  citation second line remain external article links. Link keeps a
+  public deep-link `href` for right-click copy only.
+
+## replicateEverything 0.7.14
+
+### Shiny Display/Run: no “missing output” errors for registered studies
+
+- **Blair / `engine: dataverse`:** Live Run with language `r` resolves
+  surgical access steps (no “not available for language r”). Display
+  shows a Dataverse file-access summary when `outputs/*.dta` is
+  gitignored / absent — not “Output not on disk yet … Use Live Run”.
+- **Package-backed Display (Geissler):** `load_artifact` /
+  `artifact_lookup_candidates` fall back to GitHub raw
+  `inst/report/artifacts/` when the study package is not installed
+  locally.
+- **Shiny gap icons:** padlock / compass click selects the step and
+  opens **Code** (Display stays available when a sink or gap message is
+  displayable).
+- **Validation:**
+  [`check_display_sink_rows()`](https://replicate-anything.github.io/replicateEverything/reference/check_display_sink_rows.md)
+  in folder/package `check_replication` — claimed non-gap steps must
+  have Display wiring (baked table/figure sinks, or Dataverse access
+  summary fields).
+
 ## replicateEverything 0.7.13
 
 ### Shiny Studies performance (registry-baked cache)

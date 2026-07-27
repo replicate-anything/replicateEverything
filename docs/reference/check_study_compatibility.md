@@ -55,6 +55,9 @@ per-engine `dependencies`.
 
 ``` r
 if (FALSE) { # \dontrun{
-check_study_compatibility("10.1017/S0003055426101749")
+check_study_compatibility("10.1017/S0003055403000534")
+check_study_compatibility("10.1017/S0003055422000284")
+check_study_compatibility("10.1257/aer.91.5.1369")
+check_study_compatibility("rep-template")
 } # }
 ```

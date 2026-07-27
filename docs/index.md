@@ -68,6 +68,13 @@ The project is under active development. Feedback is welcome — contact
 or use the feedback form on the [shiny
 app](https://shiny2.wzb.eu/ipi/replicate/).
 
+**Versioning (pre-1.0):** Stay on `0.x.y` until a deliberate 1.0
+decision. Prefer **patch** bumps (`0.7.y`) for most fixes and small
+UX/engine changes; use a **minor** bump (`0.8.0`) only for larger
+coherent releases, sparingly. Do not bump on every tiny change when
+several commits can ship under one release note. Do not invent
+non-semver schemes (e.g. `0.07.17`).
+
 ## Installation
 
 Install from GitHub with `remotes` or `devtools`:
@@ -163,6 +170,7 @@ paper:
   year: 2024
   doi: 1.2.3.4
   journal: Sample journal
+  source_repository: https://github.com/replicate-anything/replicateEverything
 
 maintainer:
   name: Jane Maintainer

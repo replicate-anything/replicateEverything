@@ -5,7 +5,7 @@ Git ref for folder-backed study materials
 ## Usage
 
 ``` r
-study_repo_ref(meta)
+study_repo_ref(meta, ctx = NULL)
 ```
 
 ## Arguments
@@ -13,6 +13,11 @@ study_repo_ref(meta)
 - meta:
 
   Parsed replication.yml contents.
+
+- ctx:
+
+  Optional paper / step context; when set, prefers `ctx$materials_ref`
+  (parent ref for inherited steps).
 
 ## Value
 

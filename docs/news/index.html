@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,134 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.19" id="replicateeverything-0719">replicateEverything 0.7.19<a class="anchor" aria-label="anchor" href="#replicateeverything-0719"></a></h2>
+<div class="section level3">
+<h3 id="template--contribute-exemplar-alignment-0-7-19">Template / Contribute exemplar alignment<a class="anchor" aria-label="anchor" href="#template--contribute-exemplar-alignment-0-7-19"></a></h3>
+<ul><li>
+<strong>Shiny Contribute:</strong> Gold <code>replication.yml</code> exemplar now matches <code>rep-template</code> (includes <code>paper.source_repository</code>, <code>year: "2026a"</code>, estimatr/knitr deps, <code>inputs:</code> only — no redundant <code>data:</code> duplicate).</li>
+<li>
+<strong>Skills:</strong> <code>folder_replication.md</code> notes Source icon kinds (personal as residual) and prefers <code>inputs:</code> over duplicating the same path under <code>data:</code> and <code>inputs:</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.18" id="replicateeverything-0718">replicateEverything 0.7.18<a class="anchor" aria-label="anchor" href="#replicateeverything-0718"></a></h2>
+<div class="section level3">
+<h3 id="shiny-authors-visible-above-the-study-info-fold-0-7-18">Shiny: authors visible above the study-info fold<a class="anchor" aria-label="anchor" href="#shiny-authors-visible-above-the-study-info-fold-0-7-18"></a></h3>
+<ul><li>
+<strong>UX:</strong> Study details shows a shortened author line ([format_author_label()]) under the title (always visible). The folded panel still lists the fuller [format_authors_summary()] string with year and journal.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="hex-logo-refresh-0-7-18">Hex logo refresh<a class="anchor" aria-label="anchor" href="#hex-logo-refresh-0-7-18"></a></h3>
+<ul><li>Package hex sticker promoted to circular upright <strong>replicate</strong> / <strong>everything</strong> with recycle mark; left/right separator dots are orange (<code>#C55B28</code>). Shiny welcome modal places the hex centered below the copy (smaller) so text stays primary.</li>
+<li>Hex PNGs (<code>man/figures/logo.png</code>, <code>docs/logo.png</code>, Shiny <code>logo-hex.png</code>) now use a <strong>transparent</strong> exterior (true alpha) so the sticker sits cleanly on the blue welcome UI and other non-white backgrounds; the hex face is unchanged.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="paper-source-repository-credit-0-7-18">Paper source repository credit<a class="anchor" aria-label="anchor" href="#paper-source-repository-credit-0-7-18"></a></h3>
+<ul><li>
+<strong>Metadata:</strong> Canonical field is <code>paper.source_repository</code> (URL preferred; bare <code>replicateEverything</code> also accepted). Legacy <code>source_url</code> / <code>source_repo</code> are still read as aliases. [paper_source_repository()], [source_repository_kind()], and [source_repository_href()] resolve and classify credits (Dataverse, OSF, World Bank, ICPSR/OpenICPSR, Git, personal archive, replicateEverything).</li>
+<li>
+<strong>Checks / audit:</strong> [check_replication()] requires <code>paper.source_repository</code>. [audit_everything()] summary lists <code>missing_source_repository</code> keys via [registry_source_repository_gaps()].</li>
+<li>
+<strong>Shiny:</strong> Studies table has a dedicated <strong>Source</strong> column (kind icons) beside <strong>Repo</strong>; Study column is ~20% wider. Labeled <strong>Source repository</strong> link lives in the folded study-info panel (icon may still appear in the summary icon row). Registry stubs / <code>shiny_studies.json</code> carry the field for list-time display. Icon marks: Dataverse hollow two-ring brand (#C55B28), GitHub Octicons mark-github, ICPSR serif I in linking-widget blue (<a href="https://github.com/replicate-anything/replicateEverything/issues/115" class="external-link">#115</a>BFB), plus compact OSF / WB / personal / recycle icons.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-study-only-deep-links-dropdown-first-0-7-18">Shiny: study-only deep links (dropdown first)<a class="anchor" aria-label="anchor" href="#shiny-study-only-deep-links-dropdown-first-0-7-18"></a></h3>
+<ul><li>
+<strong>Simplify:</strong> Deep links are study-only (<code>?doi=</code> / optional <code>handle=</code>). Legacy <code>what=</code> / <code>language=</code> in old URLs are ignored and never re-emitted. Opening a study prefers the first Display-ready step (existing behaviour).</li>
+<li>
+<strong>Bug fix / control flow:</strong> Manual Studies dropdown always loads the selected study (highest priority). Removed <code>pending_deep_link_what</code>, <code>study_keys_match</code> same-DOI skip, and related guards that could block the dropdown while a cold-paste <code>?doi=</code> was pending. Cold paste still queues once and applies after <code>registry_ready</code>; URL sync writes <code>?doi=</code> only and does not re-queue.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-cold-paste-deep-links-open-study-0-7-18">Shiny: cold-paste deep links open study<a class="anchor" aria-label="anchor" href="#shiny-cold-paste-deep-links-open-study-0-7-18"></a></h3>
+<ul><li>
+<strong>Bug fix:</strong> Initial load with <code>?doi=</code> / <code>?handle=</code> now waits for the deferred Studies cache before selecting the study. Previously the deep-link queue could apply before <code>shiny_studies.json</code> was ready, so <code>updateSelectInput(selected=)</code> missed and the session stayed on the main Studies page (click-through Go still worked).</li>
+<li>Preserves the pending / current study when rebuilding the DOI dropdown; does not strip inbound query params while a deep link is pending.</li>
+<li>Accepts <code>handle=</code> as a study key; re-reads the query on <code>popstate</code> (back/forward).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="validate_outputs-print-a-short-report-0-7-18">validate_outputs(): print a short report<a class="anchor" aria-label="anchor" href="#validate_outputs-print-a-short-report-0-7-18"></a></h3>
+<ul><li>
+<strong>UX:</strong> [validate_outputs()] now returns a <code>validate_outputs_result</code> that auto-prints PASS/FAIL, DOI/what, and checked paths (same style as [check_replication()]). Previously success returned <code>invisible(TRUE)</code>, so an unassigned call printed nothing. Use <code>$ok</code> for the logical flag.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-missing-engine-icon-is-a-wrench-0-7-18">Shiny: missing-engine icon is a wrench<a class="anchor" aria-label="anchor" href="#shiny-missing-engine-icon-is-a-wrench-0-7-18"></a></h3>
+<ul><li>
+<strong>UX:</strong> Missing-engine / tool-gap mark is a <strong>wrench</strong> (amber circle) instead of a navigational compass — legend, Studies Notes, and Run-slot chrome. Padlock for data unavailable is unchanged. Internal gap kind remains <code>"hammer"</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="extension-studies-cold-host-inherited-steps-use-parent-urls-0-7-18">Extension studies: cold-host inherited steps use parent URLs<a class="anchor" aria-label="anchor" href="#extension-studies-cold-host-inherited-steps-use-parent-urls-0-7-18"></a></h3>
+<ul><li>
+<strong>Bug fix:</strong> <code><a href="../reference/step_run_context.html">step_run_context()</a></code> always sets parent <code>base_url</code> / <code>materials_repo</code> for inherited steps, even when the parent study is not checked out locally (Shiny / cold hosts). Previously those fields were only rewritten when a local parent <code>local_root</code> existed, so Code/Run still fetched <code>.../--alt-1/.../analysis_data.R</code>.</li>
+<li>
+<strong>Bug fix:</strong> <code>materials_repo_override</code> narrows folder candidates / map keys to the parent slug so materialize does not fall back to the extension checkout.</li>
+<li>
+<strong>Bug fix:</strong> <code><a href="../reference/extended_base_paper_context.html">extended_base_paper_context()</a></code> always pins <code>base_url</code> to <code>extends.repo</code> / <code>extends.ref</code> (not only <code>materials_repo</code>).</li>
+<li>
+<strong>Bug fix:</strong> <code><a href="../reference/study_repo_ref.html">study_repo_ref()</a></code> honors <code>ctx$materials_ref</code> for parent refs.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="extension-studies-display-resolves-inherited-sinks-from-the-parent-0-7-18">Extension studies: Display resolves inherited sinks from the parent<a class="anchor" aria-label="anchor" href="#extension-studies-display-resolves-inherited-sinks-from-the-parent-0-7-18"></a></h3>
+<ul><li>
+<strong>Bug fix:</strong> Shiny <strong>Display</strong> was greyed out for inherited prep (e.g. <code>analysis_data</code> on <code>--alt-1</code>) because <code>step_display_output_exists</code> / <code>artifact_lookup_candidates</code> / <code>get_artifact_path</code> / <code>load_artifact</code> probed the <em>extension</em> <code>outputs/</code> and URLs. They now use <code><a href="../reference/step_run_context.html">step_run_context()</a></code> so Display enablement and resolution match Run/Code (parent local root or parent raw GitHub URL).</li>
+<li>
+<strong>Bug fix:</strong> <code><a href="../reference/load_prep_step_display.html">load_prep_step_display()</a></code> applies the same parent context and falls back to a remote parent sink when the file is not local.</li>
+<li>
+<strong>Bug fix:</strong> remote <code>.rds</code>/<code>.csv</code>/<code>.dta</code> artifacts download via <code><a href="../reference/load_artifact_file_path.html">load_artifact_file_path()</a></code> (previously only html/png remote worked).</li>
+<li>
+<strong>Bug fix:</strong> <code><a href="../reference/check_display_sink_rows.html">check_display_sink_rows()</a></code> no longer fails extensions for missing child copies of inherited prep sinks; it checks the parent study root when available, otherwise passes as inherited.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.17" id="replicateeverything-0717">replicateEverything 0.7.17<a class="anchor" aria-label="anchor" href="#replicateeverything-0717"></a></h2>
+<div class="section level3">
+<h3 id="extension-studies-inherited-codedata-resolve-from-the-parent-repo-0-7-17">Extension studies: inherited code/data resolve from the parent repo<a class="anchor" aria-label="anchor" href="#extension-studies-inherited-codedata-resolve-from-the-parent-repo-0-7-17"></a></h3>
+<ul><li>
+<strong>Bug fix:</strong> <code><a href="../reference/get_code.html">get_code()</a></code> / Code-tab readers now use <code><a href="../reference/step_code_context.html">step_code_context()</a></code> so inherited steps (e.g. <code>analysis_data</code> on alt-1) fetch from the base study repo instead of looking for <code>code/steps/...</code> under the extension slug.</li>
+<li>
+<strong>Bug fix:</strong> remote path joins use <code><a href="../reference/registry_url.html">registry_url()</a></code> everywhere (<code>get_code</code>, <code>resolve_registry_file</code>, <code>load_replication_data</code>, code-link readers) so <code>base_url</code> values that already end in <code>/</code> no longer produce <code>.../main//code/...</code> URLs.</li>
+<li>
+<strong>Bug fix:</strong> <code><a href="../reference/study_repo_slug.html">study_repo_slug()</a></code> prefers <code>ctx$materials_repo</code> when set, so materializing an inherited step downloads the base checkout, not the extension.</li>
+<li>
+<strong>Bug fix:</strong> extension <code>tab_1</code> runs that need parent <code>outputs/*.rds</code> fall back to <code>.extends_context$base_url</code> when the base study is not local (Shiny / fresh machines).</li>
+<li>
+<strong>Docs:</strong> reanalysis vignette and step-inheritance notes use <code>analysis_data</code> (current Fearon &amp; Laitin pipeline), not the retired <code>prep_data</code> name.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="versioning-going-forward-0-7-17">Versioning (going forward)<a class="anchor" aria-label="anchor" href="#versioning-going-forward-0-7-17"></a></h3>
+<ul><li>Stay on <code>0.x.y</code> until a deliberate 1.0 decision. Recent <code>0.7.y</code> patches (through 0.7.18) were fine; <strong>future bumps should be rarer and batched</strong>.</li>
+<li>Prefer patch (<code>0.7.y</code>) for most fixes and small UX/engine changes; minor (<code>0.8.0</code>) only for larger coherent releases, used sparingly.</li>
+<li>Bump <code>DESCRIPTION</code> / <code>NEWS</code> when releasing a coherent set of changes — not on every tiny commit when batching is possible. Stick to ordinary semver-style <code>0.MAJOR_FEEL.PATCH</code> (no schemes like <code>0.07.17</code>).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.16" id="replicateeverything-0716">replicateEverything 0.7.16<a class="anchor" aria-label="anchor" href="#replicateeverything-0716"></a></h2>
+<div class="section level3">
+<h3 id="code-tab-clearer-run-tips-header-0-7-16">Code tab: clearer run-tips header<a class="anchor" aria-label="anchor" href="#code-tab-clearer-run-tips-header-0-7-16"></a></h3>
+<ul><li>R defs-only Code tab epilogue banner is now <code># --- Tips for running code (generated from replication.yml) ---</code> (was <code>Execute via replication.yml (get_code mode=run)</code>).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.15" id="replicateeverything-0715">replicateEverything 0.7.15<a class="anchor" aria-label="anchor" href="#replicateeverything-0715"></a></h2>
+<div class="section level3">
+<h3 id="shiny-study-links-use-the-same-go-handler-0-7-15">Shiny: study links use the same Go handler<a class="anchor" aria-label="anchor" href="#shiny-study-links-use-the-same-go-handler-0-7-15"></a></h3>
+<ul><li>Studies table <strong>citation title</strong>, <strong>Link</strong> chain icon, related-study icons, and <strong>Explore different types of study</strong> example citations all fire <code>go_to_study</code> (select study, load, switch to Replicate, close modal) — the same path as the <strong>Go</strong> button. Journal / DOI on the citation second line remain external article links. Link keeps a public deep-link <code>href</code> for right-click copy only.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.14" id="replicateeverything-0714">replicateEverything 0.7.14<a class="anchor" aria-label="anchor" href="#replicateeverything-0714"></a></h2>
+<div class="section level3">
+<h3 id="shiny-displayrun-no-missing-output-errors-for-registered-studies-0-7-14">Shiny Display/Run: no “missing output” errors for registered studies<a class="anchor" aria-label="anchor" href="#shiny-displayrun-no-missing-output-errors-for-registered-studies-0-7-14"></a></h3>
+<ul><li>
+<strong>Blair / <code>engine: dataverse</code>:</strong> Live Run with language <code>r</code> resolves surgical access steps (no “not available for language r”). Display shows a Dataverse file-access summary when <code>outputs/*.dta</code> is gitignored / absent — not “Output not on disk yet … Use Live Run”.</li>
+<li>
+<strong>Package-backed Display (Geissler):</strong> <code>load_artifact</code> / <code>artifact_lookup_candidates</code> fall back to GitHub raw <code>inst/report/artifacts/</code> when the study package is not installed locally.</li>
+<li>
+<strong>Shiny gap icons:</strong> padlock / compass click selects the step and opens <strong>Code</strong> (Display stays available when a sink or gap message is displayable).</li>
+<li>
+<strong>Validation:</strong> <code><a href="../reference/check_display_sink_rows.html">check_display_sink_rows()</a></code> in folder/package <code>check_replication</code> — claimed non-gap steps must have Display wiring (baked table/figure sinks, or Dataverse access summary fields).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.13" id="replicateeverything-0713">replicateEverything 0.7.13<a class="anchor" aria-label="anchor" href="#replicateeverything-0713"></a></h2>
 <div class="section level3">

@@ -47,9 +47,9 @@ So this is an attempt to keep humans in the loop.
 Relation with existing repositories
 
 **replicateEverything does not replace** long-term structured
-repositories such as ICPSR and Dataverse. You can think of it as an
-**access point**. Though we are not there yet, we would love to get to
-the point where `replicateEverything` simply reads from existing
+repositories such as ICPSR, OSI, and Dataverse. You can think of it as
+an **portal**. Though we are not there yet, we would love to get to the
+point where `replicateEverything` simply reads from existing
 repositories directly.
 
 For preparing a deposit, the guidance in [AEA Data Editor
@@ -58,8 +58,9 @@ and the [Data and Code Availability
 Standard](https://datacodestandard.org/) (data–code separation and
 related rules) is excellent. However, in addition we want to be sure we
 have want a common, machine-readable layout that is legible to humans.
-For this, we ask for two things: data/analysis packaged into consumable
-steps and a `replication.yml` that provides a machine readable roadmap.
+For this, we ask for two things: data/analysis packaged into human
+consumable steps and a `replication.yml` that provides a machine
+readable roadmap.
 
 Here’s a walk through of the main elements plus the bells and whistles.
 

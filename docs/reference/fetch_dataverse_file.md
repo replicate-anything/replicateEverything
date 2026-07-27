@@ -51,3 +51,16 @@ fetch_dataverse_file(
 ## Value
 
 Invisibly, absolute destination path.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Blair et al. APSR analysis .dta (Harvard Dataverse file id)
+fetch_dataverse_file(
+  file_id = "14058927",
+  path = "outputs/analysis.dta",
+  study_root = "../rep-10.1017-s0003055422000284"
+)
+} # }
+```

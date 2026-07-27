@@ -2,7 +2,9 @@
 
 Uses `ctx$study_data_root`, then
 `getOption("replicateEverything.study_data_root")`, then
-[`getwd()`](https://rdrr.io/r/base/getwd.html).
+`getOption("replicateEverything.study_folders_root")` (monorepo), then
+[`getwd()`](https://rdrr.io/r/base/getwd.html) (Shiny app directory on
+server).
 
 ## Usage
 
@@ -19,3 +21,7 @@ study_data_root(ctx = NULL)
 ## Value
 
 Normalized path.
+
+## Details
+
+Large files resolve under `<root>/data/<study_folder>/`.

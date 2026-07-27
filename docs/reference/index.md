@@ -17,7 +17,7 @@ Find studies and inspect replication metadata.
 - [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md)
   : Search replicated papers
 - [`get_study()`](https://replicate-anything.github.io/replicateEverything/reference/get_study.md)
-  : Load a study descriptor for summary and related links
+  : Resolve a study handle (metadata once)
 - [`summary_study()`](https://replicate-anything.github.io/replicateEverything/reference/summary_study.md)
   : Summarize a study by DOI / handle (constructs then summarizes)
 - [`summary(`*`<replicate_study>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/summary.replicate_study.md)
@@ -28,6 +28,14 @@ Find studies and inspect replication metadata.
   : List available replications for a paper
 - [`paper_article_url()`](https://replicate-anything.github.io/replicateEverything/reference/paper_article_url.md)
   : Resolve a human-facing URL for a published article
+- [`paper_source_repository()`](https://replicate-anything.github.io/replicateEverything/reference/paper_source_repository.md)
+  : Resolve paper.source_repository (with legacy aliases)
+- [`source_repository_kind()`](https://replicate-anything.github.io/replicateEverything/reference/source_repository_kind.md)
+  : Classify a source-repository credit for display icons
+- [`source_repository_href()`](https://replicate-anything.github.io/replicateEverything/reference/source_repository_href.md)
+  : Browse URL for a source-repository credit
+- [`registry_source_repository_gaps()`](https://replicate-anything.github.io/replicateEverything/reference/registry_source_repository_gaps.md)
+  : Studies in a registry missing paper.source_repository
 
 ## Run & inspect
 

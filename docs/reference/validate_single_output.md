@@ -32,4 +32,4 @@ validate_single_output(doi, what, repo = NULL, folder = NULL, language = NULL)
 
 ## Value
 
-Invisibly `TRUE` on success.
+A `validate_outputs_result` on success (auto-prints a short report).

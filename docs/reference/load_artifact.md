@@ -39,5 +39,8 @@ Artifact contents suitable for display, or `NULL`.
 ``` r
 if (FALSE) { # \dontrun{
 load_artifact("10.1177/00491241211036161", "fig_1")
+load_artifact("10.1017/S0003055403000534", "tab_1")
+load_artifact("10.1017/S0003055422000284", "tab_1")
+load_artifact("rep-template", "tab_1")
 } # }
 ```

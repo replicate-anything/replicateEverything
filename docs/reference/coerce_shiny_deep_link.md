@@ -1,7 +1,8 @@
 # Coerce a Shiny client deep-link payload to a normalized list
 
 Accepts a list or named vector from `Shiny.setInputValue()` and a bare
-DOI string.
+DOI string. Study-only: `doi` or `handle`. Legacy `what` / `language`
+fields are ignored if present.
 
 ## Usage
 
@@ -17,4 +18,4 @@ coerce_shiny_deep_link(x)
 
 ## Value
 
-List with `doi`, `what`, `language`, or `NULL`.
+List with `doi` (study key), or `NULL`.

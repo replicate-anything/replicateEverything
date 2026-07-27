@@ -23,7 +23,11 @@ A filtered data frame of matching papers.
 
 ``` r
 if (FALSE) { # \dontrun{
-search_papers("causal")
-search_papers("bounding-causes")
+search_papers("insurgency")
+search_papers("Blair")
+search_papers("Acemoglu")
+search_papers("Fearon")
+search_papers("S0003055403000534")
+search_papers("rep-template")
 } # }
 ```

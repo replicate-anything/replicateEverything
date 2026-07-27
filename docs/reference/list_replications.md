@@ -59,9 +59,12 @@ A `replication_list` object (a list with a compact
 ``` r
 if (FALSE) { # \dontrun{
 list_replications("10.1177/00491241211036161")
+list_replications("10.1017/S0003055403000534")
+list_replications("10.1017/S0003055422000284")
 list_replications("10.1257/aer.91.5.1369", grouped = TRUE)
 list_replications("10.1257/aer.91.5.1369", grouped = TRUE, language = "stata")
 list_replications("10.1017/s0003055426101749", include = "pipeline")
+list_replications("rep-template")
 
 # Working on a study repo checked out locally: setwd() to the study repo
 # root (or open its RStudio project), then use "local" — no registry or

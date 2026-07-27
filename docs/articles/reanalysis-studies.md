@@ -23,8 +23,9 @@ The base study declares a transform step and downstream tables:
 
     raw data/repdata.dta  →  analysis_data  →  tab_1 (R) / tab_1_stata (Stata)
 
-`analysis_data` renames `lpopl1` to `lpopl` and recodes onset indicators.
-Both analysis engines read `outputs/analysis_data.rds` or `.dta`.
+`analysis_data` renames `lpopl1` to `lpopl` and recodes onset
+indicators. Both analysis engines read `outputs/analysis_data.rds` or
+`.dta`.
 
 ## Extension study layout
 
@@ -54,7 +55,8 @@ reanalysis models. Only add a `code:` override when the extension
 formatter lives at a different path.
 
 In the base Fearon & Laitin study, Stata table steps read
-`data/repdata.dta` directly; R steps use the shared `analysis_data` output.
+`data/repdata.dta` directly; R steps use the shared `analysis_data`
+output.
 
 ## Execution semantics
 
@@ -67,9 +69,9 @@ Inherited steps execute in the base study root; extension steps run in
 the extension root but may read base `outputs/`.
 
 `run_replication(handle, "everything", given = "nothing")` returns a
-named list with one entry per non-format step (`analysis_data`, `tab_1`, …).
-Use `format = FALSE` (default) for raw model objects; `format = TRUE`
-for display HTML.
+named list with one entry per non-format step (`analysis_data`, `tab_1`,
+…). Use `format = FALSE` (default) for raw model objects;
+`format = TRUE` for display HTML.
 
 ## Running locally
 

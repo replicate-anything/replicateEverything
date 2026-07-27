@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -108,11 +108,10 @@ replication of F&amp;L data / repo</a> — same prepared data,
 <h2 id="base-study-pipeline">Base study pipeline<a class="anchor" aria-label="anchor" href="#base-study-pipeline"></a>
 </h2>
 <p>The base study declares a transform step and downstream tables:</p>
-<pre><code>raw data/repdata.dta  →  prep_data  →  tab_1 (R) / tab_1_stata (Stata)</code></pre>
-<p><code>prep_data</code> renames <code>lpopl1</code> to
+<pre><code>raw data/repdata.dta  →  analysis_data  →  tab_1 (R) / tab_1_stata (Stata)</code></pre>
+<p><code>analysis_data</code> renames <code>lpopl1</code> to
 <code>lpopl</code> and recodes onset indicators. Both analysis engines
-read <code>outputs/prep_data/repdata.rds</code> or
-<code>.dta</code>.</p>
+read <code>outputs/analysis_data.rds</code> or <code>.dta</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="extension-study-layout">Extension study layout<a class="anchor" aria-label="anchor" href="#extension-study-layout"></a>
@@ -122,12 +121,12 @@ format matches the base study, inherit the format child step; when it
 differs (as here), inherit with a <code>code:</code> override pointing
 at local R scripts:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">inherit</span><span class="kw">:</span><span class="at"> prep_data</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">inherit</span><span class="kw">:</span><span class="at"> analysis_data</span></span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="at">    </span><span class="fu">parents</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">prep_data</span><span class="kw">]</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> outputs/prep_data/repdata.rds</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="at">    </span><span class="fu">parents</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">analysis_data</span><span class="kw">]</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> outputs/analysis_data.rds</span></span>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="at">    </span><span class="fu">format</span><span class="kw">:</span><span class="at"> format_tab_1</span></span>
 <span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
@@ -140,7 +139,7 @@ format step: replicateEverything sources that file locally so
 different path.</p>
 <p>In the base Fearon &amp; Laitin study, Stata table steps read
 <code>data/repdata.dta</code> directly; R steps use the shared
-<code>prep_data</code> output.</p>
+<code>analysis_data</code> output.</p>
 </div>
 <div class="section level2">
 <h2 id="execution-semantics">Execution semantics<a class="anchor" aria-label="anchor" href="#execution-semantics"></a>
@@ -157,13 +156,13 @@ different path.</p>
 <tbody>
 <tr class="odd">
 <td><code>"parents"</code></td>
-<td>Requires <code>prep_data</code> outputs in the <strong>base</strong>
-repo (<code>outputs/prep_data/</code>)</td>
+<td>Requires <code>analysis_data</code> outputs in the
+<strong>base</strong> repo (<code>outputs/analysis_data.rds</code>)</td>
 </tr>
 <tr class="even">
 <td><code>"nothing"</code></td>
-<td>Runs inherited <code>prep_data</code> in the base checkout, then the
-extension analysis locally</td>
+<td>Runs inherited <code>analysis_data</code> in the base checkout, then
+the extension analysis locally</td>
 </tr>
 </tbody>
 </table>
@@ -171,7 +170,7 @@ extension analysis locally</td>
 in the extension root but may read base <code>outputs/</code>.</p>
 <p><code>run_replication(handle, "everything", given = "nothing")</code>
 returns a named list with one entry per non-format step
-(<code>prep_data</code>, <code>tab_1</code>, …). Use
+(<code>analysis_data</code>, <code>tab_1</code>, …). Use
 <code>format = FALSE</code> (default) for raw model objects;
 <code>format = TRUE</code> for display HTML.</p>
 </div>
@@ -184,9 +183,9 @@ returns a named list with one entry per non-format step
 <span><span class="fu"><a href="../reference/configure_local_monorepo.html">configure_local_monorepo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Base study (once)</span></span>
-<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"prep_data"</span>, given <span class="op">=</span> <span class="st">"nothing"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"10.1017/S0003055403000534"</span>, <span class="st">"analysis_data"</span>, given <span class="op">=</span> <span class="st">"nothing"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Reanalysis (uses base prep_data outputs)</span></span>
+<span><span class="co"># Reanalysis (uses base analysis_data outputs)</span></span>
 <span><span class="fu"><a href="../reference/run_replication.html">run_replication</a></span><span class="op">(</span></span>
 <span>  <span class="st">"rep-10.1017-S0003055403000534--alt-1"</span>,</span>
 <span>  <span class="st">"tab_1"</span>,</span>

@@ -61,7 +61,8 @@ validate_outputs(
 
 ## Value
 
-Invisibly `TRUE` on success.
+A `validate_outputs_result` on success (auto-prints PASS/FAIL, DOI/what,
+and checked paths). Use `$ok` for the logical flag.
 
 ## See also
 
@@ -74,10 +75,12 @@ Invisibly `TRUE` on success.
 ``` r
 if (FALSE) { # \dontrun{
 validate_outputs(doi = "10.1177/00491241211036161", what = "fig_1")
-validate_outputs(doi = "10.1177/00491241211036161", what = "everything")
+validate_outputs(doi = "10.1017/S0003055403000534", what = "tab_1")
+validate_outputs(doi = "10.1017/S0003055422000284", what = "everything")
+validate_outputs(doi = "rep-template", what = "tab_1")
 validate_outputs(location = ".")
 options(replicateEverything.registry_root = "../registry")
 validate_outputs(doi = "everywhere", what = "everything")
-validate_outputs(doi = "everywhere", folders = "10.1177_00491241211036161")
+validate_outputs(doi = "everywhere", folders = "10.1017_s0003055403000534")
 } # }
 ```

@@ -15,6 +15,8 @@ Invisibly, the monorepo root path.
 }
 \description{
 Sets \code{replicateEverything.registry_root},
-\code{replicateEverything.study_folders_root}, and enables sibling study
+\code{replicateEverything.study_folders_root},
+\code{replicateEverything.study_data_root} (for
+\code{data/<study_folder>/} next to the monorepo), and enables sibling study
 discovery. Call once per session when developing unpublished studies locally.
 }

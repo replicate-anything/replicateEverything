@@ -34,6 +34,14 @@ Character vector of component strings.
 ``` r
 if (FALSE) { # \dontrun{
 describe_study_dag("10.1177/00491241211036161")
+describe_study_dag("10.1017/S0003055403000534")
+describe_study_dag("10.1017/S0003055422000284")
+describe_study_dag("10.1257/aer.91.5.1369")
+describe_study_dag("rep-template")
+
+# Pass a DOI from a get_study() handle:
+st <- get_study("10.1017/S0003055403000534")
+describe_study_dag(st$doi)
 
 # setwd() to a checked-out study repo (or open its RStudio project) and
 # sanity-check the parsed DAG without any registry — no DOI needed.

@@ -45,3 +45,13 @@ materialize_declared_data(
 
 Invisibly, character vector of absolute paths written or already
 present.
+
+## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# Blair et al. APSR: surgical Dataverse file wiring in replication.yml
+materialize_declared_data("10.1017/S0003055422000284")
+materialize_declared_data("10.1017/S0003055403000534")
+} # }
+```

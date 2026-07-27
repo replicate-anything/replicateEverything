@@ -1,6 +1,13 @@
-# Extract DOI deep-link fields from a parsed query list
+# Extract study deep-link key from a parsed query list
 
-Extract DOI deep-link fields from a parsed query list
+Query contract (path prefix such as `/ipi/replicate/` is irrelevant;
+only the search string matters):
+
+- `doi` — study DOI (preferred), or
+
+- `handle` — registry handle / study key when there is no DOI
+
+Legacy `what` / `language` query params are ignored if present.
 
 ## Usage
 
@@ -17,4 +24,4 @@ extract_shiny_deep_link(query_list)
 
 ## Value
 
-List with `doi`, `what`, `language`, or `NULL`.
+List with `doi` (study key: DOI or handle), or `NULL`.

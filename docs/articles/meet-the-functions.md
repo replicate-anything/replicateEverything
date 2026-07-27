@@ -55,16 +55,31 @@ Example output:
     #>                              doi                                  title
     #> 1 10.1017/S0003055403000534 Ethnicity, Insurgency, and Civil War
 
-For a one-screen overview of a study (metadata, step counts, related
-upstream/downstream studies, gap tags), use
-[`get_study()`](https://replicate-anything.github.io/replicateEverything/reference/get_study.md)
-with [`summary()`](https://rdrr.io/r/base/summary.html):
+For a resolved study **handle** (metadata loaded once), use
+[`get_study()`](https://replicate-anything.github.io/replicateEverything/reference/get_study.md).
+The return value is a compact `replicate_study` object — not only for
+printing.
 
 ``` r
 
-st <- get_study("10.1017/S0003055403000534")
+st <- get_study("10.1017/S0003055403000534")  # Fearon & Laitin
 summary(st)
 # or: summary_study("10.1017/S0003055403000534")
+
+# Inspect fields / filter programmatically
+st$doi
+st$languages
+st$step_counts
+st$related
+
+# Pass DOI / handle strings into other verbs (they take character keys)
+list_replications(st$doi)
+describe_study_dag(st$doi)
+
+# Other registry keys
+get_study("10.1017/S0003055422000284")  # Blair et al. APSR
+get_study("10.1257/aer.91.5.1369")       # Acemoglu et al. AER
+get_study("rep-template")               # handle-only template
 ```
 
 For one paper,
@@ -75,6 +90,7 @@ lists every registered table and figure, including engine (`r` /
 ``` r
 
 list_replications("10.1177/00491241211036161")
+list_replications("10.1017/S0003055422000284")
 ```
 
 **Working on a study repo you have checked out locally?** Every consumer
@@ -133,7 +149,8 @@ run_replication("10.1177/00491241211036161", "fig_1")
 
 run_replication("10.1017/S0003055403000534", "tab_1", format = TRUE)
 
-# Stata engine when both exist:
+# Blair et al. / Acemoglu et al. when both engines or Dataverse wiring matter:
+run_replication("10.1017/S0003055422000284", "tab_1")
 run_replication("10.1257/aer.91.5.1369", "tab_1", language = "stata", format = TRUE)
 ```
 
@@ -156,6 +173,16 @@ the output. The bundled Shiny app shows the same text on its Code tab.
 ``` r
 
 cat(get_code("10.1177/00491241211036161", "fig_1"), sep = "\n")
+cat(get_code("10.1017/S0003055403000534", "tab_1", language = "stata"), sep = "\n")
+```
+
+[`describe_study_dag()`](https://replicate-anything.github.io/replicateEverything/reference/describe_study_dag.md)
+prints pipeline paths for a study (useful smoke check before Run):
+
+``` r
+
+describe_study_dag("10.1017/S0003055403000534")
+describe_study_dag("10.1017/S0003055422000284")
 ```
 
 ### Browse interactively in Shiny

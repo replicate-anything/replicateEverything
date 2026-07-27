@@ -1,9 +1,10 @@
 # Configure options for a local replicate-anything monorepo
 
 Sets `replicateEverything.registry_root`,
-`replicateEverything.study_folders_root`, and enables sibling study
-discovery. Call once per session when developing unpublished studies
-locally.
+`replicateEverything.study_folders_root`,
+`replicateEverything.study_data_root` (for `data/<study_folder>/` next
+to the monorepo), and enables sibling study discovery. Call once per
+session when developing unpublished studies locally.
 
 ## Usage
 

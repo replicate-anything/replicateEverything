@@ -68,6 +68,13 @@ The project is under active development. Feedback is welcome — contact
 or use the feedback form on the [shiny
 app](https://shiny2.wzb.eu/ipi/replicate/).
 
+**Versioning (pre-1.0):** Stay on `0.x.y` until a deliberate 1.0
+decision. Prefer **patch** bumps (`0.7.y`) for most fixes and small
+UX/engine changes; use a **minor** bump (`0.8.0`) only for larger
+coherent releases, sparingly. Do not bump on every tiny change when
+several commits can ship under one release note. Do not invent
+non-semver schemes (e.g. `0.07.17`).
+
 ## Installation
 
 Install from GitHub with `remotes` or `devtools`:
@@ -163,6 +170,7 @@ paper:
   year: 2024
   doi: 1.2.3.4
   journal: Sample journal
+  source_repository: https://github.com/replicate-anything/replicateEverything
 
 maintainer:
   name: Jane Maintainer
@@ -532,7 +540,7 @@ Find studies and inspect replication metadata.
 - [`search_papers()`](https://replicate-anything.github.io/replicateEverything/reference/search_papers.md)
   : Search replicated papers
 - [`get_study()`](https://replicate-anything.github.io/replicateEverything/reference/get_study.md)
-  : Load a study descriptor for summary and related links
+  : Resolve a study handle (metadata once)
 - [`summary_study()`](https://replicate-anything.github.io/replicateEverything/reference/summary_study.md)
   : Summarize a study by DOI / handle (constructs then summarizes)
 - [`summary(`*`<replicate_study>`*`)`](https://replicate-anything.github.io/replicateEverything/reference/summary.replicate_study.md)
@@ -543,6 +551,14 @@ Find studies and inspect replication metadata.
   : List available replications for a paper
 - [`paper_article_url()`](https://replicate-anything.github.io/replicateEverything/reference/paper_article_url.md)
   : Resolve a human-facing URL for a published article
+- [`paper_source_repository()`](https://replicate-anything.github.io/replicateEverything/reference/paper_source_repository.md)
+  : Resolve paper.source_repository (with legacy aliases)
+- [`source_repository_kind()`](https://replicate-anything.github.io/replicateEverything/reference/source_repository_kind.md)
+  : Classify a source-repository credit for display icons
+- [`source_repository_href()`](https://replicate-anything.github.io/replicateEverything/reference/source_repository_href.md)
+  : Browse URL for a source-repository credit
+- [`registry_source_repository_gaps()`](https://replicate-anything.github.io/replicateEverything/reference/registry_source_repository_gaps.md)
+  : Studies in a registry missing paper.source_repository
 
 ## Run & inspect
 

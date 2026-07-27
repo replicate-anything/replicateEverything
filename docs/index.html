@@ -29,7 +29,7 @@
 
     <a class="navbar-brand me-2" href="index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.7.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -119,6 +119,7 @@
 <h2 id="project-status">Project status<a class="anchor" aria-label="anchor" href="#project-status"></a>
 </h2>
 <p>The project is under active development. Feedback is welcome — contact <a href="mailto:macartan.humphreys@wzb.eu">Macartan Humphreys</a>, post an issue on <a href="https://github.com/replicate-anything/replicateEverything/issues" class="external-link">git</a>, or use the feedback form on the <a href="https://shiny2.wzb.eu/ipi/replicate/" class="external-link">shiny app</a>.</p>
+<p><strong>Versioning (pre-1.0):</strong> Stay on <code>0.x.y</code> until a deliberate 1.0 decision. Prefer <strong>patch</strong> bumps (<code>0.7.y</code>) for most fixes and small UX/engine changes; use a <strong>minor</strong> bump (<code>0.8.0</code>) only for larger coherent releases, sparingly. Do not bump on every tiny change when several commits can ship under one release note. Do not invent non-semver schemes (e.g. <code>0.07.17</code>).</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -191,40 +192,41 @@ tests/testthat/</code></pre>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="at">  </span><span class="fu">year</span><span class="kw">:</span><span class="at"> </span><span class="dv">2024</span></span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="at">  </span><span class="fu">doi</span><span class="kw">:</span><span class="at"> </span><span class="fl">1.2.3.4</span></span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="at">  </span><span class="fu">journal</span><span class="kw">:</span><span class="at"> Sample journal</span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">maintainer</span><span class="kw">:</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Jane Maintainer</span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="at">  </span><span class="fu">email</span><span class="kw">:</span><span class="at"> maintainer@example.org</span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="fu">collections</span><span class="kw">:</span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> PED</span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="fu">languages</span><span class="kw">:</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> r</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Figure 1</span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example figure</span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/fig_1.csv</span></span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/fig_1.R</span></span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/fig_1.png</span></span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a></span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Table 1</span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example table</span></span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/tab_1.csv</span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
-<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/tab_1.html</span></span>
-<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a></span>
-<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1_format</span></span>
-<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> format</span></span>
-<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="at">    </span><span class="fu">parent</span><span class="kw">:</span><span class="at"> tab_1</span></span>
-<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/format_tab_1.R</span></span></code></pre></div>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="at">  </span><span class="fu">source_repository</span><span class="kw">:</span><span class="at"> https://github.com/replicate-anything/replicateEverything</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">maintainer</span><span class="kw">:</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="at">  </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Jane Maintainer</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="at">  </span><span class="fu">email</span><span class="kw">:</span><span class="at"> maintainer@example.org</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="fu">collections</span><span class="kw">:</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> PED</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="fu">languages</span><span class="kw">:</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> r</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> fig_1</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> figure</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Figure 1</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example figure</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/fig_1.csv</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/fig_1.R</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/fig_1.png</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> table</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="at">    </span><span class="fu">label</span><span class="kw">:</span><span class="at"> Table 1</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="at">    </span><span class="fu">description</span><span class="kw">:</span><span class="at"> Example table</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="at">    </span><span class="fu">data</span><span class="kw">:</span><span class="at"> data/tab_1.csv</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/tab_1.R</span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="at">    </span><span class="fu">outputs</span><span class="kw">:</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> outputs/tab_1.html</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">id</span><span class="kw">:</span><span class="at"> tab_1_format</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> format</span></span>
+<span id="cb6-41"><a href="#cb6-41" tabindex="-1"></a><span class="at">    </span><span class="fu">parent</span><span class="kw">:</span><span class="at"> tab_1</span></span>
+<span id="cb6-42"><a href="#cb6-42" tabindex="-1"></a><span class="at">    </span><span class="fu">code</span><span class="kw">:</span><span class="at"> code/format_tab_1.R</span></span></code></pre></div>
 <p>Root steps (nothing in-repo produces their inputs) omit <code>parents:</code> entirely — never write <code>parents: []</code>. A step that reads another step’s <code>outputs:</code> declares <code>parents: [&lt;upstream id&gt;]</code>. See <code>rep-template/replication.yml</code> for a fully commented gold example.</p>
 </div>
 </div>

@@ -20,4 +20,4 @@ validate_registry_outputs(registry_root = NULL, folders = NULL)
 
 ## Value
 
-Invisibly `TRUE` if every study passes.
+A `validate_outputs_result` if every study passes.
