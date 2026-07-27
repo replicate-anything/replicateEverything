@@ -277,7 +277,7 @@ format_for_display <- function(
   )
 
   ctx <- paper_context(doi, repo = repo, folder = folder)
-  if (is_stata_replication(rep, meta$paper)) {
+  if (is.null(ctx$local_root) && !is.null(meta)) {
     ctx$local_root <- ensure_study_folder_local(meta, ctx)
   }
   env <- new.env(parent = globalenv())
@@ -289,11 +289,17 @@ format_for_display <- function(
   } else {
     object
   }
+  # Keep REPLICATE_STUDY_ROOT set during format_* (render_replication clears it
+  # when the analysis step returns). Study helpers that resolve outputs/staging
+  # paths via that env var otherwise fall through to default_format_object and
+  # show raw .tex / logs on live Run.
   tryCatch(
-    retry_with_missing_package(
-      fmt_fn(fmt_object),
-      install_missing = allow_dependency_install(install_deps)
-    ),
+    with_replicate_study_root(ctx$local_root, {
+      retry_with_missing_package(
+        fmt_fn(fmt_object),
+        install_missing = allow_dependency_install(install_deps)
+      )
+    }),
     error = function(e) {
       if (!is_stata_replication(rep, meta$paper)) {
         stop(e)

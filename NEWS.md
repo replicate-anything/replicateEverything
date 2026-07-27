@@ -1,3 +1,13 @@
+# replicateEverything 0.7.20
+
+## format_for_display keeps REPLICATE_STUDY_ROOT
+
+* Live Run formatting now keeps `REPLICATE_STUDY_ROOT` set while calling
+  study `format_*` helpers (same as the analysis step). Without this,
+  helpers that resolve `outputs/staging/*.tex` via that env var failed and
+  Stata tables fell back to raw `.tex` in a `<pre>` on Run (Display baked
+  HTML was fine).
+
 # replicateEverything 0.7.19
 
 ## Docs home: no duplicate hex
