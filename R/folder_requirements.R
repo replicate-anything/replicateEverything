@@ -197,6 +197,7 @@ folder_study_run_options <- function(study_root, meta, registry_root = NULL) {
   opts <- list(
     replicateEverything.use_sibling_packages = TRUE,
     replicateEverything.study_folders_root = monorepo_root,
+    replicateEverything.study_data_root = monorepo_root,
     replicateEverything.index = local_index
   )
   if (!is.null(registry_root) && nzchar(registry_root) && dir.exists(registry_root)) {

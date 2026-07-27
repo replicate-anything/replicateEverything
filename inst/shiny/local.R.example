@@ -27,9 +27,9 @@ packages_root <- normalizePath("..", winslash = "/", mustWork = FALSE)
 #   data/<study_folder>/<file>
 # <study_folder> must match replication.yml paper.study_folder, e.g.
 #   data/rep-10.1596-1813-9450-10626/ACS2017-2021_finalready.dta
-# Local dev: large files usually stay in the sibling rep-* repo under data/
-# (not git-synced). run_shiny_app() from the monorepo wires that up.
-# Override working directory if needed:
+# Local / monorepo: same layout under the monorepo root (packages_root below).
+# WZB: files live at <app>/data/rep-…/ ; getwd() is usually enough. Override if
+# the app cwd is not the directory that contains data/:
 # options(replicateEverything.study_data_root = "/wzb/samba/user/ipi/replicate")
 
 # Share links always point at the public server (never localhost). If shiny2 moves, set:
@@ -69,6 +69,7 @@ if (!is.null(packages_root) && dir.exists(packages_root)) {
   options(
     replicateEverything.replication_packages_root = packages_root,
     replicateEverything.study_folders_root = packages_root,
+    replicateEverything.study_data_root = packages_root,
     replicateEverything.use_sibling_packages = TRUE
   )
 }

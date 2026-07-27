@@ -696,7 +696,9 @@ prepare_doi_for_replication <- function(
 #' Configure options for a local replicate-anything monorepo
 #'
 #' Sets \code{replicateEverything.registry_root},
-#' \code{replicateEverything.study_folders_root}, and enables sibling study
+#' \code{replicateEverything.study_folders_root},
+#' \code{replicateEverything.study_data_root} (for
+#' \code{data/<study_folder>/} next to the monorepo), and enables sibling study
 #' discovery. Call once per session when developing unpublished studies locally.
 #'
 #' @param root Monorepo root containing \code{registry/} and \code{rep-*} study
@@ -723,6 +725,7 @@ configure_local_monorepo <- function(root = NULL) {
   options(
     replicateEverything.registry_root = registry_root,
     replicateEverything.study_folders_root = root,
+    replicateEverything.study_data_root = root,
     replicateEverything.use_sibling_packages = TRUE
   )
   invisible(root)

@@ -752,6 +752,7 @@ run_shiny_app <- function(...) {
       error = function(e) {
         options(
           replicateEverything.study_folders_root = monorepo,
+          replicateEverything.study_data_root = monorepo,
           replicateEverything.use_sibling_packages = TRUE
         )
       }

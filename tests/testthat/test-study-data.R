@@ -1,4 +1,22 @@
 
+test_that("study_data_root falls back to study_folders_root", {
+  mono <- tempfile("mono-data-root-")
+  dir.create(mono)
+  on.exit(unlink(mono, recursive = TRUE), add = TRUE)
+  withr::with_options(
+    list(
+      replicateEverything.study_data_root = NULL,
+      replicateEverything.study_folders_root = mono
+    ),
+    {
+      expect_equal(
+        normalizePath(study_data_root(NULL), winslash = "/", mustWork = FALSE),
+        normalizePath(mono, winslash = "/", mustWork = FALSE)
+      )
+    }
+  )
+})
+
 test_that("resolve_study_data_file finds data at data/<study>/<file>", {
   app_root <- tempfile("shiny-app-")
   study_root <- tempfile("study-root-")

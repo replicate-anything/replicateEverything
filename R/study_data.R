@@ -1,7 +1,11 @@
 #' Root directory for external study data
 #'
 #' Uses \code{ctx$study_data_root}, then
-#' \code{getOption("replicateEverything.study_data_root")}, then \code{getwd()}.
+#' \code{getOption("replicateEverything.study_data_root")}, then
+#' \code{getOption("replicateEverything.study_folders_root")} (monorepo),
+#' then \code{getwd()} (Shiny app directory on server).
+#'
+#' Large files resolve under \code{<root>/data/<study_folder>/}.
 #'
 #' @param ctx Optional paper context.
 #' @return Normalized path.
@@ -13,6 +17,9 @@ study_data_root <- function(ctx = NULL) {
   }
   if (is.null(root) || !nzchar(root)) {
     root <- getOption("replicateEverything.study_data_root", NULL)
+  }
+  if (is.null(root) || !nzchar(root)) {
+    root <- getOption("replicateEverything.study_folders_root", NULL)
   }
   if (is.null(root) || !nzchar(root)) {
     root <- getwd()

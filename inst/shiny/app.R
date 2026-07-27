@@ -259,6 +259,7 @@ shiny_configure_monorepo_study_folders <- function(monorepo = NULL) {
   }
   options(
     replicateEverything.study_folders_root = monorepo,
+    replicateEverything.study_data_root = monorepo,
     replicateEverything.replication_packages_root = monorepo,
     replicateEverything.use_sibling_packages = TRUE
   )

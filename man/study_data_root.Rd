@@ -14,6 +14,10 @@ Normalized path.
 }
 \description{
 Uses \code{ctx$study_data_root}, then
-\code{getOption("replicateEverything.study_data_root")}, then \code{getwd()}.
+\code{getOption("replicateEverything.study_data_root")}, then
+\code{getOption("replicateEverything.study_folders_root")} (monorepo),
+then \code{getwd()} (Shiny app directory on server).
+
+Large files resolve under \code{<root>/data/<study_folder>/}.
 }
 \keyword{internal}
