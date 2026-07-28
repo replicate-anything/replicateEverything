@@ -47,13 +47,13 @@ shiny_step_show_display <- function(
 #' @keywords internal
 format_long_run_warning <- function(
   timeout_seconds = NA_real_,
-  seconds = NA_real_
+  seconds = NA_real_,
+  bake_seconds = NA_real_
 ) {
-  cap <- as.numeric(timeout_seconds[[1L]] %||% NA_real_)
-  if (!is.finite(cap) || cap <= 0) {
-    cap <- as.numeric(seconds[[1L]] %||% NA_real_)
-  }
-  cap_txt <- if (is.finite(cap) && cap > 0) {
+  fmt_dur <- function(cap) {
+    if (!is.finite(cap) || cap <= 0) {
+      return(NULL)
+    }
     if (cap < 60) {
       sprintf("%.0f seconds", cap)
     } else if (cap < 3600) {
@@ -62,15 +62,48 @@ format_long_run_warning <- function(
     } else {
       sprintf("about %.1f hours", cap / 3600)
     }
-  } else {
-    "the configured audit time limit"
   }
+
+  bake <- as.numeric(bake_seconds[[1L]] %||% NA_real_)
+  bake_txt <- fmt_dur(bake)
+
+  cap <- as.numeric(timeout_seconds[[1L]] %||% NA_real_)
+  if (!is.finite(cap) || cap <= 0) {
+    cap <- as.numeric(seconds[[1L]] %||% NA_real_)
+  }
+  # Prefer last successful bake duration when audit only hit the patience cap.
+  if (is.finite(bake) && bake > 0 &&
+      (!is.finite(cap) || cap <= 0 ||
+         (is.finite(seconds) && is.finite(cap) &&
+            abs(as.numeric(seconds) - cap) < 1))) {
+    cap_txt <- bake_txt
+    source_bit <- paste0(
+      "last successful bake took ",
+      bake_txt,
+      "; the registry audit hit its time cap before finishing"
+    )
+  } else {
+    cap_txt <- fmt_dur(cap) %||% "the configured audit time limit"
+    source_bit <- paste0(
+      "registry audit for this step hit the time cap (",
+      cap_txt,
+      ")"
+    )
+    if (!is.null(bake_txt)) {
+      source_bit <- paste0(
+        source_bit,
+        "; last successful bake took ",
+        bake_txt
+      )
+    }
+  }
+
   paste0(
-    "Long run warning: registry audit for this step hit the time cap (",
-    cap_txt,
-    "). A live Run can take a long time — often as long as the audit allowed, ",
-    "and sometimes longer — and may not finish during a typical browser session. ",
-    "Display shows a precomputed result when one is available. ",
+    "Long run warning: ",
+    source_bit,
+    ". A live Run can take a long time — often as long as the last known ",
+    "completion, and sometimes longer — and may not finish during a typical ",
+    "browser session. Display shows a precomputed result when one is available. ",
     "If you start Run, leave this tab open and expect a substantial wait. ",
     "For a complete live result, consider running locally with a higher ",
     "audit patience setting."
@@ -93,8 +126,10 @@ format_long_run_warning <- function(
 #' @param incomplete Whether the step is marked incomplete.
 #' @param timeout_seconds Optional audit cap seconds for the warning text.
 #' @param seconds Optional elapsed seconds from the audit row.
+#' @param bake_seconds Optional last successful bake seconds from
+#'   [lookup_study_replication_timing()].
 #' @return List with \code{show}, \code{title}, \code{message},
-#'   \code{timeout_seconds}, and \code{seconds}.
+#'   \code{timeout_seconds}, \code{seconds}, and \code{bake_seconds}.
 #' @keywords internal
 shiny_step_long_run_indicator <- function(
   output_exists = FALSE,
@@ -102,7 +137,8 @@ shiny_step_long_run_indicator <- function(
   gap_kind = NULL,
   incomplete = FALSE,
   timeout_seconds = NA_real_,
-  seconds = NA_real_
+  seconds = NA_real_,
+  bake_seconds = NA_real_
 ) {
   kind <- tolower(trimws(as.character(gap_kind[[1L]] %||% "")))
   has_gap <- nzchar(kind)
@@ -114,7 +150,8 @@ shiny_step_long_run_indicator <- function(
   warning <- if (isTRUE(show)) {
     format_long_run_warning(
       timeout_seconds = timeout_seconds,
-      seconds = seconds
+      seconds = seconds,
+      bake_seconds = bake_seconds
     )
   } else {
     ""
@@ -125,6 +162,7 @@ shiny_step_long_run_indicator <- function(
     title = warning,
     message = warning,
     timeout_seconds = as.numeric(timeout_seconds[[1L]] %||% NA_real_),
-    seconds = as.numeric(seconds[[1L]] %||% NA_real_)
+    seconds = as.numeric(seconds[[1L]] %||% NA_real_),
+    bake_seconds = as.numeric(bake_seconds[[1L]] %||% NA_real_)
   )
 }

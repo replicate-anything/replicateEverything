@@ -328,7 +328,8 @@ lookup_replication_audit_runtime <- function(
   doi,
   what,
   engine = NULL,
-  registry_root = NULL
+  registry_root = NULL,
+  study_root = NULL
 ) {
   empty <- list(
     available = FALSE,
@@ -337,6 +338,7 @@ lookup_replication_audit_runtime <- function(
     advice = "",
     timed_out = FALSE,
     timeout_seconds = NA_real_,
+    bake_seconds = NA_real_,
     object = NA_character_
   )
   snap <- tryCatch(
@@ -344,6 +346,12 @@ lookup_replication_audit_runtime <- function(
     error = function(e) NULL
   )
   if (is.null(snap) || is.null(snap$results) || !nrow(snap$results)) {
+    # Still try bake timings when audit snapshot is missing.
+    bake_seconds <- tryCatch(
+      lookup_study_replication_timing(study_root, what),
+      error = function(e) NA_real_
+    )
+    empty$bake_seconds <- bake_seconds
     return(empty)
   }
   doi_norm <- normalize_doi(doi)
@@ -352,6 +360,11 @@ lookup_replication_audit_runtime <- function(
   results$doi_norm <- vapply(results$doi, normalize_doi, character(1))
   sub <- results[results$doi_norm == doi_norm, , drop = FALSE]
   if (!nrow(sub)) {
+    bake_seconds <- tryCatch(
+      lookup_study_replication_timing(study_root, what),
+      error = function(e) NA_real_
+    )
+    empty$bake_seconds <- bake_seconds
     return(empty)
   }
   objs <- as.character(sub$object)
@@ -373,6 +386,11 @@ lookup_replication_audit_runtime <- function(
     }
   }
   if (!nrow(hit)) {
+    bake_seconds <- tryCatch(
+      lookup_study_replication_timing(study_root, what),
+      error = function(e) NA_real_
+    )
+    empty$bake_seconds <- bake_seconds
     return(empty)
   }
   # Prefer a successful timed run when multiple rows match; otherwise keep
@@ -394,21 +412,46 @@ lookup_replication_audit_runtime <- function(
       !is.null(snap$patience)) {
     timeout_seconds <- as.numeric(snap$patience[[1L]] %||% snap$patience)
   }
+  bake_seconds <- tryCatch(
+    lookup_study_replication_timing(study_root, what),
+    error = function(e) NA_real_
+  )
+  if (!is.finite(bake_seconds) || bake_seconds <= 0) {
+    # Fallback: monorepo sibling / study_folders_root + folder from DOI.
+    bake_seconds <- tryCatch({
+      folders_root <- getOption("replicateEverything.study_folders_root", NULL)
+      folder <- tryCatch(
+        study_folder_from_doi(doi),
+        error = function(e) NULL
+      )
+      if (is.null(folders_root) || is.null(folder)) {
+        NA_real_
+      } else {
+        lookup_study_replication_timing(file.path(folders_root, folder), what)
+      }
+    }, error = function(e) NA_real_)
+  }
+  # When audit timed out at the patience cap, prefer bake seconds for advice.
+  advice_seconds <- seconds
+  if (isTRUE(timed_out) && is.finite(bake_seconds) && bake_seconds > 0) {
+    advice_seconds <- bake_seconds
+  }
   category <- if (isTRUE(timed_out)) {
     "slow"
   } else if ("runtime_category" %in% names(row) &&
     nzchar(as.character(row$runtime_category[[1L]] %||% ""))) {
     as.character(row$runtime_category[[1L]])
   } else {
-    audit_runtime_category(seconds)
+    audit_runtime_category(advice_seconds)
   }
   list(
     available = TRUE,
     seconds = seconds,
     runtime_category = category,
-    advice = audit_runtime_advice(category, seconds),
+    advice = audit_runtime_advice(category, advice_seconds),
     timed_out = timed_out,
     timeout_seconds = timeout_seconds,
+    bake_seconds = bake_seconds,
     object = as.character(row$object[[1L]] %||% what)
   )
 }

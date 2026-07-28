@@ -7293,8 +7293,14 @@ server <- function(input, output, session) {
     state$registry_folder <- ctx$folder
     state$registry_repo <- ctx$repo
     state$local_study_meta <- NULL
+    state$local_study_root <- NULL
 
     if (!is.null(resolved$local_root)) {
+      state$local_study_root <- normalizePath(
+        resolved$local_root,
+        winslash = "/",
+        mustWork = FALSE
+      )
       local_yaml <- tryCatch(
         yaml::read_yaml(file.path(resolved$local_root, "replication.yml")),
         error = function(e) NULL
@@ -8230,7 +8236,8 @@ server <- function(input, output, session) {
               "lookup_replication_audit_runtime",
               state$doi,
               group,
-              engine = engine
+              engine = engine,
+              study_root = state$local_study_root %||% NULL
             ),
             error = function(e) NULL
           )
@@ -8246,7 +8253,8 @@ server <- function(input, output, session) {
                 gap_kind = NULL,
                 incomplete = FALSE,
                 timeout_seconds = rt$timeout_seconds %||% NA_real_,
-                seconds = rt$seconds %||% NA_real_
+                seconds = rt$seconds %||% NA_real_,
+                bake_seconds = rt$bake_seconds %||% NA_real_
               ),
               error = function(e) list(show = FALSE, title = "")
             )
@@ -8494,7 +8502,8 @@ server <- function(input, output, session) {
                       "lookup_replication_audit_runtime",
                       state$doi,
                       step_id,
-                      engine = step_engine
+                      engine = step_engine,
+                      study_root = state$local_study_root %||% NULL
                     ),
                     error = function(e) NULL
                   )
@@ -8511,7 +8520,8 @@ server <- function(input, output, session) {
                         gap_kind = NULL,
                         incomplete = FALSE,
                         timeout_seconds = step_rt$timeout_seconds %||% NA_real_,
-                        seconds = step_rt$seconds %||% NA_real_
+                        seconds = step_rt$seconds %||% NA_real_,
+                        bake_seconds = step_rt$bake_seconds %||% NA_real_
                       ),
                       error = function(e) list(show = FALSE, title = "")
                     )
@@ -8767,7 +8777,8 @@ server <- function(input, output, session) {
         "lookup_replication_audit_runtime",
         doi,
         what,
-        engine = language
+        engine = language,
+        study_root = state$local_study_root %||% NULL
       ),
       error = function(e) NULL
     )
@@ -8780,7 +8791,8 @@ server <- function(input, output, session) {
           gap_kind = NULL,
           incomplete = FALSE,
           timeout_seconds = rt$timeout_seconds %||% NA_real_,
-          seconds = rt$seconds %||% NA_real_
+          seconds = rt$seconds %||% NA_real_,
+          bake_seconds = rt$bake_seconds %||% NA_real_
         ),
         error = function(e) list(show = FALSE, title = "")
       )
@@ -8800,7 +8812,8 @@ server <- function(input, output, session) {
             replicate_fn(
               "format_long_run_warning",
               timeout_seconds = rt$timeout_seconds %||% NA_real_,
-              seconds = rt$seconds %||% NA_real_
+              seconds = rt$seconds %||% NA_real_,
+              bake_seconds = rt$bake_seconds %||% NA_real_
             ),
             error = function(e) rt$advice %||% ""
           )

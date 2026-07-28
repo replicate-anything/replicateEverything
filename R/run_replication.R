@@ -947,6 +947,7 @@ run_replication_one <- function(
     repo = repo,
     folder = folder
   )
+  t0 <- proc.time()[["elapsed"]]
   executed <- execute_study_plan(
     prepared$plan,
     doi,
@@ -958,6 +959,26 @@ run_replication_one <- function(
     format = format,
     repo = repo,
     folder = folder
+  )
+  elapsed <- proc.time()[["elapsed"]] - t0
+  study_root <- tryCatch(
+    prepared$ctx$local_root %||% prepared$ctx$study_root %||% NULL,
+    error = function(e) NULL
+  )
+  if (is.null(study_root) || !nzchar(as.character(study_root %||% ""))) {
+    study_root <- tryCatch(
+      find_local_study_root(getwd()),
+      error = function(e) NULL
+    )
+  }
+  tryCatch(
+    record_study_replication_timing(
+      study_root,
+      what,
+      elapsed,
+      engine = language %||% (executed$result$engine %||% NULL)
+    ),
+    error = function(e) NULL
   )
   result <- executed$result
   object <- replication_object(result)

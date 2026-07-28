@@ -1,3 +1,18 @@
+# replicateEverything 0.7.24
+
+## Bake timings fallback for audit timeouts
+
+* New study artifact `outputs/replication_timings.json`, written by
+  [record_study_replication_timing()] on successful [run_replication()]
+  folder runs. [lookup_study_replication_timing()] /
+  [read_study_replication_timings()] read it.
+* [lookup_replication_audit_runtime()] returns `bake_seconds` and prefers it
+  for advice when audit `timed_out`. [format_long_run_warning()] /
+  Shiny hourglass copy can say “last successful bake took …”.
+* **Windows Stata batch:** prepend Rscript’s bin to PATH (and keep that env on
+  the processx→system2 fallback) so LBD `shell Rscript` works under thin
+  System PATH.
+
 # replicateEverything 0.7.23
 
 ## Metadata: multiple source_repository URLs
@@ -7,6 +22,8 @@
   still returns the primary (first). Shiny Source column / study details show
   one kind icon per URL. Registry stubs preserve the list. Motivated by
   `rep-10.1257-aer.20250166` (GitHub Policy-Impacts/mvpf-climate + OpenICPSR).
+* **Windows Stata batch:** prepend Rscript's bin dir to PATH so LBD
+  `shell Rscript` works when Stata only sees the machine System PATH.
 
 ## Stata / Shiny (carry from uncommitted bake session)
 

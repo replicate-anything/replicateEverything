@@ -287,13 +287,37 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   # Windows: always hide the process. Combined with /i in stata_batch_args(),
   # this keeps the cancel-batch taskbar dialog from appearing. Clicking that
   # dialog injects --Break-- r(1) even under nobreak / capture noisily.
+  # Also prepend Rscript's directory to PATH: StataMP often sees only the
+  # machine System PATH (no user PATH), so bare `shell Rscript` fails even
+  # when the parent R session can find Rscript (Hahn LBD cost-curve).
+  stata_env <- NULL
+  stata_env_processx <- NULL
+  if (.Platform$OS.type == "windows") {
+    rscript <- Sys.which("Rscript")
+    if (!nzchar(rscript)) {
+      rscript <- Sys.which("Rscript.exe")
+    }
+    if (nzchar(rscript)) {
+      rbin <- dirname(normalizePath(rscript, winslash = "\\", mustWork = FALSE))
+      path_val <- paste0(rbin, ";", Sys.getenv("PATH", unset = ""))
+      stata_env <- paste0("PATH=", path_val)
+      stata_env_processx <- c(PATH = path_val)
+    }
+  }
   use_timeout <- length(timeout) == 1L && !is.na(timeout) && timeout > 0L
   if (.Platform$OS.type == "windows" && !use_timeout) {
-    return(system2(
-      stata, batch_args,
-      wait = TRUE, stdout = "", stderr = "",
+    sys_args <- list(
+      command = stata,
+      args = batch_args,
+      wait = TRUE,
+      stdout = "",
+      stderr = "",
       invisible = TRUE
-    ))
+    )
+    if (!is.null(stata_env)) {
+      sys_args$env <- stata_env
+    }
+    return(do.call(system2, sys_args))
   }
   if (!use_timeout) {
     return(system2(stata, batch_args, wait = TRUE, stdout = "", stderr = ""))
@@ -311,6 +335,12 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
     )
     if (.Platform$OS.type == "windows") {
       proc_args$windows_hide <- TRUE
+      if (!is.null(stata_env_processx)) {
+        # Merge onto full inherited env so only PATH is overridden.
+        full_env <- Sys.getenv()
+        full_env[["PATH"]] <- stata_env_processx[["PATH"]]
+        proc_args$env <- full_env
+      }
     }
     proc <- tryCatch(
       do.call(processx::process$new, proc_args),
@@ -320,11 +350,18 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
       if (.Platform$OS.type == "windows") {
         # Keep the run hidden even if processx cannot set windows_hide
         # (never spawn a visible processx child — that invites Break dialogs).
-        return(as.integer(system2(
-          stata, batch_args,
-          wait = TRUE, stdout = "", stderr = "",
+        sys_args <- list(
+          command = stata,
+          args = batch_args,
+          wait = TRUE,
+          stdout = "",
+          stderr = "",
           invisible = TRUE
-        )))
+        )
+        if (!is.null(stata_env)) {
+          sys_args$env <- stata_env
+        }
+        return(as.integer(do.call(system2, sys_args)))
       }
       stop(proc)
     }

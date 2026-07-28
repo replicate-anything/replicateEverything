@@ -4,7 +4,11 @@
 \alias{format_long_run_warning}
 \title{Format a lengthy user-facing warning for audit-timeout / long Runs}
 \usage{
-format_long_run_warning(timeout_seconds = NA_real_, seconds = NA_real_)
+format_long_run_warning(
+  timeout_seconds = NA_real_,
+  seconds = NA_real_,
+  bake_seconds = NA_real_
+)
 }
 \arguments{
 \item{timeout_seconds}{Audit patience / cap in seconds when known.}

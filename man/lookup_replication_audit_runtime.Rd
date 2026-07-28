@@ -8,7 +8,8 @@ lookup_replication_audit_runtime(
   doi,
   what,
   engine = NULL,
-  registry_root = NULL
+  registry_root = NULL,
+  study_root = NULL
 )
 }
 \arguments{

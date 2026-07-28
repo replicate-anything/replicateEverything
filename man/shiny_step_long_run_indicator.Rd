@@ -10,7 +10,8 @@ shiny_step_long_run_indicator(
   gap_kind = NULL,
   incomplete = FALSE,
   timeout_seconds = NA_real_,
-  seconds = NA_real_
+  seconds = NA_real_,
+  bake_seconds = NA_real_
 )
 }
 \arguments{
@@ -25,10 +26,13 @@ shiny_step_long_run_indicator(
 \item{timeout_seconds}{Optional audit cap seconds for the warning text.}
 
 \item{seconds}{Optional elapsed seconds from the audit row.}
+
+\item{bake_seconds}{Optional last successful bake seconds from
+\code{\link[=lookup_study_replication_timing]{lookup_study_replication_timing()}}.}
 }
 \value{
 List with \code{show}, \code{title}, \code{message},
-\code{timeout_seconds}, and \code{seconds}.
+\code{timeout_seconds}, \code{seconds}, and \code{bake_seconds}.
 }
 \description{
 Show when \strong{all} of:
