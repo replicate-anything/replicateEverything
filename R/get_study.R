@@ -143,7 +143,12 @@ get_study <- function(doi, repo = NULL, folder = NULL) {
   } else {
     as.character((meta$repo %||% paper$study_repo %||% paper$package_repo %||% "")[[1]])
   }
-  source_repository <- paper_source_repository(paper = paper)
+  source_repositories <- paper_source_repositories(paper = paper)
+  source_repository <- if (length(source_repositories)) {
+    source_repositories[[1L]]
+  } else {
+    NULL
+  }
 
   related <- if (!is.null(row)) {
     related_studies_for_index_row(row, index = index)
@@ -186,6 +191,14 @@ get_study <- function(doi, repo = NULL, folder = NULL) {
       } else {
         ""
       },
+      source_repositories = as.list(source_repositories),
+      source_repository_kinds = as.list(
+        if (length(source_repositories)) {
+          vapply(source_repositories, source_repository_kind, character(1))
+        } else {
+          character(0)
+        }
+      ),
       folder = if (!is.null(row)) index_row_field(row, "folder", "") else ""
     ),
     class = "replicate_study"
@@ -387,11 +400,26 @@ summary.replicate_study <- function(object, ...) {
   if (nzchar(repo)) {
     cat("Repo:        ", paste0("https://github.com/", repo), "\n", sep = "")
   }
-  src <- trimws(as.character(object$source_repository %||% ""))
-  if (nzchar(src)) {
-    kind <- trimws(as.character(object$source_repository_kind %||% ""))
-    kind_bit <- if (nzchar(kind)) paste0(" [", kind, "]") else ""
-    cat("Source:      ", src, kind_bit, "\n", sep = "")
+  srcs <- normalize_source_repository_values(object$source_repositories %||% NULL)
+  if (!length(srcs)) {
+    srcs <- normalize_source_repository_values(object$source_repository %||% "")
+  }
+  if (length(srcs)) {
+    kinds <- normalize_source_repository_values(object$source_repository_kinds %||% NULL)
+    for (i in seq_along(srcs)) {
+      kind <- if (length(kinds) >= i) kinds[[i]] else {
+        trimws(as.character(object$source_repository_kind %||% ""))
+      }
+      kind_bit <- if (nzchar(kind %||% "")) paste0(" [", kind, "]") else ""
+      prefix <- if (length(srcs) > 1L && i == 1L) {
+        "Sources:     "
+      } else if (length(srcs) > 1L) {
+        "             "
+      } else {
+        "Source:      "
+      }
+      cat(prefix, srcs[[i]], kind_bit, "\n", sep = "")
+    }
   }
 
   n_steps <- as.integer(counts$steps %||% 0L)

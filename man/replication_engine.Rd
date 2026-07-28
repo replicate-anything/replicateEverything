@@ -12,7 +12,10 @@ replication_engine(rep, paper_meta = NULL)
 \item{paper_meta}{Optional paper-level metadata.}
 }
 \value{
-\code{"r"}, \code{"stata"}, \code{"python"}, or \code{"dataverse"}.
+\code{"r"}, \code{"stata"}, \code{"python"}, \code{"dataverse"}, or
+\code{"mathematica"} (system-tool engines used for missing-tool /
+incomplete-step display, e.g. an alternate-engine \code{group:} member
+that is never dispatched by \code{run_replication()}).
 }
 \description{
 Replication engine for a single entry

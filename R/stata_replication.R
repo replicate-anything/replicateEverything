@@ -2,7 +2,10 @@
 #'
 #' @param rep Replication entry from \code{replication.yml}.
 #' @param paper_meta Optional paper-level metadata.
-#' @return \code{"r"}, \code{"stata"}, \code{"python"}, or \code{"dataverse"}.
+#' @return \code{"r"}, \code{"stata"}, \code{"python"}, \code{"dataverse"}, or
+#'   \code{"mathematica"} (system-tool engines used for missing-tool /
+#'   incomplete-step display, e.g. an alternate-engine \code{group:} member
+#'   that is never dispatched by \code{run_replication()}).
 #' @keywords internal
 replication_engine <- function(rep, paper_meta = NULL) {
   eng <- rep$engine %||% NULL
@@ -11,6 +14,9 @@ replication_engine <- function(rep, paper_meta = NULL) {
     if (value %in% c("stata", "r", "python", "py", "dataverse")) {
       if (value %in% c("py")) return("python")
       return(value)
+    }
+    if (value %in% c("mathematica", "wolfram", "wolframscript")) {
+      return("mathematica")
     }
   }
 
@@ -478,6 +484,18 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL,
     timeout = getOption("replicateEverything.stata_timeout", timeout)
   )
 
+  # Windows/NTFS can report a stale (smaller) file size for a brief window
+  # right after the tracked Stata child process exits - observed concretely
+  # when a nested do-file (e.g. wrapper/metafile.do) opens its own named
+  # `log using ...' that Stata's own /e batch log stream does not resume
+  # from until end-of-session flush: readLines() immediately after
+  # run_stata_system2() returns can see only a few KB of a multi-MB log,
+  # silently truncating stata_log_error()/stata_log_tail() output and
+  # producing a misleading "Stata error" excerpt from stale/incomplete
+  # content instead of the real (later) failure. Wait for the log file's
+  # size to stop growing before reading it.
+  wait_for_stata_log_flush(log_path)
+
   strays <- stata_stray_batch_log_paths(c(workdir, old_wd), log_name)
   if (length(strays) && !file.exists(log_path)) {
     relocate_stata_batch_log(strays[[1]], log_path)
@@ -518,6 +536,29 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL,
   }
 
   result
+}
+
+#' Wait for a just-written Stata batch log to stop growing on disk
+#'
+#' Polls the file size a few times with a short pause. If the Stata child
+#' process has fully exited (which \code{run_stata_system2()} already
+#' waited for), a stable size for 2 consecutive checks means the OS has
+#' finished flushing writes and it is safe to \code{readLines()}.
+#' @keywords internal
+wait_for_stata_log_flush <- function(log_path, max_checks = 10L, interval = 0.3) {
+  if (!file.exists(log_path)) {
+    return(invisible(FALSE))
+  }
+  prev_size <- -1
+  for (i in seq_len(max_checks)) {
+    size <- suppressWarnings(file.info(log_path)$size)
+    if (!is.na(size) && identical(size, prev_size)) {
+      return(invisible(TRUE))
+    }
+    prev_size <- size
+    Sys.sleep(interval)
+  }
+  invisible(FALSE)
 }
 
 #' @keywords internal
@@ -1474,6 +1515,9 @@ stata_run_dir <- function(workdir, staging_dir = NULL) {
 #' @keywords internal
 cleanup_stata_run_dir <- function(run_dir) {
   if (is.null(run_dir) || !nzchar(run_dir)) {
+    return(invisible(FALSE))
+  }
+  if (isTRUE(getOption("replicateEverything.debug_keep_run_dir", FALSE))) {
     return(invisible(FALSE))
   }
   run_parent <- dirname(run_dir)

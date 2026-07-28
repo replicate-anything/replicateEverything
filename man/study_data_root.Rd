@@ -17,12 +17,8 @@ Uses \code{ctx$study_data_root}, then
 \code{getOption("replicateEverything.study_data_root")}, then
 \code{getOption("replicateEverything.study_folders_root")} (monorepo),
 then \code{getwd()} (Shiny app directory on server).
-<<<<<<< Updated upstream
-
-=======
 }
 \details{
->>>>>>> Stashed changes
 Large files resolve under \code{<root>/data/<study_folder>/}.
 }
 \keyword{internal}

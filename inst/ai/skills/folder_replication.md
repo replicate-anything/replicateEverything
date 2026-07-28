@@ -74,7 +74,9 @@ for the Studies tab filter and maintainer link.
 
 **Also declare `paper.source_repository`:** URL of the original data / materials
 deposit (Dataverse, OpenICPSR, World Bank catalog, GitHub analysis repo, personal
-archive, etc.). Distinct from `paper.study_url` (this study’s GitHub materials
+archive, etc.). May be a **yaml list** when there are multiple official sources
+(first entry is primary for single-field consumers; Shiny shows an icon per
+source). Distinct from `paper.study_url` (this study’s GitHub materials
 repo); for a template with no external deposit they may be the same URL. Shiny
 shows **Source repository** with a kind icon inferred from the URL (Dataverse,
 OSF, World Bank, ICPSR/OpenICPSR, Git, replicateEverything); other http(s) URLs

@@ -1,3 +1,22 @@
+# replicateEverything 0.7.23
+
+## Metadata: multiple source_repository URLs
+
+* **`paper.source_repository`** may be a yaml list. New
+  [paper_source_repositories()] returns all credits; [paper_source_repository()]
+  still returns the primary (first). Shiny Source column / study details show
+  one kind icon per URL. Registry stubs preserve the list. Motivated by
+  `rep-10.1257-aer.20250166` (GitHub Policy-Impacts/mvpf-climate + OpenICPSR).
+
+## Stata / Shiny (carry from uncommitted bake session)
+
+* **`save_artifact()`** for `stata_output` uses the real output file extension
+  (xlsx/csv/dta/…) instead of hardcoding `.smcl`.
+* **Shiny engine badges:** blocked `requires_engine: mathematica` steps show
+  Mathematica only (no stray Stata badge); Mathematica recognized as a
+  display/language token for alternate-engine groups.
+* **Stata log flush wait** after batch exit (Windows/NTFS stale size).
+
 # replicateEverything 0.7.22
 
 ## Skills: file provenance header convention

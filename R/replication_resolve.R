@@ -23,7 +23,13 @@ normalize_replication_language <- function(language) {
   if (lang %in% c("dataverse")) {
     return("dataverse")
   }
-  stop('language must be "R", "stata", "python", or "dataverse"', call. = FALSE)
+  if (lang %in% c("mathematica", "wolfram", "wolframscript")) {
+    return("mathematica")
+  }
+  stop(
+    'language must be "R", "stata", "python", "dataverse", or "mathematica"',
+    call. = FALSE
+  )
 }
 
 #' Whether a step engine satisfies a language selector

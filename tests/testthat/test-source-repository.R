@@ -10,6 +10,34 @@ test_that("paper_source_repository prefers canonical field over aliases", {
   )
 })
 
+test_that("paper_source_repositories accepts a yaml list; primary is first", {
+  paper <- list(
+    source_repository = list(
+      "https://github.com/Policy-Impacts/mvpf-climate",
+      "https://www.openicpsr.org/openicpsr/project/239169/version/V1/view"
+    )
+  )
+  expect_equal(
+    paper_source_repositories(paper = paper),
+    c(
+      "https://github.com/Policy-Impacts/mvpf-climate",
+      "https://www.openicpsr.org/openicpsr/project/239169/version/V1/view"
+    )
+  )
+  expect_equal(
+    paper_source_repository(paper = paper),
+    "https://github.com/Policy-Impacts/mvpf-climate"
+  )
+  expect_equal(
+    source_repository_kind(paper_source_repository(paper = paper)),
+    "git"
+  )
+  expect_equal(
+    source_repository_kind(paper_source_repositories(paper = paper)[[2]]),
+    "icpsr"
+  )
+})
+
 test_that("paper_source_repository falls back to legacy aliases", {
   expect_equal(
     paper_source_repository(paper = list(source_url = "https://example.org/a")),

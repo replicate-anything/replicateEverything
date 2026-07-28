@@ -17,7 +17,9 @@ Character scalar, or \code{NULL} when unset.
 }
 \description{
 Canonical field is \code{paper.source_repository}: URL (preferred) or short
-text credit for the original data / materials deposit. Legacy aliases
+text credit for the original data / materials deposit. May also be a yaml
+list of sources; this helper returns the \strong{primary} (first) entry. Use
+\code{\link[=paper_source_repositories]{paper_source_repositories()}} for the full list. Legacy aliases
 \code{source_url} and \code{source_repo} are accepted when the canonical
 field is empty.
 }

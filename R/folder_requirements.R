@@ -83,7 +83,14 @@ registry_stub_from_folder_meta <- function(meta, study_folder = NULL, study_root
   if (is.null(study_repo) || !nzchar(study_repo)) {
     stop("Could not infer study repo slug; set repo or paper.study_repo in replication.yml", call. = FALSE)
   }
-  source_repository <- paper_source_repository(paper = paper)
+  source_repositories <- paper_source_repositories(paper = paper)
+  source_repository <- if (!length(source_repositories)) {
+    NULL
+  } else if (length(source_repositories) == 1L) {
+    source_repositories[[1L]]
+  } else {
+    as.list(source_repositories)
+  }
   stub_paper <- list(
     doi = paper$doi,
     study_handle = paper$study_handle %||% paper$handle %||% NULL,

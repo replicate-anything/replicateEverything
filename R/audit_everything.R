@@ -512,7 +512,7 @@ audit_run_one <- function(
   doi,
   what,
   engine = NULL,
-  patience = 20,
+  patience = 60,
   install_deps = FALSE,
   repo = NULL,
   folder = NULL,

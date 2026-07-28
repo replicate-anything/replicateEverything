@@ -953,7 +953,21 @@ save_artifact <- function(
     `data.frame` = "html",
     plot = "png",
     png = "png",
-    stata_output = "smcl",
+    # "stata_output" always writes the do-file's own output file byte-for-byte
+    # (see the file.copy() branch below) - a raw .smcl batch log only when the
+    # step has no declared outputs: path (see stata_output_path()'s fallback),
+    # but equally often a real .xlsx/.csv/.dta the do-file already wrote (e.g.
+    # tab_1/tab_2 do their own `copy ... outputs/*.xlsx`). Since the copy is
+    # extension-agnostic, the "natural" extension IS whatever the resolved
+    # output file already is, not a hardcoded "smcl" - onboarding_notes/
+    # openicpsr-aer-239169.md "tab_1/tab_2 stata_output extension mismatch".
+    stata_output = if (inherits(object, "stata_replication_result")) {
+      path <- object$output_path %||% object$smcl_path
+      ext <- if (!is.null(path)) stata_output_extension(path) else ""
+      if (nzchar(ext)) ext else "smcl"
+    } else {
+      "smcl"
+    },
     "rds"
   )
 

@@ -8,6 +8,7 @@ step_exempt_from_display_sink(entry)
 }
 \description{
 Gap steps (\code{incomplete} / \code{data_unavailable} / \code{requires_engine})
-may omit display sinks; Shiny shows Code + a clean gap message instead.
+may omit display sinks; Shiny shows Code via the padlock / wrench Run slot
+and only keeps Display when a baked sink exists.
 }
 \keyword{internal}

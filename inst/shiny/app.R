@@ -1113,6 +1113,7 @@ entry_engine <- function(x) {
   if (identical(eng, "stata")) return("stata")
   if (identical(eng, "python") || identical(eng, "py")) return("python")
   if (identical(eng, "r") || identical(eng, "dataverse")) return("r")
+  if (eng %in% c("mathematica", "wolfram", "wolframscript")) return("mathematica")
   id <- as.character(x$id %||% "")
   code <- as.character(x$code %||% "")
   if (grepl("_stata$", id, ignore.case = TRUE) || grepl("\\.do$", code, ignore.case = TRUE)) {
@@ -1210,12 +1211,16 @@ replication_row_for_id <- function(replications_df, replication_id) {
   if (is.null(replications_df) || is.null(replication_id) || !nzchar(replication_id)) {
     return(NULL)
   }
-  eq <- function(col) !is.na(col) & col == replication_id
+  eq <- function(col) {
+    if (is.null(col)) return(rep(FALSE, nrow(replications_df)))
+    !is.na(col) & col == replication_id
+  }
   hit <- eq(replications_df$group) |
     eq(replications_df$id) |
     eq(replications_df$r_id) |
     eq(replications_df$stata_id) |
-    eq(replications_df$python_id)
+    eq(replications_df$python_id) |
+    eq(replications_df$mathematica_id)
   match <- replications_df[which(hit), , drop = FALSE]
   if (nrow(match) == 0) {
     return(NULL)
@@ -2634,34 +2639,109 @@ source_repository_icon_ui <- function(
   }
 }
 
+#' Normalize one-or-many source credits for Shiny (mirrors package helper)
+shiny_normalize_source_repositories <- function(val) {
+  if (is.null(val)) {
+    return(character(0))
+  }
+  if (is.list(val) && !is.data.frame(val)) {
+    vals <- unlist(val, use.names = FALSE)
+  } else {
+    vals <- val
+  }
+  vals <- trimws(as.character(vals))
+  vals[!is.na(vals) & nzchar(vals)]
+}
+
+#' One or more source-repository icons (yaml may list multiple deposits)
+source_repository_icons_ui <- function(
+  source_repository = NULL,
+  kind = NULL,
+  source_repositories = NULL,
+  kinds = NULL
+) {
+  srcs <- shiny_normalize_source_repositories(source_repositories)
+  if (!length(srcs)) {
+    srcs <- shiny_normalize_source_repositories(source_repository)
+  }
+  if (!length(srcs)) {
+    return(NULL)
+  }
+  kind_vec <- shiny_normalize_source_repositories(kinds)
+  if (!length(kind_vec) && length(kind) == 1L && nzchar(trimws(as.character(kind %||% "")))) {
+    kind_vec <- rep(trimws(as.character(kind)), length(srcs))
+  }
+  icons <- lapply(seq_along(srcs), function(i) {
+    k <- if (length(kind_vec) >= i) kind_vec[[i]] else NULL
+    source_repository_icon_ui(srcs[[i]], kind = k)
+  })
+  icons <- Filter(Negate(is.null), icons)
+  if (!length(icons)) {
+    return(NULL)
+  }
+  if (length(icons) == 1L) {
+    return(icons[[1]])
+  }
+  tags$span(class = "source-repo-badges d-inline-flex align-items-center gap-1", icons)
+}
+
 #' Studies-table Source column cell (icon or em dash)
-source_repository_column_ui <- function(source_repository = NULL, kind = NULL) {
-  icon <- source_repository_icon_ui(source_repository, kind = kind)
+source_repository_column_ui <- function(
+  source_repository = NULL,
+  kind = NULL,
+  source_repositories = NULL,
+  kinds = NULL
+) {
+  icon <- source_repository_icons_ui(
+    source_repository = source_repository,
+    kind = kind,
+    source_repositories = source_repositories,
+    kinds = kinds
+  )
   if (is.null(icon)) {
     return(tags$span(class = "text-muted small", "—"))
   }
   icon
 }
 
-#' Labeled Source repository link for folded study-info body
-source_repository_details_ui <- function(source_repository = NULL) {
-  src <- trimws(as.character(source_repository %||% ""))
-  if (!nzchar(src)) {
+#' Labeled Source repository link(s) for folded study-info body
+source_repository_details_ui <- function(
+  source_repository = NULL,
+  source_repositories = NULL
+) {
+  srcs <- shiny_normalize_source_repositories(source_repositories)
+  if (!length(srcs)) {
+    srcs <- shiny_normalize_source_repositories(source_repository)
+  }
+  if (!length(srcs)) {
     return(NULL)
   }
-  src_href <- tryCatch(
-    replicate_fn("source_repository_href", src),
-    error = function(e) {
-      if (grepl("^https?://", src, ignore.case = TRUE)) src else NULL
-    }
-  )
-  tags$p(
-    class = "mb-2",
-    strong("Source repository: "),
+  link_for <- function(src) {
+    src_href <- tryCatch(
+      replicate_fn("source_repository_href", src),
+      error = function(e) {
+        if (grepl("^https?://", src, ignore.case = TRUE)) src else NULL
+      }
+    )
     if (!is.null(src_href) && nzchar(src_href)) {
       tags$a(href = src_href, target = "_blank", rel = "noopener", src)
     } else {
       src
+    }
+  }
+  label <- if (length(srcs) > 1L) "Source repositories: " else "Source repository: "
+  tags$p(
+    class = "mb-2",
+    strong(label),
+    if (length(srcs) == 1L) {
+      link_for(srcs[[1]])
+    } else {
+      tagList(lapply(seq_along(srcs), function(i) {
+        tagList(
+          if (i > 1L) tags$span("; "),
+          link_for(srcs[[i]])
+        )
+      }))
     }
   )
 }
@@ -3387,7 +3467,11 @@ replications_to_df <- function(reps) {
   }, logical(1))]
   reps <- reps[vapply(reps, function(x) {
     type <- as.character(x$type %||% "")
-    if (!type %in% c("figure", "table")) {
+    # "transform" is included so that split_replication_entries() can promote
+    # cross-engine grouped pipeline steps (e.g. an alternate-engine R/
+    # Mathematica pair) into this same grouped/toggle pipeline; ordinary
+    # single-engine transform steps stay in prep_to_df() and never reach here.
+    if (!type %in% c("figure", "table", "transform")) {
       return(FALSE)
     }
     # A displayable entry is runnable or has a precomputed display output.
@@ -3414,6 +3498,7 @@ replications_to_df <- function(reps) {
     r_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "r"), logical(1))]
     stata_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "stata"), logical(1))]
     python_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "python"), logical(1))]
+    mathematica_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "mathematica"), logical(1))]
     primary <- if (length(r_reps)) r_reps[[1]] else if (length(python_reps)) python_reps[[1]] else group_reps[[1]]
     data.frame(
       group = group,
@@ -3421,6 +3506,7 @@ replications_to_df <- function(reps) {
       r_id = if (length(r_reps)) as.character(r_reps[[1]]$id) else NA_character_,
       stata_id = if (length(stata_reps)) as.character(stata_reps[[1]]$id) else NA_character_,
       python_id = if (length(python_reps)) as.character(python_reps[[1]]$id) else NA_character_,
+      mathematica_id = if (length(mathematica_reps)) as.character(mathematica_reps[[1]]$id) else NA_character_,
       label = truncate_label(replication_display_label(primary), 40L),
       label_full = {
         desc <- replication_entry_description(primary)
@@ -3431,6 +3517,7 @@ replications_to_df <- function(reps) {
       blocked_reason = as.character(primary$blocked_reason %||% ""),
       requires_engine = entry_requires_engine_token(primary),
       data_unavailable = entry_data_unavailable_token(primary),
+      entries = I(list(group_reps)),
       stringsAsFactors = FALSE
     )
   })
@@ -3438,13 +3525,35 @@ replications_to_df <- function(reps) {
   do.call(rbind, rows)
 }
 
-resolve_group_replication_id <- function(row, engine = c("r", "stata", "python")) {
+#' Raw yaml entry for one engine within a grouped replication row
+#'
+#' Groups can mix a runnable engine (e.g. R) with an incomplete /
+#' missing-tool alternate engine (e.g. Mathematica original). The flattened
+#' `incomplete` / `blocked_reason` / `requires_engine` / `data_unavailable`
+#' columns on the row reflect only the group's `primary` (preferred) entry,
+#' so callers that need the currently-selected engine's own gap status
+#' (`replication_row()`) should look it up here instead.
+#' @keywords internal
+group_entry_for_engine <- function(row, engine) {
+  ents <- row$entries
+  if (is.null(ents)) return(NULL)
+  ents <- ents[[1]]
+  if (is.null(ents) || !length(ents)) return(NULL)
+  matches <- ents[vapply(ents, function(x) identical(entry_engine(x), engine), logical(1))]
+  if (length(matches) == 0L) return(NULL)
+  matches[[1]]
+}
+
+resolve_group_replication_id <- function(row, engine = c("r", "stata", "python", "mathematica")) {
   engine <- match.arg(engine)
   if (engine == "stata" && !is.na(row$stata_id) && nzchar(row$stata_id)) {
     return(row$stata_id)
   }
   if (engine == "python" && !is.na(row$python_id) && nzchar(row$python_id)) {
     return(row$python_id)
+  }
+  if (engine == "mathematica" && !is.na(row$mathematica_id) && nzchar(row$mathematica_id)) {
+    return(row$mathematica_id)
   }
   if (engine == "r" && !is.na(row$r_id) && nzchar(row$r_id)) {
     return(row$r_id)
@@ -4147,6 +4256,34 @@ split_replication_entries <- function(reps) {
     type <- tolower(as.character(x$type %||% ""))
     type %in% c("step", "prep", "pipeline", "transform")
   }, logical(1))
+
+  # Promote transform/pipeline entries that explicitly opt into cross-engine
+  # grouping (shared `group:` across >= 2 sibling entries with different
+  # engines - e.g. a runnable R build vs. an incomplete Mathematica-original
+  # alternate) into the same grouped/engine-toggle pipeline used for tables
+  # and figures, so Shiny renders one "Data steps" row with an R | Mathematica
+  # toggle instead of two separate ungrouped rows. Ordinary single-engine
+  # transform steps (the vast majority) are unaffected and stay in `prep`.
+  transform_idx <- which(is_prep & vapply(reps, function(x) {
+    identical(tolower(as.character(x$type %||% "")), "transform")
+  }, logical(1)))
+  if (length(transform_idx) > 0L) {
+    groups_of <- vapply(reps[transform_idx], function(x) {
+      grp <- as.character(x$group %||% "")
+      if (nzchar(grp)) grp else as.character(x$id %||% "")
+    }, character(1))
+    engines_of <- vapply(reps[transform_idx], entry_engine, character(1))
+    shared_groups <- unique(groups_of[duplicated(groups_of) | duplicated(groups_of, fromLast = TRUE)])
+    promote_groups <- shared_groups[vapply(shared_groups, function(g) {
+      length(unique(engines_of[groups_of == g])) > 1L
+    }, logical(1))]
+    if (length(promote_groups) > 0L) {
+      promote_idx <- transform_idx[groups_of %in% promote_groups]
+      is_prep[promote_idx] <- FALSE
+      is_display[promote_idx] <- TRUE
+    }
+  }
+
   list(
     prep = reps[is_prep],
     replications = reps[is_display]
@@ -7017,8 +7154,10 @@ server <- function(input, output, session) {
       engine,
       stata = "stata_id",
       python = "python_id",
+      mathematica = "mathematica_id",
       "r_id"
     )
+    if (is.null(reps[[col]])) return(FALSE)
     any(!is.na(reps[[col]]) & nzchar(reps[[col]]))
   }
 
@@ -7027,8 +7166,10 @@ server <- function(input, output, session) {
       engine,
       stata = "stata_id",
       python = "python_id",
+      mathematica = "mathematica_id",
       "r_id"
     )
+    if (is.null(row[[col]])) return(FALSE)
     val <- row[[col]][[1]]
     !is.na(val) && nzchar(val)
   }
@@ -7037,24 +7178,30 @@ server <- function(input, output, session) {
     sum(c(
       if (row_has_engine(row, "r")) 1L else 0L,
       if (row_has_engine(row, "stata")) 1L else 0L,
-      if (row_has_engine(row, "python")) 1L else 0L
+      if (row_has_engine(row, "python")) 1L else 0L,
+      if (row_has_engine(row, "mathematica")) 1L else 0L
     ))
   }
 
+  # Never defaults to mathematica: system-tool alternate engines (Mathematica,
+  # MATLAB, ...) are for missing-tool display only, never dispatched live -
+  # R stays the preferred default whenever both are declared in a group.
   default_row_engine <- function(row) {
     if (row_has_engine(row, "r")) return("r")
     if (row_has_engine(row, "stata")) return("stata")
     if (row_has_engine(row, "python")) return("python")
+    if (row_has_engine(row, "mathematica")) return("mathematica")
     "r"
   }
 
   group_engine <- function(group, row = NULL) {
     eng <- state$group_engines[[group]]
-    if (identical(eng, "stata") || identical(eng, "r") || identical(eng, "python")) {
+    if (identical(eng, "stata") || identical(eng, "r") || identical(eng, "python") || identical(eng, "mathematica")) {
       if (!is.null(row)) {
         if (identical(eng, "stata") && !row_has_engine(row, "stata")) return(default_row_engine(row))
         if (identical(eng, "r") && !row_has_engine(row, "r")) return(default_row_engine(row))
         if (identical(eng, "python") && !row_has_engine(row, "python")) return(default_row_engine(row))
+        if (identical(eng, "mathematica") && !row_has_engine(row, "mathematica")) return(default_row_engine(row))
       }
       return(eng)
     }
@@ -7064,8 +7211,18 @@ server <- function(input, output, session) {
     "r"
   }
 
+  # TRUE when the selected replication id is a grouped row living in
+  # state$replications_df (tables/figures, or a promoted multi-engine
+  # transform group) rather than an ungrouped single-engine prep step.
+  is_grouped_replication <- function() {
+    !is.null(state$replications_df) &&
+      nrow(state$replications_df) > 0 &&
+      !is.null(state$selected_replication) &&
+      state$selected_replication %in% state$replications_df$group
+  }
+
   selected_replication_language <- function() {
-    if (is_step_replication(state$selected_type)) {
+    if (is_step_replication(state$selected_type) && !is_grouped_replication()) {
       return(prep_step_language(state$selected_replication, state$prep_steps))
     }
     row <- replication_row_for_id(state$replications_df, state$selected_replication)
@@ -7076,7 +7233,7 @@ server <- function(input, output, session) {
   }
 
   selected_replication_id_and_language <- function() {
-    if (is_step_replication(state$selected_type)) {
+    if (is_step_replication(state$selected_type) && !is_grouped_replication()) {
       lang <- selected_replication_language()
       return(list(id = state$selected_replication, language = lang))
     }
@@ -7092,6 +7249,8 @@ server <- function(input, output, session) {
       "stata"
     } else if (!is.na(row$python_id) && identical(resolved_id, row$python_id)) {
       "python"
+    } else if (!is.na(row$mathematica_id) && identical(resolved_id, row$mathematica_id)) {
+      "mathematica"
     } else {
       lang
     }
@@ -7517,7 +7676,9 @@ server <- function(input, output, session) {
             tags$span(class = "study-citation-meta-label", "Source"),
             source_repository_column_ui(
               rec$source_repository %||% "",
-              kind = rec$source_repository_kind %||% NULL
+              kind = rec$source_repository_kind %||% NULL,
+              source_repositories = rec$source_repositories %||% NULL,
+              kinds = rec$source_repository_kinds %||% NULL
             )
           ),
           tags$div(
@@ -7616,7 +7777,9 @@ server <- function(input, output, session) {
       tags$em("Working paper")
     }
     source_repository <- NULL
+    source_repositories <- NULL
     source_kind <- NULL
+    source_kinds <- NULL
     cache_rec <- tryCatch({
       cache <- studies_cache_rv()
       studies <- if (is.list(cache)) cache$studies %||% list() else list()
@@ -7631,36 +7794,57 @@ server <- function(input, output, session) {
     if (!is.null(cache_rec)) {
       source_repository <- trimws(as.character(cache_rec$source_repository %||% ""))
       source_kind <- trimws(as.character(cache_rec$source_repository_kind %||% ""))
+      source_repositories <- cache_rec$source_repositories %||% NULL
+      source_kinds <- cache_rec$source_repository_kinds %||% NULL
     }
-    if (!nzchar(source_repository %||% "")) {
-      live_src <- tryCatch({
+    if (!length(shiny_normalize_source_repositories(source_repositories)) &&
+          !nzchar(source_repository %||% "")) {
+      live_srcs <- tryCatch({
         meta <- replicate_fn(
           "get_replication_meta",
           state$doi,
           folder = state$registry_folder,
           repo = state$registry_repo
         )
-        replicate_fn("paper_source_repository", meta = meta)
+        replicate_fn("paper_source_repositories", meta = meta)
       }, error = function(e) NULL)
-      if (!is.null(live_src) && nzchar(as.character(live_src))) {
-        source_repository <- as.character(live_src)
-        source_kind <- tryCatch(
-          replicate_fn("source_repository_kind", source_repository),
-          error = function(e) ""
+      if (!is.null(live_srcs) && length(live_srcs)) {
+        source_repositories <- as.character(live_srcs)
+        source_repository <- source_repositories[[1L]]
+        source_kinds <- vapply(
+          source_repositories,
+          function(src) {
+            tryCatch(
+              replicate_fn("source_repository_kind", src),
+              error = function(e) "other"
+            )
+          },
+          character(1)
         )
+        source_kind <- source_kinds[[1L]]
       }
     }
-    if (!is.null(state$local_study_meta) && !nzchar(source_repository %||% "")) {
-      live_src <- tryCatch(
-        replicate_fn("paper_source_repository", paper = state$local_study_meta),
+    if (!is.null(state$local_study_meta) &&
+          !length(shiny_normalize_source_repositories(source_repositories)) &&
+          !nzchar(source_repository %||% "")) {
+      live_srcs <- tryCatch(
+        replicate_fn("paper_source_repositories", paper = state$local_study_meta),
         error = function(e) NULL
       )
-      if (!is.null(live_src) && nzchar(as.character(live_src))) {
-        source_repository <- as.character(live_src)
-        source_kind <- tryCatch(
-          replicate_fn("source_repository_kind", source_repository),
-          error = function(e) ""
+      if (!is.null(live_srcs) && length(live_srcs)) {
+        source_repositories <- as.character(live_srcs)
+        source_repository <- source_repositories[[1L]]
+        source_kinds <- vapply(
+          source_repositories,
+          function(src) {
+            tryCatch(
+              replicate_fn("source_repository_kind", src),
+              error = function(e) "other"
+            )
+          },
+          character(1)
         )
+        source_kind <- source_kinds[[1L]]
       }
     }
     doi_value <- if (nrow(row) > 0) {
@@ -7712,7 +7896,12 @@ server <- function(input, output, session) {
           h4(class = "mb-0", paper$title %||% state$doi),
           tags$div(
             class = "d-flex align-items-center gap-2 flex-shrink-0",
-            source_repository_icon_ui(source_repository, kind = source_kind),
+            source_repository_icons_ui(
+              source_repository,
+              kind = source_kind,
+              source_repositories = source_repositories,
+              kinds = source_kinds
+            ),
             study_languages_icons_display(
               engines$r,
               engines$stata,
@@ -7754,7 +7943,10 @@ server <- function(input, output, session) {
               },
               strong("Journal: "), journal_display
             ),
-            source_repository_details_ui(source_repository),
+            source_repository_details_ui(
+              source_repository,
+              source_repositories = source_repositories
+            ),
             if (!is.null(state$local_study_meta) && nrow(row) == 0) {
               p(
                 class = "text-muted small mb-2",
@@ -7794,13 +7986,19 @@ server <- function(input, output, session) {
     label_full <- row$label_full[[1]] %||% label
     safe_group <- gsub("[^a-zA-Z0-9]", "_", group)
     resolved_id <- resolve_group_replication_id(row, engine)
-    is_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
-    blocked_reason <- as.character(row$blocked_reason[[1]] %||% "")
+    # Gap status (incomplete / blocked_reason / requires_engine /
+    # data_unavailable) is resolved for the CURRENTLY SELECTED engine, not the
+    # group's primary/default entry - a group can mix a runnable engine (R)
+    # with an incomplete alternate (e.g. Mathematica original), and the
+    # toggle must re-evaluate this every time the user switches engines.
+    sel_entry <- group_entry_for_engine(row, engine)
+    is_blocked <- isTRUE((sel_entry$incomplete %||% row$incomplete[[1]]) %||% FALSE)
+    blocked_reason <- as.character((sel_entry$blocked_reason %||% row$blocked_reason[[1]]) %||% "")
     if (!nzchar(blocked_reason)) {
       blocked_reason <- "This object cannot be created for this study - see the study notes."
     }
-    req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
-    data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
+    req_eng <- tolower(as.character((sel_entry$requires_engine %||% row$requires_engine[[1]]) %||% ""))
+    data_tok <- tolower(as.character((sel_entry$data_unavailable %||% row$data_unavailable[[1]]) %||% ""))
 
     output_exists <- tryCatch(
       replicate_fn(
@@ -7889,6 +8087,59 @@ server <- function(input, output, session) {
         )
       )
     }
+    engine_pick_icon <- function(eng) {
+      switch(
+        eng,
+        stata = engine_icon_stata(),
+        python = engine_icon_python(),
+        mathematica = engine_icon_mathematica(),
+        engine_icon_r()
+      )
+    }
+    engine_pick_label <- function(eng) {
+      switch(
+        eng,
+        stata = "Stata",
+        python = "Python",
+        mathematica = "Mathematica",
+        "R"
+      )
+    }
+    engine_pick_btn <- function(eng) {
+      active <- identical(engine, eng)
+      btn_class <- paste(
+        "engine-pick",
+        if (active) "is-active" else "is-inactive"
+      )
+      eng_label <- engine_pick_label(eng)
+      tags$button(
+        type = "button",
+        class = btn_class,
+        title = eng_label,
+        `aria-label` = paste0("Use ", eng_label, " replication"),
+        `aria-pressed` = if (active) "true" else "false",
+        onclick = sprintf(
+          "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
+          group, eng
+        ),
+        engine_pick_icon(eng)
+      )
+    }
+    # Clickable engine toggle (R | Stata | Mathematica | ...), one pill per
+    # declared engine - lets the user switch out of a blocked/incomplete
+    # engine (e.g. Mathematica original) into a runnable one (e.g. R).
+    # Available in BOTH the blocked and unblocked render branches below.
+    # (Python keeps its historical badge-only behavior when it is the sole
+    # engine in the group - unchanged from before this generalization.)
+    engine_picks <- tagList(
+      if (row_has_engine(row, "r")) engine_pick_btn("r"),
+      if (row_has_engine(row, "stata")) engine_pick_btn("stata"),
+      if (row_has_engine(row, "mathematica")) engine_pick_btn("mathematica"),
+      if (row_has_engine(row, "python") && !row_has_engine(row, "r") &&
+        !row_has_engine(row, "stata") && !row_has_engine(row, "mathematica")) {
+        tags$span(class = "engine-badge", title = "Python", engine_icon_python())
+      }
+    )
     if (is_blocked || is_data_gap || is_engine_gap) {
       blocked_msg <- gap$message
       if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
@@ -7915,7 +8166,9 @@ server <- function(input, output, session) {
         tags$span(label, class = "replication-label", title = label_full),
         tags$div(
           class = "replication-actions",
-          if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
+          if (row_engine_count(row) > 1L) {
+            engine_picks
+          } else if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
             tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
           },
           if (use_strikethrough) {
@@ -7954,33 +8207,6 @@ server <- function(input, output, session) {
         )
       ))
     }
-    engine_pick_btn <- function(eng) {
-      active <- identical(engine, eng)
-      btn_class <- paste(
-        "engine-pick",
-        if (active) "is-active" else "is-inactive"
-      )
-      icon <- if (eng == "r") engine_icon_r() else engine_icon_stata()
-      tags$button(
-        type = "button",
-        class = btn_class,
-        title = if (eng == "r") "R" else "Stata",
-        `aria-label` = if (eng == "r") "Use R replication" else "Use Stata replication",
-        `aria-pressed` = if (active) "true" else "false",
-        onclick = sprintf(
-          "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
-          group, eng
-        ),
-        icon
-      )
-    }
-    engine_picks <- tagList(
-      if (row_has_engine(row, "r")) engine_pick_btn("r"),
-      if (row_has_engine(row, "stata")) engine_pick_btn("stata"),
-      if (row_has_engine(row, "python") && !row_has_engine(row, "r") && !row_has_engine(row, "stata")) {
-        tags$span(class = "engine-badge", title = "Python", engine_icon_python())
-      }
-    )
     tags$div(
       class = row_class,
       tags$span(label, class = "replication-label", title = label_full),
@@ -8100,18 +8326,37 @@ server <- function(input, output, session) {
             safe_id <- gsub("[^a-zA-Z0-9]", "_", step_id)
             req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
             data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
-            engine_badge <- tagList(
-              switch(
-                step_engine,
-                stata = tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
-                python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
-                tags$span(class = "engine-badge", title = "R", engine_icon_r())
-              ),
+            step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
+            # A requires_engine naming a proprietary tool (Mathematica, ...) is
+            # this step's true identity for display, even when it is
+            # technically dispatched via Stata/R glue code. For a blocked step,
+            # show only the missing-tool badge - never also the dispatch
+            # engine - so e.g. a Mathematica-only step never also looks like a
+            # runnable Stata step (see onboarding_notes/openicpsr-aer-239169.md).
+            system_engine_req <- nzchar(req_eng) && !req_eng %in% c("r", "stata", "python")
+            engine_badge <- if (step_blocked && system_engine_req) {
               if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
                 tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+              } else {
+                tags$span(
+                  class = "engine-badge",
+                  title = "Missing system engine",
+                  engine_icon_missing_engine()
+                )
               }
-            )
-            step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
+            } else {
+              tagList(
+                switch(
+                  step_engine,
+                  stata = tags$span(class = "engine-badge", title = "Stata", engine_icon_stata()),
+                  python = tags$span(class = "engine-badge", title = "Python", engine_icon_python()),
+                  tags$span(class = "engine-badge", title = "R", engine_icon_r())
+                ),
+                if (req_eng %in% c("mathematica", "wolfram", "wolframscript")) {
+                  tags$span(class = "engine-badge", title = "Mathematica", engine_icon_mathematica())
+                }
+              )
+            }
             step_blocked_reason <- as.character(row$blocked_reason[[1]] %||% "")
             if (!nzchar(step_blocked_reason)) {
               step_blocked_reason <- "This step cannot be run for this study - see the study notes."

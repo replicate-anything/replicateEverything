@@ -303,22 +303,34 @@ shiny_studies_record_from_row <- function(
     ""
   }
   paper_study_url <- ""
-  source_repository <- ""
+  source_repositories <- character(0)
   if (is.list(meta) && is.list(meta$paper)) {
     paper_study_url <- trimws(as.character(meta$paper$study_url %||% ""))
-    source_repository <- paper_source_repository(paper = meta$paper) %||% ""
+    source_repositories <- paper_source_repositories(paper = meta$paper)
   }
   if (!nzchar(study_url) && nzchar(paper_study_url)) {
     study_url <- paper_study_url
   }
   # Prefer index column when present (future-proof); stubs remain the source of truth.
-  if (!nzchar(source_repository) && "source_repository" %in% names(row)) {
-    source_repository <- trimws(as.character(index_row_field(row, "source_repository", "")))
+  if (!length(source_repositories) && "source_repository" %in% names(row)) {
+    source_repositories <- normalize_source_repository_values(
+      index_row_field(row, "source_repository", "")
+    )
+  }
+  source_repository <- if (length(source_repositories)) {
+    source_repositories[[1L]]
+  } else {
+    ""
   }
   source_kind <- if (nzchar(source_repository)) {
     source_repository_kind(source_repository)
   } else {
     ""
+  }
+  source_kinds <- if (length(source_repositories)) {
+    vapply(source_repositories, source_repository_kind, character(1))
+  } else {
+    character(0)
   }
 
   list(
@@ -342,6 +354,8 @@ shiny_studies_record_from_row <- function(
     study_url = study_url,
     source_repository = source_repository,
     source_repository_kind = source_kind,
+    source_repositories = as.list(source_repositories),
+    source_repository_kinds = as.list(source_kinds),
     maintainer_name = index_row_field(row, "maintainer_name", ""),
     maintainer_email = index_row_field(row, "maintainer_email", "")
   )

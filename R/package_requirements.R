@@ -137,7 +137,14 @@ doi_to_registry_folder <- function(doi) {
 registry_stub_from_package_meta <- function(meta, package_folder = NULL) {
   paper <- meta$paper
   pkg_repo <- as.character((meta$repo %||% paper$package_repo)[[1]])
-  source_repository <- paper_source_repository(paper = paper)
+  source_repositories <- paper_source_repositories(paper = paper)
+  source_repository <- if (!length(source_repositories)) {
+    NULL
+  } else if (length(source_repositories) == 1L) {
+    source_repositories[[1L]]
+  } else {
+    as.list(source_repositories)
+  }
   stub_paper <- list(
     doi = paper$doi,
     title = paper$title,

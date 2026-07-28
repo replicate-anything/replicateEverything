@@ -22,7 +22,8 @@ lookup_replication_audit_runtime(
 }
 \value{
 List with \code{available}, \code{seconds}, \code{runtime_category},
-\code{advice}, \code{timed_out}, and matching \code{object}.
+\code{advice}, \code{timed_out}, \code{timeout_seconds}, and matching
+\code{object}.
 }
 \description{
 Reads the registry \code{audit_latest.rds} snapshot when available and returns
