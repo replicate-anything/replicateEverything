@@ -54,6 +54,12 @@ reference:
   desc: Package overview.
   contents:
   - replicateEverything-package
+- title: Run & inspect
+  desc: Run tables and figures and read the code behind them.
+  contents:
+  - run_replication
+  - get_code
+  - describe_study_dag
 - title: Discovery
   desc: Find studies and inspect replication metadata.
   contents:
@@ -69,12 +75,6 @@ reference:
   - source_repository_kind
   - source_repository_href
   - registry_source_repository_gaps
-- title: Run & inspect
-  desc: Run tables and figures and read the code behind them.
-  contents:
-  - run_replication
-  - get_code
-  - describe_study_dag
 - title: 'Contribute: build & check'
   desc: Bake precomputed outputs and validate a study repo before registration.
   contents:

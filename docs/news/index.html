@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.21</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,37 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.21" id="replicateeverything-0721">replicateEverything 0.7.21<a class="anchor" aria-label="anchor" href="#replicateeverything-0721"></a></h2>
+<div class="section level3">
+<h3 id="shiny-package-brand-link-pkgdown-run--inspect-first-0-7-21">Shiny: package brand link; pkgdown Run &amp; inspect first<a class="anchor" aria-label="anchor" href="#shiny-package-brand-link-pkgdown-run--inspect-first-0-7-21"></a></h3>
+<ul><li>
+<strong>UX:</strong> Top-left <code>replicateEverything</code> brand in the Shiny app links to the pkgdown site ([PKGDOCS_URL]) in a new tab (no underline clutter).</li>
+<li>
+<strong>Docs:</strong> pkgdown reference index puts <strong>Run &amp; inspect</strong> ahead of <strong>Discovery</strong> (most-used verbs first).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-study-share-link-in-summary-header-0-7-21">Shiny: study share link in summary header<a class="anchor" aria-label="anchor" href="#shiny-study-share-link-in-summary-header-0-7-21"></a></h3>
+<ul><li>
+<strong>UX:</strong> The public study share/chain icon is study-level, not table/figure-level. It no longer repeats on every left-menu step row; it sits once with the other chrome icons to the right of the study summary title (DOI-driven deep link via [share_link_ui()]).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="shiny-fix-inverted-display-enablement-hourglass-for-audit-timeout-runs-0-7-21">Shiny: fix inverted Display enablement; hourglass for audit-timeout Runs<a class="anchor" aria-label="anchor" href="#shiny-fix-inverted-display-enablement-hourglass-for-audit-timeout-runs-0-7-21"></a></h3>
+<ul><li>
+<strong>Bug fix:</strong> Display enablement no longer uses <code>output_exists || engine/data gap</code>. That rule greyd available prep steps without html/png sinks (Hahn: <code>clean_data</code> / <code>macros</code> / <code>compute_mvpf_no_lbd</code>) while leaving the Mathematica-blocked step (<code>compute_mvpf_main</code>) clickable. [shiny_step_show_display()] omits <strong>Display</strong> for gap/incomplete rows without a sink (padlock / wrench still open <strong>Code</strong>), keeps Display for runnable steps and for gaps that have a baked artifact.</li>
+<li>
+<strong>UX / helpers:</strong> [shiny_step_long_run_indicator()] shows a sand hourglass beside <strong>Run</strong> when a Display sink exists, registry audit timed out, and the step is otherwise runnable (no padlock / wrench gap). Lengthy tooltip / progress copy comes from [format_long_run_warning()] using <code>timeout_seconds</code> when available.</li>
+<li>
+<strong>Audit:</strong> [lookup_replication_audit_runtime()] returns <code>timeout_seconds</code> and treats timed-out rows as <code>runtime_category = "slow"</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.20" id="replicateeverything-0720">replicateEverything 0.7.20<a class="anchor" aria-label="anchor" href="#replicateeverything-0720"></a></h2>
+<div class="section level3">
+<h3 id="format_for_display-keeps-replicate_study_root-0-7-20">format_for_display keeps REPLICATE_STUDY_ROOT<a class="anchor" aria-label="anchor" href="#format_for_display-keeps-replicate_study_root-0-7-20"></a></h3>
+<ul><li>Live Run formatting now keeps <code>REPLICATE_STUDY_ROOT</code> set while calling study <code>format_*</code> helpers (same as the analysis step). Without this, helpers that resolve <code>outputs/staging/*.tex</code> via that env var failed and Stata tables fell back to raw <code>.tex</code> in a <code>&lt;pre&gt;</code> on Run (Display baked HTML was fine).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.19" id="replicateeverything-0719">replicateEverything 0.7.19<a class="anchor" aria-label="anchor" href="#replicateeverything-0719"></a></h2>
 <div class="section level3">

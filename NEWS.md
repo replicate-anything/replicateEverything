@@ -1,5 +1,12 @@
 # replicateEverything 0.7.21
 
+## Shiny: package brand link; pkgdown Run & inspect first
+
+* **UX:** Top-left `replicateEverything` brand in the Shiny app links to the
+  pkgdown site ([PKGDOCS_URL]) in a new tab (no underline clutter).
+* **Docs:** pkgdown reference index puts **Run & inspect** ahead of
+  **Discovery** (most-used verbs first).
+
 ## Shiny: study share link in summary header
 
 * **UX:** The public study share/chain icon is study-level, not

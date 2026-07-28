@@ -44,8 +44,12 @@ app_favicon_tags <- function() {
 }
 
 app_brand_title <- function() {
-  tags$span(
+  tags$a(
+    href = PKGDOCS_URL,
+    target = "_blank",
+    rel = "noopener noreferrer",
     class = "app-brand d-inline-flex align-items-center",
+    title = "Package documentation",
     tags$img(
       src = APP_HEX_LOGO,
       height = "32",
@@ -5908,6 +5912,16 @@ ui <- tagList(
       background: transparent;
       border: none;
       padding: 0;
+    }
+    .app-brand {
+      color: inherit;
+      text-decoration: none;
+    }
+    .app-brand:hover,
+    .app-brand:focus {
+      color: inherit;
+      text-decoration: none;
+      opacity: 0.85;
     }
     .app-brand-icon {
       height: 32px;
