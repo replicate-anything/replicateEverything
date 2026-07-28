@@ -4,7 +4,7 @@
 \alias{stata_runner_lines}
 \title{Build the do-file lines for the package's generated Stata batch runner}
 \usage{
-stata_runner_lines(do_in_do, wd_in_do, staging_dir = NULL)
+stata_runner_lines(do_in_do, wd_in_do, staging_dir = NULL, log_in_do = NULL)
 }
 \arguments{
 \item{do_in_do}{Do-file path already escaped/formatted for use inside a

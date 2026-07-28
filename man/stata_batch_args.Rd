@@ -13,16 +13,18 @@ stata_batch_args(do_path)
 Character vector of arguments for \code{system2()}.
 }
 \description{
-Windows: \code{/e /i /q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
+Windows: \code{/q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
 }
 \details{
-On Windows, \code{/e} exits when the job finishes (no end-of-job OK click).
-\code{/i} suppresses the Stata taskbar icon (Stata Getting Started with
-Windows (GSW) manual B.5). Without \code{/i},
-the icon appears for the whole run; clicking it opens "cancel the batch
-job?", which injects \code{--Break--} / \code{r(1)} and then cascades
-"Would you like the batch job to continue?" dialogs as nested do-files
-unwind. \code{/q} suppresses the logo. Paths with spaces are shortened on
-Windows when possible.
+On Windows we deliberately avoid \code{/e} and \code{/b}. Those flags put
+Stata into batch mode, which \emph{silently ignores} \code{shell} /
+\code{winexec} ("request ignored because of batch mode"). That breaks any
+study that shells out (Hahn LBD \code{shell Rscript}, Wolfram, etc.).
+StataCorp's recommended workaround is a normal \code{do} launch with
+\code{exit, clear STATA} at the end of the generated runner (see
+\code{stata_runner_lines()}). \code{/q} suppresses the logo. The GUI is
+kept off the desktop via processx \code{windows_hide} (and a best-effort
+\code{window manage minimize} in the runner). Paths with spaces are
+shortened on Windows when possible.
 }
 \keyword{internal}

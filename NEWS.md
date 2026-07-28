@@ -1,3 +1,18 @@
+# replicateEverything 0.7.26
+
+## Shiny path boxes: paired language icons + yaml-order Data steps
+
+* **Shiny:** multi-language path alternatives render as **paired-icon boxes**
+  (e.g. Stata+R icons inside one control, Stata+Mathematica in another), not
+  a single misleading engine pill. Incomplete / `requires_engine:` paths are
+  dashed+greyed but stay selectable so Code remains reachable; Display / Run
+  still follow [shiny_step_show_display()] / wrench gap rules for the active
+  path only.
+* **Shiny:** Data steps follow yaml / DAG declaration order via
+  [replication_sidebar_data_order()] — promoted multi-path transforms are
+  interleaved with ordinary prep rows (not forced first). Shared `group:`
+  siblings collapse to one sidebar key (no duplicate claim rows).
+
 # replicateEverything 0.7.25
 
 ## Multi-language path alternatives (Shiny + yaml)
@@ -9,7 +24,7 @@
 * **Shiny:** path groups render as labelled boxes (`[Stata / R]` |
   `[Stata / Mathematica]`); selection drives Display / Run / Code. Gap paths
   reuse [shiny_step_show_display()] / wrench helpers (Code visible; no false
-  Display). Promoted multi-path transforms appear under Data steps.
+  Display). Multi-path transforms stay under Data steps in yaml order.
 * **Resolve:** `language = "r"` / `"mathematica"` selects by path languages
   even when `engine: stata`.
 

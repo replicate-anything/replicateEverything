@@ -176,8 +176,11 @@ orchestrator + R kernel vs Stata + Mathematica kernel):
 
 - Reuse existing `group:` (same claim). Each sibling keeps its own `id`,
   `engine`, `code`, `outputs`, and gap fields.
-- Per-path `languages:` drives Shiny **path boxes** (`[Stata / R]` |
+- Per-path `languages:` drives Shiny **path boxes** (paired language icons
+  inside a bordered control; tooltips / a11y use `[Stata / R]` |
   `[Stata / Mathematica]`). Selection drives Display / Run / Code.
+  Multi-path transform groups stay under **Data steps** in yaml / DAG order
+  (not promoted ahead of ordinary prep).
 - Gap paths reuse `incomplete:` + `requires_engine:` — wrench in Run slot;
   [shiny_step_show_display()] omits Display when there is no sink; Code stays
   available.

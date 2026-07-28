@@ -135,3 +135,40 @@ test_that("shiny_step_show_display still omits Display for mathematica path gaps
     incomplete = TRUE
   ))
 })
+
+test_that("replication_sidebar_data_order follows yaml order and collapses groups", {
+  reps <- list(
+    list(id = "clean_data", type = "transform", engine = "stata"),
+    list(id = "macros", type = "transform", engine = "stata", parents = list("clean_data")),
+    list(
+      id = "cost_curve_data_r",
+      type = "transform",
+      engine = "r"
+    ),
+    list(
+      id = "compute_mvpf_main",
+      group = "compute_mvpf_main",
+      type = "transform",
+      engine = "stata",
+      languages = list("stata", "r")
+    ),
+    list(
+      id = "compute_mvpf_main_mathematica",
+      group = "compute_mvpf_main",
+      type = "transform",
+      engine = "stata",
+      languages = list("stata", "mathematica"),
+      incomplete = TRUE
+    ),
+    list(id = "tab_1", type = "table", engine = "stata", parents = list("compute_mvpf_main"))
+  )
+  expect_equal(
+    replication_sidebar_data_order(reps),
+    c("clean_data", "macros", "cost_curve_data_r", "compute_mvpf_main")
+  )
+  # Multi-path group appears once (not before prep).
+  expect_equal(
+    which(replication_sidebar_data_order(reps) == "compute_mvpf_main"),
+    4L
+  )
+})

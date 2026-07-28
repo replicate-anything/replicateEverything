@@ -39,8 +39,8 @@ shared `group:`; Shiny shows engine icon pills.
 
 **Multi-language paths** (one claim, paths that each use multiple languages):
 same `group:`, plus per-path `languages:` (e.g. `[stata, r]` vs
-`[stata, mathematica]`). Shiny shows path boxes (`[Stata / R]` |
-`[Stata / Mathematica]`); gap paths use `incomplete:` + `requires_engine:` as
+`[stata, mathematica]`). Shiny shows **paired-icon path boxes** (Stata+R vs
+Stata+Mathematica); gap paths use `incomplete:` + `requires_engine:` as
 usual. See `folder_replication.md` § Multi-language path alternatives.
 
 Until uniqueness of `precedent:` is validated, list preferred path first (or

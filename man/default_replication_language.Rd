@@ -12,9 +12,11 @@ default_replication_language(entries, paper_meta = NULL)
 \item{paper_meta}{Optional paper-level metadata.}
 }
 \value{
-\code{"r"} or \code{"stata"}.
+\code{"r"}, \code{"stata"}, \code{"python"}, or \code{"mathematica"}.
 }
 \description{
-Prefers R when available, otherwise Stata.
+Prefers a runnable multi-language path whose languages include R when
+\code{\link[=group_uses_path_boxes]{group_uses_path_boxes()}} applies; otherwise prefers an R dispatch engine,
+then Stata.
 }
 \keyword{internal}

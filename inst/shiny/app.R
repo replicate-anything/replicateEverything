@@ -4419,11 +4419,36 @@ get_replications_meta <- function(doi, folder = NULL, repo = NULL) {
     diagnostics$error_message <- conditionMessage(load_error)
   }
 
-  split <- split_replication_entries(replications %||% list())
+  all_reps <- replications %||% list()
+  split <- split_replication_entries(all_reps)
+  data_order <- tryCatch(
+    replicate_fn("replication_sidebar_data_order", all_reps),
+    error = function(e) {
+      # Fallback: prep ids then promoted transform groups (never promote-first).
+      prep_ids <- vapply(split$prep, function(x) {
+        as.character(x$id[[1]] %||% x$id %||% "")
+      }, character(1))
+      prom_keys <- character(0)
+      for (x in split$replications) {
+        type <- tolower(as.character(x$type %||% ""))
+        if (!type %in% c("step", "prep", "pipeline", "transform")) {
+          next
+        }
+        grp <- as.character(x$group[[1]] %||% x$group %||% "")
+        id <- as.character(x$id[[1]] %||% x$id %||% "")
+        key <- if (nzchar(grp)) grp else id
+        if (nzchar(key) && !key %in% prom_keys) {
+          prom_keys <- c(prom_keys, key)
+        }
+      }
+      unique(c(prep_ids[nzchar(prep_ids)], prom_keys))
+    }
+  )
 
   list(
     replications = split$replications,
     prep = split$prep,
+    data_order = data_order,
     error = if (replication_display_count(split$replications) == 0L) load_error else NULL,
     diagnostics = diagnostics
   )
@@ -6277,18 +6302,31 @@ ui <- tagList(
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 0.12rem 0.4rem;
+      gap: 0.18rem;
+      padding: 0.1rem 0.28rem;
       margin: 0;
       border: 1px solid rgba(108, 117, 125, 0.45);
       border-radius: 0.3rem;
       background: #fff;
       color: #343a40;
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       font-weight: 600;
-      line-height: 1.2;
+      line-height: 1;
       letter-spacing: 0.01em;
       white-space: nowrap;
       cursor: pointer;
+    }
+    .path-pick .path-pick-icons {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.12rem;
+    }
+    .path-pick .path-pick-sep {
+      color: rgba(108, 117, 125, 0.85);
+      font-weight: 700;
+      font-size: 0.72rem;
+      line-height: 1;
+      user-select: none;
     }
     .path-pick.is-active {
       border-color: rgba(13, 110, 253, 0.85);
@@ -6301,6 +6339,34 @@ ui <- tagList(
     }
     .path-pick.is-inactive:hover {
       opacity: 0.85;
+    }
+    /* Incomplete / missing-engine path: stay clickable (Code) but look greyed */
+    .path-pick.is-unavailable {
+      opacity: 0.42;
+      filter: grayscale(0.55);
+      border-style: dashed;
+    }
+    .path-pick.is-unavailable.is-active {
+      opacity: 0.72;
+      filter: grayscale(0.25);
+      border-color: rgba(180, 83, 9, 0.75);
+      box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.2);
+      background: rgba(180, 83, 9, 0.06);
+      color: #92400e;
+    }
+    .path-pick.is-unavailable:hover {
+      opacity: 0.7;
+    }
+    .path-pick .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
     }
     .engine-icons-cell {
       display: inline-flex;
@@ -7452,6 +7518,7 @@ server <- function(input, output, session) {
     state$replications <- meta$replications
     state$prep_steps <- meta$prep %||% list()
     state$prep_df <- prep_to_df(state$prep_steps)
+    state$data_step_order <- meta$data_order %||% character(0)
     state$replications_load_error <- meta$error
     if (
       is.null(state$replications_load_error) &&
@@ -8276,6 +8343,11 @@ server <- function(input, output, session) {
         replicate_fn("step_path_languages", entry),
         error = function(e) entry_engine(entry)
       )
+      langs <- unique(tolower(trimws(as.character(langs %||% character(0)))))
+      langs <- langs[nzchar(langs)]
+      if (length(langs) == 0L) {
+        langs <- entry_engine(entry)
+      }
       box_lab <- tryCatch(
         replicate_fn("format_path_languages_box_label", langs),
         error = function(e) paste0("[", paste(langs, collapse = " / "), "]")
@@ -8285,24 +8357,60 @@ server <- function(input, output, session) {
         error = function(e) paste(langs, collapse = " / ")
       )
       active <- identical(engine, sel)
+      entry_incomplete <- isTRUE(entry$incomplete %||% FALSE)
+      req_tok <- tolower(as.character(
+        entry$requires_engine[[1]] %||% entry$requires_engine %||% ""
+      ))
+      path_unavailable <- entry_incomplete || (
+        nzchar(req_tok) && !req_tok %in% c("r", "stata", "python")
+      )
+      # Paired language icons inside a bordered box (e.g. Stata + R), with
+      # bracketed label chrome as accessible name / tooltip.
+      icon_nodes <- list()
+      for (i in seq_along(langs)) {
+        tok <- langs[[i]]
+        icon_nodes[[length(icon_nodes) + 1L]] <- tags$span(
+          class = "engine-badge",
+          title = engine_pick_label(tok),
+          engine_pick_icon(tok)
+        )
+        if (i < length(langs)) {
+          icon_nodes[[length(icon_nodes) + 1L]] <- tags$span(
+            class = "path-pick-sep",
+            "/",
+            `aria-hidden` = "true"
+          )
+        }
+      }
       tags$button(
         type = "button",
         class = paste(
           "path-pick",
-          if (active) "is-active" else "is-inactive"
+          if (active) "is-active" else "is-inactive",
+          if (path_unavailable) "is-unavailable" else NULL
         ),
-        title = plain_lab,
-        `aria-label` = paste0("Use ", plain_lab, " path"),
+        title = if (path_unavailable) {
+          paste0(plain_lab, " (unavailable)")
+        } else {
+          plain_lab
+        },
+        `aria-label` = paste0(
+          "Use ", plain_lab, " path",
+          if (path_unavailable) " (unavailable)" else ""
+        ),
         `aria-pressed` = if (active) "true" else "false",
         onclick = sprintf(
           "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
           group, sel
         ),
-        box_lab
+        tags$span(class = "path-pick-icons", do.call(tagList, icon_nodes)),
+        # Keep bracketed text for screen readers / clear chrome; visually the
+        # paired icons are the primary signal.
+        tags$span(class = "visually-hidden", box_lab)
       )
     }
-    # Path boxes ([Stata / R] | [Stata / Mathematica]) when yaml declares
-    # multi-language path alternatives; otherwise classic engine icon pills.
+    # Path boxes (paired icons for [Stata / R] | [Stata / Mathematica]) when
+    # yaml declares multi-language path alternatives; otherwise classic pills.
     engine_picks <- if (path_mode) {
       ents <- row$entries[[1]]
       do.call(tagList, lapply(ents, path_box_btn))
@@ -8494,25 +8602,13 @@ server <- function(input, output, session) {
     tabs <- reps[reps$type == "table", , drop = FALSE]
     transforms <- reps[reps$type == "transform", , drop = FALSE]
     active <- state$selected_replication
+    prep_df <- state$prep_df
+    has_prep <- !is.null(prep_df) && nrow(prep_df) > 0
+    has_transforms <- !is.null(transforms) && nrow(transforms) > 0
 
-    tagList(
-      if ((!is.null(state$prep_df) && nrow(state$prep_df) > 0) ||
-          (!is.null(transforms) && nrow(transforms) > 0)) {
-        tagList(
-          tags$h6(class = "text-muted mb-2", "Data steps"),
-          if (!is.null(transforms) && nrow(transforms) > 0) {
-            lapply(seq_len(nrow(transforms)), function(i) {
-              row <- transforms[i, , drop = FALSE]
-              replication_row(
-                row,
-                active_id = active,
-                engine = group_engine(row$group[[1]], row)
-              )
-            })
-          },
-          if (!is.null(state$prep_df) && nrow(state$prep_df) > 0) {
-            lapply(seq_len(nrow(state$prep_df)), function(i) {
-            row <- state$prep_df[i, , drop = FALSE]
+    # Data steps follow yaml/DAG order (via replication_sidebar_data_order),
+    # not "promoted multi-path transforms first then prep".
+    render_prep_row <- function(row) {
             step_id <- row$id[[1]]
             step_engine <- row$engine[[1]] %||% "r"
             safe_id <- gsub("[^a-zA-Z0-9]", "_", step_id)
@@ -8746,8 +8842,60 @@ server <- function(input, output, session) {
                 }
               )
             )
-          })
-          }
+    }
+
+    data_step_uis <- list()
+    if (has_prep || has_transforms) {
+      order_keys <- as.character(state$data_step_order %||% character(0))
+      order_keys <- order_keys[nzchar(order_keys)]
+      seen_keys <- character(0)
+      append_key <- function(key, ui) {
+        if (!nzchar(key) || key %in% seen_keys) {
+          return(invisible(NULL))
+        }
+        seen_keys <<- c(seen_keys, key)
+        data_step_uis[[length(data_step_uis) + 1L]] <<- ui
+        invisible(NULL)
+      }
+      for (key in order_keys) {
+        if (has_transforms && key %in% transforms$group) {
+          row <- transforms[transforms$group == key, , drop = FALSE][1, , drop = FALSE]
+          append_key(key, replication_row(
+            row,
+            active_id = active,
+            engine = group_engine(row$group[[1]], row)
+          ))
+        } else if (has_prep && key %in% prep_df$id) {
+          row <- prep_df[prep_df$id == key, , drop = FALSE][1, , drop = FALSE]
+          append_key(key, render_prep_row(row))
+        }
+      }
+      # Safety: any leftover rows not covered by data_order (should be rare).
+      if (has_transforms) {
+        for (i in seq_len(nrow(transforms))) {
+          row <- transforms[i, , drop = FALSE]
+          key <- as.character(row$group[[1]] %||% "")
+          append_key(key, replication_row(
+            row,
+            active_id = active,
+            engine = group_engine(row$group[[1]], row)
+          ))
+        }
+      }
+      if (has_prep) {
+        for (i in seq_len(nrow(prep_df))) {
+          row <- prep_df[i, , drop = FALSE]
+          key <- as.character(row$id[[1]] %||% "")
+          append_key(key, render_prep_row(row))
+        }
+      }
+    }
+
+    tagList(
+      if (length(data_step_uis) > 0L) {
+        tagList(
+          tags$h6(class = "text-muted mb-2", "Data steps"),
+          data_step_uis
         )
       },
       if (nrow(tabs) > 0) {

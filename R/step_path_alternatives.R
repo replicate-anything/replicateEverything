@@ -238,6 +238,44 @@ path_selector_language <- function(entry, siblings = list()) {
   langs[[1]]
 }
 
+#' Sidebar keys for Data steps in yaml / DAG declaration order
+#'
+#' Returns unique \code{group:} (or \code{id} when ungrouped) keys for
+#' transform/prep steps, preserving first-appearance order in \code{reps}.
+#' Multi-path siblings that share a \code{group:} collapse to one key so the
+#' Shiny sidebar does not list the claim twice. Used to interleave promoted
+#' path-group transforms with ordinary prep rows instead of rendering
+#' multi-path groups first.
+#'
+#' @param reps List of replication / step entries (yaml order).
+#' @return Character vector of sidebar keys.
+#' @keywords internal
+replication_sidebar_data_order <- function(reps) {
+  if (is.null(reps) || !length(reps)) {
+    return(character(0))
+  }
+  keys <- character(0)
+  for (x in reps) {
+    if (!is.list(x)) {
+      next
+    }
+    type <- tolower(as.character(x$type %||% ""))
+    if (!type %in% c("step", "prep", "pipeline", "transform")) {
+      next
+    }
+    grp <- as.character(x$group[[1]] %||% x$group %||% "")
+    id <- as.character(x$id[[1]] %||% x$id %||% "")
+    key <- if (nzchar(grp)) grp else id
+    if (!nzchar(key)) {
+      next
+    }
+    if (!key %in% keys) {
+      keys <- c(keys, key)
+    }
+  }
+  keys
+}
+
 #' Pick a path entry from a sibling list by selector language
 #' @keywords internal
 pick_path_entry <- function(entries, selector = NULL) {
