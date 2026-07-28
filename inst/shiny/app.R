@@ -2196,6 +2196,46 @@ engine_icon_missing_engine <- function() {
   )
 }
 
+# Sand hourglass for steps that timed out in audit but still have a Display sink.
+engine_icon_long_run <- function() {
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    viewBox = "0 0 24 24",
+    width = "18",
+    height = "18",
+    `aria-hidden` = "true",
+    tags$circle(cx = "12", cy = "12", r = "11", fill = "#92400E"),
+    # Classic hourglass (top/bottom bulbs + mid neck)
+    tags$path(
+      d = paste(
+        "M8 6.5 h8 v1.2 c0 1.1-0.6 2.1-1.5 2.7 L12 12",
+        "l-2.5-1.6 C8.6 9.8 8 8.8 8 7.7 Z",
+        "M8 17.5 h8 v-1.2 c0-1.1-0.6-2.1-1.5-2.7 L12 12",
+        "l-2.5 1.6 C8.6 14.2 8 15.2 8 16.3 Z"
+      ),
+      fill = "#FDE68A",
+      stroke = "#ffffff",
+      `stroke-width` = "0.9",
+      `stroke-linejoin` = "round"
+    )
+  )
+}
+
+#' Decorative mark beside Run when audit timed out (long live run)
+run_long_run_mark <- function(title) {
+  msg <- trimws(as.character(title %||% ""))
+  if (!nzchar(msg)) {
+    msg <- "This step may take a long time to Run."
+  }
+  tags$span(
+    class = "run-long-run-mark",
+    title = msg,
+    `aria-label` = msg,
+    role = "img",
+    engine_icon_long_run()
+  )
+}
+
 engine_icons_display <- function(
   has_r = FALSE,
   has_stata = FALSE,
@@ -6060,6 +6100,18 @@ ui <- tagList(
       background: rgba(180, 83, 9, 0.08);
       color: #92400e;
     }
+    .replication-row .run-long-run-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+      cursor: help;
+      opacity: 0.95;
+    }
+    .replication-row .run-long-run-mark:hover,
+    .replication-row .run-long-run-mark:focus {
+      opacity: 1;
+    }
     .replication-row .run-unavailable-lock:hover,
     .replication-row .run-unavailable-lock:focus {
       background: rgba(107, 114, 128, 0.16);
@@ -7791,8 +7843,19 @@ server <- function(input, output, session) {
     is_engine_gap <- identical(gap$kind, "hammer")
     # Strikethrough only for generic incomplete (neither padlock nor hammer).
     use_strikethrough <- is_blocked && !is_data_gap && !is_engine_gap
-    # Display is enabled when a sink exists, or for gap steps (clean gap message).
-    displayable <- isTRUE(output_exists) || is_data_gap || is_engine_gap || use_strikethrough
+    # Display only when a sink exists for gap/incomplete rows; omit otherwise
+    # (no greyed false affordance). Normal runnable rows keep Display.
+    displayable <- tryCatch(
+      isTRUE(replicate_fn(
+        "shiny_step_show_display",
+        output_exists = isTRUE(output_exists),
+        gap_kind = gap$kind,
+        incomplete = is_blocked
+      )),
+      error = function(e) {
+        isTRUE(output_exists) || (!is_data_gap && !is_engine_gap && !is_blocked)
+      }
+    )
     row_class <- paste(
       "replication-row d-flex align-items-center rounded",
       if (!is.null(active_id) && (identical(group, active_id) || identical(resolved_id, active_id))) {
@@ -7802,19 +7865,16 @@ server <- function(input, output, session) {
       },
       if (use_strikethrough) "is-blocked" else ""
     )
-    display_btn <- function(disabled = FALSE, title = NULL) {
+    display_btn <- function(title = NULL) {
       actionButton(
         paste0("display_", safe_group),
         "Display",
         class = "btn-outline-secondary btn-sm",
-        disabled = if (isTRUE(disabled)) "disabled" else NULL,
         title = title,
-        onclick = if (!isTRUE(disabled)) {
-          sprintf(
-            "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
-            group
-          )
-        }
+        onclick = sprintf(
+          "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
+          group
+        )
       )
     }
     if (is_blocked || is_data_gap || is_engine_gap) {
@@ -7853,14 +7913,15 @@ server <- function(input, output, session) {
               if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
             )
           },
-          display_btn(
-            disabled = !isTRUE(displayable),
-            title = if (isTRUE(output_exists)) {
-              paste0(blocked_msg, " (baked output can still be shown)")
-            } else {
-              blocked_msg
-            }
-          ),
+          if (isTRUE(displayable)) {
+            display_btn(
+              title = if (isTRUE(output_exists) && (is_data_gap || is_engine_gap || use_strikethrough)) {
+                paste0(blocked_msg, " (baked output can still be shown)")
+              } else {
+                blocked_msg
+              }
+            )
+          },
           if (is_data_gap) {
             run_unavailable_padlock_button(group, blocked_msg, data_tok)
           } else if (is_engine_gap) {
@@ -7938,6 +7999,7 @@ server <- function(input, output, session) {
         ),
         if (shiny_live_run_enabled()) {
           run_title <- "Run live replication"
+          long_mark <- NULL
           rt <- tryCatch(
             replicate_fn(
               "lookup_replication_audit_runtime",
@@ -7950,14 +8012,35 @@ server <- function(input, output, session) {
           if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
             run_title <- rt$advice
           }
-          actionButton(
-            paste0("replicate_", safe_group),
-            "Run",
-            class = "btn-primary btn-sm",
-            title = run_title,
-            onclick = sprintf(
-              "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
-              group
+          if (!is.null(rt) && isTRUE(rt$timed_out)) {
+            long_ind <- tryCatch(
+              replicate_fn(
+                "shiny_step_long_run_indicator",
+                output_exists = isTRUE(output_exists),
+                audit_timed_out = TRUE,
+                gap_kind = NULL,
+                incomplete = FALSE,
+                timeout_seconds = rt$timeout_seconds %||% NA_real_,
+                seconds = rt$seconds %||% NA_real_
+              ),
+              error = function(e) list(show = FALSE, title = "")
+            )
+            if (isTRUE(long_ind$show)) {
+              run_title <- long_ind$title %||% run_title
+              long_mark <- run_long_run_mark(long_ind$title)
+            }
+          }
+          tagList(
+            long_mark,
+            actionButton(
+              paste0("replicate_", safe_group),
+              "Run",
+              class = "btn-primary btn-sm",
+              title = run_title,
+              onclick = sprintf(
+                "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
+                group
+              )
             )
           )
         }
@@ -8085,8 +8168,18 @@ server <- function(input, output, session) {
             step_data_gap <- identical(step_gap$kind, "padlock")
             step_engine_gap <- identical(step_gap$kind, "hammer")
             step_strikethrough <- step_blocked && !step_data_gap && !step_engine_gap
-            step_displayable <- isTRUE(step_out_exists) ||
-              step_data_gap || step_engine_gap || step_strikethrough
+            step_displayable <- tryCatch(
+              isTRUE(replicate_fn(
+                "shiny_step_show_display",
+                output_exists = isTRUE(step_out_exists),
+                gap_kind = step_gap$kind,
+                incomplete = step_blocked
+              )),
+              error = function(e) {
+                isTRUE(step_out_exists) ||
+                  (!step_data_gap && !step_engine_gap && !step_blocked)
+              }
+            )
             if (!is.null(step_gap$message) && nzchar(as.character(step_gap$message))) {
               step_blocked_reason <- as.character(step_gap$message)
             } else if (step_blocked || step_data_gap || step_engine_gap) {
@@ -8129,25 +8222,29 @@ server <- function(input, output, session) {
                     if (isTRUE(step_out_exists)) "Not reproducible" else "Unavailable"
                   )
                 },
-                actionButton(
-                  paste0("data_display_", safe_id),
-                  "Display",
-                  class = "btn-outline-secondary btn-sm",
-                  disabled = if (!isTRUE(step_displayable)) "disabled" else NULL,
-                  title = if (step_blocked || step_data_gap || step_engine_gap) {
-                    step_blocked_reason
-                  } else {
-                    NULL
-                  },
-                  onclick = if (isTRUE(step_displayable)) {
-                    sprintf(
+                if (isTRUE(step_displayable)) {
+                  actionButton(
+                    paste0("data_display_", safe_id),
+                    "Display",
+                    class = "btn-outline-secondary btn-sm",
+                    title = if (step_blocked || step_data_gap || step_engine_gap) {
+                      if (isTRUE(step_out_exists)) {
+                        paste0(step_blocked_reason, " (baked output can still be shown)")
+                      } else {
+                        step_blocked_reason
+                      }
+                    } else {
+                      NULL
+                    },
+                    onclick = sprintf(
                       "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
                       step_id
                     )
-                  }
-                ),
+                  )
+                },
                 if (shiny_live_run_enabled() && !step_blocked && !step_data_gap && !step_engine_gap) {
                   step_run_title <- "Run live replication"
+                  step_long_mark <- NULL
                   step_rt <- tryCatch(
                     replicate_fn(
                       "lookup_replication_audit_runtime",
@@ -8161,14 +8258,35 @@ server <- function(input, output, session) {
                       nzchar(step_rt$advice %||% "")) {
                     step_run_title <- step_rt$advice
                   }
-                  actionButton(
-                    paste0("data_run_", safe_id),
-                    "Run",
-                    class = "btn-outline-primary btn-sm",
-                    title = step_run_title,
-                    onclick = sprintf(
-                      "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
-                      step_id
+                  if (!is.null(step_rt) && isTRUE(step_rt$timed_out)) {
+                    step_long <- tryCatch(
+                      replicate_fn(
+                        "shiny_step_long_run_indicator",
+                        output_exists = isTRUE(step_out_exists),
+                        audit_timed_out = TRUE,
+                        gap_kind = NULL,
+                        incomplete = FALSE,
+                        timeout_seconds = step_rt$timeout_seconds %||% NA_real_,
+                        seconds = step_rt$seconds %||% NA_real_
+                      ),
+                      error = function(e) list(show = FALSE, title = "")
+                    )
+                    if (isTRUE(step_long$show)) {
+                      step_run_title <- step_long$title %||% step_run_title
+                      step_long_mark <- run_long_run_mark(step_long$title)
+                    }
+                  }
+                  tagList(
+                    step_long_mark,
+                    actionButton(
+                      paste0("data_run_", safe_id),
+                      "Run",
+                      class = "btn-outline-primary btn-sm",
+                      title = step_run_title,
+                      onclick = sprintf(
+                        "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
+                        step_id
+                      )
                     )
                   )
                 } else if (step_data_gap) {
@@ -8409,13 +8527,45 @@ server <- function(input, output, session) {
       ),
       error = function(e) NULL
     )
-    if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
+    if (!is.null(rt) && isTRUE(rt$timed_out)) {
+      long_ind <- tryCatch(
+        replicate_fn(
+          "shiny_step_long_run_indicator",
+          output_exists = TRUE,
+          audit_timed_out = TRUE,
+          gap_kind = NULL,
+          incomplete = FALSE,
+          timeout_seconds = rt$timeout_seconds %||% NA_real_,
+          seconds = rt$seconds %||% NA_real_
+        ),
+        error = function(e) list(show = FALSE, title = "")
+      )
+      if (isTRUE(long_ind$show) && nzchar(long_ind$title %||% "")) {
+        run_msg <- paste0("Running live replication... ", long_ind$title)
+      } else if (nzchar(rt$advice %||% "")) {
+        run_msg <- paste0("Running live replication... ", rt$advice)
+      }
+    } else if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
       run_msg <- paste0("Running live replication... ", rt$advice)
     }
 
     tryCatch({
       withProgress(message = run_msg, value = 0.2, {
-        state$progress <- if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
+        state$progress <- if (!is.null(rt) && isTRUE(rt$timed_out)) {
+          long_title <- tryCatch(
+            replicate_fn(
+              "format_long_run_warning",
+              timeout_seconds = rt$timeout_seconds %||% NA_real_,
+              seconds = rt$seconds %||% NA_real_
+            ),
+            error = function(e) rt$advice %||% ""
+          )
+          if (nzchar(long_title)) {
+            paste0("Running replication — ", long_title)
+          } else {
+            "Running replication"
+          }
+        } else if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
           paste0("Running replication — ", rt$advice)
         } else {
           "Running replication"

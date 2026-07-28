@@ -321,7 +321,8 @@ audit_runtime_advice <- function(category, seconds = NULL) {
 #' @param engine Optional engine filter (\code{"r"}, \code{"stata"}, \code{"python"}).
 #' @param registry_root Optional registry root.
 #' @return List with \code{available}, \code{seconds}, \code{runtime_category},
-#'   \code{advice}, \code{timed_out}, and matching \code{object}.
+#'   \code{advice}, \code{timed_out}, \code{timeout_seconds}, and matching
+#'   \code{object}.
 #' @keywords internal
 lookup_replication_audit_runtime <- function(
   doi,
@@ -335,6 +336,7 @@ lookup_replication_audit_runtime <- function(
     runtime_category = NA_character_,
     advice = "",
     timed_out = FALSE,
+    timeout_seconds = NA_real_,
     object = NA_character_
   )
   snap <- tryCatch(
@@ -373,14 +375,28 @@ lookup_replication_audit_runtime <- function(
   if (!nrow(hit)) {
     return(empty)
   }
-  # Prefer a successful timed run when multiple rows match
+  # Prefer a successful timed run when multiple rows match; otherwise keep
+  # timeout / failure rows so Shiny can surface long-run chrome.
   prefer <- hit
   if ("success" %in% names(prefer) && any(prefer$success %in% TRUE)) {
     prefer <- prefer[prefer$success %in% TRUE, , drop = FALSE]
   }
   row <- prefer[1L, , drop = FALSE]
   seconds <- as.numeric(row$seconds[[1L]])
-  category <- if ("runtime_category" %in% names(row) &&
+  timed_out <- isTRUE(row$timed_out[[1L]])
+  timeout_seconds <- if ("timeout_seconds" %in% names(row)) {
+    as.numeric(row$timeout_seconds[[1L]])
+  } else {
+    NA_real_
+  }
+  if ((!is.finite(timeout_seconds) || timeout_seconds <= 0) &&
+      isTRUE(timed_out) &&
+      !is.null(snap$patience)) {
+    timeout_seconds <- as.numeric(snap$patience[[1L]] %||% snap$patience)
+  }
+  category <- if (isTRUE(timed_out)) {
+    "slow"
+  } else if ("runtime_category" %in% names(row) &&
     nzchar(as.character(row$runtime_category[[1L]] %||% ""))) {
     as.character(row$runtime_category[[1L]])
   } else {
@@ -391,7 +407,8 @@ lookup_replication_audit_runtime <- function(
     seconds = seconds,
     runtime_category = category,
     advice = audit_runtime_advice(category, seconds),
-    timed_out = isTRUE(row$timed_out[[1L]]),
+    timed_out = timed_out,
+    timeout_seconds = timeout_seconds,
     object = as.character(row$object[[1L]] %||% what)
   )
 }

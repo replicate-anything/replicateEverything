@@ -244,7 +244,8 @@ validate_single_output <- function(doi, what, repo = NULL, folder = NULL, langua
 #' Whether a step is exempt from baked Display-sink requirements
 #'
 #' Gap steps (\code{incomplete} / \code{data_unavailable} / \code{requires_engine})
-#' may omit display sinks; Shiny shows Code + a clean gap message instead.
+#' may omit display sinks; Shiny shows Code via the padlock / wrench Run slot
+#' and only keeps Display when a baked sink exists.
 #' @keywords internal
 step_exempt_from_display_sink <- function(entry) {
   if (is.null(entry) || !is.list(entry)) {

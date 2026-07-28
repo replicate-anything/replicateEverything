@@ -1,3 +1,23 @@
+# replicateEverything 0.7.21
+
+## Shiny: fix inverted Display enablement; hourglass for audit-timeout Runs
+
+* **Bug fix:** Display enablement no longer uses
+  `output_exists || engine/data gap`. That rule greyd available prep steps
+  without html/png sinks (Hahn: `clean_data` / `macros` /
+  `compute_mvpf_no_lbd`) while leaving the Mathematica-blocked step
+  (`compute_mvpf_main`) clickable. [shiny_step_show_display()] omits
+  **Display** for gap/incomplete rows without a sink (padlock / wrench still
+  open **Code**), keeps Display for runnable steps and for gaps that have a
+  baked artifact.
+* **UX / helpers:** [shiny_step_long_run_indicator()] shows a sand hourglass
+  beside **Run** when a Display sink exists, registry audit timed out, and the
+  step is otherwise runnable (no padlock / wrench gap). Lengthy tooltip /
+  progress copy comes from [format_long_run_warning()] using
+  `timeout_seconds` when available.
+* **Audit:** [lookup_replication_audit_runtime()] returns
+  `timeout_seconds` and treats timed-out rows as `runtime_category = "slow"`.
+
 # replicateEverything 0.7.20
 
 ## format_for_display keeps REPLICATE_STUDY_ROOT
