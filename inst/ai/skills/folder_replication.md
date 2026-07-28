@@ -223,13 +223,15 @@ sidebar and labels are unused there.
 | `id` | Stable key for code (`make_<id>`), DAG, Run, tests, inheritance |
 | `type` | `table` / `figure` / `transform` / `format` — sidebar + run behavior |
 | `label` | Short Display / DAG name (skip on format children) |
-| `description` | Longer caption: Shiny hover + Display title; prep caption parenthetical |
+| `description` | Longer caption: Shiny hover + Display title; prep caption parenthetical (keep short; truncated in UI) |
+| `path_note` | Optional short path-box caption (e.g. “R is a translation of Mathematica”); also preferred in prep Display captions |
 | `parents` | Upstream step ids (default none); raw `data/` files go in `inputs:` / `data:` |
 | `engine` | `r` (default), `stata`, or `python` |
 | `code` | Script path defining `make_*` / `format_*` |
 | `format` | `format_*` name or helper `.R` path (on the table/figure parent) |
 | `data` / `inputs` | Files loaded or declared as inputs |
 | `outputs` | Files written under `outputs/` (first displayable path is used for Shiny Display) |
+| `products` / `display_products` | Optional real data products for Display when `outputs:` is a `.done` marker |
 | `dependencies` | Step-level R packages (unioned with `paper.dependencies`) |
 | `incomplete` | `true` when the step cannot be produced here — **audit skips** (not success/fail) |
 | `requires_engine` | System engine token when missing engine is the block (`mathematica`, `matlab`, …) |

@@ -27,6 +27,14 @@ test_that("format_path_languages_box_label builds Shiny labels", {
   )
 })
 
+test_that("step_path_note surfaces yaml path_note", {
+  expect_equal(
+    step_path_note(list(path_note = "R is a translation of the original Mathematica LBD kernel")),
+    "R is a translation of the original Mathematica LBD kernel"
+  )
+  expect_equal(step_path_note(list()), "")
+})
+
 test_that("group_uses_path_boxes detects multi-language path groups", {
   sibs <- list(
     list(

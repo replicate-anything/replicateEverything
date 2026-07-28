@@ -209,3 +209,84 @@ test_that("registry audit summary paths resolve under registry root", {
     "audit_latest.rds"
   )
 })
+
+test_that("audit_progress_category buckets status fields", {
+  expect_equal(
+    replicateEverything:::audit_progress_category(success = TRUE),
+    "replicating"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_category(
+      success = FALSE,
+      timed_out = TRUE
+    ),
+    "timed_out"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_category(
+      success = FALSE,
+      substantive_ok = FALSE
+    ),
+    "substantive_fail"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_category(
+      skipped = TRUE,
+      error_snippet = "Figure 1 not available because of missing Mathematica engine"
+    ),
+    "missing_engine"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_category(
+      skipped = TRUE,
+      error_snippet = "Table 1 not available because of proprietary data"
+    ),
+    "other"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_category(success = FALSE),
+    "other"
+  )
+})
+
+test_that("audit_progress_counts aggregates from results and summary", {
+  results <- data.frame(
+    success = c(TRUE, FALSE, FALSE, NA, FALSE),
+    timed_out = c(FALSE, TRUE, FALSE, FALSE, FALSE),
+    skipped = c(FALSE, FALSE, FALSE, TRUE, FALSE),
+    substantive_ok = c(NA, NA, FALSE, NA, NA),
+    error_snippet = c(
+      "",
+      "Timed out",
+      "benchmark miss",
+      "Fig not available because of missing Mathematica engine",
+      "Stata failed"
+    ),
+    stringsAsFactors = FALSE
+  )
+  counts <- replicateEverything:::audit_progress_counts(results = results)
+  expect_equal(unname(counts[["replicating"]]), 1L)
+  expect_equal(unname(counts[["timed_out"]]), 1L)
+  expect_equal(unname(counts[["substantive_fail"]]), 1L)
+  expect_equal(unname(counts[["missing_engine"]]), 1L)
+  expect_equal(unname(counts[["other"]]), 1L)
+  expect_equal(unname(counts[["total"]]), 5L)
+
+  from_summary <- replicateEverything:::audit_progress_counts(
+    summary = list(
+      runs = 10L,
+      success = 6L,
+      failed = 3L,
+      timed_out = 1L,
+      substantive_failed = 1L,
+      skipped = 1L,
+      missing_engine = 1L
+    )
+  )
+  expect_equal(unname(from_summary[["replicating"]]), 6L)
+  expect_equal(unname(from_summary[["timed_out"]]), 1L)
+  expect_equal(unname(from_summary[["substantive_fail"]]), 1L)
+  expect_equal(unname(from_summary[["missing_engine"]]), 1L)
+  expect_equal(unname(from_summary[["other"]]), 1L) # failed-timeout-sub = 1; skip-miss = 0
+  expect_equal(unname(from_summary[["total"]]), 10L)
+})

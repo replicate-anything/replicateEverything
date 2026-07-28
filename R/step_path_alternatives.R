@@ -110,6 +110,24 @@ format_path_languages_box_label <- function(languages) {
   paste0("[", lab, "]")
 }
 
+#' Optional short note for a multi-language path box (\code{path_note:})
+#'
+#' Surfaced in Shiny path-box tooltips and a visible caption under the icons
+#' (e.g. that R is a translation of an original Mathematica kernel).
+#'
+#' @param step Step entry.
+#' @return Character scalar (possibly empty).
+#' @keywords internal
+step_path_note <- function(step) {
+  if (is.null(step) || !is.list(step)) {
+    return("")
+  }
+  short_prep_display_blurb(
+    step$path_note[[1]] %||% step$path_note %||% "",
+    max_chars = 160L
+  )
+}
+
 #' Whether a group of sibling entries should use language-path boxes
 #'
 #' Path boxes are used when siblings share a \code{group:} and either:

@@ -851,6 +851,11 @@ load_prep_step_display <- function(meta, ctx, prep) {
     if (ext %in% c("rds", "csv", "dta")) {
       return(preview_data_file(path))
     }
+    # Marker sinks (.done) and other non-tabular prep products: human summary
+    # (file inventory / declared products), not raw marker text.
+    if (is_prep_marker_sink(path) || dir.exists(path) || length(prep_declared_product_rels(prep))) {
+      return(summarize_prep_transform_sink(meta, ctx, prep, path = path))
+    }
     return(structure(
       list(
         path = path,

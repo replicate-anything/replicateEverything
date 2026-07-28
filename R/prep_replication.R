@@ -72,7 +72,31 @@ find_prep_entry <- function(meta, step_id) {
   matches[[1]]
 }
 
+#' Collapse and optionally truncate a yaml blurb for Display captions
+#'
+#' @param text Character scalar.
+#' @param max_chars Maximum length before ellipsis (default 140).
+#' @return Single-line character scalar.
+#' @keywords internal
+short_prep_display_blurb <- function(text, max_chars = 140L) {
+  txt <- trimws(gsub("\\s+", " ", as.character(text %||% ""), perl = TRUE))
+  if (!nzchar(txt)) {
+    return("")
+  }
+  max_chars <- as.integer(max_chars[[1]] %||% 140L)
+  if (!is.finite(max_chars) || max_chars < 24L) {
+    max_chars <- 140L
+  }
+  if (nchar(txt) <= max_chars) {
+    return(txt)
+  }
+  paste0(substr(txt, 1L, max_chars - 1L), "\u2026")
+}
+
 #' Caption for a prep / transform step in Shiny and reports
+#'
+#' Prefers a short \code{path_note:} when present, otherwise a truncated
+#' \code{description:}, so Display banners stay readable.
 #'
 #' @param prep Prep step entry from \code{replication.yml}.
 #' @return Character string like \code{`Analysis data` step (Rename ...)}.
@@ -83,12 +107,245 @@ prep_step_display_caption <- function(prep) {
   }
   id <- as.character(prep$id %||% "step")
   label <- trimws(as.character(prep$label %||% id))
-  desc <- trimws(as.character(prep$description %||% prep$desc %||% ""))
+  note <- short_prep_display_blurb(
+    prep$path_note[[1]] %||% prep$path_note %||% ""
+  )
+  desc <- short_prep_display_blurb(
+    prep$description %||% prep$desc %||% ""
+  )
+  blurb <- if (nzchar(note)) note else desc
   step_name <- paste0("`", label, "` step")
-  if (nzchar(desc) && !identical(desc, label)) {
-    return(paste0(step_name, " (", desc, ")"))
+  if (nzchar(blurb) && !identical(blurb, label)) {
+    return(paste0(step_name, " (", blurb, ")"))
   }
   step_name
+}
+
+#' Whether a prep output path is a marker sink (.done / stamp), not a table
+#' @keywords internal
+is_prep_marker_sink <- function(path) {
+  if (is.null(path) || !nzchar(as.character(path[[1]] %||% ""))) {
+    return(FALSE)
+  }
+  base <- basename(as.character(path[[1]]))
+  ext <- tolower(tools::file_ext(base))
+  identical(base, ".done") ||
+    identical(base, ".stamp") ||
+    identical(toupper(base), "DONE") ||
+    identical(ext, "done")
+}
+
+#' Optional product paths declared for Display (products: / display_products:)
+#' @keywords internal
+prep_declared_product_rels <- function(prep) {
+  if (is.null(prep) || !is.list(prep)) {
+    return(character(0))
+  }
+  raw <- prep$products %||% prep$display_products %||% NULL
+  if (is.null(raw) || length(raw) == 0L) {
+    return(character(0))
+  }
+  rels <- unique(as.character(unlist(raw, use.names = FALSE)))
+  rels <- trimws(rels)
+  rels[nzchar(rels)]
+}
+
+#' Cheap row/column note for a tabular file when inexpensive
+#' @keywords internal
+cheap_tabular_file_note <- function(path, max_bytes = 8e6) {
+  if (is.null(path) || !file.exists(path)) {
+    return(NULL)
+  }
+  sz <- file.size(path)
+  if (!is.finite(sz) || sz > max_bytes) {
+    return(paste0(basename(path), " (", format(sz, big.mark = ","), " bytes)"))
+  }
+  ext <- tolower(tools::file_ext(path))
+  if (identical(ext, "csv")) {
+    preview <- tryCatch(
+      utils::read.csv(path, nrows = 1L, stringsAsFactors = FALSE),
+      error = function(e) NULL
+    )
+    n_lines <- tryCatch(
+      length(readLines(path, warn = FALSE)),
+      error = function(e) NA_integer_
+    )
+    if (!is.null(preview) && is.finite(n_lines)) {
+      return(sprintf(
+        "%s (%d rows x %d cols)",
+        basename(path),
+        max(0L, as.integer(n_lines) - 1L),
+        ncol(preview)
+      ))
+    }
+  }
+  if (identical(ext, "dta") && requireNamespace("haven", quietly = TRUE)) {
+    preview <- tryCatch(
+      haven::read_dta(path, n_max = 1L),
+      error = function(e) NULL
+    )
+    if (!is.null(preview)) {
+      return(sprintf(
+        "%s (%d+ rows x %d cols; preview)",
+        basename(path),
+        nrow(preview),
+        ncol(preview)
+      ))
+    }
+  }
+  if (identical(ext, "rds")) {
+    obj <- tryCatch(readRDS(path), error = function(e) NULL)
+    if (is.data.frame(obj)) {
+      return(sprintf(
+        "%s (%d rows x %d cols)",
+        basename(path),
+        nrow(obj),
+        ncol(obj)
+      ))
+    }
+  }
+  paste0(basename(path), " (", format(sz, big.mark = ","), " bytes)")
+}
+
+#' Inventory files under a prep output directory (shallow)
+#' @keywords internal
+list_prep_output_dir_notes <- function(dir, max_n = 12L) {
+  if (is.null(dir) || !dir.exists(dir)) {
+    return(character(0))
+  }
+  files <- list.files(dir, full.names = TRUE, all.files = FALSE, no.. = TRUE)
+  files <- files[!grepl("(^|[\\\\/])_probe([\\\\/]|$)", files)]
+  files <- files[basename(files) != ".done"]
+  if (length(files) == 0L) {
+    return(character(0))
+  }
+  files <- sort(files)
+  show <- files[seq_len(min(length(files), as.integer(max_n)))]
+  notes <- vapply(show, function(p) {
+    if (dir.exists(p)) {
+      n <- length(list.files(p, recursive = TRUE, all.files = FALSE))
+      paste0(basename(p), "/ (", n, " files)")
+    } else {
+      cheap_tabular_file_note(p) %||% basename(p)
+    }
+  }, character(1))
+  if (length(files) > length(show)) {
+    notes <- c(notes, paste0("... and ", length(files) - length(show), " more"))
+  }
+  notes
+}
+
+#' Human Display summary for transform / prep sinks (.done, dirs, products)
+#'
+#' Prefer this over dumping marker-file text. Uses optional yaml
+#' \code{products:} / \code{display_products:}, the output directory inventory,
+#' and a completion stamp from \code{.done} when present.
+#'
+#' @param meta Parsed replication metadata.
+#' @param ctx Paper context.
+#' @param prep Prep / transform step entry.
+#' @param path Primary output path (often a \code{.done} marker).
+#' @return A \code{prep_output_preview} with a multi-line \code{note}.
+#' @keywords internal
+summarize_prep_transform_sink <- function(meta, ctx, prep, path = NULL) {
+  id <- as.character(prep$id %||% "step")
+  label <- trimws(as.character(prep$label %||% id))
+  lines <- character(0)
+
+  stamp <- NULL
+  if (!is.null(path) && file.exists(path) && is_prep_marker_sink(path)) {
+    stamp_lines <- tryCatch(
+      readLines(path, warn = FALSE, encoding = "UTF-8", n = 3L),
+      error = function(e) character(0)
+    )
+    stamp_lines <- trimws(stamp_lines)
+    stamp_lines <- stamp_lines[nzchar(stamp_lines)]
+    if (length(stamp_lines)) {
+      stamp <- stamp_lines[[1]]
+    }
+  }
+
+  header <- if (!is.null(stamp) && nzchar(stamp)) {
+    paste0(label, " — ", stamp)
+  } else if (!is.null(path) && file.exists(path)) {
+    paste0(
+      label, " — output ready (",
+      format(file.info(path)$mtime, "%d %b %Y %H:%M:%S"),
+      ")"
+    )
+  } else {
+    paste0(label, " — transform / prep step")
+  }
+  lines <- c(lines, header)
+
+  path_note <- short_prep_display_blurb(
+    prep$path_note[[1]] %||% prep$path_note %||% "",
+    max_chars = 220L
+  )
+  if (nzchar(path_note)) {
+    lines <- c(lines, paste0("Note: ", path_note))
+  }
+
+  if (!is.null(path) && nzchar(path)) {
+    rel_marker <- tryCatch(
+      prep_manifest_output_path(path, ctx$local_path %||% ctx$folder %||% NULL),
+      error = function(e) path
+    )
+    lines <- c(lines, paste0("Marker / primary output: ", rel_marker %||% path))
+  }
+
+  product_rels <- prep_declared_product_rels(prep)
+  if (length(product_rels)) {
+    lines <- c(lines, "Products:")
+    root <- ctx$local_path %||% NULL
+    for (rel in product_rels) {
+      abs <- if (!is.null(root) && nzchar(root)) {
+        file.path(root, rel)
+      } else {
+        resolve_registry_file(rel, ctx, meta = meta, local_only = TRUE)
+      }
+      if (!is.null(abs) && dir.exists(abs)) {
+        n <- length(list.files(abs, recursive = TRUE, all.files = FALSE))
+        lines <- c(lines, sprintf("  %s/ (%d files)", rel, n))
+      } else if (!is.null(abs) && file.exists(abs)) {
+        note <- cheap_tabular_file_note(abs)
+        lines <- c(lines, paste0("  ", rel, if (!is.null(note)) paste0(" — ", note) else ""))
+      } else {
+        lines <- c(lines, paste0("  ", rel, " (not on disk here)"))
+      }
+    }
+  }
+
+  out_dir <- NULL
+  if (!is.null(path) && file.exists(path)) {
+    out_dir <- if (dir.exists(path)) path else dirname(path)
+  }
+  dir_notes <- list_prep_output_dir_notes(out_dir)
+  if (length(dir_notes) && length(product_rels) == 0L) {
+    lines <- c(lines, "Output directory:")
+    lines <- c(lines, paste0("  ", dir_notes))
+  }
+
+  ins <- as.character(unlist(prep$inputs %||% list(), use.names = FALSE))
+  ins <- trimws(ins)
+  ins <- ins[nzchar(ins)]
+  if (length(ins)) {
+    show <- ins[seq_len(min(6L, length(ins)))]
+    lines <- c(lines, paste0("Key inputs: ", paste(show, collapse = "; ")))
+    if (length(ins) > length(show)) {
+      lines <- c(lines, paste0("  ... and ", length(ins) - length(show), " more inputs"))
+    }
+  }
+
+  structure(
+    list(
+      path = path %||% NA_character_,
+      note = paste(lines, collapse = "\n"),
+      label = label,
+      products = product_rels
+    ),
+    class = c("prep_transform_summary", "prep_output_preview")
+  )
 }
 
 #' Resolve a prep display value to a kable-ready preview when possible

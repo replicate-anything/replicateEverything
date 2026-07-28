@@ -138,6 +138,141 @@ audit_result_status <- function(success, timed_out = FALSE, skipped = FALSE) {
   out
 }
 
+#' Progress-bar category for one audit result row
+#'
+#' Mutually exclusive buckets for the Shiny registry health bar:
+#' \code{replicating}, \code{timed_out}, \code{substantive_fail},
+#' \code{missing_engine}, or \code{other} (gaps / skipped / incomplete /
+#' data unavailable / other fails).
+#'
+#' @param success Logical success flag (`NA` allowed for skipped rows).
+#' @param timed_out Logical timeout flag.
+#' @param skipped Logical skip flag.
+#' @param substantive_ok Logical or \code{NA} substantive-check result.
+#' @param error_snippet Character skip / error reason.
+#' @return Character scalar category id.
+#' @keywords internal
+audit_progress_category <- function(
+  success = NA,
+  timed_out = FALSE,
+  skipped = FALSE,
+  substantive_ok = NA,
+  error_snippet = ""
+) {
+  if (isTRUE(skipped)) {
+    if (isTRUE(audit_reason_is_missing_engine(error_snippet))) {
+      return("missing_engine")
+    }
+    return("other")
+  }
+  if (isTRUE(timed_out)) {
+    return("timed_out")
+  }
+  if (isFALSE(substantive_ok)) {
+    return("substantive_fail")
+  }
+  if (isTRUE(success)) {
+    return("replicating")
+  }
+  "other"
+}
+
+#' Vectorized progress categories for an audit results data frame
+#' @keywords internal
+audit_progress_categories_from_results <- function(results) {
+  if (is.null(results) || !is.data.frame(results) || nrow(results) == 0L) {
+    return(character(0))
+  }
+  n <- nrow(results)
+  success <- if ("success" %in% names(results)) results$success else rep(NA, n)
+  timed_out <- if ("timed_out" %in% names(results)) {
+    results$timed_out
+  } else {
+    rep(FALSE, n)
+  }
+  skipped <- if ("skipped" %in% names(results)) {
+    results$skipped
+  } else {
+    rep(FALSE, n)
+  }
+  substantive_ok <- if ("substantive_ok" %in% names(results)) {
+    results$substantive_ok
+  } else {
+    rep(NA, n)
+  }
+  snippet <- if ("error_snippet" %in% names(results)) {
+    as.character(results$error_snippet)
+  } else {
+    rep("", n)
+  }
+  vapply(seq_len(n), function(i) {
+    audit_progress_category(
+      success = success[[i]],
+      timed_out = timed_out[[i]],
+      skipped = skipped[[i]],
+      substantive_ok = substantive_ok[[i]],
+      error_snippet = snippet[[i]]
+    )
+  }, character(1))
+}
+
+#' Named progress counts for the registry health bar
+#'
+#' Prefers classifying rows from a full audit results data frame. When only a
+#' summary list is available, reconstructs counts from summary fields
+#' (\code{success}, \code{timed_out}, \code{substantive_failed},
+#' \code{missing_engine}, \code{failed}, \code{skipped}).
+#'
+#' @param summary Optional audit summary list (from \code{audit_summary.json}).
+#' @param results Optional audit results data frame.
+#' @return Named integer vector with categories
+#'   \code{replicating}, \code{timed_out}, \code{substantive_fail},
+#'   \code{missing_engine}, \code{other}, plus \code{total}.
+#' @keywords internal
+audit_progress_counts <- function(summary = NULL, results = NULL) {
+  empty <- c(
+    replicating = 0L,
+    timed_out = 0L,
+    substantive_fail = 0L,
+    missing_engine = 0L,
+    other = 0L,
+    total = 0L
+  )
+  if (!is.null(results) && is.data.frame(results) && nrow(results) > 0L) {
+    cats <- audit_progress_categories_from_results(results)
+    tab <- table(factor(cats, levels = names(empty)[names(empty) != "total"]))
+    out <- empty
+    out[names(tab)] <- as.integer(tab)
+    out[["total"]] <- length(cats)
+    return(out)
+  }
+  if (is.null(summary) || !is.list(summary)) {
+    return(empty)
+  }
+  n_ok <- as.integer(summary$success %||% 0L)
+  n_timeout <- as.integer(summary$timed_out %||% 0L)
+  n_sub <- as.integer(summary$substantive_failed %||% 0L)
+  n_miss <- as.integer(summary$missing_engine %||% 0L)
+  n_fail <- as.integer(summary$failed %||% 0L)
+  n_skip <- as.integer(summary$skipped %||% 0L)
+  n_runs <- as.integer(summary$runs %||% 0L)
+
+  other_fails <- max(0L, n_fail - n_timeout - n_sub)
+  other_skips <- max(0L, n_skip - n_miss)
+  out <- empty
+  out[["replicating"]] <- max(0L, n_ok)
+  out[["timed_out"]] <- max(0L, n_timeout)
+  out[["substantive_fail"]] <- max(0L, n_sub)
+  out[["missing_engine"]] <- max(0L, n_miss)
+  out[["other"]] <- other_fails + other_skips
+  out[["total"]] <- if (is.finite(n_runs) && n_runs > 0L) {
+    n_runs
+  } else {
+    sum(out[names(out) != "total"])
+  }
+  out
+}
+
 #' Format an audit timeout error for reports
 #'
 #' @param patience Seconds used as the audit elapsed-time cap.
@@ -933,6 +1068,8 @@ audit_everything <- function(
     !is.na(results_df$substantive_ok) & !results_df$substantive_ok,
     na.rm = TRUE
   )
+  progress_counts <- audit_progress_counts(results = results_df)
+  n_missing_engine <- as.integer(progress_counts[["missing_engine"]] %||% 0L)
 
   meta_root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
   missing_source <- tryCatch(
@@ -956,6 +1093,8 @@ audit_everything <- function(
         timed_out = n_timeout,
         skipped = n_skip,
         substantive_failed = n_substantive_fail,
+        missing_engine = n_missing_engine,
+        progress = as.list(progress_counts),
         missing_source_repository = missing_source
       )
     ),
@@ -1135,6 +1274,10 @@ write_registry_audit_record <- function(audit, registry_root = NULL) {
   }
 
   sm <- audit$summary
+  progress <- sm$progress %||% as.list(audit_progress_counts(
+    summary = sm,
+    results = audit$results
+  ))
   payload <- list(
     patience = audit$patience,
     started_at = format(audit$started_at, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
@@ -1146,6 +1289,8 @@ write_registry_audit_record <- function(audit, registry_root = NULL) {
     timed_out = sm$timed_out,
     skipped = sm$skipped %||% 0L,
     substantive_failed = sm$substantive_failed %||% 0L,
+    missing_engine = sm$missing_engine %||% progress$missing_engine %||% 0L,
+    progress = progress,
     missing_source_repository = as.list(sm$missing_source_repository %||% character(0))
   )
   jsonlite::write_json(

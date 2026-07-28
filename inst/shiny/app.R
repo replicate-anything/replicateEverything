@@ -1915,48 +1915,113 @@ registry_health_bar_ui <- function(summary) {
   if (is.null(summary)) {
     return(NULL)
   }
-  total <- as.integer(summary$runs %||% 0)
-  ok <- as.integer(summary$success %||% 0)
-  skipped <- as.integer(summary$skipped %||% 0)
+  # Prefer full snapshot when available so missing-engine / substantive
+  # buckets are exact; fall back to summary fields.
+  results <- NULL
+  snap <- tryCatch(
+    replicate_fn("load_registry_audit_snapshot"),
+    error = function(e) NULL
+  )
+  if (!is.null(snap) && is.data.frame(snap$results)) {
+    results <- snap$results
+  }
+  counts <- tryCatch(
+    replicate_fn("audit_progress_counts", summary = summary, results = results),
+    error = function(e) NULL
+  )
+  if (is.null(counts)) {
+    counts <- c(
+      replicating = as.integer(summary$success %||% 0L),
+      timed_out = as.integer(summary$timed_out %||% 0L),
+      substantive_fail = as.integer(summary$substantive_failed %||% 0L),
+      missing_engine = as.integer(summary$missing_engine %||% 0L),
+      other = 0L,
+      total = as.integer(summary$runs %||% 0L)
+    )
+  }
+  total <- as.integer(counts[["total"]] %||% 0L)
   if (!is.finite(total) || total <= 0L) {
     return(NULL)
   }
-  attempted <- max(0L, total - max(0L, skipped))
-  if (attempted <= 0L) {
-    return(tags$div(
-      class = "registry-health-wrap",
-      tags$span(
-        class = "registry-health-label",
-        sprintf("%d skipped (no runnable audit jobs)", skipped)
-      )
-    ))
+  segs <- c(
+    replicating = as.integer(counts[["replicating"]] %||% 0L),
+    timed_out = as.integer(counts[["timed_out"]] %||% 0L),
+    substantive_fail = as.integer(counts[["substantive_fail"]] %||% 0L),
+    missing_engine = as.integer(counts[["missing_engine"]] %||% 0L),
+    other = as.integer(counts[["other"]] %||% 0L)
+  )
+  segs <- pmax(0L, segs)
+  if (sum(segs) <= 0L) {
+    return(NULL)
   }
-  ok <- max(0L, min(ok, attempted))
-  pct_ok <- 100 * ok / attempted
-  pct_fail <- 100 - pct_ok
+  # Normalize widths to 100% of classified rows (usually == total).
+  denom <- max(sum(segs), total)
   finished <- summary$finished_at %||% ""
+  seg_meta <- list(
+    replicating = list(class = "registry-health-ok", label = "replicating"),
+    timed_out = list(class = "registry-health-timeout", label = "timed out"),
+    substantive_fail = list(
+      class = "registry-health-substantive",
+      label = "substantive fails"
+    ),
+    missing_engine = list(
+      class = "registry-health-missing-engine",
+      label = "missing engines"
+    ),
+    other = list(class = "registry-health-other", label = "other")
+  )
+  bar_nodes <- lapply(names(segs), function(nm) {
+    n <- segs[[nm]]
+    if (n <= 0L) {
+      return(NULL)
+    }
+    meta <- seg_meta[[nm]]
+    tags$div(
+      class = meta$class,
+      style = sprintf("width:%.4f%%", 100 * n / denom),
+      title = sprintf("%d %s", n, meta$label)
+    )
+  })
+  label_bits <- sprintf("%d / %d replicating", segs[["replicating"]], denom)
+  extras <- character(0)
+  if (segs[["timed_out"]] > 0L) {
+    extras <- c(extras, sprintf("%d timed out", segs[["timed_out"]]))
+  }
+  if (segs[["substantive_fail"]] > 0L) {
+    extras <- c(extras, sprintf("%d substantive", segs[["substantive_fail"]]))
+  }
+  if (segs[["missing_engine"]] > 0L) {
+    extras <- c(extras, sprintf("%d missing engine", segs[["missing_engine"]]))
+  }
+  if (segs[["other"]] > 0L) {
+    extras <- c(extras, sprintf("%d other", segs[["other"]]))
+  }
+  if (length(extras)) {
+    label_bits <- paste0(label_bits, " · ", paste(extras, collapse = " · "))
+  }
   tags$div(
     class = "registry-health-wrap",
     tags$div(
       class = "registry-health-bar",
-      title = sprintf(
-        "Registry audit: %d of %d tables/figures replicating%s%s",
-        ok,
-        attempted,
-        if (skipped > 0L) sprintf(" (%d skipped)", skipped) else "",
+      title = paste0(
+        "Registry audit: ", label_bits,
         if (nzchar(finished)) paste0(" (", finished, ")") else ""
       ),
-      tags$div(class = "registry-health-ok", style = sprintf("width:%.4f%%", pct_ok)),
-      tags$div(class = "registry-health-fail", style = sprintf("width:%.4f%%", pct_fail))
+      do.call(tagList, bar_nodes[!vapply(bar_nodes, is.null, logical(1))])
     ),
-    tags$span(
-      class = "registry-health-label",
-      sprintf(
-        "%d / %d replicating%s",
-        ok,
-        attempted,
-        if (skipped > 0L) sprintf(" (%d skipped)", skipped) else ""
-      )
+    tags$span(class = "registry-health-label", label_bits),
+    tags$div(
+      class = "registry-health-legend text-muted",
+      tags$span(class = "registry-health-legend-swatch registry-health-ok"),
+      tags$span("replicating"),
+      tags$span(class = "registry-health-legend-swatch registry-health-timeout"),
+      tags$span("timed out"),
+      tags$span(class = "registry-health-legend-swatch registry-health-substantive"),
+      tags$span("substantive"),
+      tags$span(class = "registry-health-legend-swatch registry-health-missing-engine"),
+      tags$span("missing engine"),
+      tags$span(class = "registry-health-legend-swatch registry-health-other"),
+      tags$span("other")
     )
   )
 }
@@ -6300,10 +6365,11 @@ ui <- tagList(
     }
     .path-pick {
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.18rem;
-      padding: 0.1rem 0.28rem;
+      gap: 0.12rem;
+      padding: 0.18rem 0.35rem;
       margin: 0;
       border: 1px solid rgba(108, 117, 125, 0.45);
       border-radius: 0.3rem;
@@ -6311,15 +6377,26 @@ ui <- tagList(
       color: #343a40;
       font-size: 0.62rem;
       font-weight: 600;
-      line-height: 1;
+      line-height: 1.15;
       letter-spacing: 0.01em;
-      white-space: nowrap;
+      white-space: normal;
+      max-width: 11.5rem;
       cursor: pointer;
     }
     .path-pick .path-pick-icons {
       display: inline-flex;
       align-items: center;
       gap: 0.12rem;
+      white-space: nowrap;
+    }
+    .path-pick .path-pick-note {
+      display: block;
+      font-size: 0.58rem;
+      font-weight: 500;
+      color: #495057;
+      text-align: center;
+      line-height: 1.2;
+      max-width: 11rem;
     }
     .path-pick .path-pick-sep {
       color: rgba(108, 117, 125, 0.85);
@@ -6859,8 +6936,9 @@ ui <- tagList(
     }
     .registry-health-wrap {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 0.65rem;
+      gap: 0.35rem 0.65rem;
       padding: 0.35rem 1rem 0;
       max-width: 100%;
     }
@@ -6878,6 +6956,22 @@ ui <- tagList(
       background: #2ca25f;
       height: 100%;
     }
+    .registry-health-timeout {
+      background: #fdae6b;
+      height: 100%;
+    }
+    .registry-health-substantive {
+      background: #8856a7;
+      height: 100%;
+    }
+    .registry-health-missing-engine {
+      background: #6baed6;
+      height: 100%;
+    }
+    .registry-health-other {
+      background: #969696;
+      height: 100%;
+    }
     .registry-health-fail {
       background: #de2d26;
       height: 100%;
@@ -6886,6 +6980,22 @@ ui <- tagList(
       font-size: 0.8rem;
       color: #495057;
       white-space: nowrap;
+    }
+    .registry-health-legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem 0.55rem;
+      font-size: 0.72rem;
+      width: 100%;
+      padding-top: 0.15rem;
+    }
+    .registry-health-legend-swatch {
+      display: inline-block;
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 2px;
+      flex: 0 0 auto;
     }
     .study-audit-compact {
       padding: 0.35rem 0.5rem;
@@ -8356,6 +8466,11 @@ server <- function(input, output, session) {
         replicate_fn("format_path_languages_label", langs),
         error = function(e) paste(langs, collapse = " / ")
       )
+      path_note <- tryCatch(
+        replicate_fn("step_path_note", entry),
+        error = function(e) ""
+      )
+      path_note <- as.character(path_note %||% "")
       active <- identical(engine, sel)
       entry_incomplete <- isTRUE(entry$incomplete %||% FALSE)
       req_tok <- tolower(as.character(
@@ -8382,6 +8497,14 @@ server <- function(input, output, session) {
           )
         }
       }
+      title_txt <- if (path_unavailable) {
+        paste0(plain_lab, " (unavailable)")
+      } else {
+        plain_lab
+      }
+      if (nzchar(path_note)) {
+        title_txt <- paste0(title_txt, " — ", path_note)
+      }
       tags$button(
         type = "button",
         class = paste(
@@ -8389,13 +8512,10 @@ server <- function(input, output, session) {
           if (active) "is-active" else "is-inactive",
           if (path_unavailable) "is-unavailable" else NULL
         ),
-        title = if (path_unavailable) {
-          paste0(plain_lab, " (unavailable)")
-        } else {
-          plain_lab
-        },
+        title = title_txt,
         `aria-label` = paste0(
           "Use ", plain_lab, " path",
+          if (nzchar(path_note)) paste0(": ", path_note) else "",
           if (path_unavailable) " (unavailable)" else ""
         ),
         `aria-pressed` = if (active) "true" else "false",
@@ -8406,7 +8526,10 @@ server <- function(input, output, session) {
         tags$span(class = "path-pick-icons", do.call(tagList, icon_nodes)),
         # Keep bracketed text for screen readers / clear chrome; visually the
         # paired icons are the primary signal.
-        tags$span(class = "visually-hidden", box_lab)
+        tags$span(class = "visually-hidden", box_lab),
+        if (nzchar(path_note)) {
+          tags$span(class = "path-pick-note", path_note)
+        }
       )
     }
     # Path boxes (paired icons for [Stata / R] | [Stata / Mathematica]) when

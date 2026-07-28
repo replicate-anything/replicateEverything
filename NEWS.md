@@ -1,3 +1,31 @@
+# replicateEverything 0.7.27
+
+## Prep Display: transform / .done sink summaries
+
+* **Display:** transform/prep steps whose primary sink is a `.done` marker (or
+  other non-tabular product) now show a human summary via
+  [summarize_prep_transform_sink()] — completion stamp, optional yaml
+  `products:` / `display_products:` inventory (with cheap row/col notes),
+  output-dir listing, and key inputs — instead of dumping marker text like
+  `clean_data completed …`.
+* **Captions:** [prep_step_display_caption()] prefers short `path_note:` and
+  truncates long `description:` blurbs so “Showing precomputed result for …”
+  stays readable.
+
+## Path boxes: `path_note:` for translation honesty
+
+* Yaml steps may set `path_note:` (e.g. “R is a translation of the original
+  Mathematica LBD kernel”). Shiny path boxes show it under the paired icons
+  and in tooltips / aria labels ([step_path_note()]).
+
+## Audit health bar: finer progress categories
+
+* Registry top bar segments: **replicating**, **timed out**, **substantive
+  fails**, **missing engines**, **other** (gaps / skipped / incomplete /
+  data unavailable / other fails). Wired from
+  [audit_progress_category()] / [audit_progress_counts()]; summary JSON gains
+  `missing_engine` and `progress` when rewritten from an audit snapshot.
+
 # replicateEverything 0.7.26
 
 ## Shiny path boxes: paired language icons + yaml-order Data steps
