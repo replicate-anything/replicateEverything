@@ -1,3 +1,31 @@
+# replicateEverything 0.7.25
+
+## Multi-language path alternatives (Shiny + yaml)
+
+* **Yaml:** sibling steps may share `group:` and declare per-path
+  `languages:` (e.g. `[stata, r]` vs `[stata, mathematica]`) for one claim
+  with multiple engine paths. Documented in `folder_replication.md` and
+  `inst/docs/step-dag-design.md`.
+* **Shiny:** path groups render as labelled boxes (`[Stata / R]` |
+  `[Stata / Mathematica]`); selection drives Display / Run / Code. Gap paths
+  reuse [shiny_step_show_display()] / wrench helpers (Code visible; no false
+  Display). Promoted multi-path transforms appear under Data steps.
+* **Resolve:** `language = "r"` / `"mathematica"` selects by path languages
+  even when `engine: stata`.
+
+## Windows Stata: allow shell (drop /e batch mode)
+
+* Windows Stata launches as `/q do …` instead of `/e /i /q do …`. Batch mode
+  (`/e`/`/b`) ignores `shell`/`winexec` (“request ignored because of batch
+  mode”), which blocked Hahn LBD `shell Rscript` and any other external
+  calls. Generated runner now `log using` + `exit, clear STATA`; processx
+  `windows_hide` keeps the GUI off the desktop. Dependency probes also go
+  through [run_stata_do()] so they exit cleanly (a bare `/q do` hung until
+  probe timeout and falsely reported every SSC package missing).
+* PATH injection for Rscript’s bin is unchanged (still needed when shell
+  runs under a thin System PATH).
+* Probe map: SSC `labutil` → `which labmask`.
+
 # replicateEverything 0.7.24
 
 ## Bake timings fallback for audit timeouts

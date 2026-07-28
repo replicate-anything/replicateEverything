@@ -195,16 +195,18 @@ stata_shell_do_path <- function(path) {
 
 #' Stata command-line arguments for non-interactive do-file execution
 #'
-#' Windows: \code{/e /i /q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
+#' Windows: \code{/q do file.do}. Unix/Linux/macOS: \code{-b -q file.do}.
 #'
-#' On Windows, \code{/e} exits when the job finishes (no end-of-job OK click).
-#' \code{/i} suppresses the Stata taskbar icon (Stata Getting Started with
-#' Windows (GSW) manual B.5). Without \code{/i},
-#' the icon appears for the whole run; clicking it opens "cancel the batch
-#' job?", which injects \code{--Break--} / \code{r(1)} and then cascades
-#' "Would you like the batch job to continue?" dialogs as nested do-files
-#' unwind. \code{/q} suppresses the logo. Paths with spaces are shortened on
-#' Windows when possible.
+#' On Windows we deliberately avoid \code{/e} and \code{/b}. Those flags put
+#' Stata into batch mode, which \emph{silently ignores} \code{shell} /
+#' \code{winexec} ("request ignored because of batch mode"). That breaks any
+#' study that shells out (Hahn LBD \code{shell Rscript}, Wolfram, etc.).
+#' StataCorp's recommended workaround is a normal \code{do} launch with
+#' \code{exit, clear STATA} at the end of the generated runner (see
+#' \code{stata_runner_lines()}). \code{/q} suppresses the logo. The GUI is
+#' kept off the desktop via processx \code{windows_hide} (and a best-effort
+#' \code{window manage minimize} in the runner). Paths with spaces are
+#' shortened on Windows when possible.
 #'
 #' @param do_path Path to the do-file.
 #' @return Character vector of arguments for \code{system2()}.
@@ -212,7 +214,7 @@ stata_shell_do_path <- function(path) {
 stata_batch_args <- function(do_path) {
   path <- stata_shell_do_path(do_path)
   if (.Platform$OS.type == "windows") {
-    return(c("/e", "/i", "/q", "do", path))
+    return(c("/q", "do", path))
   }
   c("-b", "-q", path)
 }
@@ -284,9 +286,9 @@ cleanup_stata_stray_batch_logs <- function(dirs, log_name, keep = NULL) {
 #' @keywords internal
 run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   timeout <- as.integer(timeout[1])
-  # Windows: always hide the process. Combined with /i in stata_batch_args(),
-  # this keeps the cancel-batch taskbar dialog from appearing. Clicking that
-  # dialog injects --Break-- r(1) even under nobreak / capture noisily.
+  # Windows: always hide the process. Combined with /q (no /e batch mode) and
+  # exit, clear STATA in the generated runner, this keeps the GUI off the
+  # desktop. Clicking a visible Stata window can still inject Break / r(1).
   # Also prepend Rscript's directory to PATH: StataMP often sees only the
   # machine System PATH (no user PATH), so bare `shell Rscript` fails even
   # when the parent R session can find Rscript (Hahn LBD cost-curve).
@@ -420,7 +422,8 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
 #' @param staging_dir Optional writable directory for \code{$result} output.
 #' @return Character vector of do-file lines.
 #' @keywords internal
-stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL) {
+stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL,
+                               log_in_do = NULL) {
   runner_lines <- c(
     "version 17",
     "clear all",
@@ -429,7 +432,23 @@ stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL) {
     "pause off",
     "set linesize 255",
     "cap set scrollbufsize 2000000",
-    "cap set netmsg off",
+    "cap set netmsg off"
+  )
+  # Windows non-/e launch: keep the GUI out of the way (processx also hides).
+  if (.Platform$OS.type == "windows") {
+    runner_lines <- c(runner_lines, "cap window manage minimize")
+  }
+  # Without Windows /e, Stata does not auto-write a batch .log; open one
+  # explicitly when the caller supplies a path (same basename as the runner).
+  if (!is.null(log_in_do) && nzchar(log_in_do)) {
+    runner_lines <- c(
+      runner_lines,
+      sprintf("cap log close _all"),
+      sprintf("log using \"%s\", replace text", log_in_do)
+    )
+  }
+  runner_lines <- c(
+    runner_lines,
     sprintf("local root \"%s\"", wd_in_do),
     "cd \"`root'\""
   )
@@ -443,18 +462,28 @@ stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL) {
       sprintf("cap mkdir \"%s\"", staging_in_do)
     )
   }
-  c(
+  runner_lines <- c(
     runner_lines,
     "* Re-assert before the study script in case a prior step left more on",
     "set more off, permanently",
     "pause off",
-    # nobreak: ignore Break during the nested do so Windows batch does not
-    # surface r(1) / continue dialogs if the Stata icon is clicked.
+    # nobreak: ignore Break during the nested do so a stray focus/click does
+    # not surface r(1) / continue dialogs.
     sprintf("capture noisily nobreak do \"%s\"", do_in_do),
     "if _rc != 0 {",
     "    display as error \"replicateEverything: step do-file ended with error r(\" _rc \");  see log above for the failing command.\"",
     "}"
   )
+  # Windows: must exit explicitly because we do not use /e (needed so shell
+  # works). clear STATA skips save prompts.
+  if (.Platform$OS.type == "windows") {
+    runner_lines <- c(
+      runner_lines,
+      "cap log close _all",
+      "exit, clear STATA"
+    )
+  }
+  runner_lines
 }
 
 #' Run a Stata do-file non-interactively
@@ -487,12 +516,22 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL,
   do_in_do <- stata_path_in_do(do_path)
   wd_in_do <- stata_path_in_do(workdir)
 
-  runner_lines <- stata_runner_lines(do_in_do, wd_in_do, staging_dir = staging_dir)
-
-  writeLines(runner_lines, runner, useBytes = TRUE)
-
   log_name <- stata_batch_log_name(runner)
   log_path <- file.path(run_dir, log_name)
+  # On Windows (no /e auto-log), the runner opens this path via log using.
+  log_in_do <- if (.Platform$OS.type == "windows") {
+    stata_path_in_do(normalizePath(log_path, winslash = "/", mustWork = FALSE))
+  } else {
+    NULL
+  }
+  runner_lines <- stata_runner_lines(
+    do_in_do,
+    wd_in_do,
+    staging_dir = staging_dir,
+    log_in_do = log_in_do
+  )
+
+  writeLines(runner_lines, runner, useBytes = TRUE)
   old_wd <- getwd()
   on.exit({
     setwd(old_wd)
@@ -870,6 +909,10 @@ stata_probe_command <- function(pkg) {
   if (identical(pkg, "estout")) {
     return("eststo")
   }
+  # SSC labutil ships labmask/labcombine/…, not a labutil.ado
+  if (identical(pkg, "labutil")) {
+    return("labmask")
+  }
   pkg
 }
 
@@ -1122,25 +1165,25 @@ stata_dependencies_satisfied <- function(
   run_dir <- stata_run_dir(workdir, staging_dir)
 
   run_probe <- function(do_path) {
-    old_wd <- getwd()
-    on.exit(setwd(old_wd), add = TRUE)
-    if (dir.exists(run_dir)) {
-      setwd(run_dir)
-    }
-    status <- tryCatch(
-      run_stata_system2(
-        stata,
-        stata_batch_args(do_path),
-        timeout = timeout
+    # Must go through run_stata_do on Windows: without /e, a bare
+    # `Stata /q do probe.do` leaves the GUI running after `exit 0` (do-file
+    # exit only), so the probe hangs until stata_deps_probe_timeout and
+    # every package looks "missing".
+    res <- tryCatch(
+      run_stata_do(
+        do_path,
+        workdir = workdir,
+        timeout = timeout,
+        staging_dir = staging_dir
       ),
       error = function(e) {
         if (grepl("did not finish within", conditionMessage(e), fixed = TRUE)) {
           stop(conditionMessage(e), call. = FALSE)
         }
-        return(1L)
+        e
       }
     )
-    identical(status, 0L) || identical(status, 0)
+    !inherits(res, "error")
   }
 
   if (length(probe_scripts) > 0L) {

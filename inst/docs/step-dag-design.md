@@ -34,7 +34,17 @@ Display / [load_artifact()] use precomputed files under `outputs/`.
 
 ## Engine alternatives
 
-When two steps could produce the same output (e.g. R and Stata), declare one as **`precedent:`** in yaml (future builds validate uniqueness). Until then, list engines in declaration order; first wins.
+**Classic bilingual** (R *or* Stata for the same table): separate step ids with
+shared `group:`; Shiny shows engine icon pills.
+
+**Multi-language paths** (one claim, paths that each use multiple languages):
+same `group:`, plus per-path `languages:` (e.g. `[stata, r]` vs
+`[stata, mathematica]`). Shiny shows path boxes (`[Stata / R]` |
+`[Stata / Mathematica]`); gap paths use `incomplete:` + `requires_engine:` as
+usual. See `folder_replication.md` § Multi-language path alternatives.
+
+Until uniqueness of `precedent:` is validated, list preferred path first (or
+mark the alternate `incomplete:`).
 
 ## Migration
 

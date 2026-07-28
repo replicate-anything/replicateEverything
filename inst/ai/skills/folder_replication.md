@@ -144,10 +144,50 @@ author pipeline.
 3. **Follow writes** — every `save`, `export`, `write.csv`, `ggsave` becomes an `outputs:` path. Use flat `outputs/<step_id>.<ext>` for transform steps (e.g. `outputs/analysis_data.rds`); display sinks use `outputs/<id>.html` or `.png`.
 4. **Split shared prep** — if three tables all `use` the same constructed `.dta`, declare **one** transform step and set `parents: [that_step]` on each table (do not duplicate prep inside every table script).
 5. **Wrapper granularity** — prefer author wrappers / master scripts as DAG nodes (e.g. one batch transform feeding many thin tables), **not** one node per policy or micro-script when the README runs them in batch. OpenICPSR AER packages often have ~100 policy `.do` files feeding a handful of wrappers — map README tables, then collapse.
-6. **Parallel engines** — when authors ship both Stata and R for the same table, use **separate step ids** (`tab_1`, `tab_1_stata`) with optional `group: tab_1`. They may read different inputs (raw vs cleaned) if that matches the author code.
+6. **Parallel engines** — when authors ship both Stata and R for the same table, use **separate step ids** (`tab_1`, `tab_1_stata`) with optional `group: tab_1`. They may read different inputs (raw vs cleaned) if that matches the author code. For **multi-language paths** (one claim that needs two engines together, e.g. Stata+R vs Stata+Mathematica), see **Multi-language path alternatives** below.
 7. **Format children** — when Display needs HTML/PNG but analysis returns a model or temp file, add `type: format` with `parent: <table_or_figure_id>` (or rely on auto-generated `<id>_format` from legacy migration).
 8. **Blocked / unavailable steps** — before marking unavailable, search deposit + study for **precomputed** outputs. Then declare `incomplete: true` plus a structured class (see **Blocked steps** below). **Put a step in the DAG only if it is a replication claim** (Display/audit); proprietary prep or other blocked stages that are *not* on the path to a claimed output belong in README / study popup — not as orphan Unavailable nodes in `steps:`.
 9. **Draw the graph** — sanity-check: every non-root input is either under `data/` or produced by a listed parent; no cycles; `given = "parents"` on a table only requires immediate parents' `outputs/` to exist.
+
+### Multi-language path alternatives
+
+When one claim has alternative **engine paths** (not classic bilingual “R *or* Stata”
+for the same table, but paths that each use multiple languages — e.g. Stata
+orchestrator + R kernel vs Stata + Mathematica kernel):
+
+```yaml
+  - id: compute_mvpf_main
+    group: compute_mvpf_main
+    languages: [stata, r]          # path label → [Stata / R]
+    engine: stata                  # dispatch engine for run_replication
+    code: code/compute_mvpf_main.do
+    outputs: [outputs/compute_mvpf_main/compiled.dta]
+    # description: note R is a translation of Mathematica when relevant
+
+  - id: compute_mvpf_main_mathematica
+    group: compute_mvpf_main
+    languages: [stata, mathematica]  # → [Stata / Mathematica]
+    engine: stata
+    code: code/compute_mvpf_main_mathematica.do
+    outputs: [outputs/compute_mvpf_main_mathematica/compiled.dta]
+    incomplete: true
+    requires_engine: mathematica
+```
+
+- Reuse existing `group:` (same claim). Each sibling keeps its own `id`,
+  `engine`, `code`, `outputs`, and gap fields.
+- Per-path `languages:` drives Shiny **path boxes** (`[Stata / R]` |
+  `[Stata / Mathematica]`). Selection drives Display / Run / Code.
+- Gap paths reuse `incomplete:` + `requires_engine:` — wrench in Run slot;
+  [shiny_step_show_display()] omits Display when there is no sink; Code stays
+  available.
+- Select in R with `language = "r"` or `language = "mathematica"` (matches the
+  distinguishing path language, even when `engine: stata`).
+- Prefer one language per *path role*; label translations in `description`
+  (e.g. R cost-curve = translation of Mathematica).
+
+Classic bilingual tables (single language per sibling, different `engine:`) keep
+the icon-pill UI — do not add multi-item `languages:` unless you want path boxes.
 
 Example (Fearon & Laitin):
 
@@ -192,6 +232,8 @@ sidebar and labels are unused there.
 | `requires_engine` | System engine token when missing engine is the block (`mathematica`, `matlab`, …) |
 | `data_unavailable` | Data-access class when proprietary/restricted/missing data is the block (`proprietary`, …) |
 | `blocked_reason` | Human text for Shiny hover / tooltips |
+| `group` | Logical claim id when siblings are alternatives (classic bilingual or multi-language paths) |
+| `languages` (step) | Languages on this **path** (e.g. `[stata, r]`) — Shiny path-box label when grouped |
 | `languages` (root) | Study engines for registry / system checks |
 
 ### Blocked steps (`incomplete:` / engines / proprietary data)

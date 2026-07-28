@@ -62,10 +62,10 @@ test_that("stata_shell_do_path shortens spaced paths on Windows", {
 test_that("stata_batch_args uses platform-specific invocation", {
   runner <- "/tmp/runner.do"
   if (.Platform$OS.type == "windows") {
-    # /i suppresses the taskbar icon that opens the cancel-batch dialog.
+    # No /e|/b: Windows batch mode ignores shell (Hahn LBD needs shell Rscript).
     expect_equal(
       stata_batch_args(runner),
-      c("/e", "/i", "/q", "do", stata_shell_do_path(runner))
+      c("/q", "do", stata_shell_do_path(runner))
     )
   } else {
     expect_equal(stata_batch_args(runner), c("-b", "-q", runner))

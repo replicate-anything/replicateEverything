@@ -3468,9 +3468,8 @@ replications_to_df <- function(reps) {
   reps <- reps[vapply(reps, function(x) {
     type <- as.character(x$type %||% "")
     # "transform" is included so that split_replication_entries() can promote
-    # cross-engine grouped pipeline steps (e.g. an alternate-engine R/
-    # Mathematica pair) into this same grouped/toggle pipeline; ordinary
-    # single-engine transform steps stay in prep_to_df() and never reach here.
+    # cross-engine / multi-language path groups into this same grouped/toggle
+    # pipeline; ordinary single-engine transform steps stay in prep_to_df().
     if (!type %in% c("figure", "table", "transform")) {
       return(FALSE)
     }
@@ -3495,18 +3494,68 @@ replications_to_df <- function(reps) {
   groups <- unique(vapply(reps, rep_group, character(1)))
   rows <- lapply(groups, function(group) {
     group_reps <- reps[vapply(reps, function(x) identical(rep_group(x), group), logical(1))]
+    path_mode <- tryCatch(
+      isTRUE(replicate_fn("group_uses_path_boxes", group_reps)),
+      error = function(e) FALSE
+    )
     r_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "r"), logical(1))]
     stata_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "stata"), logical(1))]
     python_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "python"), logical(1))]
     mathematica_reps <- group_reps[vapply(group_reps, function(x) identical(rep_engine(x), "mathematica"), logical(1))]
-    primary <- if (length(r_reps)) r_reps[[1]] else if (length(python_reps)) python_reps[[1]] else group_reps[[1]]
+    # For path-mode groups (e.g. Stata+R vs Stata+Mathematica), prefer the
+    # runnable / R-kernel path as primary rather than first-by-engine.
+    primary <- if (isTRUE(path_mode)) {
+      tryCatch({
+        sel <- replicate_fn("default_path_selector_language", group_reps)
+        hit <- replicate_fn("pick_path_entry", group_reps, sel)
+        if (is.null(hit)) group_reps[[1]] else hit
+      }, error = function(e) {
+        if (length(r_reps)) r_reps[[1]] else group_reps[[1]]
+      })
+    } else if (length(r_reps)) {
+      r_reps[[1]]
+    } else if (length(python_reps)) {
+      python_reps[[1]]
+    } else {
+      group_reps[[1]]
+    }
+    # Path-mode: also expose path-language slots so toggles can select by
+    # secondary kernel (r / mathematica) even when dispatch engine is stata.
+    path_r_id <- NA_character_
+    path_mathematica_id <- NA_character_
+    if (isTRUE(path_mode)) {
+      for (e in group_reps) {
+        langs <- tryCatch(
+          replicate_fn("step_path_languages", e),
+          error = function(err) character(0)
+        )
+        eid <- as.character(e$id)
+        if ("r" %in% langs && is.na(path_r_id)) path_r_id <- eid
+        if ("mathematica" %in% langs && is.na(path_mathematica_id)) {
+          path_mathematica_id <- eid
+        }
+      }
+    }
     data.frame(
       group = group,
       id = as.character(primary$id),
-      r_id = if (length(r_reps)) as.character(r_reps[[1]]$id) else NA_character_,
+      r_id = if (!is.na(path_r_id)) {
+        path_r_id
+      } else if (length(r_reps)) {
+        as.character(r_reps[[1]]$id)
+      } else {
+        NA_character_
+      },
       stata_id = if (length(stata_reps)) as.character(stata_reps[[1]]$id) else NA_character_,
       python_id = if (length(python_reps)) as.character(python_reps[[1]]$id) else NA_character_,
-      mathematica_id = if (length(mathematica_reps)) as.character(mathematica_reps[[1]]$id) else NA_character_,
+      mathematica_id = if (!is.na(path_mathematica_id)) {
+        path_mathematica_id
+      } else if (length(mathematica_reps)) {
+        as.character(mathematica_reps[[1]]$id)
+      } else {
+        NA_character_
+      },
+      path_mode = isTRUE(path_mode),
       label = truncate_label(replication_display_label(primary), 40L),
       label_full = {
         desc <- replication_entry_description(primary)
@@ -3525,16 +3574,26 @@ replications_to_df <- function(reps) {
   do.call(rbind, rows)
 }
 
-#' Raw yaml entry for one engine within a grouped replication row
+#' Raw yaml entry for one engine / path within a grouped replication row
 #'
-#' Groups can mix a runnable engine (e.g. R) with an incomplete /
-#' missing-tool alternate engine (e.g. Mathematica original). The flattened
+#' Groups can mix a runnable path (e.g. Stata+R) with an incomplete /
+#' missing-tool alternate (e.g. Stata+Mathematica). The flattened
 #' `incomplete` / `blocked_reason` / `requires_engine` / `data_unavailable`
 #' columns on the row reflect only the group's `primary` (preferred) entry,
-#' so callers that need the currently-selected engine's own gap status
+#' so callers that need the currently-selected path's own gap status
 #' (`replication_row()`) should look it up here instead.
 #' @keywords internal
 group_entry_for_engine <- function(row, engine) {
+  path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+  if (path_mode) {
+    hit <- tryCatch(
+      replicate_fn("group_entry_for_path_selector", row, engine),
+      error = function(e) NULL
+    )
+    if (!is.null(hit)) {
+      return(hit)
+    }
+  }
   ents <- row$entries
   if (is.null(ents)) return(NULL)
   ents <- ents[[1]]
@@ -3546,6 +3605,13 @@ group_entry_for_engine <- function(row, engine) {
 
 resolve_group_replication_id <- function(row, engine = c("r", "stata", "python", "mathematica")) {
   engine <- match.arg(engine)
+  path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+  if (path_mode) {
+    hit <- group_entry_for_engine(row, engine)
+    if (!is.null(hit) && nzchar(as.character(hit$id %||% ""))) {
+      return(as.character(hit$id))
+    }
+  }
   if (engine == "stata" && !is.na(row$stata_id) && nzchar(row$stata_id)) {
     return(row$stata_id)
   }
@@ -4257,13 +4323,11 @@ split_replication_entries <- function(reps) {
     type %in% c("step", "prep", "pipeline", "transform")
   }, logical(1))
 
-  # Promote transform/pipeline entries that explicitly opt into cross-engine
-  # grouping (shared `group:` across >= 2 sibling entries with different
-  # engines - e.g. a runnable R build vs. an incomplete Mathematica-original
-  # alternate) into the same grouped/engine-toggle pipeline used for tables
-  # and figures, so Shiny renders one "Data steps" row with an R | Mathematica
-  # toggle instead of two separate ungrouped rows. Ordinary single-engine
-  # transform steps (the vast majority) are unaffected and stay in `prep`.
+  # Promote transform entries that share a `group:` across >= 2 siblings into
+  # the grouped path/engine-toggle pipeline used for tables and figures.
+  # Covers (a) classic different-engine pairs and (b) multi-language path
+  # alternatives that share a dispatch engine (e.g. Stata+R vs
+  # Stata+Mathematica). Ordinary single-engine transforms stay in `prep`.
   transform_idx <- which(is_prep & vapply(reps, function(x) {
     identical(tolower(as.character(x$type %||% "")), "transform")
   }, logical(1)))
@@ -4272,10 +4336,16 @@ split_replication_entries <- function(reps) {
       grp <- as.character(x$group %||% "")
       if (nzchar(grp)) grp else as.character(x$id %||% "")
     }, character(1))
-    engines_of <- vapply(reps[transform_idx], entry_engine, character(1))
     shared_groups <- unique(groups_of[duplicated(groups_of) | duplicated(groups_of, fromLast = TRUE)])
     promote_groups <- shared_groups[vapply(shared_groups, function(g) {
-      length(unique(engines_of[groups_of == g])) > 1L
+      sibs <- reps[transform_idx][groups_of == g]
+      tryCatch(
+        isTRUE(replicate_fn("group_uses_path_boxes", sibs)) ||
+          length(unique(vapply(sibs, entry_engine, character(1)))) > 1L,
+        error = function(e) {
+          length(unique(vapply(sibs, entry_engine, character(1)))) > 1L
+        }
+      )
     }, logical(1))]
     if (length(promote_groups) > 0L) {
       promote_idx <- transform_idx[groups_of %in% promote_groups]
@@ -6203,6 +6273,35 @@ ui <- tagList(
       box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
       border-radius: 999px;
     }
+    .path-pick {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.12rem 0.4rem;
+      margin: 0;
+      border: 1px solid rgba(108, 117, 125, 0.45);
+      border-radius: 0.3rem;
+      background: #fff;
+      color: #343a40;
+      font-size: 0.68rem;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .path-pick.is-active {
+      border-color: rgba(13, 110, 253, 0.85);
+      box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.22);
+      color: #0d6efd;
+      background: rgba(13, 110, 253, 0.06);
+    }
+    .path-pick.is-inactive {
+      opacity: 0.55;
+    }
+    .path-pick.is-inactive:hover {
+      opacity: 0.85;
+    }
     .engine-icons-cell {
       display: inline-flex;
       align-items: center;
@@ -7162,6 +7261,11 @@ server <- function(input, output, session) {
   }
 
   row_has_engine <- function(row, engine) {
+    path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+    if (path_mode) {
+      hit <- group_entry_for_engine(row, engine)
+      return(!is.null(hit))
+    }
     col <- switch(
       engine,
       stata = "stata_id",
@@ -7175,6 +7279,12 @@ server <- function(input, output, session) {
   }
 
   row_engine_count <- function(row) {
+    path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+    if (path_mode) {
+      ents <- row$entries[[1]]
+      if (is.null(ents)) return(0L)
+      return(length(ents))
+    }
     sum(c(
       if (row_has_engine(row, "r")) 1L else 0L,
       if (row_has_engine(row, "stata")) 1L else 0L,
@@ -7187,6 +7297,14 @@ server <- function(input, output, session) {
   # MATLAB, ...) are for missing-tool display only, never dispatched live -
   # R stays the preferred default whenever both are declared in a group.
   default_row_engine <- function(row) {
+    path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+    if (path_mode) {
+      ents <- row$entries[[1]]
+      return(tryCatch(
+        replicate_fn("default_path_selector_language", ents %||% list()),
+        error = function(e) "r"
+      ))
+    }
     if (row_has_engine(row, "r")) return("r")
     if (row_has_engine(row, "stata")) return("stata")
     if (row_has_engine(row, "python")) return("python")
@@ -7242,6 +7360,18 @@ server <- function(input, output, session) {
       return(list(id = state$selected_replication, language = "r"))
     }
     lang <- selected_replication_language()
+    path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+    if (path_mode) {
+      sel_entry <- group_entry_for_engine(row, lang)
+      if (!is.null(sel_entry)) {
+        return(list(
+          id = as.character(sel_entry$id),
+          # Dispatch engine for run_replication / get_code (not the path
+          # selector token — Stata+R paths still run as engine: stata).
+          language = entry_engine(sel_entry)
+        ))
+      }
+    }
     resolved_id <- resolve_group_replication_id(row, lang)
     resolved_lang <- if (!is.na(row$r_id) && identical(resolved_id, row$r_id)) {
       "r"
@@ -7998,6 +8128,11 @@ server <- function(input, output, session) {
     # with an incomplete alternate (e.g. Mathematica original), and the
     # toggle must re-evaluate this every time the user switches engines.
     sel_entry <- group_entry_for_engine(row, engine)
+    dispatch_lang <- if (!is.null(sel_entry)) {
+      entry_engine(sel_entry)
+    } else {
+      engine
+    }
     is_blocked <- isTRUE((sel_entry$incomplete %||% row$incomplete[[1]]) %||% FALSE)
     blocked_reason <- as.character((sel_entry$blocked_reason %||% row$blocked_reason[[1]]) %||% "")
     if (!nzchar(blocked_reason)) {
@@ -8013,7 +8148,7 @@ server <- function(input, output, session) {
         resolved_id,
         folder = state$registry_folder,
         repo = state$registry_repo,
-        language = engine
+        language = dispatch_lang
       ),
       error = function(e) FALSE
     )
@@ -8131,21 +8266,57 @@ server <- function(input, output, session) {
         engine_pick_icon(eng)
       )
     }
-    # Clickable engine toggle (R | Stata | Mathematica | ...), one pill per
-    # declared engine - lets the user switch out of a blocked/incomplete
-    # engine (e.g. Mathematica original) into a runnable one (e.g. R).
-    # Available in BOTH the blocked and unblocked render branches below.
-    # (Python keeps its historical badge-only behavior when it is the sole
-    # engine in the group - unchanged from before this generalization.)
-    engine_picks <- tagList(
-      if (row_has_engine(row, "r")) engine_pick_btn("r"),
-      if (row_has_engine(row, "stata")) engine_pick_btn("stata"),
-      if (row_has_engine(row, "mathematica")) engine_pick_btn("mathematica"),
-      if (row_has_engine(row, "python") && !row_has_engine(row, "r") &&
-        !row_has_engine(row, "stata") && !row_has_engine(row, "mathematica")) {
-        tags$span(class = "engine-badge", title = "Python", engine_icon_python())
-      }
-    )
+    path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+    path_box_btn <- function(entry) {
+      sel <- tryCatch(
+        replicate_fn("path_selector_language", entry, row$entries[[1]]),
+        error = function(e) entry_engine(entry)
+      )
+      langs <- tryCatch(
+        replicate_fn("step_path_languages", entry),
+        error = function(e) entry_engine(entry)
+      )
+      box_lab <- tryCatch(
+        replicate_fn("format_path_languages_box_label", langs),
+        error = function(e) paste0("[", paste(langs, collapse = " / "), "]")
+      )
+      plain_lab <- tryCatch(
+        replicate_fn("format_path_languages_label", langs),
+        error = function(e) paste(langs, collapse = " / ")
+      )
+      active <- identical(engine, sel)
+      tags$button(
+        type = "button",
+        class = paste(
+          "path-pick",
+          if (active) "is-active" else "is-inactive"
+        ),
+        title = plain_lab,
+        `aria-label` = paste0("Use ", plain_lab, " path"),
+        `aria-pressed` = if (active) "true" else "false",
+        onclick = sprintf(
+          "Shiny.setInputValue('engine_action', '%s:%s', {priority: 'event'})",
+          group, sel
+        ),
+        box_lab
+      )
+    }
+    # Path boxes ([Stata / R] | [Stata / Mathematica]) when yaml declares
+    # multi-language path alternatives; otherwise classic engine icon pills.
+    engine_picks <- if (path_mode) {
+      ents <- row$entries[[1]]
+      do.call(tagList, lapply(ents, path_box_btn))
+    } else {
+      tagList(
+        if (row_has_engine(row, "r")) engine_pick_btn("r"),
+        if (row_has_engine(row, "stata")) engine_pick_btn("stata"),
+        if (row_has_engine(row, "mathematica")) engine_pick_btn("mathematica"),
+        if (row_has_engine(row, "python") && !row_has_engine(row, "r") &&
+          !row_has_engine(row, "stata") && !row_has_engine(row, "mathematica")) {
+          tags$span(class = "engine-badge", title = "Python", engine_icon_python())
+        }
+      )
+    }
     if (is_blocked || is_data_gap || is_engine_gap) {
       blocked_msg <- gap$message
       if (is.null(blocked_msg) || !nzchar(as.character(blocked_msg))) {
@@ -8321,13 +8492,26 @@ server <- function(input, output, session) {
 
     figs <- reps[reps$type == "figure", , drop = FALSE]
     tabs <- reps[reps$type == "table", , drop = FALSE]
+    transforms <- reps[reps$type == "transform", , drop = FALSE]
     active <- state$selected_replication
 
     tagList(
-      if (!is.null(state$prep_df) && nrow(state$prep_df) > 0) {
+      if ((!is.null(state$prep_df) && nrow(state$prep_df) > 0) ||
+          (!is.null(transforms) && nrow(transforms) > 0)) {
         tagList(
           tags$h6(class = "text-muted mb-2", "Data steps"),
-          lapply(seq_len(nrow(state$prep_df)), function(i) {
+          if (!is.null(transforms) && nrow(transforms) > 0) {
+            lapply(seq_len(nrow(transforms)), function(i) {
+              row <- transforms[i, , drop = FALSE]
+              replication_row(
+                row,
+                active_id = active,
+                engine = group_engine(row$group[[1]], row)
+              )
+            })
+          },
+          if (!is.null(state$prep_df) && nrow(state$prep_df) > 0) {
+            lapply(seq_len(nrow(state$prep_df)), function(i) {
             row <- state$prep_df[i, , drop = FALSE]
             step_id <- row$id[[1]]
             step_engine <- row$engine[[1]] %||% "r"
@@ -8563,6 +8747,7 @@ server <- function(input, output, session) {
               )
             )
           })
+          }
         )
       },
       if (nrow(tabs) > 0) {
@@ -8600,7 +8785,12 @@ server <- function(input, output, session) {
     req(length(parts) == 2)
     row <- resolve_replication_row(parts[[1]])
     eng <- parts[[2]]
-    if (!row_has_engine(row, eng)) return()
+    path_mode <- isTRUE(row$path_mode[[1]] %||% row$path_mode %||% FALSE)
+    if (path_mode) {
+      if (!row_has_engine(row, eng)) return()
+    } else if (!row_has_engine(row, eng)) {
+      return()
+    }
     state$group_engines[[parts[[1]]]] <- eng
     cur_row <- tryCatch(
       resolve_replication_row(state$selected_replication),

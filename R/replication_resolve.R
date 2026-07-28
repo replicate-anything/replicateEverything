@@ -117,13 +117,18 @@ collect_replication_entries <- function(meta) {
 
 #' Default engine when multiple entries share a logical id
 #'
-#' Prefers R when available, otherwise Stata.
+#' Prefers a runnable multi-language path whose languages include R when
+#' [group_uses_path_boxes()] applies; otherwise prefers an R dispatch engine,
+#' then Stata.
 #'
 #' @param entries List of replication entries sharing a logical id.
 #' @param paper_meta Optional paper-level metadata.
-#' @return \code{"r"} or \code{"stata"}.
+#' @return \code{"r"}, \code{"stata"}, \code{"python"}, or \code{"mathematica"}.
 #' @keywords internal
 default_replication_language <- function(entries, paper_meta = NULL) {
+  if (isTRUE(group_uses_path_boxes(entries))) {
+    return(default_path_selector_language(entries, paper_meta))
+  }
   langs <- vapply(
     entries,
     function(x) replication_engine(x, paper_meta),
@@ -160,10 +165,8 @@ find_replication_entry <- function(meta, what, language = NULL, paper_meta = NUL
   ]
   if (length(exact) == 1L) {
     rep <- exact[[1]]
-    if (replication_engine_matches_language(
-      replication_engine(rep, paper_meta),
-      language
-    )) {
+    if (is.null(language) ||
+        entry_matches_path_language(rep, language, paper_meta)) {
       return(rep)
     }
   }
@@ -198,10 +201,7 @@ find_replication_entry <- function(meta, what, language = NULL, paper_meta = NUL
   lang <- language %||% default_replication_language(group_matches, paper_meta)
   engine_matches <- group_matches[
     vapply(group_matches, function(x) {
-      replication_engine_matches_language(
-        replication_engine(x, paper_meta),
-        lang
-      )
+      entry_matches_path_language(x, lang, paper_meta)
     }, logical(1))
   ]
 
@@ -211,6 +211,21 @@ find_replication_entry <- function(meta, what, language = NULL, paper_meta = NUL
       lang,
       call. = FALSE
     )
+  }
+
+  if (length(engine_matches) > 1L && isTRUE(group_uses_path_boxes(group_matches))) {
+    exact <- engine_matches[vapply(engine_matches, function(x) {
+      identical(path_selector_language(x, group_matches), lang)
+    }, logical(1))]
+    if (length(exact) >= 1L) {
+      return(exact[[1]])
+    }
+    runnable <- engine_matches[!vapply(engine_matches, function(x) {
+      isTRUE(x$incomplete %||% FALSE)
+    }, logical(1))]
+    if (length(runnable) >= 1L) {
+      return(runnable[[1]])
+    }
   }
 
   engine_matches[[1]]
