@@ -680,6 +680,50 @@ Transform steps write to paths declared in `outputs:` (under `outputs/<step_id>/
 
 Reference: `rep-template/code/tab_1.R`, `rep-10.1017-S0003055403000534/code/tab_1.R`.
 
+### File provenance headers
+
+Every committed code file should carry a short top-of-file comment (2-5 lines,
+language-appropriate comment syntax) naming **one** fixed provenance label, so
+a reader can tell at a glance whether a file is ours or the authors':
+
+| Label | Meaning |
+|-------|---------|
+| `connector` | Thin runner/wiring written by replicateEverything to connect author files to the study-repo structure (`code/<id>.do` / `.R`, `init_study_paths.do`, format helpers, …) |
+| `author-original` | Unedited file vendored from the author deposit |
+| `translation (X -> Y)` | File we wrote translating author logic from one language/tool to another (e.g. `translation (Mathematica -> R)`) |
+| `author-edited` | Author file we modified in place (bug fix, portability, …) — say what changed briefly |
+
+Use the language's comment marker (`*` Stata, `#` R/Python, …):
+
+```
+* replicateEverything provenance: connector
+* Connects author scripts under code/original/ to study-root outputs/ via path globals.
+```
+
+```
+# replicateEverything provenance: translation (Mathematica -> R)
+# R port of code/original/cost_curve/cost_curve_masterfile.wls; see README for validation status.
+```
+
+```
+* replicateEverything provenance: author-edited
+* Stata regex has no {n} interval quantifier; expanded "[0-9]{4}" to four literal "[0-9]" classes.
+```
+
+**Large vendored trees:** do not mass-edit hundreds of untouched author files just
+to add a header. When a whole directory (typically `code/original/` or an
+OpenICPSR/Dataverse deposit mirror) is unedited author code, add **one**
+`README.md` at the top of that directory stating all files below are unedited
+author-original, vendored from the deposit (name it). Add file-level
+`author-edited` headers **only** to files inside that tree that we actually
+touch (bug fixes, portability changes) — add the header at the same time as
+the edit, not retroactively as a separate sweep.
+
+Reference (Hahn study, `rep-10.1257-aer.20250166`): `code/*.do` + `code/helpers/*.do`
+are `connector`; `code/cost_curve/*.R` are `translation (Mathematica -> R)`;
+`code/original/README.md` documents the vendored tree; the handful of
+`code/original/**/*.do` files with a regex-portability fix carry `author-edited`.
+
 ## Step 7 — Build outputs
 
 Build from monorepo:

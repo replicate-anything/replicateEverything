@@ -25,6 +25,12 @@ justified. OpenICPSR (no public file API): commit needed inputs only, still
 yaml-declare. Blocked steps: `incomplete:` + `requires_engine:` or
 `data_unavailable:` (audit skips).
 
+**File provenance headers:** every code file gets a short top-of-file comment
+naming one of `connector` / `author-original` / `translation (X -> Y)` /
+`author-edited` (see `folder_replication.md` § File provenance headers).
+Untouched vendored trees (e.g. `code/original/`) get one folder-level
+`README.md` instead of per-file headers.
+
 ## Single source of truth
 
 These skills live **only** here. There are no Dropbox or `~/.cursor/skills`

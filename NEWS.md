@@ -1,3 +1,15 @@
+# replicateEverything 0.7.22
+
+## Skills: file provenance header convention
+
+* **Docs:** New cross-study convention — every study code file carries a
+  short top-of-file `replicateEverything provenance:` comment naming one of
+  `connector` / `author-original` / `translation (X -> Y)` / `author-edited`.
+  Documented in `inst/ai/skills/folder_replication.md` (§ File provenance
+  headers), the skills `README.md`, and root `AI.md`. Large untouched vendored
+  trees (e.g. `code/original/`) get one folder-level `README.md` instead of a
+  per-file sweep. Applied to `rep-10.1257-aer.20250166` as the worked example.
+
 # replicateEverything 0.7.21
 
 ## Shiny: package brand link; pkgdown Run & inspect first
