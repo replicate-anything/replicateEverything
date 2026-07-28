@@ -1,5 +1,12 @@
 # replicateEverything 0.7.21
 
+## Shiny: study share link in summary header
+
+* **UX:** The public study share/chain icon is study-level, not
+  table/figure-level. It no longer repeats on every left-menu step row;
+  it sits once with the other chrome icons to the right of the study
+  summary title (DOI-driven deep link via [share_link_ui()]).
+
 ## Shiny: fix inverted Display enablement; hourglass for audit-timeout Runs
 
 * **Bug fix:** Display enablement no longer uses

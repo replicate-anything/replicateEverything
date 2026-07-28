@@ -6201,14 +6201,6 @@ ui <- tagList(
       color: #0d6efd;
       background: #eef4ff;
     }
-    .replication-share-link {
-      display: inline-flex;
-      align-items: center;
-      margin-right: 0.15rem;
-      color: #6c757d;
-      line-height: 0;
-    }
-    .replication-share-link:hover { color: #0d6efd; }
     .study-dag-panel {
       border-top: 1px solid #dee2e6;
       padding-top: 0.65rem;
@@ -7705,7 +7697,7 @@ server <- function(input, output, session) {
           class = "d-flex align-items-start justify-content-between gap-2",
           h4(class = "mb-0", paper$title %||% state$doi),
           tags$div(
-            class = "d-flex align-items-center gap-2",
+            class = "d-flex align-items-center gap-2 flex-shrink-0",
             source_repository_icon_ui(source_repository, kind = source_kind),
             study_languages_icons_display(
               engines$r,
@@ -7716,7 +7708,13 @@ server <- function(input, output, session) {
             study_notes_icons_display(
               has_data_gap = isTRUE(gaps$data_unavailable),
               has_engine_gap = isTRUE(gaps$missing_engine)
-            )
+            ),
+            if (!is.null(state$doi) && nzchar(state$doi)) {
+              share_link_ui(
+                shiny_deep_link_query_list(state$doi),
+                title = "Link to this study on the public server"
+              )
+            }
           )
         ),
         {
@@ -7974,19 +7972,6 @@ server <- function(input, output, session) {
       tags$span(label, class = "replication-label", title = label_full),
       tags$div(
         class = "replication-actions",
-        if (!is.null(state$doi) && nzchar(state$doi)) {
-          tags$a(
-            href = shiny_share_url(
-              shiny_deep_link_query_list(state$doi)
-            ),
-            class = "replication-share-link",
-            title = paste0("Link to this study on the public server"),
-            target = "_blank",
-            rel = "noopener noreferrer",
-            `aria-label` = paste0("Link to ", label),
-            link_icon_svg()
-          )
-        },
         engine_picks,
         actionButton(
           paste0("display_", safe_group),
