@@ -17,9 +17,11 @@ test_that("save_local_shiny copies app and www", {
   expect_true(any(grepl("replicate_shiny.feedback_enabled = TRUE", opts)))
   expect_true(any(grepl("replicate_shiny.feedback_in_app_enabled = TRUE", opts)))
   expect_true(any(grepl("replicate_shiny.feedback_file", opts)))
+  expect_true(any(grepl("replicate_shiny.wzb_live_run_max_seconds = 600L", opts)))
   app_lines <- readLines(file.path(dest, "app.R"), warn = FALSE)
   expect_true(any(grepl("BAKED_DEPLOY_OPTIONS_START", app_lines, fixed = TRUE)))
   expect_true(any(grepl("replicate_shiny.feedback_enabled = TRUE", app_lines)))
+  expect_true(any(grepl("replicate_shiny.wzb_live_run_max_seconds = 600L", app_lines)))
 })
 
 test_that("save_local_shiny with live_run=FALSE writes display-only deploy-options", {
@@ -54,6 +56,21 @@ test_that("save_local_shiny can disable feedback via arg", {
   opts <- readLines(file.path(dest, "deploy-options.R"))
   expect_true(any(grepl("replicate_shiny.feedback_enabled = FALSE", opts)))
   expect_true(any(grepl("replicate_shiny.feedback_in_app_enabled = FALSE", opts)))
+})
+
+test_that("save_local_shiny writes configurable WZB live-run limit", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  dest <- tempfile("shiny-deploy-")
+  dir.create(dest)
+  on.exit(unlink(dest, recursive = TRUE), add = TRUE)
+
+  save_local_shiny(dest, wzb_live_run_max_seconds = 1200)
+  opts <- readLines(file.path(dest, "deploy-options.R"))
+  expect_true(any(grepl("replicate_shiny.wzb_live_run_max_seconds = 1200L", opts)))
+  app_lines <- readLines(file.path(dest, "app.R"), warn = FALSE)
+  expect_true(any(grepl("replicate_shiny.wzb_live_run_max_seconds = 1200L", app_lines)))
 })
 
 test_that("shiny_live_run_enabled reads replicate_shiny.live_run option", {

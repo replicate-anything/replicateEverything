@@ -2036,14 +2036,17 @@ registry_health_bar_ui <- function(summary) {
   tags$div(
     class = "registry-health-wrap",
     tags$div(
-      class = "registry-health-bar",
-      title = paste0(
-        "Registry audit: ", label_bits,
-        if (nzchar(finished)) paste0(" (", finished, ")") else ""
+      class = "registry-health-main",
+      tags$div(
+        class = "registry-health-bar",
+        title = paste0(
+          "Registry audit: ", label_bits,
+          if (nzchar(finished)) paste0(" (", finished, ")") else ""
+        ),
+        do.call(tagList, bar_nodes[!vapply(bar_nodes, is.null, logical(1))])
       ),
-      do.call(tagList, bar_nodes[!vapply(bar_nodes, is.null, logical(1))])
+      tags$span(class = "registry-health-label", label_bits)
     ),
-    tags$span(class = "registry-health-label", label_bits),
     tags$div(
       class = "registry-health-legend text-muted",
       tags$span(class = "registry-health-legend-swatch registry-health-ok"),
@@ -4868,6 +4871,83 @@ as_table_ui <- function(result) {
     return(tableOutput("dynamic_table"))
   }
 
+  trim_xlsx_preview_df <- function(df) {
+    if (!is.data.frame(df) || nrow(df) == 0L || ncol(df) == 0L) {
+      return(df)
+    }
+    is_blank <- function(x) {
+      vals <- trimws(as.character(x))
+      is.na(vals) | !nzchar(vals)
+    }
+    keep_rows <- vapply(seq_len(nrow(df)), function(i) !all(is_blank(df[i, , drop = TRUE])), logical(1))
+    keep_cols <- vapply(seq_len(ncol(df)), function(i) !all(is_blank(df[[i]])), logical(1))
+    if (!any(keep_rows) || !any(keep_cols)) {
+      return(data.frame())
+    }
+    out <- df[keep_rows, keep_cols, drop = FALSE]
+    out[] <- lapply(out, function(col) {
+      vals <- as.character(col)
+      vals[is.na(vals)] <- ""
+      vals
+    })
+    names(out) <- rep("", ncol(out))
+    out
+  }
+
+  xlsx_preview_ui <- function(path) {
+    if (!requireNamespace("readxl", quietly = TRUE)) {
+      return(tags$div(
+        class = "alert alert-secondary mb-0",
+        "This table was baked as an Excel workbook. Install ",
+        tags$code("readxl"),
+        " on the Shiny host to preview it in-app, or open the workbook directly."
+      ))
+    }
+    sheets <- tryCatch(readxl::excel_sheets(path), error = function(e) character(0))
+    if (!length(sheets)) {
+      return(tags$div(class = "alert alert-warning mb-0", "Could not read workbook sheets for this table."))
+    }
+    preferred <- sheets[!tolower(sheets) %in% c("data_export", "metadata", "readme")]
+    if (!length(preferred)) {
+      preferred <- sheets
+    }
+    rendered <- lapply(preferred[seq_len(min(length(preferred), 2L))], function(sheet) {
+      df <- tryCatch(
+        readxl::read_excel(path, sheet = sheet, col_names = FALSE),
+        error = function(e) NULL
+      )
+      if (is.null(df)) {
+        return(NULL)
+      }
+      df <- trim_xlsx_preview_df(as.data.frame(df, stringsAsFactors = FALSE))
+      if (!nrow(df) || !ncol(df)) {
+        return(NULL)
+      }
+      tags$div(
+        class = "replication-table table-responsive mb-3",
+        if (length(preferred) > 1L || !identical(sheet, sheets[[1L]])) {
+          tags$div(class = "small text-muted mb-1", paste("Sheet:", sheet))
+        },
+        tags$table(
+          class = "table table-sm table-striped table-bordered mb-0",
+          tags$tbody(
+            lapply(seq_len(nrow(df)), function(i) {
+              tags$tr(lapply(df[i, , drop = TRUE], tags$td))
+            })
+          )
+        )
+      )
+    })
+    rendered <- Filter(Negate(is.null), rendered)
+    if (!length(rendered)) {
+      return(tags$div(
+        class = "alert alert-warning mb-0",
+        "Workbook loaded, but no previewable sheet content was found."
+      ))
+    }
+    tagList(rendered)
+  }
+
   # Stata result lists must not fall through to as.character() — that dumps
   # "path NULL study_root id" into Display instead of the table/log HTML.
   if (is.list(obj) && !is.data.frame(obj)) {
@@ -4880,6 +4960,9 @@ as_table_ui <- function(result) {
           class = "replication-table table-responsive",
           HTML(replicate_fn("normalize_html_table", html))
         ))
+      }
+      if (ext %in% c("xlsx", "xlsm", "xls")) {
+        return(xlsx_preview_ui(path))
       }
       lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
       text <- paste(lines, collapse = "\n")
@@ -5600,6 +5683,56 @@ feedback_tab_ui <- function() {
     ),
     in_app_form
   )
+}
+
+shiny_running_on_wzb_safe <- function() {
+  fn <- feedback_pkg_fn("shiny_running_on_wzb", required = FALSE)
+  if (is.null(fn)) {
+    return(FALSE)
+  }
+  isTRUE(tryCatch(fn(), error = function(e) FALSE))
+}
+
+shiny_wzb_live_run_limit_seconds <- function() {
+  raw <- getOption("replicate_shiny.wzb_live_run_max_seconds", 600)
+  secs <- suppressWarnings(as.numeric(raw[[1L]] %||% raw))
+  if (!is.finite(secs) || secs <= 0) {
+    return(Inf)
+  }
+  secs
+}
+
+shiny_runtime_estimate_seconds <- function(rt) {
+  if (is.null(rt) || !is.list(rt)) {
+    return(NA_real_)
+  }
+  bake <- suppressWarnings(as.numeric(rt$bake_seconds[[1L]] %||% rt$bake_seconds %||% NA_real_))
+  secs <- suppressWarnings(as.numeric(rt$seconds[[1L]] %||% rt$seconds %||% NA_real_))
+  cap <- suppressWarnings(as.numeric(rt$timeout_seconds[[1L]] %||% rt$timeout_seconds %||% NA_real_))
+  if (isTRUE(rt$timed_out) && is.finite(bake) && bake > 0) {
+    return(bake)
+  }
+  cand <- c(bake, secs, cap)
+  cand <- cand[is.finite(cand) & cand > 0]
+  if (!length(cand)) {
+    return(NA_real_)
+  }
+  max(cand)
+}
+
+format_run_duration_short <- function(seconds) {
+  seconds <- suppressWarnings(as.numeric(seconds[[1L]] %||% seconds))
+  if (!is.finite(seconds) || seconds <= 0) {
+    return("an extended run")
+  }
+  if (seconds < 90) {
+    return(sprintf("about %.0f seconds", seconds))
+  }
+  if (seconds < 3600) {
+    mins <- max(1L, as.integer(round(seconds / 60)))
+    return(sprintf("about %d minute%s", mins, if (mins == 1L) "" else "s"))
+  }
+  sprintf("about %.1f hours", round(seconds / 3600, 1))
 }
 
 replication_run_snippet <- function(doi, what, language = NULL, include_language = NULL) {
@@ -6953,6 +7086,13 @@ ui <- tagList(
       padding: 0.35rem 1rem 0;
       max-width: 100%;
     }
+    .registry-health-main {
+      flex: 1 1 auto;
+      min-width: 220px;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem 0.65rem;
+    }
     .registry-health-bar {
       flex: 1 1 auto;
       display: flex;
@@ -6998,10 +7138,8 @@ ui <- tagList(
       align-items: center;
       gap: 0.35rem 0.55rem;
       font-size: 0.72rem;
-      /* Sit to the right of the bar/label on the same row (compact); only
-         wraps to its own line if the row is too narrow to fit. */
       flex: 0 1 auto;
-      margin-left: 0.25rem;
+      margin-left: auto;
     }
     .registry-health-legend-swatch {
       display: inline-block;
@@ -9317,6 +9455,36 @@ server <- function(input, output, session) {
       }
     } else if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
       run_msg <- paste0("Running live replication... ", rt$advice)
+    }
+
+    if (isTRUE(shiny_running_on_wzb_safe())) {
+      limit_seconds <- shiny_wzb_live_run_limit_seconds()
+      estimate_seconds <- shiny_runtime_estimate_seconds(rt)
+      if (is.finite(limit_seconds) &&
+          is.finite(estimate_seconds) &&
+          estimate_seconds > limit_seconds) {
+        polite_msg <- paste0(
+          "This step can be run in principle, but the estimated completion time (",
+          format_run_duration_short(estimate_seconds),
+          ") is above the current WZB Shiny live-run limit (",
+          format_run_duration_short(limit_seconds),
+          "). To preserve shared server resources, please run it locally instead."
+        )
+        showModal(modalDialog(
+          title = "Please run locally",
+          tags$p(polite_msg),
+          tags$p(
+            class = "text-muted small mb-0",
+            "Display will continue to show any baked output that is already available."
+          ),
+          easyClose = TRUE,
+          footer = modalButton("OK")
+        ))
+        state$selected_source <- "artifact"
+        state$progress <- NULL
+        load_selected_artifact(fallback_live = FALSE)
+        return(invisible(NULL))
+      }
     }
 
     tryCatch({

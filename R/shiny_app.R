@@ -118,6 +118,9 @@ source_shiny_deploy_config <- function(dir) {
 #' @param feedback_enabled If \code{TRUE}, enable in-app feedback form and
 #'   server-side CSV logging.
 #' @param feedback_file Relative or absolute feedback CSV path.
+#' @param wzb_live_run_max_seconds Max estimated live-run duration allowed on
+#'   the WZB Shiny host before the app politely asks users to run locally.
+#'   Default \code{600} seconds (10 minutes). Set \code{Inf} to disable.
 #' @return Invisibly, a list with \code{live_run}, \code{feedback_enabled}, and
 #'   \code{feedback_file}.
 #' @keywords internal
@@ -126,6 +129,7 @@ write_shiny_deploy_options <- function(
   live_run = TRUE,
   feedback_enabled = TRUE,
   feedback_file = SHINY_FEEDBACK_DEFAULT_FILE,
+  wzb_live_run_max_seconds = 600,
   package = "replicateEverything"
 ) {
   dest <- resolve_shiny_deploy_dest(dest)
@@ -155,6 +159,12 @@ write_shiny_deploy_options <- function(
 
   live_txt <- if (isTRUE(live_run)) "TRUE" else "FALSE"
   feedback_txt <- if (isTRUE(feedback_enabled)) "TRUE" else "FALSE"
+  limit_seconds <- suppressWarnings(as.numeric(wzb_live_run_max_seconds[[1L]] %||% wzb_live_run_max_seconds))
+  if (!is.finite(limit_seconds) || limit_seconds <= 0) {
+    limit_txt <- "Inf"
+  } else {
+    limit_txt <- paste0(format(round(limit_seconds, 3), trim = TRUE, scientific = FALSE), "L")
+  }
   lines <- c(
     stamp,
     sprintf("options(replicate_shiny.live_run = %s)", live_txt),
@@ -175,6 +185,10 @@ write_shiny_deploy_options <- function(
     sprintf(
       "options(replicate_shiny.deploy_lib = %s)",
       encodeString(lib_path, quote = '"')
+    ),
+    sprintf(
+      "options(replicate_shiny.wzb_live_run_max_seconds = %s)",
+      limit_txt
     )
   )
   writeLines(lines, file.path(dest, "deploy-options.R"), useBytes = TRUE)
@@ -182,6 +196,7 @@ write_shiny_deploy_options <- function(
     live_run = isTRUE(live_run),
     feedback_enabled = isTRUE(feedback_enabled),
     feedback_file = feedback_file,
+    wzb_live_run_max_seconds = limit_seconds,
     pkg_version = pkg_info$version,
     pkg_sha = bundled_sha,
     deploy_lib = lib_path
@@ -202,7 +217,8 @@ bake_shiny_app_deploy_options <- function(
   app_path,
   live_run = TRUE,
   feedback_enabled = TRUE,
-  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE
+  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE,
+  wzb_live_run_max_seconds = 600
 ) {
   app_path <- as.character(app_path[[1L]] %||% app_path)
   if (!nzchar(app_path) || !file.exists(app_path)) {
@@ -214,6 +230,12 @@ bake_shiny_app_deploy_options <- function(
   }
   live_txt <- if (isTRUE(live_run)) "TRUE" else "FALSE"
   feedback_txt <- if (isTRUE(feedback_enabled)) "TRUE" else "FALSE"
+  limit_seconds <- suppressWarnings(as.numeric(wzb_live_run_max_seconds[[1L]] %||% wzb_live_run_max_seconds))
+  if (!is.finite(limit_seconds) || limit_seconds <= 0) {
+    limit_txt <- "Inf"
+  } else {
+    limit_txt <- paste0(format(round(limit_seconds, 3), trim = TRUE, scientific = FALSE), "L")
+  }
   block <- c(
     "# BAKED_DEPLOY_OPTIONS_START",
     "# Written by save_local_shiny(); redeploy overwrites. No local.R required.",
@@ -223,6 +245,10 @@ bake_shiny_app_deploy_options <- function(
     sprintf(
       "options(replicate_shiny.feedback_file = %s)",
       encodeString(feedback_file, quote = '"')
+    ),
+    sprintf(
+      "options(replicate_shiny.wzb_live_run_max_seconds = %s)",
+      limit_txt
     ),
     "# BAKED_DEPLOY_OPTIONS_END"
   )
@@ -380,6 +406,9 @@ parse_shiny_deep_link_from_search <- function(url_search) {
 #'   [run_shiny_app()] leaves feedback off unless you set options yourself.
 #' @param feedback_file Relative or absolute path for the feedback CSV
 #'   (default `data/feedback.csv`, relative to the deploy directory).
+#' @param wzb_live_run_max_seconds Max estimated live-run duration allowed on
+#'   the WZB Shiny host before the app asks users to run locally. Default
+#'   `600` seconds (10 minutes). Set `Inf` to disable.
 #' @return Invisibly, normalized `dest`.
 #' @export
 #' @examples
@@ -394,7 +423,8 @@ save_local_shiny <- function(
   overwrite = TRUE,
   live_run = TRUE,
   feedback_enabled = TRUE,
-  feedback_file = "data/feedback.csv"
+  feedback_file = "data/feedback.csv",
+  wzb_live_run_max_seconds = 600
 ) {
   src <- shiny_app_dir(package)
   if (!nzchar(src) || !dir.exists(src)) {
@@ -432,7 +462,8 @@ save_local_shiny <- function(
     dest_app,
     live_run = live_run,
     feedback_enabled = feedback_enabled,
-    feedback_file = feedback_file
+    feedback_file = feedback_file,
+    wzb_live_run_max_seconds = wzb_live_run_max_seconds
   )
 
   www_src <- file.path(src, "www")
@@ -459,6 +490,7 @@ save_local_shiny <- function(
     live_run = live_run,
     feedback_enabled = feedback_enabled,
     feedback_file = feedback_file,
+    wzb_live_run_max_seconds = wzb_live_run_max_seconds,
     package = package
   )
   mode_label <- if (isTRUE(live_run)) "live run" else "display-only"

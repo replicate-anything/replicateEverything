@@ -1,6 +1,6 @@
 Package: replicateEverything
 Title: Tools to Replicate Empirical Research Papers
-Version: 0.7.29
+Version: 0.7.30
 Authors@R: c(
     person("Macartan", "Humphreys", email = "macartan.humphreys@wzb.eu", role = c("aut", "cre")),
     person("Vermon", "Washington", email = "vermon.washington@wzb.eu", role = "aut"),
@@ -31,6 +31,7 @@ Suggests:
     withr,
     devtools,
     remotes,
+    readxl,
     shiny,
     bslib,
     shinyWidgets,

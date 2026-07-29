@@ -501,19 +501,29 @@ stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL,
     "set more off, permanently",
     "pause off",
     # nobreak: ignore Break during the nested do so a stray focus/click does
-    # not surface r(1) / continue dialogs.
+    # not surface r(1) / continue dialogs. Preserve the nested do's return
+    # code and re-raise it: otherwise Windows `exit, clear STATA` below would
+    # report process exit 0 even when the step failed (silent missing sinks).
     sprintf("capture noisily nobreak do \"%s\"", do_in_do),
-    "if _rc != 0 {",
-    "    display as error \"replicateEverything: step do-file ended with error r(\" _rc \");  see log above for the failing command.\"",
+    "local REPLICATE_STEP_RC = _rc",
+    "if `REPLICATE_STEP_RC' != 0 {",
+    "    display as error \"replicateEverything: step do-file ended with error r(\" `REPLICATE_STEP_RC' \");  see log above for the failing command.\"",
     "}"
   )
   # Windows: must exit explicitly because we do not use /e (needed so shell
-  # works). clear STATA skips save prompts.
+  # works). clear STATA skips save prompts. Re-raise the nested do's return
+  # code so processx / system2 see a non-zero status when the step failed.
   if (.Platform$OS.type == "windows") {
     runner_lines <- c(
       runner_lines,
       "cap log close _all",
-      "exit, clear STATA"
+      "exit `REPLICATE_STEP_RC', clear STATA"
+    )
+  } else {
+    runner_lines <- c(
+      runner_lines,
+      "cap log close _all",
+      "exit `REPLICATE_STEP_RC'"
     )
   }
   runner_lines
@@ -668,6 +678,28 @@ wait_for_stata_log_flush <- function(log_path, max_checks = 10L, interval = 0.3)
     Sys.sleep(interval)
   }
   invisible(FALSE)
+}
+
+#' Wait briefly for a declared Stata output file to appear or refresh
+#'
+#' Some Windows / Dropbox-backed outputs (notably workbook files) can land a
+#' fraction of a second after the Stata process exits cleanly. Poll the
+#' declared output path for a short period before treating the run as a hard
+#' failure.
+#' @keywords internal
+wait_for_stata_output_flush <- function(path, before_tokens = NULL,
+                                        max_checks = 10L, interval = 0.3) {
+  if (is.null(path) || !length(path) || !nzchar(path[[1L]])) {
+    return(invisible(FALSE))
+  }
+  path <- as.character(path[[1L]])
+  for (i in seq_len(max_checks)) {
+    if (file.exists(path) && stata_output_is_fresh(path, before_tokens)) {
+      return(invisible(TRUE))
+    }
+    Sys.sleep(interval)
+  }
+  invisible(file.exists(path) && stata_output_is_fresh(path, before_tokens))
 }
 
 #' @keywords internal
@@ -2141,6 +2173,9 @@ run_stata_replication <- function(rep, ctx, meta = NULL, install_deps = FALSE) {
     staging_dir = staging_dir,
     before_mtimes = before_mtimes
   )
+  if (!file.exists(output_path) || !stata_output_is_fresh(output_path, before_mtimes)) {
+    wait_for_stata_output_flush(output_path, before_tokens = before_mtimes)
+  }
   if (!file.exists(output_path) || !stata_output_is_fresh(output_path, before_mtimes)) {
     stop(
       paste0(

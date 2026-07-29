@@ -15,9 +15,12 @@ test_that("stata_runner_lines wraps the step do-file in capture noisily, not a b
   expect_true(any(grepl("nobreak do", lines, fixed = TRUE)))
   # Do not force varabbrev off - deposited scripts often rely on abbreviation.
   # Do not inject a sleep override - sleep is a Stata built-in and cannot be replaced.
-  # The error must still surface in the log for stata_log_error() to find.
-  expect_true(any(grepl("if _rc != 0", lines, fixed = TRUE)))
+  # The error must still surface in the log for stata_log_error() to find,
+  # and the nested do's return code must be preserved / re-raised (not
+  # silently converted to process exit 0 by `exit, clear STATA`).
+  expect_true(any(grepl("REPLICATE_STEP_RC", lines, fixed = TRUE)))
   expect_true(any(grepl("display as error", lines, fixed = TRUE)))
+  expect_true(any(grepl("exit `REPLICATE_STEP_RC'", lines, fixed = TRUE)))
 })
 
 test_that("stata_runner_lines still wires up staging dir globals", {

@@ -1,4 +1,25 @@
-# replicateEverything 0.7.29
+# replicateEverything 0.7.30
+
+## Hahn tables + WZB Shiny run gate
+
+* **Hahn tables:** file-backed Excel table artifacts (e.g. Hahn `tab_1` /
+  `tab_2` `.xlsx` outputs) now preview in Shiny when `readxl` is available on
+  the host, instead of falling through to a raw text / unreadable file-path
+  view. The table display picks non-`data_export` sheets first and trims blank
+  rows/columns for a compact preview.
+* **Stata runner exit codes:** generated runners now preserve the nested
+  step do-file's `_rc` and re-raise it on `exit` (Windows included). Previously
+  a failed step could still report process exit 0 after `exit, clear STATA`,
+  which surfaced only as a confusing "Expected Stata output not found".
+* **WZB Shiny live-run limit:** deployed apps can now set
+  `replicate_shiny.wzb_live_run_max_seconds` via
+  [save_local_shiny()] / [write_shiny_deploy_options()] /
+  `deploy-options.R` (default `600`, i.e. 10 minutes). When the app is running
+  on the WZB Shiny host and a step's estimated runtime exceeds that threshold,
+  clicking `Run` shows a polite "please run locally" message and falls back to
+  baked Display output instead of starting the server-side job.
+* **Registry health layout:** the health legend/key is now explicitly laid out
+  to the right of the bar for a more compact header.
 
 ## Fix: registry health bar `[[` crash persisted after the 0.7.28 authors fix
 

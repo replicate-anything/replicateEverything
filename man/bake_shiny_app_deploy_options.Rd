@@ -8,7 +8,8 @@ bake_shiny_app_deploy_options(
   app_path,
   live_run = TRUE,
   feedback_enabled = TRUE,
-  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE
+  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE,
+  wzb_live_run_max_seconds = 600
 )
 }
 \arguments{
@@ -20,6 +21,10 @@ bake_shiny_app_deploy_options(
 server-side CSV logging.}
 
 \item{feedback_file}{Relative or absolute feedback CSV path.}
+
+\item{wzb_live_run_max_seconds}{Max estimated live-run duration allowed on
+the WZB Shiny host before the app politely asks users to run locally.
+Default \code{600} seconds (10 minutes). Set \code{Inf} to disable.}
 }
 \value{
 Invisibly, \code{app_path}.
