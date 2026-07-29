@@ -357,23 +357,32 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
 #' @return Character scalar suitable for an HTML table cell.
 #' @keywords internal
 format_xlsx_preview_cell <- function(x) {
+  # readxl mixed-type columns are list-columns; unwrap length-1 lists.
+  while (is.list(x) && length(x) == 1L) {
+    x <- x[[1]]
+  }
   if (length(x) != 1L) {
     x <- x[[1]]
   }
   if (is.null(x) || (length(x) == 1L && is.na(x))) {
     return("")
   }
+  round3 <- function(num) {
+    sprintf("%.3f", round(as.numeric(num), 3L))
+  }
   if (is.numeric(x)) {
-    return(format(round(as.numeric(x), 3L), nsmall = 3L, trim = TRUE, scientific = FALSE))
+    return(round3(x))
   }
   s <- trimws(as.character(x))
   if (!nzchar(s) || identical(s, "NA")) {
     return("")
   }
+  # Character cells that are plain numbers (Excel often stores these as text,
+  # including binary float artifacts like "6.2399425510000004").
   if (grepl("^-?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?$", s)) {
     num <- suppressWarnings(as.numeric(s))
     if (!is.na(num)) {
-      return(format(round(num, 3L), nsmall = 3L, trim = TRUE, scientific = FALSE))
+      return(round3(num))
     }
   }
   s

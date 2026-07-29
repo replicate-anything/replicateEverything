@@ -58,6 +58,11 @@ test_that("format_xlsx_preview_cell rounds numerics to 3 decimals", {
   expect_identical(format_xlsx_preview_cell("3.14159"), "3.142")
   expect_identical(format_xlsx_preview_cell("Policy A"), "Policy A")
   expect_identical(format_xlsx_preview_cell(NA_real_), "")
+  # Hahn tab_2 Excel text cells / binary float artifacts (must not pass through).
+  expect_identical(format_xlsx_preview_cell("6.2399425510000004"), "6.240")
+  expect_identical(format_xlsx_preview_cell("-113.1814499"), "-113.181")
+  expect_identical(format_xlsx_preview_cell(6.2399425510000004), "6.240")
+  expect_identical(format_xlsx_preview_cell(list("6.2399425510000004")), "6.240")
 })
 
 test_that("format_xlsx_preview_df rounds numeric columns and keeps text", {
@@ -69,6 +74,21 @@ test_that("format_xlsx_preview_df rounds numeric columns and keeps text", {
   )
   expect_identical(out[[1]][[1]], "1.235")
   expect_identical(out[[2]][[1]], "x")
+
+  # Character columns with float-artifact strings (Hahn tab_2 TABLE sheet).
+  hahnish <- as.data.frame(
+    list(
+      V1 = c("Wind Production Credits", "note"),
+      V2 = c("6.2399425510000004", "keep"),
+      V3 = c("-113.1814499", "")
+    ),
+    stringsAsFactors = FALSE
+  )
+  out2 <- format_xlsx_preview_df(hahnish)
+  expect_identical(out2[[1]][[1]], "Wind Production Credits")
+  expect_identical(out2[[2]][[1]], "6.240")
+  expect_identical(out2[[3]][[1]], "-113.181")
+  expect_identical(out2[[2]][[2]], "keep")
 })
 
 test_that("get_artifact_paths returns all declared figure panels that exist", {

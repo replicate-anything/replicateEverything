@@ -4920,6 +4920,36 @@ as_table_ui <- function(result) {
     result
   }
 
+  # Round numeric Excel cells to 3dp for Display. Prefer the package helper
+  # when available; never fall back to bare as.character() (that preserves
+  # binary float artifacts like "6.2399425510000004" from Hahn tab_2).
+  format_xlsx_preview_cell_local <- function(x) {
+    while (is.list(x) && length(x) == 1L) {
+      x <- x[[1]]
+    }
+    if (length(x) != 1L) {
+      x <- x[[1]]
+    }
+    if (is.null(x) || (length(x) == 1L && is.na(x))) {
+      return("")
+    }
+    round3 <- function(num) sprintf("%.3f", round(as.numeric(num), 3L))
+    if (is.numeric(x)) {
+      return(round3(x))
+    }
+    s <- trimws(as.character(x))
+    if (!nzchar(s) || identical(s, "NA")) {
+      return("")
+    }
+    if (grepl("^-?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?$", s)) {
+      num <- suppressWarnings(as.numeric(s))
+      if (!is.na(num)) {
+        return(round3(num))
+      }
+    }
+    s
+  }
+
   trim_xlsx_preview_df <- function(df) {
     if (
       requireNamespace("replicateEverything", quietly = TRUE) &&
@@ -4940,7 +4970,9 @@ as_table_ui <- function(result) {
       return(data.frame())
     }
     out <- df[keep_rows, keep_cols, drop = FALSE]
-    out[] <- lapply(out, function(col) as.character(col))
+    out[] <- lapply(out, function(col) {
+      vapply(seq_along(col), function(i) format_xlsx_preview_cell_local(col[[i]]), character(1))
+    })
     names(out) <- rep("", ncol(out))
     out
   }
@@ -4983,7 +5015,8 @@ as_table_ui <- function(result) {
           class = "table table-sm table-striped table-bordered mb-0",
           tags$tbody(
             lapply(seq_len(nrow(df)), function(i) {
-              tags$tr(lapply(df[i, , drop = TRUE], tags$td))
+              row <- df[i, , drop = TRUE]
+              tags$tr(lapply(row, function(cell) tags$td(as.character(cell))))
             })
           )
         )

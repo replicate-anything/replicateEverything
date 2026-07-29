@@ -1,3 +1,16 @@
+# replicateEverything 0.7.33
+
+## Fix: Excel Display rounding actually reaches Shiny
+
+* **Bug:** 0.7.32 added [format_xlsx_preview_df()] but Shiny `as_table_ui()`
+  fell back to bare `as.character()` when the installed package lacked that
+  helper (e.g. still on 0.7.31). That preserved Excel float-text artifacts
+  such as Hahn `tab_2` `6.2399425510000004` / `-113.1814499`.
+* **Fix:** Shiny always rounds preview cells to 3 decimals (inline fallback
+  mirrors the package helper; never raw `as.character`). Package helper uses
+  `sprintf("%.3f", ...)` and unwraps length-1 list cells. Does not rebake
+  workbooks.
+
 # replicateEverything 0.7.32
 
 ## Display: multi-panel figures + Excel 3-decimal preview
