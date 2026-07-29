@@ -6998,8 +6998,10 @@ ui <- tagList(
       align-items: center;
       gap: 0.35rem 0.55rem;
       font-size: 0.72rem;
-      width: 100%;
-      padding-top: 0.15rem;
+      /* Sit to the right of the bar/label on the same row (compact); only
+         wraps to its own line if the row is too narrow to fit. */
+      flex: 0 1 auto;
+      margin-left: 0.25rem;
     }
     .registry-health-legend-swatch {
       display: inline-block;

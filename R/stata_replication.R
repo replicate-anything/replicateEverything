@@ -162,6 +162,39 @@ find_stata_executable <- function() {
   NULL
 }
 
+#' Human-readable label for a resolved Stata executable path
+#'
+#' Derives a short "Stata &lt;version&gt; &lt;edition&gt;" label from the
+#' install path (e.g. \code{.../Stata17/StataMP-64.exe} -> \code{"Stata 17
+#' MP"}), so check/install messages make it obvious at a glance whether they
+#' resolved the same Stata. The raw path (always reported alongside) is the
+#' ground truth for programmatic comparison.
+#'
+#' @param path Absolute path to a Stata executable, or \code{NULL}.
+#' @return Character scalar, e.g. \code{"Stata 17 MP (C:/.../StataMP-64.exe)"}
+#'   or \code{"(Stata not found)"}.
+#' @keywords internal
+stata_executable_label <- function(path) {
+  if (is.null(path) || !length(path) || is.na(path[[1]]) || !nzchar(path[[1]])) {
+    return("(Stata not found)")
+  }
+  path <- as.character(path[[1]])
+  base <- basename(path)
+  ver_match <- regmatches(path, regexpr("[Ss]tata[A-Za-z]*([0-9]{2})", path))
+  ver <- if (length(ver_match) && nzchar(ver_match)) gsub("[^0-9]", "", ver_match) else ""
+  edition <- if (grepl("mp", base, ignore.case = TRUE)) {
+    "MP"
+  } else if (grepl("se", base, ignore.case = TRUE)) {
+    "SE"
+  } else if (grepl("ic", base, ignore.case = TRUE)) {
+    "IC"
+  } else {
+    ""
+  }
+  label <- trimws(paste("Stata", ver, edition))
+  paste0(label, " (", path, ")")
+}
+
 #' @keywords internal
 stata_path_for_shell <- function(path) {
   path <- normalizePath(path, winslash = "/", mustWork = FALSE)
@@ -652,6 +685,29 @@ stata_log_error <- function(log_path) {
   strip_ansi_escapes(paste(lines[start:end], collapse = "\n"))
 }
 
+#' Relay per-package \code{REPLICATE_DEP_STATUS:} lines from an install log
+#'
+#' [stata_deps_install_lines_from_packages()] prints one
+#' \code{REPLICATE_DEP_STATUS: ...} line per declared package (already
+#' present / installed) so the install can report success/failure without
+#' the caller having to open the Stata batch log by hand.
+#'
+#' @param log_path Path to a Stata batch log written by the install runner.
+#' @return Character vector of status lines (without the marker prefix), or
+#'   \code{character(0)} when the log has none (e.g. custom install script).
+#' @keywords internal
+stata_install_status_lines <- function(log_path) {
+  if (is.null(log_path) || !nzchar(log_path) || !file.exists(log_path)) {
+    return(character(0))
+  }
+  lines <- tryCatch(
+    readLines(log_path, warn = FALSE, encoding = "UTF-8"),
+    error = function(e) character(0)
+  )
+  hits <- grep("^REPLICATE_DEP_STATUS: ", lines, value = TRUE)
+  trimws(sub("^REPLICATE_DEP_STATUS: ", "", hits))
+}
+
 #' @keywords internal
 stata_log_tail <- function(log_path, n = 40L) {
   if (!file.exists(log_path)) {
@@ -916,6 +972,49 @@ stata_probe_command <- function(pkg) {
   pkg
 }
 
+#' Presence-probe spec for a declared SSC package name
+#'
+#' Most SSC packages install a runnable ado command that \code{which} can
+#' probe directly. A few ship no command at all - notably \code{moremata},
+#' which is a pure Mata function library (\code{lmoremata.mlib} + help
+#' files, no \code{moremata.ado}). \code{which moremata} therefore always
+#' returns "command not found" (\code{r(111)}) even when the package is
+#' correctly installed via \code{ssc install moremata}, which is exactly
+#' what makes the auto-generated dependency probe report a false
+#' "missing" for otherwise-installed packages. For those, probe the
+#' installed library/help file directly with \code{findfile} instead.
+#'
+#' @param pkg Declared package name from \code{stata_packages:}.
+#' @return List with \code{kind} (\code{"command"} or \code{"file"}) and
+#'   \code{target} (command name, or filename to \code{findfile}).
+#' @keywords internal
+stata_package_probe_spec <- function(pkg) {
+  # Packages that ship no runnable ado command of their own name - probe an
+  # installed file instead (checked via `findfile`, which searches the
+  # resolved Stata's ado path exactly like `which` does for commands).
+  file_probes <- c(
+    moremata = "lmoremata.mlib"
+  )
+  if (pkg %in% names(file_probes)) {
+    return(list(kind = "file", target = unname(file_probes[[pkg]])))
+  }
+  list(kind = "command", target = stata_probe_command(pkg))
+}
+
+#' Stata do-file line(s) that test presence of a declared package
+#'
+#' @inheritParams stata_package_probe_spec
+#' @return Character scalar: a single \code{cap which ...} or
+#'   \code{cap findfile ...} line.
+#' @keywords internal
+stata_package_probe_line <- function(pkg) {
+  spec <- stata_package_probe_spec(pkg)
+  if (identical(spec$kind, "file")) {
+    return(sprintf("cap findfile %s", spec$target))
+  }
+  sprintf("cap which %s", spec$target)
+}
+
 #' Stata install lines for the SSC \code{ftools} + \code{reghdfe} stack
 #'
 #' Current SSC \code{reghdfe} (6.x) requires the \code{require} package. Refreshes
@@ -991,17 +1090,20 @@ stata_deps_install_lines_from_packages <- function(packages) {
     if (needs_reghdfe && pkg %in% c("ftools", "reghdfe", "require")) {
       next
     }
-    cmd <- stata_probe_command(pkg)
     lines <- c(
       lines,
-      sprintf("cap which %s", cmd),
+      stata_package_probe_line(pkg),
       "if _rc {",
-      sprintf('    di as txt "Installing %s from SSC..."', pkg),
+      sprintf('    di as txt "REPLICATE_DEP_STATUS: installing %s from SSC..."', pkg),
       # `capture noisily` (not bare `ssc install`): a network hiccup or SSC
       # outage here must not leave Stata "interrupted" and popping the
       # Windows batch-continue dialog - see stata_runner_lines() above for
       # the full explanation. Still visible/logged via `noisily`.
       sprintf("    capture noisily ssc install %s, replace", pkg),
+      sprintf('    di as txt "REPLICATE_DEP_STATUS: installed %s from SSC"', pkg),
+      "}",
+      "else {",
+      sprintf('    di as txt "REPLICATE_DEP_STATUS: %s already present"', pkg),
       "}"
     )
   }
@@ -1018,17 +1120,24 @@ stata_deps_install_lines_from_packages <- function(packages) {
   lines
 }
 
-#' Build a Stata probe from \code{stata_packages:}
+#' Build a Stata probe from \code{stata_packages:}, with exit-code attribution
 #'
-#' Uses \code{which} plus \code{help} (and reghdfe runtime checks when needed).
+#' Uses \code{which} (or \code{findfile} for file-only packages; see
+#' [stata_package_probe_spec()]) plus \code{help} (and reghdfe runtime checks
+#' when needed). Each check exits with a distinct code so a failing probe run
+#' can be attributed back to the exact package that failed, instead of
+#' blaming every declared package (see [stata_dependencies_satisfied()]).
 #'
 #' @param packages Character vector of ado command names.
-#' @return Character vector of Stata commands.
+#' @return List with \code{lines} (character vector of Stata commands) and
+#'   \code{code_map} (named character vector: exit code as name, package
+#'   name as value).
 #' @keywords internal
-stata_deps_probe_lines_from_packages <- function(packages) {
+stata_deps_probe_plan_from_packages <- function(packages) {
   packages <- unique(as.character(packages[nzchar(packages)]))
+  code_map <- character(0)
   if (length(packages) == 0L) {
-    return(character(0))
+    return(list(lines = character(0), code_map = code_map))
   }
   lines <- c(
     "* Auto-generated probe from replication.yml stata_packages:",
@@ -1041,6 +1150,7 @@ stata_deps_probe_lines_from_packages <- function(packages) {
       "cap which ftools",
       "if _rc exit 10"
     )
+    code_map[["10"]] <- "ftools"
   }
   if ("reghdfe" %in% packages) {
     lines <- c(
@@ -1055,18 +1165,40 @@ stata_deps_probe_lines_from_packages <- function(packages) {
       "cap help reghdfe",
       "if _rc exit 12"
     )
+    code_map[["11"]] <- "reghdfe"
+    code_map[["16"]] <- "require"
+    code_map[["12"]] <- "reghdfe"
+    code_map[["15"]] <- "reghdfe"
   }
   other <- packages[!packages %in% c("ftools", "reghdfe", "require")]
   for (i in seq_along(other)) {
     pkg <- other[[i]]
-    cmd <- stata_probe_command(pkg)
+    code <- 20L + i
     lines <- c(
       lines,
-      sprintf("cap which %s", cmd),
-      sprintf("if _rc exit %d", 20L + i)
+      stata_package_probe_line(pkg),
+      sprintf("if _rc exit %d", code)
     )
+    code_map[[as.character(code)]] <- pkg
   }
-  c(lines, "exit 0")
+  list(lines = c(lines, "exit 0"), code_map = code_map)
+}
+
+#' Build a Stata probe from \code{stata_packages:}
+#'
+#' @inheritParams stata_deps_probe_plan_from_packages
+#' @return Character vector of Stata commands.
+#' @keywords internal
+stata_deps_probe_lines_from_packages <- function(packages) {
+  stata_deps_probe_plan_from_packages(packages)$lines
+}
+
+#' Exit-code -> package name map for [stata_deps_probe_lines_from_packages()]
+#' @inheritParams stata_deps_probe_plan_from_packages
+#' @return Named character vector (exit code as name, package as value).
+#' @keywords internal
+stata_deps_probe_code_map <- function(packages) {
+  stata_deps_probe_plan_from_packages(packages)$code_map
 }
 
 #' Resolve Stata install scripts or generated install from \code{stata_packages:}
@@ -1132,6 +1264,30 @@ stata_deps_probe_label <- function(study_root, meta = NULL) {
   "not configured"
 }
 
+#' Exit code that made a generated Stata probe fail, if attributable
+#'
+#' \code{stata_runner_lines()} always prints
+#' \code{"...ended with error r(<code>);..."} when the wrapped do-file
+#' aborts, and Stata itself echoes a bare \code{r(<code>);} line for the
+#' underlying \code{exit <code>}. Either is enough to recover the first
+#' failing exit code from the run's error text.
+#'
+#' @param text Character scalar (e.g. \code{conditionMessage()} of the error
+#'   thrown by \code{run_stata_do()}, which includes the Stata error/log
+#'   tail).
+#' @return Character scalar exit code, or \code{NA_character_} if none found.
+#' @keywords internal
+stata_probe_failure_code <- function(text) {
+  if (is.null(text) || !length(text) || !nzchar(text[[1]])) {
+    return(NA_character_)
+  }
+  m <- regmatches(text, regexpr("r\\(([0-9]+)\\)", text))
+  if (!length(m) || !nzchar(m)) {
+    return(NA_character_)
+  }
+  gsub("[^0-9]", "", m)
+}
+
 #' Whether required Stata SSC packages load without running install scripts
 #'
 #' Uses the study's \code{stata_deps_probe} script when declared; otherwise a
@@ -1139,9 +1295,18 @@ stata_deps_probe_label <- function(study_root, meta = NULL) {
 #' \code{NA} when neither is configured (caller should run install scripts or
 #' skip per policy).
 #'
+#' The returned logical carries diagnostic attributes so callers can report
+#' precisely *which* Stata was used and *which* package(s) actually failed,
+#' instead of blaming every declared package for one broken probe (the
+#' \code{moremata} bug): \code{stata_executable} (path), \code{stata_label}
+#' (human-readable), and \code{missing} (character vector - the specific
+#' package attributed to the failure when derivable, else all declared
+#' packages as a conservative fallback).
+#'
 #' @inheritParams run_stata_do
 #' @param meta Parsed replication metadata.
-#' @return \code{TRUE}, \code{FALSE}, or \code{NA} (no probe configured).
+#' @return \code{TRUE}, \code{FALSE}, or \code{NA} (no probe configured), with
+#'   \code{stata_executable} / \code{stata_label} / \code{missing} attributes.
 #' @keywords internal
 stata_dependencies_satisfied <- function(
   study_root,
@@ -1157,8 +1322,19 @@ stata_dependencies_satisfied <- function(
   }
 
   stata <- find_stata_executable()
+  stata_label <- stata_executable_label(stata)
+  with_diag <- function(x, missing = character(0)) {
+    attr(x, "stata_executable") <- stata
+    attr(x, "stata_label") <- stata_label
+    attr(x, "missing") <- missing
+    x
+  }
+
   if (is.null(stata)) {
-    return(FALSE)
+    return(with_diag(
+      FALSE,
+      missing = if (length(packages)) packages else "Stata executable"
+    ))
   }
 
   workdir <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
@@ -1169,7 +1345,7 @@ stata_dependencies_satisfied <- function(
     # `Stata /q do probe.do` leaves the GUI running after `exit 0` (do-file
     # exit only), so the probe hangs until stata_deps_probe_timeout and
     # every package looks "missing".
-    res <- tryCatch(
+    tryCatch(
       run_stata_do(
         do_path,
         workdir = workdir,
@@ -1183,20 +1359,36 @@ stata_dependencies_satisfied <- function(
         e
       }
     )
-    !inherits(res, "error")
   }
 
   if (length(probe_scripts) > 0L) {
-    results <- vapply(probe_scripts, function(script) {
-      run_probe(script)
-    }, logical(1))
-    return(all(results))
+    results <- lapply(probe_scripts, run_probe)
+    ok <- all(vapply(results, function(r) !inherits(r, "error"), logical(1)))
+    # Custom stata_deps_probe scripts are free-form user do-files; we cannot
+    # attribute a failure to one specific package, so fall back to a generic
+    # "probe failed" marker rather than guessing.
+    return(with_diag(ok, missing = if (ok) character(0) else "Stata packages (probe failed)"))
   }
 
   runner <- file.path(run_dir, "replicate_stata_deps_probe.do")
-  writeLines(stata_deps_probe_lines_from_packages(packages), runner, useBytes = TRUE)
+  plan <- stata_deps_probe_plan_from_packages(packages)
+  writeLines(plan$lines, runner, useBytes = TRUE)
   on.exit(cleanup_stata_run_dir(run_dir), add = TRUE)
-  run_probe(runner)
+  res <- run_probe(runner)
+  if (!inherits(res, "error")) {
+    return(with_diag(TRUE, missing = character(0)))
+  }
+
+  code <- stata_probe_failure_code(conditionMessage(res))
+  attributed <- if (!is.na(code) && code %in% names(plan$code_map)) {
+    unname(plan$code_map[[code]])
+  } else {
+    NA_character_
+  }
+  # A generated probe short-circuits (`exit`) at the first failing package,
+  # so only that one is *known* to be missing; report just it when
+  # attributable instead of blaming every declared package.
+  with_diag(FALSE, missing = if (!is.na(attributed)) attributed else packages)
 }
 
 #' Whether study Stata install scripts may run (maintainer / build only)
@@ -1231,6 +1423,7 @@ verify_stata_dependencies <- function(
       call. = FALSE
     )
   }
+  stata_label <- stata_executable_label(stata)
 
   probe_label <- stata_deps_probe_label(study_root, meta = meta)
   pkgs <- stata_deps_package_names(meta, study_root = study_root)
@@ -1240,6 +1433,10 @@ verify_stata_dependencies <- function(
     return(invisible(TRUE))
   }
 
+  # Always report which Stata this check is talking to, so a check vs.
+  # install mismatch (e.g. two Stata versions installed) is visible rather
+  # than assumed.
+  message("Checking Stata dependencies using: ", stata_label)
   replicate_progress(paste0("Checking Stata dependencies (", probe_label, ")..."))
   satisfied <- tryCatch(
     stata_dependencies_satisfied(
@@ -1258,15 +1455,23 @@ verify_stata_dependencies <- function(
 
   if (isTRUE(satisfied)) {
     replicate_progress("Stata dependencies OK")
+    message("Stata dependencies OK (", stata_label, ")")
     return(invisible(TRUE))
   }
 
+  attributed_missing <- attr(satisfied, "missing", exact = TRUE)
   scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
   stop(
     "Stata dependencies are not satisfied on this machine.\n",
+    "Stata: ", stata_label, "\n",
     "Probe: ", probe_label, "\n",
     if (length(pkgs)) {
       paste0("Declared stata_packages: ", paste(pkgs, collapse = ", "), "\n")
+    } else {
+      ""
+    },
+    if (length(attributed_missing)) {
+      paste0("Missing (probe-attributed): ", paste(attributed_missing, collapse = ", "), "\n")
     } else {
       ""
     },
@@ -1384,17 +1589,74 @@ install_stata_dependencies <- function(
   install_timeout <- as.integer(
     getOption("replicateEverything.stata_deps_install_timeout", 600L)[1]
   )
+  stata_label <- stata_executable_label(find_stata_executable())
+  message("Installing Stata dependencies using: ", stata_label)
   for (script in scripts) {
     replicate_progress(paste0("Installing Stata dependencies via ", basename(script), " ..."))
     message("Installing Stata dependencies via ", basename(script), " ...")
-    run_stata_do(
+    run_result <- run_stata_do(
       script,
       study_root,
       staging_dir = staging_dir,
       timeout = install_timeout,
       hint_context = list(study_root = study_root, meta = meta)
     )
+    status_lines <- stata_install_status_lines(run_result$log_path %||% NULL)
+    if (length(status_lines)) {
+      message("  ", paste(status_lines, collapse = "\n  "))
+    }
   }
+
+  # Validate on the spot: re-run the same presence probe immediately after
+  # install and report per-package pass/fail, so "install finished" cannot
+  # silently lie when the probe (or install) is still broken for a package
+  # (e.g. wrong presence check, network hiccup, ado reindex needed).
+  post_check <- tryCatch(
+    stata_dependencies_satisfied(
+      study_root,
+      staging_dir = staging_dir,
+      meta = meta,
+      timeout = as.integer(
+        getOption("replicateEverything.stata_deps_probe_timeout", 120L)[1]
+      )
+    ),
+    error = function(e) {
+      message("Post-install validation could not run: ", conditionMessage(e))
+      NA
+    }
+  )
+  if (isTRUE(post_check)) {
+    message(
+      "Post-install validation OK (", stata_label, "): ",
+      if (length(targets$packages)) {
+        paste0("all declared packages found (", paste(targets$packages, collapse = ", "), ")")
+      } else {
+        "probe passed"
+      }
+    )
+    mark_stata_deps_installed(deps_key)
+    return(invisible(TRUE))
+  }
+  if (isFALSE(post_check)) {
+    still_missing <- attr(post_check, "missing", exact = TRUE) %||% targets$packages
+    warning(
+      "Stata dependency install finished, but post-install validation still ",
+      "reports missing package(s) using ", stata_label, ": ",
+      paste(still_missing, collapse = ", "), ". ",
+      "This usually means the install and the check are using different ",
+      "Stata installs, the ado database needs a `mata: mata mlib index` / ",
+      "Stata restart, or the presence probe for one of these packages is ",
+      "wrong (e.g. a Mata-only library like moremata has no runnable ",
+      "command of its own name).",
+      call. = FALSE
+    )
+    # Do not mark as installed: a later replication attempt in this session
+    # should retry rather than trust a "finished" that didn't actually work.
+    return(invisible(FALSE))
+  }
+  # NA: no probe configured to validate against (e.g. custom install script
+  # with no stata_packages: / stata_deps_probe: declared) - nothing to
+  # contradict "finished", so keep prior behavior.
   mark_stata_deps_installed(deps_key)
   invisible(TRUE)
 }

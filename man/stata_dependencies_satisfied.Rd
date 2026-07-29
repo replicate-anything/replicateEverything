@@ -19,12 +19,22 @@ stata_dependencies_satisfied(
 \item{meta}{Parsed replication metadata.}
 }
 \value{
-\code{TRUE}, \code{FALSE}, or \code{NA} (no probe configured).
+\code{TRUE}, \code{FALSE}, or \code{NA} (no probe configured), with
+\code{stata_executable} / \code{stata_label} / \code{missing} attributes.
 }
 \description{
 Uses the study's \code{stata_deps_probe} script when declared; otherwise a
 generic \code{which}-only probe from \code{stata_packages}. Returns
 \code{NA} when neither is configured (caller should run install scripts or
 skip per policy).
+}
+\details{
+The returned logical carries diagnostic attributes so callers can report
+precisely \emph{which} Stata was used and \emph{which} package(s) actually failed,
+instead of blaming every declared package for one broken probe (the
+\code{moremata} bug): \code{stata_executable} (path), \code{stata_label}
+(human-readable), and \code{missing} (character vector - the specific
+package attributed to the failure when derivable, else all declared
+packages as a conservative fallback).
 }
 \keyword{internal}

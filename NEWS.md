@@ -1,3 +1,81 @@
+# replicateEverything 0.7.29
+
+## Fix: registry health bar `[[` crash persisted after the 0.7.28 authors fix
+
+* **Bug:** the 0.7.28 fix guarded the empty-`authors` `strsplit(...)[[1]]`
+  sites, but the health bar's `[[` crash persisted because it had a second,
+  unrelated cause introduced by the finer replicating / timed out /
+  substantive / missing-engine / other status breakdown:
+  `registry_health_bar_ui()` built a *named* integer vector `segs`, then
+  called `segs <- pmax(0L, segs)` to clamp negative counts - but `pmax()`
+  silently drops the names attribute when one argument is an unnamed
+  scalar, so every subsequent `segs[["replicating"]]` (etc.) lookup threw
+  `Error in [[: subscript out of bounds`. Reproduced end-to-end with
+  `devtools::load_all()` against the local `registry/audit_summary.json`.
+* **Fix:** clamp negatives in place (`segs[is.na(segs) | segs < 0L] <- 0L`)
+  instead of `pmax()`, which preserves names. Also hardened bucket lookups
+  in `registry_health_bar_ui()` against version-skewed/legacy
+  `audit_progress_counts()` output missing one or more of the newer
+  buckets (falls back to `0` per-bucket instead of erroring), so an older
+  or partial audit summary degrades gracefully instead of crashing.
+* **Fail-soft UX:** a health-bar rendering failure (this bug or any future
+  one) no longer surfaces as a big red Shiny error banner at the top of the
+  app. The bar is silently omitted and a small `replicateEverything:
+  registry health bar unavailable (see server log)` note appears in the
+  footer instead; the underlying error is still logged server-side
+  (`warning()`) for maintainers.
+
+## Fix: Stata dependency check disagreed with `ssc install` (moremata)
+
+* **Bug:** `check_study_compatibility()` / `install_dependencies()` could
+  report Stata packages as missing (e.g. `estout`, `outreg`, `moremata` for
+  the Bertoli `10.1596/1813-9450-10626` study) even though `ssc install`
+  confirmed them already installed in the interactive Stata session. Root
+  cause: the auto-generated dependency probe tested every declared package
+  with `which <pkg>`, but `moremata` ships no ado command of its own name
+  (it's a pure Mata function library - `lmoremata.mlib` + help files, no
+  `moremata.ado`), so `which moremata` always fails with `r(111)`
+  regardless of installation status. Because the probe exits at the first
+  failing check, this single false failure caused *every* declared package
+  for the study to be reported "missing", not just `moremata` - a second,
+  compounding bug. Both the check and the install path already resolved
+  the exact same Stata executable ([find_stata_executable()]); confirmed
+  with a live probe against the actual Stata 17 MP install
+  (`C:/Program Files/Stata17/StataMP-64.exe`) that `which moremata` fails
+  while `findfile lmoremata.mlib` correctly finds the installed library.
+* **Fix:**
+  - `moremata` (and any future file-only package) is now probed with
+    `findfile lmoremata.mlib` instead of `which moremata`
+    ([stata_package_probe_spec()] / [stata_package_probe_line()]), used
+    consistently by both the install script and the check probe.
+  - A failing generated probe now attributes the failure to the *specific*
+    package whose check failed (via its distinct `exit` code -
+    [stata_deps_probe_plan_from_packages()] /
+    [stata_probe_failure_code()]), instead of blaming every declared
+    package for one broken check.
+  - `check_study_compatibility()`'s `$dependencies$stata` (and
+    `install_dependencies()` console output) now always report which Stata
+    binary was used (`stata_executable` path + a human-readable
+    `stata_label`, e.g. `"Stata 17 MP (C:/Program Files/Stata17/
+    StataMP-64.exe)"` - see [stata_executable_label()]), so a check-vs-
+    install Stata mismatch is visible instead of assumed.
+  - `install_dependencies()` now reports which packages were already
+    present vs. newly installed, and immediately re-runs the same
+    presence probe after install ("on-the-spot validation"), warning
+    loudly with the specific still-missing package(s) if the probe still
+    fails - so "Dependency install finished" can no longer silently lie.
+
+## Fix: broken `@description` link in roxygen docs
+
+* `replication_errors.R`: the doc block documenting
+  `replication_error_message()` was misattached to `strip_ansi_escapes()`
+  (defined between the roxygen comment and the intended function), leaving
+  `replication_error_message` undocumented and breaking the
+  `[replication_error_message()]` markdown link used elsewhere in the same
+  file (`missing_replication_steps_message()`). Moved the doc block to the
+  correct function and gave `strip_ansi_escapes()` its own short doc
+  comment; `devtools::document()` now builds without that link warning.
+
 # replicateEverything 0.7.28
 
 ## Shiny path picks: standard chrome, translation note moved to study summary

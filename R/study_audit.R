@@ -102,19 +102,28 @@ probe_r_packages <- function(packages) {
 }
 
 #' Probe Stata from yaml declarations (executable + probe or stata_packages)
+#'
+#' Always reports the resolved Stata executable (\code{stata_executable} /
+#' \code{stata_label}) alongside \code{ok} / \code{missing}, so
+#' [check_study_compatibility()] output makes it obvious which Stata binary
+#' was probed - and whether it's the same one [install_dependencies()] used
+#' (see [stata_executable_label()]).
 #' @keywords internal
 probe_stata_from_yaml <- function(meta, study_root = NULL) {
   if (!is.null(study_root) && nzchar(study_root) && dir.exists(study_root)) {
     meta <- complete_folder_study_meta(meta, study_root)
   }
   stata <- find_stata_executable()
+  stata_label <- stata_executable_label(stata)
   if (is.null(stata)) {
     return(list(
       ok = FALSE,
       required = stata_deps_package_names(meta),
       missing = "Stata executable",
       probe = stata_deps_probe_label(study_root %||% "", meta = meta),
-      message = "Stata not found on PATH"
+      message = "Stata not found on PATH",
+      stata_executable = NULL,
+      stata_label = stata_label
     ))
   }
 
@@ -129,7 +138,9 @@ probe_stata_from_yaml <- function(meta, study_root = NULL) {
       required = pkgs,
       missing = character(0),
       probe = probe_label,
-      message = "Study folder required to run stata_deps_probe script"
+      message = "Study folder required to run stata_deps_probe script",
+      stata_executable = stata,
+      stata_label = stata_label
     ))
   }
   if (is.null(workdir) || !dir.exists(workdir)) {
@@ -142,7 +153,9 @@ probe_stata_from_yaml <- function(meta, study_root = NULL) {
       required = character(0),
       missing = character(0),
       probe = probe_label,
-      message = "Stata available (no packages declared in yaml)"
+      message = "Stata available (no packages declared in yaml)",
+      stata_executable = stata,
+      stata_label = stata_label
     ))
   }
 
@@ -163,16 +176,32 @@ probe_stata_from_yaml <- function(meta, study_root = NULL) {
       required = pkgs,
       missing = character(0),
       probe = probe_label,
-      message = "Probe passed"
+      message = paste0("Probe passed (", stata_label, ")"),
+      stata_executable = stata,
+      stata_label = stata_label
     ))
+  }
+
+  # `stata_dependencies_satisfied()` attributes the failure to the specific
+  # package it can attribute (from the probe's exit code), falling back to
+  # every declared package only when it genuinely cannot tell which one.
+  attributed_missing <- attr(satisfied, "missing", exact = TRUE)
+  missing <- if (!is.null(attributed_missing) && length(attributed_missing)) {
+    attributed_missing
+  } else if (length(pkgs)) {
+    pkgs
+  } else {
+    "Stata packages (probe failed)"
   }
 
   list(
     ok = FALSE,
     required = pkgs,
-    missing = if (length(pkgs)) pkgs else "Stata packages (probe failed)",
+    missing = missing,
     probe = probe_label,
-    message = "Dependency probe did not pass"
+    message = paste0("Dependency probe did not pass (", stata_label, ")"),
+    stata_executable = stata,
+    stata_label = stata_label
   )
 }
 

@@ -7,6 +7,10 @@
 probe_stata_from_yaml(meta, study_root = NULL)
 }
 \description{
-Probe Stata from yaml declarations (executable + probe or stata_packages)
+Always reports the resolved Stata executable (\code{stata_executable} /
+\code{stata_label}) alongside \code{ok} / \code{missing}, so
+\code{\link[=check_study_compatibility]{check_study_compatibility()}} output makes it obvious which Stata binary
+was probed - and whether it's the same one \code{\link[=install_dependencies]{install_dependencies()}} used
+(see \code{\link[=stata_executable_label]{stata_executable_label()}}).
 }
 \keyword{internal}

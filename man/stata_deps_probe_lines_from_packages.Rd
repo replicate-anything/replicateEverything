@@ -13,6 +13,6 @@ stata_deps_probe_lines_from_packages(packages)
 Character vector of Stata commands.
 }
 \description{
-Uses \code{which} plus \code{help} (and reghdfe runtime checks when needed).
+Build a Stata probe from \code{stata_packages:}
 }
 \keyword{internal}
