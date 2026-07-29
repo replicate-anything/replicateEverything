@@ -11,9 +11,9 @@ study_artifact_rel_path(rep)
 }
 \description{
 Returns the first displayable path from \code{outputs:} in
-\code{replication.yml}, otherwise the type-based default from
-\code{default_artifact_path()}. This is the one rule used by both
-\code{save_artifact()} (build) and artifact lookup (Shiny), so builds write
-exactly where lookup reads.
+\code{replication.yml} (html/png/rds/svg/xlsx), otherwise the type-based
+default from \code{default_artifact_path()}. This is the one rule used by
+both \code{save_artifact()} (build) and artifact lookup (Shiny), so builds
+write exactly where lookup reads.
 }
 \keyword{internal}

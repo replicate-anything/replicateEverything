@@ -10,7 +10,7 @@ study_artifact_rel_candidates(rep)
 \item{rep}{A single replication entry from \code{replication.yml}.}
 }
 \description{
-Uses displayable paths from \code{outputs:} (html/png/rds/svg), then
+Uses displayable paths from \code{outputs:} (html/png/rds/svg/xlsx), then
 type-based defaults under \code{outputs/}.
 }
 \keyword{internal}

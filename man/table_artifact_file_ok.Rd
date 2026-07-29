@@ -12,8 +12,8 @@ table_artifact_file_ok(art_path, engine = NULL)
 \item{engine}{Optional replication engine (\code{"stata"} or \code{"r"}).}
 }
 \description{
-Accepts \code{.rds}, HTML with a \verb{<table>}, or (for Stata entries) monospace
-\verb{<pre class="stata-output">} blocks produced when regression output cannot
-be parsed into an HTML table.
+Accepts \code{.rds}, Excel workbooks (\code{.xlsx} / \code{.xlsm} / \code{.xls}), HTML with a
+\verb{<table>}, or (for Stata entries) monospace \verb{<pre class="stata-output">}
+blocks produced when regression output cannot be parsed into an HTML table.
 }
 \keyword{internal}
