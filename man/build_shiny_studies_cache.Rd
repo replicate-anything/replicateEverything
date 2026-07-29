@@ -20,8 +20,9 @@ Invisibly, a list with \code{path}, \code{n}, and \code{cache}.
 Writes \code{registry/shiny_studies.json} with one record per study: citation
 fields, collections, languages/engines, notes flags (data unavailable /
 missing engine), related upstream/downstream (dois, titles, urls), article
-and study/repo urls. Intended for the Shiny Studies tab — no live yaml fetch
-at list time.
+and study/repo urls, plus a baked \code{ui} block (select / collection
+choices) so Shiny startup does not reassemble dropdowns. Intended for the
+Shiny Studies tab — no live yaml fetch at list time.
 }
 \details{
 Called from \code{\link[=build_registry_index]{build_registry_index()}}. Gap flags come from stub

@@ -2,12 +2,13 @@
 % Please edit documentation in R/render_replication.R
 \name{get_replication_meta_impl}
 \alias{get_replication_meta_impl}
-\title{Fetch replication metadata for a paper}
+\title{Fetch replication metadata for a paper (uncached)}
 \usage{
 get_replication_meta_impl(doi, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{doi}{Character. DOI of the paper.}
+\item{doi}{Character. DOI of the paper (or study handle / local path
+accepted by \code{\link[=prepare_doi_for_replication]{prepare_doi_for_replication()}}).}
 
 \item{repo}{Optional repository slug.}
 
@@ -17,11 +18,7 @@ get_replication_meta_impl(doi, repo = NULL, folder = NULL)
 Parsed \code{replication.yml} contents.
 }
 \description{
-Deterministic resolution order (first hit wins; no silent URL scavenges):
-\enumerate{
-\item Local study root (\code{ctx$local_root} or configured study folders / monorepo)
-\item Configured registry stub (\verb{registry_root/studies/<folder>.yml})
-\item Remote registry stub URL for the configured registry repo
-}
+Implementation used by \code{\link[=get_replication_meta]{get_replication_meta()}}. Prefer the memoized
+wrapper in call sites.
 }
 \keyword{internal}

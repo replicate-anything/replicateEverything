@@ -36,17 +36,12 @@ enrich_package_replication_meta <- function(meta, ctx) {
   meta
 }
 
-#' Fetch replication metadata for a paper
+#' Fetch replication metadata for a paper (uncached)
 #'
-#' Deterministic resolution order (first hit wins; no silent URL scavenges):
-#' 1. Local study root (`ctx$local_root` or configured study folders / monorepo)
-#' 2. Configured registry stub (`registry_root/studies/<folder>.yml`)
-#' 3. Remote registry stub URL for the configured registry repo
+#' Implementation used by [get_replication_meta()]. Prefer the memoized
+#' wrapper in call sites.
 #'
-#' @param doi Character. DOI of the paper.
-#' @param repo Optional repository slug.
-#' @param folder Optional registry folder name from \code{index.csv}.
-#'
+#' @inheritParams get_replication_meta
 #' @return Parsed \code{replication.yml} contents.
 #' @keywords internal
 get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
@@ -132,6 +127,23 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   meta
 }
 
+#' Fetch replication metadata for a paper
+#'
+#' Deterministic resolution order (first hit wins; no silent URL scavenges):
+#' 1. Local study root (`ctx$local_root` or configured study folders / monorepo)
+#' 2. Configured registry stub (`registry_root/studies/<folder>.yml`)
+#' 3. Remote registry stub URL for the configured registry repo
+#'
+#' Results are memoized in-process by DOI / repo / folder so repeated Shiny
+#' and audit lookups do not re-read yaml.
+#'
+#' @param doi Character. DOI of the paper (or study handle / local path
+#'   accepted by [prepare_doi_for_replication()]).
+#' @param repo Optional repository slug.
+#' @param folder Optional registry folder name from \code{index.csv}.
+#'
+#' @return Parsed \code{replication.yml} contents.
+#' @keywords internal
 get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
   doi_key <- tryCatch(
     prepare_doi_for_replication(doi),

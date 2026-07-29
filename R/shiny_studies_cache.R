@@ -128,7 +128,7 @@ shiny_studies_select_label <- function(authors, year, title) {
 }
 
 #' Sentinel value for the Shiny "All studies" collection filter
-#' @keywords internal
+#' @noRd
 SHINY_STUDIES_ALL_COLLECTION <- "__all_studies__"
 
 #' Bake selectInput / collection filter payloads for Shiny startup
