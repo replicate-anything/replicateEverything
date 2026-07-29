@@ -845,12 +845,18 @@ app_build_footer_ui <- function() {
     tags$div(
       class = "d-flex flex-wrap justify-content-between gap-2",
       tags$span(replicate_everything_build_label()),
-      if (isTRUE(info$deploy_lib_stale)) {
-        tags$span(
-          class = "text-warning",
-          "deploy lib differs from loaded package"
-        )
-      }
+      tags$span(
+        class = "d-flex flex-wrap gap-2",
+        # Reactive slot: a health-bar rendering failure shows a discreet
+        # maintainer note here instead of a red Shiny error banner up top.
+        uiOutput("app_footer_health_note", inline = TRUE),
+        if (isTRUE(info$deploy_lib_stale)) {
+          tags$span(
+            class = "text-warning",
+            "deploy lib differs from loaded package"
+          )
+        }
+      )
     )
   )
 }
@@ -7221,13 +7227,44 @@ server <- function(input, output, session) {
     )
   })
 
+  # Health-bar rendering failure must never surface as a big red Shiny error
+  # banner at the top of the app; fall back to omitting the bar and leaving
+  # a small note for the maintainer in the footer instead (see below).
+  health_bar_error <- reactiveVal(NULL)
+
   output$registry_health_bar <- renderUI({
     registry_ready()
-    summary <- tryCatch(
-      replicate_fn("load_registry_audit_summary"),
-      error = function(e) NULL
+    health_bar_error(NULL)
+    result <- tryCatch(
+      {
+        summary <- tryCatch(
+          replicate_fn("load_registry_audit_summary"),
+          error = function(e) NULL
+        )
+        registry_health_bar_ui(summary)
+      },
+      error = function(e) {
+        warning(
+          "registry_health_bar_ui() failed: ", conditionMessage(e),
+          call. = FALSE
+        )
+        health_bar_error(conditionMessage(e))
+        NULL
+      }
     )
-    registry_health_bar_ui(summary)
+    result
+  })
+
+  output$app_footer_health_note <- renderUI({
+    err <- health_bar_error()
+    if (is.null(err) || !nzchar(err)) {
+      return(NULL)
+    }
+    tags$span(
+      class = "text-muted",
+      title = err,
+      "\u26a0 registry health bar unavailable (see server log)"
+    )
   })
 
   apply_studies_session_data <- function(data) {
