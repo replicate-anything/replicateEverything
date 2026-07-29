@@ -1308,12 +1308,15 @@ study_materials_summary_ui <- function(
   folder = NULL,
   repo = NULL,
   dual_engine = FALSE,
-  maintainer_row = NULL
+  maintainer_row = NULL,
+  translation_notes = character(0)
 ) {
   info <- study_materials_info(doi, folder = folder, repo = repo)
   if (is.null(info)) {
     return(NULL)
   }
+  translation_notes <- as.character(translation_notes %||% character(0))
+  translation_notes <- translation_notes[nzchar(trimws(translation_notes))]
   tags$p(
     class = "mb-0",
     strong("Replication type: "),
@@ -1329,6 +1332,15 @@ study_materials_summary_ui <- function(
     tags$a(href = info$url, target = "_blank", rel = "noopener", info$repo),
     if (!is.null(maintainer_row) && is.data.frame(maintainer_row) && nrow(maintainer_row) > 0) {
       maintainer_link_ui(maintainer_row)
+    },
+    if (length(translation_notes) > 0L) {
+      tagList(
+        br(),
+        tags$span(
+          class = "text-muted study-translation-note",
+          paste(translation_notes, collapse = " ")
+        )
+      )
     }
   )
 }
@@ -1939,18 +1951,34 @@ registry_health_bar_ui <- function(summary) {
       total = as.integer(summary$runs %||% 0L)
     )
   }
-  total <- as.integer(counts[["total"]] %||% 0L)
+  # `counts` may come from an older/newer installed replicateEverything (via
+  # replicate_fn()'s namespace dispatch) whose progress-bucket names don't
+  # exactly match what this UI expects. Use a name-safe getter (`%in%` check,
+  # not `[[`) so a missing bucket falls back to 0 instead of throwing
+  # "subscript out of bounds".
+  bucket <- function(nm) {
+    if (is.null(counts) || !(nm %in% names(counts))) {
+      return(0L)
+    }
+    val <- as.integer(counts[[nm]])
+    if (length(val) != 1L || is.na(val)) 0L else val
+  }
+  total <- bucket("total")
   if (!is.finite(total) || total <= 0L) {
     return(NULL)
   }
   segs <- c(
-    replicating = as.integer(counts[["replicating"]] %||% 0L),
-    timed_out = as.integer(counts[["timed_out"]] %||% 0L),
-    substantive_fail = as.integer(counts[["substantive_fail"]] %||% 0L),
-    missing_engine = as.integer(counts[["missing_engine"]] %||% 0L),
-    other = as.integer(counts[["other"]] %||% 0L)
+    replicating = bucket("replicating"),
+    timed_out = bucket("timed_out"),
+    substantive_fail = bucket("substantive_fail"),
+    missing_engine = bucket("missing_engine"),
+    other = bucket("other")
   )
-  segs <- pmax(0L, segs)
+  # `pmax(0L, segs)` silently drops the names attribute of `segs` here
+  # (0L is unnamed), which then makes every `segs[["...")]]` lookup below
+  # fail with "subscript out of bounds". Clamp negatives in place instead
+  # so names are preserved.
+  segs[is.na(segs) | segs < 0L] <- 0L
   if (sum(segs) <= 0L) {
     return(NULL)
   }
@@ -2061,7 +2089,7 @@ nice_doi_choices <- function(index_df) {
     }
     ord <- order(
       vapply(strsplit(idx$authors, ",\\s*"), function(x) {
-        first_author_surname(trimws(x[[1]] %||% ""))
+        first_author_surname(trimws(if (length(x)) x[[1]] else ""))
       }, character(1)),
       idx$year,
       idx$title
@@ -3816,7 +3844,7 @@ studies_for_bibliography <- function(index_df) {
   if (is.null(index_df) || nrow(index_df) == 0) return(index_df)
   order(
     vapply(strsplit(index_df$authors, ",\\s*"), function(x) {
-      first_author_surname(trimws(x[[1]] %||% ""))
+      first_author_surname(trimws(if (length(x)) x[[1]] else ""))
     }, character(1)),
     index_df$year,
     index_df$title
@@ -6363,76 +6391,53 @@ ui <- tagList(
       box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
       border-radius: 999px;
     }
+    /* Path picks look like a standard engine-pick toggle (no bordered box,
+       no visible caption) - the only difference is two icons per pick since
+       each path is a language pair (e.g. Stata+R vs Stata+Mathematica). */
     .path-pick {
       display: inline-flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 0.12rem;
-      padding: 0.18rem 0.35rem;
+      gap: 0;
+      padding: 0.1rem 0.15rem;
       margin: 0;
-      border: 1px solid rgba(108, 117, 125, 0.45);
-      border-radius: 0.3rem;
-      background: #fff;
-      color: #343a40;
-      font-size: 0.62rem;
-      font-weight: 600;
-      line-height: 1.15;
-      letter-spacing: 0.01em;
-      white-space: normal;
-      max-width: 11.5rem;
+      border: 0;
+      background: transparent;
+      line-height: 0;
+      border-radius: 999px;
       cursor: pointer;
     }
     .path-pick .path-pick-icons {
       display: inline-flex;
       align-items: center;
-      gap: 0.12rem;
+      gap: 0.05rem;
       white-space: nowrap;
-    }
-    .path-pick .path-pick-note {
-      display: block;
-      font-size: 0.58rem;
-      font-weight: 500;
-      color: #495057;
-      text-align: center;
-      line-height: 1.2;
-      max-width: 11rem;
     }
     .path-pick .path-pick-sep {
       color: rgba(108, 117, 125, 0.85);
       font-weight: 700;
-      font-size: 0.72rem;
+      font-size: 0.65rem;
       line-height: 1;
       user-select: none;
+      padding: 0 0.02rem;
     }
-    .path-pick.is-active {
-      border-color: rgba(13, 110, 253, 0.85);
-      box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.22);
-      color: #0d6efd;
-      background: rgba(13, 110, 253, 0.06);
-    }
+    .path-pick.is-active { opacity: 1; }
     .path-pick.is-inactive {
-      opacity: 0.55;
+      opacity: 0.38;
+      filter: grayscale(0.35);
     }
-    .path-pick.is-inactive:hover {
-      opacity: 0.85;
-    }
+    .path-pick.is-inactive:hover { opacity: 0.72; }
     /* Incomplete / missing-engine path: stay clickable (Code) but look greyed */
     .path-pick.is-unavailable {
-      opacity: 0.42;
-      filter: grayscale(0.55);
-      border-style: dashed;
+      opacity: 0.3;
+      filter: grayscale(0.7);
     }
     .path-pick.is-unavailable.is-active {
-      opacity: 0.72;
-      filter: grayscale(0.25);
-      border-color: rgba(180, 83, 9, 0.75);
-      box-shadow: 0 0 0 2px rgba(180, 83, 9, 0.2);
-      background: rgba(180, 83, 9, 0.06);
-      color: #92400e;
+      opacity: 0.6;
+      filter: grayscale(0.4);
     }
     .path-pick.is-unavailable:hover {
-      opacity: 0.7;
+      opacity: 0.55;
     }
     .path-pick .visually-hidden {
       position: absolute !important;
@@ -8275,7 +8280,14 @@ server <- function(input, output, session) {
               dual_engine = !is.null(state$replications_df) &&
                 replication_has_engine(state$replications_df, "r") &&
                 replication_has_engine(state$replications_df, "stata"),
-              maintainer_row = if (nrow(row) > 0) row else NULL
+              maintainer_row = if (nrow(row) > 0) row else NULL,
+              translation_notes = tryCatch(
+                replicate_fn(
+                  "study_path_translation_notes",
+                  c(state$replications %||% list(), state$prep_steps %||% list())
+                ),
+                error = function(e) character(0)
+              )
             ),
             study_dag_link_ui(
               state$doi,
@@ -8479,8 +8491,9 @@ server <- function(input, output, session) {
       path_unavailable <- entry_incomplete || (
         nzchar(req_tok) && !req_tok %in% c("r", "stata", "python")
       )
-      # Paired language icons inside a bordered box (e.g. Stata + R), with
-      # bracketed label chrome as accessible name / tooltip.
+      # Paired language icons (e.g. Stata + R), styled like a standard
+      # engine-pick toggle - no bordered box or visible caption; the
+      # bracketed label is the accessible name / tooltip only.
       icon_nodes <- list()
       for (i in seq_along(langs)) {
         tok <- langs[[i]]
@@ -8524,16 +8537,17 @@ server <- function(input, output, session) {
           group, sel
         ),
         tags$span(class = "path-pick-icons", do.call(tagList, icon_nodes)),
-        # Keep bracketed text for screen readers / clear chrome; visually the
-        # paired icons are the primary signal.
-        tags$span(class = "visually-hidden", box_lab),
-        if (nzchar(path_note)) {
-          tags$span(class = "path-pick-note", path_note)
-        }
+        # Bracketed text is screen-reader only; the note (e.g. "R is a
+        # translation of ...") lives in the tooltip/aria-label and the study
+        # summary, not as visible sidebar chrome - the pick should look like
+        # any other standard engine toggle, just with a language pair.
+        tags$span(class = "visually-hidden", box_lab)
       )
     }
-    # Path boxes (paired icons for [Stata / R] | [Stata / Mathematica]) when
-    # yaml declares multi-language path alternatives; otherwise classic pills.
+    # Path picks (paired icons for [Stata / R] | [Stata / Mathematica]) when
+    # yaml declares multi-language path alternatives; look the same as the
+    # classic single-icon engine picks used everywhere else, just with two
+    # icons per pick since each path is a language pair.
     engine_picks <- if (path_mode) {
       ents <- row$entries[[1]]
       do.call(tagList, lapply(ents, path_box_btn))

@@ -427,9 +427,8 @@ build_shiny_studies_cache <- function(
   # Alphabetical by citation surname / year / title (Studies table order)
   ord <- order(
     vapply(studies, function(s) {
-      first_author_surname(
-        trimws(strsplit(as.character(s$authors %||% ""), ",\\s*")[[1]][[1]] %||% "")
-      )
+      parts <- strsplit(as.character(s$authors %||% ""), ",\\s*")[[1]]
+      first_author_surname(trimws(if (length(parts)) parts[[1]] else ""))
     }, character(1)),
     vapply(studies, function(s) as.character(s$year %||% ""), character(1)),
     vapply(studies, function(s) as.character(s$title %||% ""), character(1))

@@ -13,6 +13,7 @@ prep_step_display_caption(prep)
 Character string like \code{`Analysis data` step (Rename ...)}.
 }
 \description{
-Caption for a prep / transform step in Shiny and reports
+Prefers a short \code{path_note:} when present, otherwise a truncated
+\code{description:}, so Display banners stay readable.
 }
 \keyword{internal}

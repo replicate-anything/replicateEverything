@@ -256,6 +256,58 @@ path_selector_language <- function(entry, siblings = list()) {
   langs[[1]]
 }
 
+#' Translation notes for multi-language path groups (study summary)
+#'
+#' Generic across studies: for a flat list of step / replication entries
+#' (pre-grouping), finds \code{group:} clusters where at least one sibling
+#' requires a proprietary system engine (Mathematica, MATLAB, ...) and at
+#' least one other sibling does not. Returns the non-empty \code{path_note:}
+#' of the runnable sibling(s) - e.g. "R is a translation of the original
+#' Mathematica LBD kernel" - so Shiny can surface it once in the study/output
+#' summary instead of as a per-row callout. Relies only on yaml-declared
+#' \code{group:}, \code{requires_engine:}, and \code{path_note:}; no
+#' study-specific text lives in the package.
+#'
+#' @param entries List of step / replication entries (flat, pre-grouping).
+#' @return Character vector of unique non-empty notes (possibly empty).
+#' @keywords internal
+study_path_translation_notes <- function(entries) {
+  if (is.null(entries) || !length(entries)) {
+    return(character(0))
+  }
+  entries <- Filter(is.list, entries)
+  if (!length(entries)) {
+    return(character(0))
+  }
+  group_of <- vapply(entries, function(x) {
+    grp <- as.character(x$group[[1]] %||% x$group %||% "")
+    if (nzchar(grp)) grp else as.character(x$id[[1]] %||% x$id %||% "")
+  }, character(1))
+  is_system_engine <- vapply(entries, function(x) {
+    req <- tolower(trimws(as.character(x$requires_engine[[1]] %||% x$requires_engine %||% "")))
+    nzchar(req) && !req %in% c("r", "stata", "python")
+  }, logical(1))
+
+  notes <- character(0)
+  for (grp in unique(group_of[nzchar(group_of)])) {
+    idx <- which(group_of == grp)
+    if (length(idx) < 2L) {
+      next
+    }
+    if (!any(is_system_engine[idx])) {
+      next
+    }
+    runnable_idx <- idx[!is_system_engine[idx]]
+    for (i in runnable_idx) {
+      note <- tryCatch(step_path_note(entries[[i]]), error = function(e) "")
+      if (nzchar(note)) {
+        notes <- c(notes, note)
+      }
+    }
+  }
+  unique(notes)
+}
+
 #' Sidebar keys for Data steps in yaml / DAG declaration order
 #'
 #' Returns unique \code{group:} (or \code{id} when ungrouped) keys for

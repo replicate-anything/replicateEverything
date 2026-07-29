@@ -144,6 +144,44 @@ test_that("shiny_step_show_display still omits Display for mathematica path gaps
   ))
 })
 
+test_that("study_path_translation_notes surfaces the runnable sibling's path_note", {
+  entries <- list(
+    list(id = "clean_data", type = "transform", engine = "stata"),
+    list(
+      id = "compute_mvpf_main",
+      group = "compute_mvpf_main",
+      type = "transform",
+      engine = "stata",
+      languages = list("stata", "r"),
+      path_note = "R is a translation of the original Mathematica LBD kernel"
+    ),
+    list(
+      id = "compute_mvpf_main_mathematica",
+      group = "compute_mvpf_main",
+      type = "transform",
+      engine = "stata",
+      languages = list("stata", "mathematica"),
+      incomplete = TRUE,
+      requires_engine = "mathematica",
+      path_note = "Original Mathematica / wolframscript LBD kernel (optional)"
+    )
+  )
+  expect_equal(
+    study_path_translation_notes(entries),
+    "R is a translation of the original Mathematica LBD kernel"
+  )
+})
+
+test_that("study_path_translation_notes is empty without a system-engine sibling", {
+  entries <- list(
+    list(id = "tab_1", group = "tab_1", engine = "r", code = "a.R", path_note = "note"),
+    list(id = "tab_1_stata", group = "tab_1", engine = "stata", code = "a.do")
+  )
+  expect_equal(study_path_translation_notes(entries), character(0))
+  expect_equal(study_path_translation_notes(list()), character(0))
+  expect_equal(study_path_translation_notes(NULL), character(0))
+})
+
 test_that("replication_sidebar_data_order follows yaml order and collapses groups", {
   reps <- list(
     list(id = "clean_data", type = "transform", engine = "stata"),

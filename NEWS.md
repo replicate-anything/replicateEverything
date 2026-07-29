@@ -1,3 +1,39 @@
+# replicateEverything 0.7.28
+
+## Shiny path picks: standard chrome, translation note moved to study summary
+
+* **Path picks (multi-language path groups):** the paired-icon path pick for
+  groups like Stata+R vs Stata+Mathematica now looks like a standard
+  single-icon engine pick (transparent, opacity-based active/inactive state)
+  instead of a bordered box - no visible caption underneath. The only
+  visual difference from an ordinary study is that a pick shows two icons
+  (a language pair) instead of one. The `path_note:` text (e.g. "R is a
+  translation of the original Mathematica LBD kernel") still lives in the
+  tooltip / aria-label.
+* **Study summary:** added [study_path_translation_notes()], a generic
+  (non-study-specific) helper that surfaces each multi-language path
+  group's `path_note:` once in the sidebar study summary ("Replication
+  type: ..."), instead of as a per-row callout. No study-specific text is
+  hardcoded in the package - it is read from yaml.
+* **Wrench/hammer gating (confirmed, no behavior change needed):** the
+  missing-system-engine wrench in the row's Display/Run controls already
+  re-evaluates per the *currently selected* path, so it only shows when the
+  Mathematica (or other proprietary-engine) path is the active selection,
+  not the R/Stata default. The Studies-table summary column is unaffected.
+
+## Fix: Shiny crash on studies with a blank `authors` field
+
+* **Bug:** any registry entry with an empty `authors` string (e.g. a freshly
+  onboarded stub before author metadata is filled in) crashed the Shiny app
+  with `Error in [[: subscript out of bounds`. The Studies dropdown
+  (`nice_doi_choices()`) and bibliography ordering
+  (`studies_for_bibliography()`, `build_shiny_studies_cache()`) sorted rows
+  by first-author surname using `strsplit(authors, ",")[[1]][[1]]`; an empty
+  `authors` string splits to `character(0)`, and indexing it with `[[1]]`
+  errors instead of returning `NA`/`""`.
+* **Fix:** guard each of the three call sites with a `length()` check before
+  indexing, so blank authors sort as "Unknown" instead of crashing.
+
 # replicateEverything 0.7.27
 
 ## Prep Display: transform / .done sink summaries
