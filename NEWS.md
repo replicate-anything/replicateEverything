@@ -1,3 +1,19 @@
+# replicateEverything 0.7.31
+
+## Fix: Excel `outputs:` paths resolve for Display (Hahn Table 1 / 2)
+
+* **Bug:** `study_artifact_rel_candidates()` only treated `html|png|rds|svg` as
+  displayable, so table steps whose sole `outputs:` entry was an `.xlsx`
+  (Hahn `tab_1` / `tab_2`) fell through to non-existent `outputs/<id>.html`
+  and Shiny Display reported a missing object even when the workbook was on
+  disk. The 0.7.30 Excel preview UI never ran because lookup never found the
+  file.
+* **Fix:** treat `.xlsx` / `.xlsm` / `.xls` as displayable sinks in candidate
+  resolution and Display-sink checks; `read_artifact_file()` / remote fetch
+  keep the workbook path (like PNG); Shiny `as_table_ui()` previews a
+  character path to an Excel file via the existing `readxl` preview (not only
+  Stata result lists); folder `table_artifact_file_ok()` accepts Excel sinks.
+
 # replicateEverything 0.7.30
 
 ## Hahn tables + WZB Shiny run gate

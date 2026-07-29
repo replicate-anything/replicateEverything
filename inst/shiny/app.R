@@ -4851,26 +4851,6 @@ as_table_ui <- function(result) {
     result
   }
 
-  if (is.character(obj) && length(obj) == 1 && grepl("<table|<pre", obj, ignore.case = TRUE)) {
-    html <- if (grepl("<table", obj, ignore.case = TRUE)) {
-      replicate_fn("normalize_html_table", obj)
-    } else {
-      obj
-    }
-    return(tags$div(
-      class = "replication-table table-responsive",
-      HTML(html)
-    ))
-  }
-
-  if (is.character(obj) && length(obj) == 1 && grepl("^\\s*<", obj)) {
-    return(HTML(replicate_fn("normalize_html_table", obj)))
-  }
-
-  if (is.data.frame(obj) || is.matrix(obj)) {
-    return(tableOutput("dynamic_table"))
-  }
-
   trim_xlsx_preview_df <- function(df) {
     if (!is.data.frame(df) || nrow(df) == 0L || ncol(df) == 0L) {
       return(df)
@@ -4946,6 +4926,41 @@ as_table_ui <- function(result) {
       ))
     }
     tagList(rendered)
+  }
+
+  # File-backed Display sinks (path string from load_artifact): Excel / HTML.
+  if (is.character(obj) && length(obj) == 1L && nzchar(obj) && file.exists(obj)) {
+    ext <- tolower(tools::file_ext(obj))
+    if (ext %in% c("xlsx", "xlsm", "xls")) {
+      return(xlsx_preview_ui(obj))
+    }
+    if (identical(ext, "html")) {
+      html <- paste(readLines(obj, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+      return(tags$div(
+        class = "replication-table table-responsive",
+        HTML(replicate_fn("normalize_html_table", html))
+      ))
+    }
+  }
+
+  if (is.character(obj) && length(obj) == 1 && grepl("<table|<pre", obj, ignore.case = TRUE)) {
+    html <- if (grepl("<table", obj, ignore.case = TRUE)) {
+      replicate_fn("normalize_html_table", obj)
+    } else {
+      obj
+    }
+    return(tags$div(
+      class = "replication-table table-responsive",
+      HTML(html)
+    ))
+  }
+
+  if (is.character(obj) && length(obj) == 1 && grepl("^\\s*<", obj)) {
+    return(HTML(replicate_fn("normalize_html_table", obj)))
+  }
+
+  if (is.data.frame(obj) || is.matrix(obj)) {
+    return(tableOutput("dynamic_table"))
   }
 
   # Stata result lists must not fall through to as.character() — that dumps

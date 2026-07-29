@@ -287,7 +287,7 @@ load_artifact_file_path <- function(path) {
     if (is.null(resp) || httr::status_code(resp) >= 400L) {
       return(NULL)
     }
-    if (ext %in% c("png", "svg", "jpg", "jpeg")) {
+    if (ext %in% c("png", "svg", "jpg", "jpeg", "xlsx", "xlsm", "xls")) {
       tmp <- tempfile(fileext = paste0(".", ext))
       writeBin(httr::content(resp, as = "raw"), tmp)
       return(tmp)
@@ -869,6 +869,11 @@ read_artifact_file <- function(path, ext) {
     html = normalize_html_table(paste(readLines(path, warn = FALSE), collapse = "\n")),
     png = path,
     svg = path,
+    # File-backed Excel tables (e.g. Hahn tab_1/tab_2): keep the path so Shiny
+    # can preview via readxl instead of treating the workbook as text.
+    xlsx = path,
+    xlsm = path,
+    xls = path,
     rds = preview_data_file(path),
     csv = preview_data_file(path),
     dta = preview_data_file(path),

@@ -261,7 +261,7 @@ check_folder_replication <- function(
           if (ok_table) {
             art_path
           } else {
-            "Table artifact must be HTML with <table>, Stata <pre> output, or .rds"
+            "Table artifact must be HTML with <table>, Excel (.xlsx), Stata <pre> output, or .rds"
           }
         )
       )

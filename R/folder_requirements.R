@@ -322,9 +322,9 @@ replication_data_paths <- function(rep) {
 
 #' Check whether a baked table artifact file is valid for folder checks
 #'
-#' Accepts `.rds`, HTML with a `<table>`, or (for Stata entries) monospace
-#' `<pre class="stata-output">` blocks produced when regression output cannot
-#' be parsed into an HTML table.
+#' Accepts `.rds`, Excel workbooks (`.xlsx` / `.xlsm` / `.xls`), HTML with a
+#' `<table>`, or (for Stata entries) monospace `<pre class="stata-output">`
+#' blocks produced when regression output cannot be parsed into an HTML table.
 #'
 #' @param art_path Path to the artifact file.
 #' @param engine Optional replication engine (`"stata"` or `"r"`).
@@ -333,6 +333,9 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
   ext <- tolower(tools::file_ext(art_path))
   if (identical(ext, "rds")) {
     return(TRUE)
+  }
+  if (ext %in% c("xlsx", "xlsm", "xls")) {
+    return(file.exists(art_path) && isTRUE(file.size(art_path) > 100))
   }
   if (!identical(ext, "html") || !file.exists(art_path)) {
     return(FALSE)
@@ -345,9 +348,19 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
     grepl('<pre[^>]*class="[^"]*stata-output', html, ignore.case = TRUE)
 }
 
+#' Regex for \code{outputs:} paths that Shiny Display can open
+#'
+#' Includes spreadsheet sinks (Hahn \code{tab_1}/\code{tab_2} \code{.xlsx}) so
+#' lookup does not fall through to a non-existent \code{outputs/<id>.html}.
+#'
+#' @keywords internal
+displayable_output_ext_regex <- function() {
+  "\\.(html|png|rds|svg|xlsx|xlsm|xls)$"
+}
+
 #' Candidate display artifact paths under \code{outputs/}
 #'
-#' Uses displayable paths from \code{outputs:} (html/png/rds/svg), then
+#' Uses displayable paths from \code{outputs:} (html/png/rds/svg/xlsx), then
 #' type-based defaults under \code{outputs/}.
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
@@ -358,7 +371,7 @@ study_artifact_rel_candidates <- function(rep) {
   outs <- rep$outputs %||% NULL
   if (!is.null(outs) && length(outs) > 0L) {
     outs <- vapply(outs, function(x) as.character(x), character(1))
-    display <- outs[grepl("\\.(html|png|rds|svg)$", outs, ignore.case = TRUE)]
+    display <- outs[grepl(displayable_output_ext_regex(), outs, ignore.case = TRUE)]
     cands <- c(cands, display)
   }
   if (nzchar(id)) {
@@ -384,10 +397,10 @@ study_artifact_rel_candidates <- function(rep) {
 #' Artifact path relative to study root (primary candidate)
 #'
 #' Returns the first displayable path from \code{outputs:} in
-#' \code{replication.yml}, otherwise the type-based default from
-#' \code{default_artifact_path()}. This is the one rule used by both
-#' \code{save_artifact()} (build) and artifact lookup (Shiny), so builds write
-#' exactly where lookup reads.
+#' \code{replication.yml} (html/png/rds/svg/xlsx), otherwise the type-based
+#' default from \code{default_artifact_path()}. This is the one rule used by
+#' both \code{save_artifact()} (build) and artifact lookup (Shiny), so builds
+#' write exactly where lookup reads.
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
 #' @keywords internal

@@ -44,6 +44,30 @@ test_that("study_artifact_rel_candidates uses outputs paths only", {
   expect_false(any(grepl("^artifacts/", cands)))
 })
 
+test_that("study_artifact_rel_candidates includes Excel table sinks", {
+  rep <- list(
+    id = "tab_1",
+    type = "table",
+    outputs = list("outputs/Table1_scc193_main.xlsx")
+  )
+  cands <- study_artifact_rel_candidates(rep)
+  expect_identical(cands[[1]], "outputs/Table1_scc193_main.xlsx")
+  expect_identical(study_artifact_rel_path(rep), "outputs/Table1_scc193_main.xlsx")
+  tmp <- withr::local_tempfile(fileext = ".xlsx")
+  zz <- file(tmp, "wb")
+  writeBin(as.raw(rep(as.raw(1L), 200L)), zz)
+  close(zz)
+  expect_true(table_artifact_file_ok(tmp))
+})
+
+test_that("read_artifact_file returns path for xlsx sinks", {
+  tmp <- withr::local_tempfile(fileext = ".xlsx")
+  zz <- file(tmp, "wb")
+  writeBin(as.raw(rep(as.raw(2L), 120L)), zz)
+  close(zz)
+  expect_identical(read_artifact_file(tmp, "xlsx"), tmp)
+})
+
 test_that("validate_outputs prints a short PASS report", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555-print")

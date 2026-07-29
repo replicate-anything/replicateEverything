@@ -365,7 +365,7 @@ check_display_sink_rows <- function(meta, study_root) {
       outs <- vapply(entry$outputs, function(x) as.character(x[[1]] %||% x), character(1))
       outs <- outs[nzchar(outs)]
     }
-    displayable <- outs[grepl("\\.(html|png|rds|svg)$", outs, ignore.case = TRUE)]
+    displayable <- outs[grepl(displayable_output_ext_regex(), outs, ignore.case = TRUE)]
     if (!length(displayable)) {
       # Non-display transform (e.g. intermediate .dta only) — OK for Display gap
       # as long as Shiny does not claim a precomputed table/figure.
@@ -374,7 +374,7 @@ check_display_sink_rows <- function(meta, study_root) {
         check_result(
           paste0("display_sink_", rid),
           TRUE,
-          "no html/png/rds/svg display sink declared"
+          "no html/png/rds/svg/xlsx display sink declared"
         )
       )
       next
