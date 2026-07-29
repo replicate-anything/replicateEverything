@@ -4840,6 +4840,75 @@ display_object <- function(doi, what, obj, install_deps = FALSE, folder = NULL, 
   )
 }
 
+as_figure_ui <- function(result) {
+  if (inherits(result, "error")) {
+    return(replication_error_ui(result))
+  }
+
+  obj <- if (is.list(result) && !is.data.frame(result) && !is.null(result$object)) {
+    replicate_fn("replication_object", result)
+  } else {
+    result
+  }
+
+  # Multi-panel or single file-backed figure path(s) from load_artifact_panels().
+  if (is.character(obj) && length(obj) >= 1L) {
+    paths <- obj[nzchar(obj) & file.exists(obj)]
+    image_exts <- c("png", "svg", "jpg", "jpeg", "gif", "webp")
+    image_paths <- paths[tolower(tools::file_ext(paths)) %in% image_exts]
+    html_paths <- paths[tolower(tools::file_ext(paths)) %in% c("html", "htm")]
+
+    if (length(image_paths) + length(html_paths) >= 1L) {
+      panels <- list()
+      for (p in image_paths) {
+        ext <- tolower(tools::file_ext(p))
+        mime <- switch(
+          ext,
+          png = "image/png",
+          svg = "image/svg+xml",
+          jpg = "image/jpeg",
+          jpeg = "image/jpeg",
+          gif = "image/gif",
+          webp = "image/webp",
+          "application/octet-stream"
+        )
+        raw <- tryCatch(readBin(p, "raw", file.info(p)$size), error = function(e) NULL)
+        if (is.null(raw) || !length(raw)) {
+          next
+        }
+        b64 <- jsonlite::base64_enc(raw)
+        panels[[length(panels) + 1L]] <- tags$div(
+          class = "replication-figure-panel mb-3",
+          tags$img(
+            src = paste0("data:", mime, ";base64,", b64),
+            alt = basename(p),
+            style = "max-width:100%;height:auto;display:block;"
+          ),
+          if (length(image_paths) + length(html_paths) > 1L) {
+            tags$div(class = "small text-muted mt-1", basename(p))
+          }
+        )
+      }
+      for (p in html_paths) {
+        html <- paste(readLines(p, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+        panels[[length(panels) + 1L]] <- tags$div(
+          class = "replication-figure-panel mb-3",
+          if (length(image_paths) + length(html_paths) > 1L) {
+            tags$div(class = "small text-muted mb-1", basename(p))
+          },
+          HTML(html)
+        )
+      }
+      if (length(panels)) {
+        return(tagList(panels))
+      }
+    }
+  }
+
+  # Live ggplot / grid / other printable objects: keep plotOutput path.
+  plotOutput("selected_plot", height = "500px")
+}
+
 as_table_ui <- function(result) {
   if (inherits(result, "error")) {
     return(replication_error_ui(result))
@@ -4852,6 +4921,12 @@ as_table_ui <- function(result) {
   }
 
   trim_xlsx_preview_df <- function(df) {
+    if (
+      requireNamespace("replicateEverything", quietly = TRUE) &&
+        exists("format_xlsx_preview_df", envir = asNamespace("replicateEverything"), inherits = FALSE)
+    ) {
+      return(replicate_fn("format_xlsx_preview_df", df))
+    }
     if (!is.data.frame(df) || nrow(df) == 0L || ncol(df) == 0L) {
       return(df)
     }
@@ -4865,11 +4940,7 @@ as_table_ui <- function(result) {
       return(data.frame())
     }
     out <- df[keep_rows, keep_cols, drop = FALSE]
-    out[] <- lapply(out, function(col) {
-      vals <- as.character(col)
-      vals[is.na(vals)] <- ""
-      vals
-    })
+    out[] <- lapply(out, function(col) as.character(col))
     names(out) <- rep("", ncol(out))
     out
   }
@@ -9752,7 +9823,7 @@ server <- function(input, output, session) {
           kind = "figure"
         ))
       }
-      plotOutput("selected_plot", height = "500px")
+      as_figure_ui(resolved$value)
     }, error = function(e) {
       replication_error_ui(
         e,
@@ -9780,8 +9851,9 @@ server <- function(input, output, session) {
       val <- resolved$value
       if (inherits(val, "replication_result")) {
         print(replicate_fn("replication_object", val))
-      } else if (is.character(val) && length(val) == 1 && file.exists(val)) {
-        img <- png::readPNG(val)
+      } else if (is.character(val) && length(val) >= 1L && all(file.exists(val))) {
+        # Fallback when as_figure_ui delegates to plotOutput (single panel).
+        img <- png::readPNG(val[[1]])
         grid::grid.raster(img)
       } else {
         print(val)

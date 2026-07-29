@@ -263,7 +263,20 @@ package_installed_artifact_path <- function(what, pkg, meta = NULL, ctx = NULL) 
 
 #' @keywords internal
 artifact_content_missing <- function(x) {
-  is.null(x) || (is.character(x) && length(x) == 1L && !nzchar(x))
+  if (is.null(x)) {
+    return(TRUE)
+  }
+  if (is.character(x)) {
+    if (!length(x)) {
+      return(TRUE)
+    }
+    if (length(x) == 1L) {
+      return(!nzchar(x))
+    }
+    # Multi-panel paths: missing only when every entry is blank.
+    return(all(!nzchar(x)))
+  }
+  FALSE
 }
 
 #' Load artifact bytes from a local path or registry URL
@@ -704,6 +717,100 @@ get_artifact_path <- function(doi, what, repo = NULL, folder = NULL, language = 
     }
   }
   resolve_registry_artifact_path(rep$id, ctx, rep, doi = doi)
+}
+
+#' Resolve all declared displayable artifact paths for a replication
+#'
+#' Unlike [get_artifact_path()], which returns the first existing candidate,
+#' this returns every declared \code{outputs:} display sink that exists on
+#' disk (or a single fallback path when none of the declared sinks exist).
+#' Used by Shiny Display to stack multi-panel figures.
+#'
+#' @inheritParams get_artifact_path
+#' @return Character vector of local paths or URLs (may be length 0).
+#' @keywords internal
+get_artifact_paths <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  ctx <- paper_context(doi, repo = repo, folder = folder)
+  rep <- tryCatch(
+    find_replication_entry(meta, what, language = NULL),
+    error = function(e) NULL
+  )
+  if (!is.null(rep)) {
+    ctx <- step_run_context(rep, meta, ctx)
+  }
+
+  declared <- if (!is.null(rep)) {
+    study_declared_displayable_rels(rep)
+  } else {
+    character(0)
+  }
+  # Prefer declared outputs: only so type-based fallbacks (outputs/fig_2.png)
+  # are not treated as extra panels when the yaml lists real panel names.
+  rels <- if (length(declared)) {
+    declared
+  } else if (!is.null(rep)) {
+    study_artifact_rel_candidates(rep)
+  } else {
+    character(0)
+  }
+
+  paths <- character(0)
+  for (rel in rels) {
+    found <- NULL
+    if (!is.null(ctx$local_root)) {
+      local <- file.path(ctx$local_root, rel)
+      if (file.exists(local)) {
+        found <- normalizePath(local, winslash = "/", mustWork = FALSE)
+      }
+    }
+    if (is.null(found) && is_package_replication(meta)) {
+      # Package-backed: only the primary installed path is reliable here.
+      next
+    }
+    if (is.null(found) && !is.null(ctx$base_url) && nzchar(as.character(ctx$base_url))) {
+      # Remote panels: include URL candidates so load_artifact_file_path can fetch.
+      found <- registry_url(ctx$base_url, rel)
+    }
+    if (!is.null(found) && nzchar(found)) {
+      paths <- c(paths, found)
+    }
+  }
+
+  if (!length(paths)) {
+    one <- get_artifact_path(doi, what, repo = repo, folder = folder, language = language)
+    if (!is.null(one) && nzchar(as.character(one))) {
+      paths <- as.character(one)
+    }
+  }
+  unique(paths[nzchar(paths)])
+}
+
+#' Load every displayable panel for a replication
+#'
+#' Returns a single loaded artifact when there is one panel, or a character
+#' vector / list of loaded panels when \code{outputs:} lists several
+#' displayable sinks (png/html/svg/xlsx).
+#'
+#' @inheritParams load_artifact
+#' @keywords internal
+load_artifact_panels <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  paths <- get_artifact_paths(doi, what, repo = repo, folder = folder, language = language)
+  if (!length(paths)) {
+    return(NULL)
+  }
+  loaded <- lapply(paths, load_artifact_file_path)
+  loaded <- Filter(function(x) !artifact_content_missing(x), loaded)
+  if (!length(loaded)) {
+    return(NULL)
+  }
+  if (length(loaded) == 1L) {
+    return(loaded[[1]])
+  }
+  if (all(vapply(loaded, function(x) is.character(x) && length(x) == 1L, logical(1)))) {
+    return(vapply(loaded, as.character, character(1)))
+  }
+  loaded
 }
 
 #' Load a precomputed artifact for a replication

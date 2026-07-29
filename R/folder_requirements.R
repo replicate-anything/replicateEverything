@@ -348,6 +348,63 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
     grepl('<pre[^>]*class="[^"]*stata-output', html, ignore.case = TRUE)
 }
 
+#' Format one Excel preview cell for Shiny Display
+#'
+#' Numeric values (and character cells that parse as plain numbers) are rounded
+#' to 3 decimal places. Non-numeric text is left unchanged.
+#'
+#' @param x A length-1 cell value.
+#' @return Character scalar suitable for an HTML table cell.
+#' @keywords internal
+format_xlsx_preview_cell <- function(x) {
+  if (length(x) != 1L) {
+    x <- x[[1]]
+  }
+  if (is.null(x) || (length(x) == 1L && is.na(x))) {
+    return("")
+  }
+  if (is.numeric(x)) {
+    return(format(round(as.numeric(x), 3L), nsmall = 3L, trim = TRUE, scientific = FALSE))
+  }
+  s <- trimws(as.character(x))
+  if (!nzchar(s) || identical(s, "NA")) {
+    return("")
+  }
+  if (grepl("^-?[0-9]+(\\.[0-9]+)?([eE][-+]?[0-9]+)?$", s)) {
+    num <- suppressWarnings(as.numeric(s))
+    if (!is.na(num)) {
+      return(format(round(num, 3L), nsmall = 3L, trim = TRUE, scientific = FALSE))
+    }
+  }
+  s
+}
+
+#' Trim blank rows/cols and round numeric cells for Excel Display preview
+#'
+#' @param df A data frame from \code{readxl::read_excel(..., col_names = FALSE)}.
+#' @return A character data frame (possibly empty).
+#' @keywords internal
+format_xlsx_preview_df <- function(df) {
+  if (!is.data.frame(df) || nrow(df) == 0L || ncol(df) == 0L) {
+    return(df)
+  }
+  is_blank <- function(x) {
+    vals <- trimws(as.character(x))
+    is.na(vals) | !nzchar(vals)
+  }
+  keep_rows <- vapply(seq_len(nrow(df)), function(i) !all(is_blank(df[i, , drop = TRUE])), logical(1))
+  keep_cols <- vapply(seq_len(ncol(df)), function(i) !all(is_blank(df[[i]])), logical(1))
+  if (!any(keep_rows) || !any(keep_cols)) {
+    return(data.frame())
+  }
+  out <- df[keep_rows, keep_cols, drop = FALSE]
+  out[] <- lapply(out, function(col) {
+    vapply(seq_along(col), function(i) format_xlsx_preview_cell(col[[i]]), character(1))
+  })
+  names(out) <- rep("", ncol(out))
+  out
+}
+
 #' Regex for \code{outputs:} paths that Shiny Display can open
 #'
 #' Includes spreadsheet sinks (Hahn \code{tab_1}/\code{tab_2} \code{.xlsx}) so
@@ -356,6 +413,24 @@ table_artifact_file_ok <- function(art_path, engine = NULL) {
 #' @keywords internal
 displayable_output_ext_regex <- function() {
   "\\.(html|png|rds|svg|xlsx|xlsm|xls)$"
+}
+
+#' Declared displayable \code{outputs:} paths only (no type-based fallbacks)
+#'
+#' Used when Display should stack every panel listed under \code{outputs:}
+#' (e.g. multi-panel figures). \code{study_artifact_rel_candidates()} still
+#' appends type defaults for single-artifact lookup / bake.
+#'
+#' @param rep A single replication entry from \code{replication.yml}.
+#' @keywords internal
+study_declared_displayable_rels <- function(rep) {
+  outs <- rep$outputs %||% NULL
+  if (is.null(outs) || !length(outs)) {
+    return(character(0))
+  }
+  outs <- vapply(outs, function(x) as.character(x[[1]] %||% x), character(1))
+  outs <- outs[nzchar(outs)]
+  outs[grepl(displayable_output_ext_regex(), outs, ignore.case = TRUE)]
 }
 
 #' Candidate display artifact paths under \code{outputs/}
@@ -368,10 +443,8 @@ displayable_output_ext_regex <- function() {
 study_artifact_rel_candidates <- function(rep) {
   id <- as.character(rep$id %||% "")
   cands <- character(0)
-  outs <- rep$outputs %||% NULL
-  if (!is.null(outs) && length(outs) > 0L) {
-    outs <- vapply(outs, function(x) as.character(x), character(1))
-    display <- outs[grepl(displayable_output_ext_regex(), outs, ignore.case = TRUE)]
+  display <- study_declared_displayable_rels(rep)
+  if (length(display)) {
     cands <- c(cands, display)
   }
   if (nzchar(id)) {

@@ -1,3 +1,18 @@
+# replicateEverything 0.7.32
+
+## Display: multi-panel figures + Excel 3-decimal preview
+
+* **Multi-panel figures:** Shiny Display now stacks every declared displayable
+  `outputs:` sink for a figure step (png/html/svg), not only the first path
+  returned by [study_artifact_rel_path()]. New helpers
+  [study_declared_displayable_rels()], [get_artifact_paths()], and
+  [load_artifact_panels()] feed [load_replication_for_display()]. Fixes Hahn
+  AER `fig_2` / `fig_3` (panels a+b both baked) without study-specific hacks.
+* **Excel table preview:** numeric cells in the `readxl` Display preview are
+  rounded to 3 decimal places ([format_xlsx_preview_cell()] /
+  [format_xlsx_preview_df()]); non-numeric text is unchanged. Does not rebake
+  workbooks.
+
 # replicateEverything 0.7.31
 
 ## Fix: Excel `outputs:` paths resolve for Display (Hahn Table 1 / 2)

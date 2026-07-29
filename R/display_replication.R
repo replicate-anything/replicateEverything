@@ -41,8 +41,13 @@ resolve_display_value <- function(
   if (is.list(result) && !is.data.frame(result) && identical(result$source, "package")) {
     return(replication_object(result))
   }
-  if (is.character(result) && length(result) == 1L && nzchar(result) && file.exists(result)) {
-    return(result)
+  if (is.character(result) && length(result) >= 1L) {
+    if (length(result) == 1L && nzchar(result) && file.exists(result)) {
+      return(result)
+    }
+    if (length(result) > 1L && all(nzchar(result)) && all(file.exists(result))) {
+      return(result)
+    }
   }
   if (
     is.character(result) &&
@@ -117,7 +122,7 @@ load_replication_for_display <- function(
   }
 
   artifact <- tryCatch(
-    load_artifact(doi, what, repo = repo, folder = folder, language = language),
+    load_artifact_panels(doi, what, repo = repo, folder = folder, language = language),
     error = function(e) e
   )
   if (inherits(artifact, "error")) {
