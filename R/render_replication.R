@@ -790,11 +790,23 @@ get_artifact_paths <- function(doi, what, repo = NULL, folder = NULL, language =
 #'
 #' Returns a single loaded artifact when there is one panel, or a character
 #' vector / list of loaded panels when \code{outputs:} lists several
-#' displayable sinks (png/html/svg/xlsx).
+#' displayable sinks (png/html/svg/xlsx). Prep/transform steps use
+#' [load_artifact()] (via [load_prep_step_display()]) so \code{.done}/
+#' \code{.dta}/\code{.csv} sinks are summarized or previewed instead of falling
+#' through to remote \code{outputs/<id>.html} HTTP 404s.
 #'
 #' @inheritParams load_artifact
 #' @keywords internal
 load_artifact_panels <- function(doi, what, repo = NULL, folder = NULL, language = NULL) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  rep <- tryCatch(
+    find_replication_entry(meta, what, language = NULL),
+    error = function(e) NULL
+  )
+  if (!is.null(rep) && is_prep_entry(rep)) {
+    return(load_artifact(doi, what, repo = repo, folder = folder, language = language))
+  }
+
   paths <- get_artifact_paths(doi, what, repo = repo, folder = folder, language = language)
   if (!length(paths)) {
     return(NULL)

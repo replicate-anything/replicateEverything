@@ -98,6 +98,75 @@ test_that("is_prep_marker_sink detects .done", {
   expect_false(replicateEverything:::is_prep_marker_sink("/tmp/out.csv"))
 })
 
+test_that("study_artifact_rel_candidates keeps declared prep sinks over html/png", {
+  done_rep <- list(
+    id = "clean_data",
+    type = "transform",
+    outputs = list("outputs/clean_data/.done")
+  )
+  cands <- study_artifact_rel_candidates(done_rep)
+  expect_identical(cands[[1]], "outputs/clean_data/.done")
+  expect_false(any(grepl("clean_data\\.html$", cands)))
+  expect_false(any(grepl("clean_data\\.png$", cands)))
+
+  csv_rep <- list(
+    id = "cost_curve_data_r",
+    type = "transform",
+    outputs = list("outputs/cost_curve_data_r/lbd_cost_curve.csv")
+  )
+  cands2 <- study_artifact_rel_candidates(csv_rep)
+  expect_identical(cands2[[1]], "outputs/cost_curve_data_r/lbd_cost_curve.csv")
+  expect_true(
+    "outputs/cost_curve_data_r/lbd_cost_curve.csv" %in%
+      study_declared_displayable_rels(csv_rep)
+  )
+})
+
+test_that("load_artifact_panels delegates prep steps to load_artifact", {
+  monorepo_root <- normalizePath(
+    file.path(testthat::test_path(".."), "..", ".."),
+    winslash = "/",
+    mustWork = FALSE
+  )
+  study_dir <- file.path(monorepo_root, "rep-10.1257-aer.20250166")
+  testthat::skip_if_not(dir.exists(study_dir), "Hahn study repo missing")
+  testthat::skip_if_not(
+    file.exists(file.path(study_dir, "outputs", "clean_data", ".done")),
+    "clean_data .done missing"
+  )
+
+  withr::local_options(list(
+    replicateEverything.registry_root = file.path(monorepo_root, "registry"),
+    replicateEverything.study_folders_root = monorepo_root,
+    replicateEverything.use_sibling_packages = TRUE
+  ))
+
+  doi <- "10.1257/aer.20250166"
+  folder <- "rep-10.1257-aer.20250166"
+
+  cands <- artifact_lookup_candidates(doi, "clean_data", folder = folder)
+  expect_true(any(grepl("clean_data[/\\\\]\\.done$", cands) | grepl("\\.done$", cands)))
+  expect_false(any(grepl("clean_data\\.html$", cands)))
+
+  panels <- load_artifact_panels(doi, "clean_data", folder = folder)
+  expect_false(artifact_content_missing(panels))
+  expect_s3_class(panels, "prep_transform_summary")
+
+  disp <- load_replication_for_display(
+    doi, "clean_data",
+    folder = folder, prefer = "artifact", fallback_live = FALSE
+  )
+  expect_true(disp$ok)
+  expect_equal(disp$source, "artifact")
+
+  dta_disp <- load_replication_for_display(
+    doi, "compute_mvpf_main",
+    folder = folder, prefer = "artifact", fallback_live = FALSE
+  )
+  expect_true(dta_disp$ok)
+  expect_s3_class(dta_disp$value, "data.frame")
+})
+
 test_that("load_artifact returns data frame preview for Fearon analysis_data", {
   monorepo_root <- normalizePath(
     file.path(testthat::test_path(".."), "..", ".."),

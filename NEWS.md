@@ -1,3 +1,21 @@
+# replicateEverything 0.7.34
+
+## Fix: Display for prep/transform data steps (Hahn datasets 1–5)
+
+* **Bug:** After multi-panel Display (0.7.32), Shiny loaded artifacts via
+  [load_artifact_panels()], which only treated html/png/rds/svg/xlsx as
+  displayable. Prep/transform steps whose `outputs:` are `.done` / `.dta` /
+  `.csv` (Hahn `clean_data`, `macros`, `cost_curve_data_r`,
+  `compute_mvpf_main`, `compute_mvpf_no_lbd`) fell through to invented
+  `outputs/<id>.html`/`.png` candidates, then GitHub raw URLs, and surfaced
+  as missing with **HTTP 404** — even when baked local sinks existed and
+  [load_artifact()] already previewed/summarized them correctly.
+* **Fix:** treat `.csv`/`.dta`/`.tab` as displayable sinks; for prep steps,
+  include declared `outputs:` (including `.done`) and skip html/png type
+  fallbacks when sinks are declared; [load_artifact_panels()] delegates prep
+  entries to [load_artifact()] / [load_prep_step_display()]. Local monorepo
+  paths win; no rebake.
+
 # replicateEverything 0.7.33
 
 ## Fix: Excel Display rounding actually reaches Shiny

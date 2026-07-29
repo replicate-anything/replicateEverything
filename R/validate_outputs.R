@@ -268,9 +268,11 @@ step_exempt_from_display_sink <- function(entry) {
 #' Tables/figures need baked html/png. Pattern B Dataverse access steps need
 #' resolvable file-id wiring (Display uses a yaml summary; binary may be
 #' gitignored). Other transform steps with displayable \code{outputs:}
-#' (html/png/rds/svg) must have those files on disk. Inherited steps are
-#' checked against the parent study root (or pass when the parent is not
-#' local) — extensions must not commit parent prep sinks.
+#' (html/png/rds/svg/xlsx/csv/dta) must have those files on disk. Marker-only
+#' prep sinks (\code{.done}) are summarized in Display without a separate
+#' html/png. Inherited steps are checked against the parent study root (or
+#' pass when the parent is not local) — extensions must not commit parent
+#' prep sinks.
 #'
 #' @param meta Parsed replication.yml.
 #' @param study_root Local study or package root.
@@ -374,7 +376,7 @@ check_display_sink_rows <- function(meta, study_root) {
         check_result(
           paste0("display_sink_", rid),
           TRUE,
-          "no html/png/rds/svg/xlsx display sink declared"
+          "no html/png/rds/svg/xlsx/csv/dta display sink declared"
         )
       )
       next

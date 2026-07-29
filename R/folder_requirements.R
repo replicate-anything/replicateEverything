@@ -416,12 +416,35 @@ format_xlsx_preview_df <- function(df) {
 
 #' Regex for \code{outputs:} paths that Shiny Display can open
 #'
-#' Includes spreadsheet sinks (Hahn \code{tab_1}/\code{tab_2} \code{.xlsx}) so
-#' lookup does not fall through to a non-existent \code{outputs/<id>.html}.
+#' Includes spreadsheet sinks (Hahn \code{tab_1}/\code{tab_2} \code{.xlsx}) and
+#' tabular prep sinks (\code{.csv}/\code{.dta}/\code{.tab}) so lookup does not
+#' fall through to a non-existent \code{outputs/<id>.html}. Marker sinks
+#' (\code{.done}) are handled separately via [load_prep_step_display()].
 #'
 #' @keywords internal
 displayable_output_ext_regex <- function() {
-  "\\.(html|png|rds|svg|xlsx|xlsm|xls)$"
+  "\\.(html|png|rds|svg|xlsx|xlsm|xls|csv|dta|tab)$"
+}
+
+#' Declared \code{outputs:} paths for a prep/transform step (any extension)
+#'
+#' Unlike [study_declared_displayable_rels()], this keeps marker sinks such as
+#' \code{.done} so local baked prep products resolve before type-default
+#' \code{outputs/<id>.html} remote URLs.
+#'
+#' @param rep A single replication entry from \code{replication.yml}.
+#' @keywords internal
+study_declared_prep_output_rels <- function(rep) {
+  if (!is_prep_entry(rep)) {
+    return(character(0))
+  }
+  outs <- rep$outputs %||% NULL
+  if (is.null(outs) || !length(outs)) {
+    return(character(0))
+  }
+  outs <- vapply(outs, function(x) as.character(x[[1]] %||% x), character(1))
+  outs <- trimws(outs)
+  outs[nzchar(outs)]
 }
 
 #' Declared displayable \code{outputs:} paths only (no type-based fallbacks)
@@ -444,8 +467,10 @@ study_declared_displayable_rels <- function(rep) {
 
 #' Candidate display artifact paths under \code{outputs/}
 #'
-#' Uses displayable paths from \code{outputs:} (html/png/rds/svg/xlsx), then
-#' type-based defaults under \code{outputs/}.
+#' Uses displayable paths from \code{outputs:} (html/png/rds/svg/xlsx/csv/dta),
+#' then declared prep sinks (including \code{.done}), then type-based defaults
+#' under \code{outputs/}. Prep steps with declared sinks skip the misleading
+#' \code{outputs/<id>.html}/\code{.png} fallbacks that produced remote HTTP 404s.
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
 #' @keywords internal
@@ -456,8 +481,24 @@ study_artifact_rel_candidates <- function(rep) {
   if (length(display)) {
     cands <- c(cands, display)
   }
+  prep_declared <- study_declared_prep_output_rels(rep)
+  if (length(prep_declared)) {
+    cands <- c(cands, prep_declared)
+  }
+  has_prep_sink <- length(prep_declared) > 0L
   if (nzchar(id)) {
-    if (identical(rep$type, "figure")) {
+    if (has_prep_sink) {
+      # Declared prep sinks are authoritative; do not invent html/png.
+    } else if (is_prep_entry(rep)) {
+      cands <- c(
+        cands,
+        paste0("outputs/", id, ".rds"),
+        paste0("outputs/", id, ".dta"),
+        paste0("outputs/", id, ".csv"),
+        paste0("outputs/", id, ".html"),
+        paste0("outputs/", id, ".png")
+      )
+    } else if (identical(rep$type, "figure")) {
       cands <- c(
         cands,
         paste0("outputs/", id, ".png"),
@@ -471,18 +512,20 @@ study_artifact_rel_candidates <- function(rep) {
       )
     }
   }
-  legacy <- default_artifact_path(rep, id)
-  cands <- c(cands, legacy)
+  if (!has_prep_sink) {
+    legacy <- default_artifact_path(rep, id)
+    cands <- c(cands, legacy)
+  }
   unique(cands[nzchar(cands)])
 }
 
 #' Artifact path relative to study root (primary candidate)
 #'
 #' Returns the first displayable path from \code{outputs:} in
-#' \code{replication.yml} (html/png/rds/svg/xlsx), otherwise the type-based
-#' default from \code{default_artifact_path()}. This is the one rule used by
-#' both \code{save_artifact()} (build) and artifact lookup (Shiny), so builds
-#' write exactly where lookup reads.
+#' \code{replication.yml} (html/png/rds/svg/xlsx/csv/dta), otherwise the
+#' type-based default from \code{default_artifact_path()}. This is the one rule
+#' used by both \code{save_artifact()} (build) and artifact lookup (Shiny), so
+#' builds write exactly where lookup reads.
 #'
 #' @param rep A single replication entry from \code{replication.yml}.
 #' @keywords internal
