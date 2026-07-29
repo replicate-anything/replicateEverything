@@ -10,7 +10,9 @@ study_artifact_rel_candidates(rep)
 \item{rep}{A single replication entry from \code{replication.yml}.}
 }
 \description{
-Uses displayable paths from \code{outputs:} (html/png/rds/svg/xlsx), then
-type-based defaults under \code{outputs/}.
+Uses displayable paths from \code{outputs:} (html/png/rds/svg/xlsx/csv/dta),
+then declared prep sinks (including \code{.done}), then type-based defaults
+under \code{outputs/}. Prep steps with declared sinks skip the misleading
+\code{outputs/<id>.html}/\code{.png} fallbacks that produced remote HTTP 404s.
 }
 \keyword{internal}

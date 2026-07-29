@@ -7,7 +7,9 @@
 displayable_output_ext_regex()
 }
 \description{
-Includes spreadsheet sinks (Hahn \code{tab_1}/\code{tab_2} \code{.xlsx}) so
-lookup does not fall through to a non-existent \code{outputs/<id>.html}.
+Includes spreadsheet sinks (Hahn \code{tab_1}/\code{tab_2} \code{.xlsx}) and
+tabular prep sinks (\code{.csv}/\code{.dta}/\code{.tab}) so lookup does not
+fall through to a non-existent \code{outputs/<id>.html}. Marker sinks
+(\code{.done}) are handled separately via \code{\link[=load_prep_step_display]{load_prep_step_display()}}.
 }
 \keyword{internal}

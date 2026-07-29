@@ -20,6 +20,9 @@ load_artifact_panels(doi, what, repo = NULL, folder = NULL, language = NULL)
 \description{
 Returns a single loaded artifact when there is one panel, or a character
 vector / list of loaded panels when \code{outputs:} lists several
-displayable sinks (png/html/svg/xlsx).
+displayable sinks (png/html/svg/xlsx). Prep/transform steps use
+\code{\link[=load_artifact]{load_artifact()}} (via \code{\link[=load_prep_step_display]{load_prep_step_display()}}) so \code{.done}/
+\code{.dta}/\code{.csv} sinks are summarized or previewed instead of falling
+through to remote \code{outputs/<id>.html} HTTP 404s.
 }
 \keyword{internal}
