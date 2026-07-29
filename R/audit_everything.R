@@ -709,7 +709,7 @@ audit_run_one <- function(
   doi,
   what,
   engine = NULL,
-  patience = 60,
+  patience = 120,
   install_deps = FALSE,
   repo = NULL,
   folder = NULL,
