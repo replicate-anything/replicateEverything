@@ -1,3 +1,20 @@
+#' Strip ANSI color/hyperlink escape codes from text
+#'
+#' @param x Character vector (log lines, error messages, etc.).
+#' @return Character vector with ANSI escapes removed.
+#' @keywords internal
+strip_ansi_escapes <- function(x) {
+  if (!is.character(x) || !length(x)) {
+    return(x)
+  }
+  tryCatch({
+    x <- gsub("\x1b\\[[0-9;]*m", "", x, perl = TRUE)
+    gsub("\x1b\\]8;[^\x1b]*\x1b\\\\", "", x, perl = TRUE)
+  }, error = function(e) {
+    gsub("\x1b", "", x, fixed = TRUE)
+  })
+}
+
 #' Format a replication error for user-facing display
 #'
 #' Unwraps \code{conditionMessage()} and, when present, parent errors and the
@@ -13,18 +30,6 @@
 #' }
 #'
 #' @keywords internal
-strip_ansi_escapes <- function(x) {
-  if (!is.character(x) || !length(x)) {
-    return(x)
-  }
-  tryCatch({
-    x <- gsub("\x1b\\[[0-9;]*m", "", x, perl = TRUE)
-    gsub("\x1b\\]8;[^\x1b]*\x1b\\\\", "", x, perl = TRUE)
-  }, error = function(e) {
-    gsub("\x1b", "", x, fixed = TRUE)
-  })
-}
-
 replication_error_message <- function(x) {
   if (inherits(x, "study_package_error")) {
     return(strip_ansi_escapes(conditionMessage(x)))

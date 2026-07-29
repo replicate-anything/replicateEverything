@@ -2,25 +2,17 @@
 % Please edit documentation in R/replication_errors.R
 \name{strip_ansi_escapes}
 \alias{strip_ansi_escapes}
-\title{Format a replication error for user-facing display}
+\title{Strip ANSI color/hyperlink escape codes from text}
 \usage{
 strip_ansi_escapes(x)
 }
 \arguments{
-\item{x}{An error condition or character message.}
+\item{x}{Character vector (log lines, error messages, etc.).}
 }
 \value{
-A single character string suitable for logs or UI.
+Character vector with ANSI escapes removed.
 }
 \description{
-Unwraps \code{conditionMessage()} and, when present, parent errors and the
-call that failed.
-}
-\examples{
-\dontrun{
-err <- simpleError("Replication failed", call = quote(run_replication()))
-replication_error_message(err)
-}
-
+Strip ANSI color/hyperlink escape codes from text
 }
 \keyword{internal}

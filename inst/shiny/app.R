@@ -7263,7 +7263,7 @@ server <- function(input, output, session) {
     tags$span(
       class = "text-muted",
       title = err,
-      "\u26a0 registry health bar unavailable (see server log)"
+      "\u26a0 replicateEverything: registry health bar unavailable (see server log)"
     )
   })
 
