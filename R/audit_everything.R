@@ -249,6 +249,25 @@ audit_progress_counts <- function(summary = NULL, results = NULL) {
   if (is.null(summary) || !is.list(summary)) {
     return(empty)
   }
+  # Prefer baked progress from audit_summary.json (Shiny health bar path).
+  prog <- summary$progress %||% NULL
+  if (is.list(prog) && length(prog)) {
+    out <- empty
+    for (nm in names(empty)) {
+      if (nm %in% names(prog)) {
+        val <- as.integer(prog[[nm]][[1]] %||% prog[[nm]] %||% 0L)
+        if (length(val) == 1L && !is.na(val)) {
+          out[[nm]] <- max(0L, val)
+        }
+      }
+    }
+    if (out[["total"]] <= 0L) {
+      out[["total"]] <- sum(out[names(out) != "total"])
+    }
+    if (sum(out[names(out) != "total"]) > 0L || out[["total"]] > 0L) {
+      return(out)
+    }
+  }
   n_ok <- as.integer(summary$success %||% 0L)
   n_timeout <- as.integer(summary$timed_out %||% 0L)
   n_sub <- as.integer(summary$substantive_failed %||% 0L)

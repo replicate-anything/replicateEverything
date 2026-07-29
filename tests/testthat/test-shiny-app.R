@@ -297,6 +297,28 @@ test_that("app.R isolates clientData reads when arming welcome from onFlushed", 
   expect_match(text, "deep_link_flags\\s*<-\\s*new\\.env")
 })
 
+test_that("app.R frontloads Studies cache and defers auto-update off first flush", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  text <- paste(readLines(file.path(src, "app.R"), warn = FALSE), collapse = "\n")
+  expect_match(text, "\\.shiny_studies_preload")
+  expect_match(text, "shiny_studies_select_choices_global")
+  expect_match(text, "auto_update_at\\s*<-\\s*reactiveVal")
+  # Auto-update must not sit on the first onFlushed critical path.
+  on_flushed <- regmatches(
+    text,
+    regexpr(
+      "session\\$onFlushed\\s*\\([\\s\\S]*?\\},\\s*once\\s*=\\s*TRUE\\s*\\)",
+      text,
+      perl = TRUE
+    )
+  )
+  expect_true(length(on_flushed) == 1L && nzchar(on_flushed))
+  expect_false(grepl("ensure_replicate_everything\\s*\\(", on_flushed, perl = TRUE))
+  expect_match(text, "ensure_replicate_everything\\s*\\(")
+})
+
 test_that("app.R defers deep-link apply until Studies cache is ready", {
   src <- shiny_app_dir()
   skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")

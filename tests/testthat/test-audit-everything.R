@@ -289,4 +289,22 @@ test_that("audit_progress_counts aggregates from results and summary", {
   expect_equal(unname(from_summary[["missing_engine"]]), 1L)
   expect_equal(unname(from_summary[["other"]]), 1L) # failed-timeout-sub = 1; skip-miss = 0
   expect_equal(unname(from_summary[["total"]]), 10L)
+
+  baked <- replicateEverything:::audit_progress_counts(
+    summary = list(
+      runs = 96L,
+      success = 1L,
+      progress = list(
+        replicating = 85L,
+        timed_out = 7L,
+        substantive_fail = 0L,
+        missing_engine = 0L,
+        other = 4L,
+        total = 96L
+      )
+    )
+  )
+  expect_equal(unname(baked[["replicating"]]), 85L)
+  expect_equal(unname(baked[["other"]]), 4L)
+  expect_equal(unname(baked[["total"]]), 96L)
 })

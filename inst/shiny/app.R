@@ -1525,6 +1525,9 @@ empty_registry_index <- function() {
   )
 }
 
+# Shared with collection filter UI / baked shiny_studies.json ui block.
+ALL_STUDIES_COLLECTION <- "__all_studies__"
+
 #' Load Studies list from registry-baked shiny_studies.json (no live yaml)
 load_studies_session_data <- function() {
   cache <- tryCatch(
@@ -1532,30 +1535,80 @@ load_studies_session_data <- function() {
     error = function(e) NULL
   )
   if (is.null(cache)) {
-    return(list(cache = NULL, index = empty_registry_index()))
+    return(list(
+      cache = NULL,
+      index = empty_registry_index(),
+      select_choices = character(0),
+      collection_choices = c("All studies" = ALL_STUDIES_COLLECTION)
+    ))
   }
   index <- tryCatch(
     get("shiny_studies_as_index_df", envir = asNamespace("replicateEverything"))(cache),
     error = function(e) empty_registry_index()
   )
+  # DOIs are already normalized when the cache is built; only normalize if needed.
   if (!is.null(index) && "doi" %in% names(index)) {
-    index$doi <- vapply(as.character(index$doi %||% ""), function(d) {
-      if (!nzchar(d)) {
-        return("")
-      }
-      tryCatch(replicate_fn("normalize_doi", d), error = function(e) d)
-    }, character(1))
+    raw <- as.character(index$doi %||% "")
+    needs <- nzchar(raw) & !grepl("^10\\.", raw)
+    if (any(needs)) {
+      index$doi[needs] <- vapply(raw[needs], function(d) {
+        tryCatch(replicate_fn("normalize_doi", d), error = function(e) d)
+      }, character(1))
+    }
   }
   if (!is.null(index) && !"repo" %in% names(index)) {
     index$repo <- DEFAULT_REGISTRY_REPO
   }
-  list(cache = cache, index = index)
+  select_choices <- tryCatch(
+    get("shiny_studies_select_choices", envir = asNamespace("replicateEverything"))(cache),
+    error = function(e) character(0)
+  )
+  collection_choices <- tryCatch(
+    get("shiny_studies_collection_choices", envir = asNamespace("replicateEverything"))(cache),
+    error = function(e) c("All studies" = ALL_STUDIES_COLLECTION)
+  )
+  if (!length(collection_choices)) {
+    collection_choices <- c("All studies" = ALL_STUDIES_COLLECTION)
+  }
+  list(
+    cache = cache,
+    index = index,
+    select_choices = select_choices,
+    collection_choices = collection_choices
+  )
 }
 
-# Filled after first paint via session$onFlushed (see server).
+# Filled at worker start when possible; sessions only assign from this.
 registry_index <- empty_registry_index()
 registry_audit_summary <- NULL
 shiny_studies_cache_global <- NULL
+shiny_studies_select_choices_global <- character(0)
+shiny_studies_collection_choices_global <- c("All studies" = ALL_STUDIES_COLLECTION)
+
+# Process-level preload: parse shiny_studies.json once per worker so session
+# onFlushed does not reassemble dropdowns / re-parse JSON.
+.shiny_studies_preload <- tryCatch(load_studies_session_data(), error = function(e) NULL)
+if (!is.null(.shiny_studies_preload) && !is.null(.shiny_studies_preload$cache)) {
+  shiny_studies_cache_global <- .shiny_studies_preload$cache
+  registry_index <- .shiny_studies_preload$index
+  shiny_studies_select_choices_global <- .shiny_studies_preload$select_choices %||% character(0)
+  shiny_studies_collection_choices_global <- .shiny_studies_preload$collection_choices %||%
+    c("All studies" = ALL_STUDIES_COLLECTION)
+}
+.registry_audit_summary_preload <- tryCatch(
+  {
+    ns <- asNamespace("replicateEverything")
+    if (exists("load_registry_audit_summary", envir = ns, inherits = FALSE)) {
+      get("load_registry_audit_summary", envir = ns)()
+    } else {
+      NULL
+    }
+  },
+  error = function(e) NULL
+)
+if (!is.null(.registry_audit_summary_preload)) {
+  registry_audit_summary <- .registry_audit_summary_preload
+}
 
 study_audit_dep_line <- function(engine, dep) {
   label <- switch(
@@ -1933,18 +1986,11 @@ registry_health_bar_ui <- function(summary) {
   if (is.null(summary)) {
     return(NULL)
   }
-  # Prefer full snapshot when available so missing-engine / substantive
-  # buckets are exact; fall back to summary fields.
-  results <- NULL
-  snap <- tryCatch(
-    replicate_fn("load_registry_audit_snapshot"),
-    error = function(e) NULL
-  )
-  if (!is.null(snap) && is.data.frame(snap$results)) {
-    results <- snap$results
-  }
+  # Prefer baked summary$progress (written into audit_summary.json). Do not
+  # load the full audit_latest.rds snapshot on first paint — that was the
+  # expensive path for the health bar at startup.
   counts <- tryCatch(
-    replicate_fn("audit_progress_counts", summary = summary, results = results),
+    replicate_fn("audit_progress_counts", summary = summary, results = NULL),
     error = function(e) NULL
   )
   if (is.null(counts)) {
@@ -3178,7 +3224,7 @@ maintainer_link_ui <- function(row) {
   )
 }
 
-ALL_STUDIES_COLLECTION <- "__all_studies__"
+# ALL_STUDIES_COLLECTION is defined near load_studies_session_data() (startup).
 
 registry_collection_choices <- function(index_df) {
   if (is.null(index_df) || nrow(index_df) == 0) {
@@ -7496,10 +7542,16 @@ server <- function(input, output, session) {
     health_bar_error(NULL)
     result <- tryCatch(
       {
-        summary <- tryCatch(
-          replicate_fn("load_registry_audit_summary"),
-          error = function(e) NULL
-        )
+        summary <- registry_audit_summary
+        if (is.null(summary)) {
+          summary <- tryCatch(
+            replicate_fn("load_registry_audit_summary"),
+            error = function(e) NULL
+          )
+          if (!is.null(summary)) {
+            registry_audit_summary <<- summary
+          }
+        }
         registry_health_bar_ui(summary)
       },
       error = function(e) {
@@ -7532,6 +7584,12 @@ server <- function(input, output, session) {
     }
     registry_index <<- data$index
     shiny_studies_cache_global <<- data$cache
+    if (!is.null(data$select_choices)) {
+      shiny_studies_select_choices_global <<- data$select_choices
+    }
+    if (!is.null(data$collection_choices) && length(data$collection_choices)) {
+      shiny_studies_collection_choices_global <<- data$collection_choices
+    }
     studies_cache_rv(data$cache)
     # Preserve inbound deep-link / current study when rebuilding choices.
     # Cold paste queues ?doi= before this runs; resetting to "" drops the key.
@@ -7548,20 +7606,28 @@ server <- function(input, output, session) {
         ""
       }
     })
+    select_ch <- shiny_studies_select_choices_global
+    if (!length(select_ch)) {
+      select_ch <- nice_doi_choices(registry_index)
+    }
+    collection_ch <- shiny_studies_collection_choices_global
+    if (!length(collection_ch)) {
+      collection_ch <- registry_collection_choices(registry_index)
+    }
     updateSelectInput(
       session,
       "study_select",
       choices = c(
         "Choose a study…" = "",
         local_study_select_choice(),
-        nice_doi_choices(registry_index)
+        select_ch
       ),
       selected = preserve_selected
     )
     updateSelectInput(
       session,
       "studies_collection_filter",
-      choices = registry_collection_choices(registry_index),
+      choices = collection_ch,
       selected = ALL_STUDIES_COLLECTION
     )
     registry_ready(TRUE)
@@ -7673,15 +7739,59 @@ server <- function(input, output, session) {
 
   # onFlushed is not a reactive consumer: never call invalidateLater() or
   # read session$clientData / reactiveValues without isolate() here.
-  # Paint the UI shell first, then load the Studies cache + version check.
+  # Paint the UI shell first, then apply the (usually preloaded) Studies cache.
+  # GitHub auto-update is deferred to a later observe — not on this critical path.
+  auto_update_at <- reactiveVal(as.POSIXct(0))
+
   session$onFlushed(function() {
-    # 1. Registry-baked Studies cache (session-memoized by mtime)
-    data <- tryCatch(load_studies_session_data(), error = function(e) NULL)
+    # 1. Registry-baked Studies cache (process-preloaded when possible)
+    data <- NULL
+    if (!is.null(shiny_studies_cache_global)) {
+      data <- list(
+        cache = shiny_studies_cache_global,
+        index = registry_index,
+        select_choices = shiny_studies_select_choices_global,
+        collection_choices = shiny_studies_collection_choices_global
+      )
+    } else {
+      data <- tryCatch(load_studies_session_data(), error = function(e) NULL)
+    }
     if (!is.null(data)) {
       apply_studies_session_data(data)
     }
 
-    # 2. Version check / optional GitHub install (off critical path)
+    # 2. Deep link / welcome (existing behaviour)
+    if (isTRUE(deep_link_flags$url_deep_link_parsed)) {
+      isolate(auto_update_at(Sys.time() + 2))
+      return(invisible(NULL))
+    }
+    link <- parse_shiny_deep_link_from_search(
+      isolate(session$clientData$url_search)
+    )
+    if (!is.null(link) && isTRUE(queue_shiny_deep_link(link))) {
+      deep_link_flags$url_deep_link_parsed <- TRUE
+      isolate(auto_update_at(Sys.time() + 2))
+      return(invisible(NULL))
+    }
+    isolate(welcome_defer_until(Sys.time() + 0.8))
+    isolate(auto_update_at(Sys.time() + 2))
+  }, once = TRUE)
+
+  # Version check / optional GitHub install — after Studies are interactive.
+  observe({
+    at <- auto_update_at()
+    if (at <= as.POSIXct(0)) {
+      return(invisible(NULL))
+    }
+    if (Sys.time() < at) {
+      remaining_ms <- max(
+        1L,
+        ceiling(1000 * as.numeric(difftime(at, Sys.time(), units = "secs")))
+      )
+      invalidateLater(remaining_ms, session)
+      return(invisible(NULL))
+    }
+    isolate(auto_update_at(as.POSIXct(0)))
     tryCatch(ensure_replicate_everything(), error = function(e) NULL)
     # Nudge banner outputs after auto-update status is set
     isolate({
@@ -7692,20 +7802,7 @@ server <- function(input, output, session) {
         registry_ready(TRUE)
       }
     })
-
-    # 3. Deep link / welcome (existing behaviour)
-    if (isTRUE(deep_link_flags$url_deep_link_parsed)) {
-      return(invisible(NULL))
-    }
-    link <- parse_shiny_deep_link_from_search(
-      isolate(session$clientData$url_search)
-    )
-    if (!is.null(link) && isTRUE(queue_shiny_deep_link(link))) {
-      deep_link_flags$url_deep_link_parsed <- TRUE
-      return(invisible(NULL))
-    }
-    isolate(welcome_defer_until(Sys.time() + 0.8))
-  }, once = TRUE)
+  })
 
   observe({
     defer_until <- welcome_defer_until()

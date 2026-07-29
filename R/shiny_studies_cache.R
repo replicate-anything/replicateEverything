@@ -90,6 +90,147 @@ shiny_studies_citation_label <- function(authors, year, title) {
   }
 }
 
+#' Short title clip for Replicate dropdown labels (matches Shiny truncate_label)
+#' @noRd
+shiny_studies_truncate_label <- function(text, max_chars = 16L) {
+  text <- trimws(as.character(text %||% ""))
+  max_chars <- as.integer(max_chars[[1]] %||% 16L)
+  if (!nzchar(text) || !is.finite(max_chars) || max_chars < 1L) {
+    return(text)
+  }
+  if (nchar(text) <= max_chars) {
+    return(text)
+  }
+  cut <- substr(text, 1L, max_chars)
+  if (grepl(" ", cut, fixed = TRUE)) {
+    cut2 <- sub(" +[^ ]*$", "", cut)
+    if (nzchar(cut2)) {
+      cut <- cut2
+    }
+  }
+  paste0(cut, "...")
+}
+
+#' Replicate-tab dropdown label (author / year / short title)
+#' @noRd
+shiny_studies_select_label <- function(authors, year, title) {
+  author <- format_author_label(authors)
+  year_chr <- trimws(as.character(year %||% ""))
+  if (!nzchar(year_chr) || identical(year_chr, "NA")) {
+    year_chr <- ""
+  }
+  title_snip <- shiny_studies_truncate_label(title, 16L)
+  paste0(
+    author,
+    if (nzchar(year_chr)) paste0(" (", year_chr, ")") else "",
+    if (nzchar(title_snip)) paste0(" ", title_snip) else ""
+  )
+}
+
+#' Sentinel value for the Shiny "All studies" collection filter
+#' @keywords internal
+SHINY_STUDIES_ALL_COLLECTION <- "__all_studies__"
+
+#' Bake selectInput / collection filter payloads for Shiny startup
+#'
+#' Studies must already be sorted in display order. Returns list columns of
+#' \code{value}/\code{label} pairs so Shiny can call \code{updateSelectInput}
+#' without re-sorting or rebuilding labels at session start.
+#'
+#' @param studies List of study records from [build_shiny_studies_cache()].
+#' @return List with \code{select_choices} and \code{collection_choices}.
+#' @keywords internal
+shiny_studies_bake_ui <- function(studies) {
+  if (!length(studies)) {
+    return(list(
+      select_choices = list(),
+      collection_choices = list(
+        list(value = SHINY_STUDIES_ALL_COLLECTION, label = "All studies")
+      )
+    ))
+  }
+
+  select_choices <- lapply(studies, function(s) {
+    value <- as.character(s$key %||% s$doi %||% s$handle %||% s$folder %||% "")
+    if (!nzchar(value)) {
+      return(NULL)
+    }
+    list(
+      value = value,
+      label = shiny_studies_select_label(
+        s$authors %||% "",
+        s$year %||% "",
+        s$title %||% ""
+      )
+    )
+  })
+  select_choices <- Filter(Negate(is.null), select_choices)
+
+  cols <- unique(unlist(lapply(studies, function(s) {
+    shiny_studies_collections_vec(s$collections %||% character(0))
+  })))
+  cols <- sort(cols[nzchar(cols) & !is.na(cols)])
+  collection_choices <- c(
+    list(list(value = SHINY_STUDIES_ALL_COLLECTION, label = "All studies")),
+    lapply(cols, function(c) list(value = c, label = c))
+  )
+
+  list(
+    select_choices = select_choices,
+    collection_choices = collection_choices
+  )
+}
+
+#' Named character vector for \code{selectInput(choices=)} from baked UI pairs
+#' @param pairs List of lists with \code{value} and \code{label}.
+#' @return Named character vector (\code{names} = labels, values = values).
+#' @keywords internal
+shiny_studies_named_choices <- function(pairs) {
+  if (!length(pairs)) {
+    return(character(0))
+  }
+  vals <- vapply(pairs, function(x) {
+    as.character(x$value[[1]] %||% x$value %||% "")
+  }, character(1))
+  labs <- vapply(pairs, function(x) {
+    lab <- as.character(x$label[[1]] %||% x$label %||% "")
+    if (!nzchar(lab)) {
+      lab <- as.character(x$value[[1]] %||% x$value %||% "")
+    }
+    lab
+  }, character(1))
+  keep <- nzchar(vals)
+  stats::setNames(vals[keep], labs[keep])
+}
+
+#' SelectInput choices from a Shiny Studies cache (baked UI, with fallback)
+#' @param cache Result of [load_shiny_studies_cache()].
+#' @return Named character vector.
+#' @keywords internal
+shiny_studies_select_choices <- function(cache) {
+  ui <- cache$ui %||% NULL
+  baked <- shiny_studies_named_choices(ui$select_choices %||% list())
+  if (length(baked)) {
+    return(baked)
+  }
+  studies <- studies_table_data(cache)
+  shiny_studies_named_choices(shiny_studies_bake_ui(studies)$select_choices)
+}
+
+#' Collection filter choices from a Shiny Studies cache (baked UI, with fallback)
+#' @param cache Result of [load_shiny_studies_cache()].
+#' @return Named character vector.
+#' @keywords internal
+shiny_studies_collection_choices <- function(cache) {
+  ui <- cache$ui %||% NULL
+  baked <- shiny_studies_named_choices(ui$collection_choices %||% list())
+  if (length(baked)) {
+    return(baked)
+  }
+  studies <- studies_table_data(cache)
+  shiny_studies_named_choices(shiny_studies_bake_ui(studies)$collection_choices)
+}
+
 #' Gap notes from stub summary fields (if present)
 #' @noRd
 shiny_studies_notes_from_meta <- function(meta) {
@@ -366,8 +507,9 @@ shiny_studies_record_from_row <- function(
 #' Writes \code{registry/shiny_studies.json} with one record per study: citation
 #' fields, collections, languages/engines, notes flags (data unavailable /
 #' missing engine), related upstream/downstream (dois, titles, urls), article
-#' and study/repo urls. Intended for the Shiny Studies tab — no live yaml fetch
-#' at list time.
+#' and study/repo urls, plus a baked \code{ui} block (select / collection
+#' choices) so Shiny startup does not reassemble dropdowns. Intended for the
+#' Shiny Studies tab — no live yaml fetch at list time.
 #'
 #' Called from [build_registry_index()]. Gap flags come from stub
 #' \code{notes:} (written by [sync_study_to_registry()]), declared languages
@@ -437,9 +579,11 @@ build_shiny_studies_cache <- function(
 
   cache <- list(
     generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
-    schema_version = 1L,
+    schema_version = 2L,
     n = length(studies),
-    studies = studies
+    studies = studies,
+    # Pre-assembled Shiny widgets — session start should not rebuild labels.
+    ui = shiny_studies_bake_ui(studies)
   )
 
   path <- shiny_studies_cache_path(registry_root)

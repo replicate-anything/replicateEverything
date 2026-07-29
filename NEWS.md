@@ -1,3 +1,20 @@
+# replicateEverything 0.7.35
+
+## Shiny launch: frontload Studies UI + health counts; defer auto-update
+
+* **Baked Studies widgets:** [build_shiny_studies_cache()] writes a `ui`
+  block (`select_choices`, `collection_choices`) into `shiny_studies.json`
+  (schema_version 2). Shiny applies those named choices on startup instead of
+  re-sorting authors and rebuilding dropdown labels each session.
+* **Health bar:** uses baked `audit_summary.json` `progress` counts only —
+  no longer loads `audit_latest.rds` on first paint. [audit_progress_counts()]
+  prefers `summary$progress` when present.
+* **Process preload:** worker start parses `shiny_studies.json` and
+  `audit_summary.json` once into globals; session `onFlushed` assigns from
+  that memo instead of reassembling.
+* **Deferred auto-update:** [ensure_replicate_everything_current()] runs ~2s
+  after Studies are interactive, not on the first flush critical path.
+
 # replicateEverything 0.7.34
 
 ## Fix: Display for prep/transform data steps (Hahn datasets 1–5)
