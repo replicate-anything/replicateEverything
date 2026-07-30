@@ -564,7 +564,7 @@ stata_windows_hidden_shell_vbs_lines <- function() {
 #' @param hidden_shell_vbs Optional Windows path to
 #'   [stata_windows_hidden_shell_vbs_lines()] script for \code{$S_SHELL}.
 #' @param rscript_path Optional absolute Rscript path for
-#'   \code{$REPLICATE_RSCRIPT} (Hahn LBD and similar Stata\to R shells).
+#'   \code{$REPLICATE_RSCRIPT} (Hahn LBD and similar Stata to R shells).
 #' @return Character vector of do-file lines.
 #' @keywords internal
 stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL,

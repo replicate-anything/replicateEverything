@@ -443,7 +443,9 @@ install_dependencies <- function(
 #'
 #' @inheritParams study_system_compatibility
 #' @return A \code{study_system_compatibility} list with \code{ready},
-#'   \code{install_needed}, and per-engine \code{dependencies}.
+#'   \code{install_needed}, per-engine \code{dependencies}, and when not ready
+#'   stable \code{message} / \code{error} fields (maintainer hint text) for
+#'   Shiny and verification consumers.
 #' @seealso [install_dependencies()], [maintainer_dependency_hint()]
 #'
 #' @examples

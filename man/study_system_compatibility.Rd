@@ -28,7 +28,9 @@ study_readiness_audit(...)
 \item{include_registry_audit}{Include latest registry \code{audit_latest.rds} summary.}
 }
 \value{
-A \code{study_system_compatibility} list.
+A \code{study_system_compatibility} list. When \code{ready} is
+\code{FALSE}, includes stable \code{message} and \code{error} fields with
+\code{\link[=maintainer_dependency_hint]{maintainer_dependency_hint()}} text for Shiny / verification consumers.
 }
 \description{
 Reads \code{languages:}, \code{paper.dependencies}, \code{python_dependencies:},

@@ -47,6 +47,32 @@ test_that("plan_study_run respects given = parents", {
   expect_equal(plan$step_ids, "tab_1")
 })
 
+test_that("plan_study_run given = parents does not rebuild grandparents", {
+  meta <- list(
+    steps = list(
+      list(id = "root", type = "transform", label = "Root"),
+      list(
+        id = "mid",
+        type = "transform",
+        label = "Mid",
+        parents = list("root")
+      ),
+      list(
+        id = "leaf",
+        type = "figure",
+        label = "Leaf",
+        parents = list("mid")
+      )
+    )
+  )
+  graph <- study_step_graph(normalize_study_steps(meta))
+  plan <- plan_study_run("leaf", "parents", FALSE, graph)
+  expect_true(all(c("mid", "root") %in% plan$given_ids))
+  expect_equal(plan$step_ids, "leaf")
+  expect_false("root" %in% plan$step_ids)
+  expect_false("mid" %in% plan$step_ids)
+})
+
 test_that("plan_study_run given = nothing includes ancestors", {
   meta <- list(
     steps = list(

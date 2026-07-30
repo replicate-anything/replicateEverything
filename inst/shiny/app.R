@@ -1771,13 +1771,17 @@ study_audit_ui <- function(audit, compact = FALSE) {
 }
 
 dependency_hint_modal <- function(session, doi, audit = NULL, title = "Missing dependencies") {
-  hint <- tryCatch(
-    maintainer_hint(
-      doi = doi,
-      audit = audit
-    ),
-    error = function(e) conditionMessage(e)
-  )
+  # Prefer stable package-level message from check_study_compatibility().
+  hint <- as.character(audit$message %||% audit$error %||% "")
+  if (!nzchar(hint)) {
+    hint <- tryCatch(
+      maintainer_hint(
+        doi = doi,
+        audit = audit
+      ),
+      error = function(e) conditionMessage(e)
+    )
+  }
   showModal(modalDialog(
     title = title,
     tags$p(
@@ -5831,6 +5835,10 @@ shiny_running_on_wzb_safe <- function() {
 }
 
 shiny_wzb_live_run_limit_seconds <- function() {
+  fn <- feedback_pkg_fn("shiny_live_run_estimate_limit_seconds", required = FALSE)
+  if (!is.null(fn)) {
+    return(tryCatch(fn(), error = function(e) Inf))
+  }
   raw <- getOption("replicate_shiny.wzb_live_run_max_seconds", 600)
   secs <- suppressWarnings(as.numeric(raw[[1L]] %||% raw))
   if (!is.finite(secs) || secs <= 0) {
@@ -5840,36 +5848,17 @@ shiny_wzb_live_run_limit_seconds <- function() {
 }
 
 shiny_runtime_estimate_seconds <- function(rt) {
-  if (is.null(rt) || !is.list(rt)) {
-    return(NA_real_)
-  }
-  bake <- suppressWarnings(as.numeric(rt$bake_seconds[[1L]] %||% rt$bake_seconds %||% NA_real_))
-  secs <- suppressWarnings(as.numeric(rt$seconds[[1L]] %||% rt$seconds %||% NA_real_))
-  cap <- suppressWarnings(as.numeric(rt$timeout_seconds[[1L]] %||% rt$timeout_seconds %||% NA_real_))
-  if (isTRUE(rt$timed_out) && is.finite(bake) && bake > 0) {
-    return(bake)
-  }
-  cand <- c(bake, secs, cap)
-  cand <- cand[is.finite(cand) & cand > 0]
-  if (!length(cand)) {
-    return(NA_real_)
-  }
-  max(cand)
+  tryCatch(
+    replicate_fn("shiny_runtime_estimate_seconds", rt),
+    error = function(e) NA_real_
+  )
 }
 
 format_run_duration_short <- function(seconds) {
-  seconds <- suppressWarnings(as.numeric(seconds[[1L]] %||% seconds))
-  if (!is.finite(seconds) || seconds <= 0) {
-    return("an extended run")
-  }
-  if (seconds < 90) {
-    return(sprintf("about %.0f seconds", seconds))
-  }
-  if (seconds < 3600) {
-    mins <- max(1L, as.integer(round(seconds / 60)))
-    return(sprintf("about %d minute%s", mins, if (mins == 1L) "" else "s"))
-  }
-  sprintf("about %.1f hours", round(seconds / 3600, 1))
+  tryCatch(
+    replicate_fn("format_run_duration_short", seconds),
+    error = function(e) "an extended run"
+  )
 }
 
 replication_run_snippet <- function(doi, what, language = NULL, include_language = NULL) {
@@ -9585,22 +9574,59 @@ server <- function(input, output, session) {
     withProgress(message = "Loading precomputed result...", value = 0.4, {
       state$progress <- "Loading artifact"
       target <- selected_replication_id_and_language()
-      loaded <- replicate_fn(
-        "load_replication_for_display",
-        state$doi,
-        target$id,
-        language = target$language,
-        prefer = "artifact",
-        fallback_live = fallback_live,
-        install_deps = FALSE,
-        folder = state$registry_folder,
-        repo = state$registry_repo
-      )
+      # Display button path: shared shiny_display_action (artifact only).
+      # fallback_live is retained for call-site compatibility but Display
+      # semantics are prefer = "artifact", fallback_live = FALSE.
+      loaded <- if (isFALSE(fallback_live)) {
+        tryCatch(
+          replicate_fn(
+            "shiny_display_action",
+            state$doi,
+            target$id,
+            language = target$language,
+            folder = state$registry_folder,
+            repo = state$registry_repo
+          ),
+          error = function(e) {
+            # Older package without shiny_display_action
+            replicate_fn(
+              "load_replication_for_display",
+              state$doi,
+              target$id,
+              language = target$language,
+              prefer = "artifact",
+              fallback_live = FALSE,
+              install_deps = FALSE,
+              folder = state$registry_folder,
+              repo = state$registry_repo
+            )
+          }
+        )
+      } else {
+        replicate_fn(
+          "load_replication_for_display",
+          state$doi,
+          target$id,
+          language = target$language,
+          prefer = "artifact",
+          fallback_live = TRUE,
+          install_deps = FALSE,
+          folder = state$registry_folder,
+          repo = state$registry_repo
+        )
+      }
       state$progress <- NULL
 
       if (isTRUE(loaded$ok)) {
         state$selected_result <- loaded$raw %||% loaded$value
-        state$selected_source <- loaded$source
+        state$selected_source <- loaded$source %||% "artifact"
+        return(invisible(NULL))
+      }
+      if (isTRUE(loaded$unavailable) || isTRUE(loaded$missing)) {
+        # Grey Display short-circuit: clear missing/unavailable without a
+        # long failing artifact load.
+        state$selected_result <- NULL
+        state$selected_source <- "artifact"
         return(invisible(NULL))
       }
       if (!is.null(loaded$error)) {
@@ -9648,44 +9674,104 @@ server <- function(input, output, session) {
       state$progress <- NULL
       return(invisible(NULL))
     }
-    shiny_run_gate <- tryCatch({
-      meta <- replicate_fn(
-        "get_replication_meta",
+
+    # Shared preflight: shiny_run / padlock / hammer / compat / estimate gate.
+    pre <- tryCatch(
+      replicate_fn(
+        "shiny_run_action",
         doi,
+        what,
+        language = language,
         folder = state$registry_folder,
-        repo = state$registry_repo
+        repo = state$registry_repo,
+        study_root = state$local_study_root %||% NULL,
+        install_deps = TRUE,
+        on_wzb = shiny_running_on_wzb_safe(),
+        estimate_limit_seconds = shiny_wzb_live_run_limit_seconds(),
+        check_compatibility = TRUE,
+        execute = FALSE
+      ),
+      error = function(e) NULL
+    )
+
+    if (is.null(pre)) {
+      # Older package without shiny_run_action — keep prior inline path.
+      shiny_run_gate <- tryCatch({
+        meta <- replicate_fn(
+          "get_replication_meta",
+          doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo
+        )
+        entry <- replicate_fn("find_replication_entry", meta, what, language = language)
+        list(
+          enabled = isTRUE(replicate_fn("step_shiny_run_enabled", entry)),
+          message = as.character(replicate_fn("step_shiny_run_message", entry))
+        )
+      }, error = function(e) list(enabled = TRUE, message = ""))
+      if (!isTRUE(shiny_run_gate$enabled)) {
+        msg <- shiny_run_gate$message
+        if (!nzchar(as.character(msg %||% ""))) {
+          msg <- "[live run not available on shiny]"
+        }
+        state$selected_result <- simpleError(msg)
+        state$selected_source <- "live"
+        state$progress <- NULL
+        return(invisible(NULL))
+      }
+      audit <- tryCatch(
+        check_study_compat(
+          doi,
+          folder = state$registry_folder,
+          repo = state$registry_repo,
+          materialize_study = TRUE,
+          include_registry_audit = FALSE
+        ),
+        error = function(e) list(error = conditionMessage(e), ready = FALSE)
       )
-      entry <- replicate_fn("find_replication_entry", meta, what, language = language)
-      list(
-        enabled = isTRUE(replicate_fn("step_shiny_run_enabled", entry)),
-        message = as.character(replicate_fn("step_shiny_run_message", entry))
+      if (!is.null(audit$error) || !isTRUE(audit$ready)) {
+        dependency_hint_modal(session, doi, audit = audit)
+        hint <- as.character(
+          audit$message %||% audit$error %||%
+            tryCatch(
+              maintainer_hint(doi = doi, audit = audit),
+              error = function(e) conditionMessage(e)
+            )
+        )
+        state$selected_result <- structure(
+          list(message = hint),
+          class = c("dependency_error", "error", "condition")
+        )
+        state$selected_source <- "live"
+        state$progress <- NULL
+        return(invisible(NULL))
+      }
+      pre <- list(
+        ok_to_execute = TRUE,
+        progress_message = "Running live replication...",
+        long_run_warning = "",
+        estimate_blocked = FALSE
       )
-    }, error = function(e) list(enabled = TRUE, message = ""))
-    if (!isTRUE(shiny_run_gate$enabled)) {
-      msg <- shiny_run_gate$message
+    }
+
+    if (isTRUE(pre$skipped) || identical(pre$gate, "shiny_run") ||
+        identical(pre$gate, "gap") || identical(pre$gate, "incomplete")) {
+      msg <- pre$message
       if (!nzchar(as.character(msg %||% ""))) {
         msg <- "[live run not available on shiny]"
       }
-      state$selected_result <- simpleError(msg)
+      state$selected_result <- pre$error %||% simpleError(msg)
       state$selected_source <- "live"
       state$progress <- NULL
       return(invisible(NULL))
     }
-    audit <- tryCatch(
-      check_study_compat(
-        doi,
-        folder = state$registry_folder,
-        repo = state$registry_repo,
-        materialize_study = TRUE,
-        include_registry_audit = FALSE
-      ),
-      error = function(e) list(error = conditionMessage(e), ready = FALSE)
-    )
-    if (!is.null(audit$error) || !isTRUE(audit$ready)) {
+
+    if (identical(pre$gate, "compat")) {
+      audit <- pre$compatibility
       dependency_hint_modal(session, doi, audit = audit)
-      hint <- tryCatch(
-        maintainer_hint(doi = doi, audit = audit),
-        error = function(e) conditionMessage(e)
+      hint <- as.character(
+        pre$message %||% audit$message %||% audit$error %||%
+          "Study compatibility check failed (not ready)"
       )
       state$selected_result <- structure(
         list(message = hint),
@@ -9696,105 +9782,84 @@ server <- function(input, output, session) {
       return(invisible(NULL))
     }
 
-    run_msg <- "Running live replication..."
-    rt <- tryCatch(
-      replicate_fn(
-        "lookup_replication_audit_runtime",
-        doi,
-        what,
-        engine = language,
-        study_root = state$local_study_root %||% NULL
-      ),
-      error = function(e) NULL
-    )
-    if (!is.null(rt) && isTRUE(rt$timed_out)) {
-      long_ind <- tryCatch(
-        replicate_fn(
-          "shiny_step_long_run_indicator",
-          output_exists = TRUE,
-          audit_timed_out = TRUE,
-          gap_kind = NULL,
-          incomplete = FALSE,
-          timeout_seconds = rt$timeout_seconds %||% NA_real_,
-          seconds = rt$seconds %||% NA_real_,
-          bake_seconds = rt$bake_seconds %||% NA_real_
+    if (isTRUE(pre$estimate_blocked) || identical(pre$gate, "estimate")) {
+      polite_msg <- as.character(pre$message %||% "")
+      if (!nzchar(polite_msg)) {
+        polite_msg <- "Estimated runtime exceeds the WZB Shiny live-run limit. Please run locally."
+      }
+      showModal(modalDialog(
+        title = "Please run locally",
+        tags$p(polite_msg),
+        tags$p(
+          class = "text-muted small mb-0",
+          "Display will continue to show any baked output that is already available."
         ),
-        error = function(e) list(show = FALSE, title = "")
-      )
-      if (isTRUE(long_ind$show) && nzchar(long_ind$title %||% "")) {
-        run_msg <- paste0("Running live replication... ", long_ind$title)
-      } else if (nzchar(rt$advice %||% "")) {
-        run_msg <- paste0("Running live replication... ", rt$advice)
-      }
-    } else if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
-      run_msg <- paste0("Running live replication... ", rt$advice)
+        easyClose = TRUE,
+        footer = modalButton("OK")
+      ))
+      state$selected_source <- "artifact"
+      state$progress <- NULL
+      load_selected_artifact(fallback_live = FALSE)
+      return(invisible(NULL))
     }
 
-    if (isTRUE(shiny_running_on_wzb_safe())) {
-      limit_seconds <- shiny_wzb_live_run_limit_seconds()
-      estimate_seconds <- shiny_runtime_estimate_seconds(rt)
-      if (is.finite(limit_seconds) &&
-          is.finite(estimate_seconds) &&
-          estimate_seconds > limit_seconds) {
-        polite_msg <- paste0(
-          "This step can be run in principle, but the estimated completion time (",
-          format_run_duration_short(estimate_seconds),
-          ") is above the current WZB Shiny live-run limit (",
-          format_run_duration_short(limit_seconds),
-          "). To preserve shared server resources, please run it locally instead."
-        )
-        showModal(modalDialog(
-          title = "Please run locally",
-          tags$p(polite_msg),
-          tags$p(
-            class = "text-muted small mb-0",
-            "Display will continue to show any baked output that is already available."
-          ),
-          easyClose = TRUE,
-          footer = modalButton("OK")
-        ))
-        state$selected_source <- "artifact"
-        state$progress <- NULL
-        load_selected_artifact(fallback_live = FALSE)
-        return(invisible(NULL))
-      }
+    # Local / non-WZB soft gate: surface long-run estimate as a warning modal
+    # but still allow the run.
+    if (nzchar(as.character(pre$long_run_warning %||% "")) &&
+        !isTRUE(shiny_running_on_wzb_safe()) &&
+        is.finite(pre$estimate_seconds %||% NA_real_) &&
+        is.finite(pre$limit_seconds %||% NA_real_) &&
+        (pre$estimate_seconds %||% 0) > (pre$limit_seconds %||% Inf)) {
+      showModal(modalDialog(
+        title = "Long run warning",
+        tags$p(pre$long_run_warning),
+        tags$p(
+          class = "text-muted small mb-0",
+          "The live run will continue. You can dismiss this and wait, or stop and run locally."
+        ),
+        easyClose = TRUE,
+        footer = modalButton("Continue")
+      ))
     }
 
+    run_msg <- pre$progress_message %||% "Running live replication..."
     tryCatch({
       withProgress(message = run_msg, value = 0.2, {
-        state$progress <- if (!is.null(rt) && isTRUE(rt$timed_out)) {
-          long_title <- tryCatch(
-            replicate_fn(
-              "format_long_run_warning",
-              timeout_seconds = rt$timeout_seconds %||% NA_real_,
-              seconds = rt$seconds %||% NA_real_,
-              bake_seconds = rt$bake_seconds %||% NA_real_
-            ),
-            error = function(e) rt$advice %||% ""
-          )
-          if (nzchar(long_title)) {
-            paste0("Running replication — ", long_title)
-          } else {
-            "Running replication"
-          }
-        } else if (!is.null(rt) && isTRUE(rt$available) && nzchar(rt$advice %||% "")) {
-          paste0("Running replication — ", rt$advice)
-        } else {
-          "Running replication"
-        }
-        ensure_study_replication_package(doi, folder = state$registry_folder, repo = state$registry_repo)
-        # Live Run = leaf only (given = "parents"): missing parent sinks fail;
-        # do not rebuild ancestors via ensure_study_ancestor_steps.
-        loaded <- replicate_fn(
-          "load_replication_for_display",
+        state$progress <- run_msg
+        ensure_study_replication_package(
           doi,
-          what,
-          language = language,
-          prefer = "live",
-          fallback_live = FALSE,
-          install_deps = TRUE,
           folder = state$registry_folder,
           repo = state$registry_repo
+        )
+        loaded <- tryCatch(
+          replicate_fn(
+            "shiny_run_action",
+            doi,
+            what,
+            language = language,
+            folder = state$registry_folder,
+            repo = state$registry_repo,
+            study_root = state$local_study_root %||% NULL,
+            install_deps = TRUE,
+            on_wzb = shiny_running_on_wzb_safe(),
+            estimate_limit_seconds = shiny_wzb_live_run_limit_seconds(),
+            check_compatibility = TRUE,
+            execute = TRUE
+          ),
+          error = function(e) {
+            # Fallback: bare live load
+            replicate_fn(
+              "load_replication_for_display",
+              doi,
+              what,
+              language = language,
+              prefer = "live",
+              fallback_live = FALSE,
+              install_deps = TRUE,
+              folder = state$registry_folder,
+              repo = state$registry_repo
+            )
+          }
         )
         state$selected_result <- if (isTRUE(loaded$ok)) {
           loaded$raw %||% loaded$value

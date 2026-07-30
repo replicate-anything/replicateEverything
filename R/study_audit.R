@@ -533,7 +533,9 @@ evaluate_study_compatibility <- function(
 #' @param registry_root Optional local registry checkout.
 #' @param materialize_study Materialize folder-backed study repo for Stata probe scripts.
 #' @param include_registry_audit Include latest registry \code{audit_latest.rds} summary.
-#' @return A \code{study_system_compatibility} list.
+#' @return A \code{study_system_compatibility} list. When \code{ready} is
+#'   \code{FALSE}, includes stable \code{message} and \code{error} fields with
+#'   [maintainer_dependency_hint()] text for Shiny / verification consumers.
 #' @keywords internal
 study_system_compatibility <- function(
   doi,
@@ -548,7 +550,7 @@ study_system_compatibility <- function(
   ctx <- paper_context(doi, repo = repo, folder = folder)
   eval <- evaluate_study_compatibility(meta, ctx, do_materialize = materialize_study)
 
-  structure(
+  compat <- structure(
     c(
       list(doi = doi),
       eval,
@@ -562,6 +564,22 @@ study_system_compatibility <- function(
     ),
     class = "study_system_compatibility"
   )
+
+  # Stable failure shape for Shiny / verification (prefer package message over
+  # app-local maintainer_hint wrappers).
+  if (!isTRUE(compat$ready)) {
+    hint <- tryCatch(
+      maintainer_dependency_hint(doi = doi, audit = compat),
+      error = function(e) conditionMessage(e)
+    )
+    compat$message <- as.character(hint %||% "")
+    compat$error <- compat$message
+  } else {
+    compat$message <- ""
+    compat$error <- NULL
+  }
+
+  compat
 }
 
 #' @rdname study_system_compatibility

@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny_step_chrome.R
 \name{shiny_step_show_display}
 \alias{shiny_step_show_display}
-\title{Whether Shiny should show a Display control for a step}
+\title{Whether a Shiny step has a Display-available object}
 \usage{
 shiny_step_show_display(
   output_exists = FALSE,
@@ -22,18 +22,22 @@ shiny_step_show_display(
 Logical.
 }
 \description{
-Correct enablement (do \strong{not} invert):
-\itemize{
-\item Baked sink present (\code{output_exists}): always show Display,
-including engine/data gaps that still have a precomputed artifact.
-\item Engine/data gap or generic incomplete \emph{without} a sink: omit
-Display entirely (padlock / wrench open Code). Never treat gap kind as
-a reason to show an active Display affordance.
-\item Normal runnable step without a detected sink: still show Display
-(prep preview / live path may work; avoids greying available steps).
-}
+Used for Display chrome (not for omitting the control): when this returns
+\code{FALSE}, Shiny still shows Display but greys it (still clickable so
+users can open Code / see the short unavailable note). When \code{TRUE},
+Display uses the same filled dark style as enabled Run.
 }
 \details{
+Correct enablement (do \strong{not} invert):
+\itemize{
+\item Baked sink present (\code{output_exists}): available, including
+engine/data gaps that still have a precomputed artifact.
+\item Engine/data gap or generic incomplete \emph{without} a sink: not
+available (padlock / wrench; grey Display).
+\item Normal runnable step without a detected sink: still available
+(prep preview / live path may work).
+}
+
 The historical bug was \code{displayable = output_exists || is_gap}, which
 greyd available prep rows without html/png sinks while leaving Mathematica
 / data-gap rows clickable.

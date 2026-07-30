@@ -7,6 +7,7 @@
 assert_given_outputs_ready(given_ids, graph, ctx, meta, force = FALSE)
 }
 \description{
-Check that all steps in given set have outputs ready
+\code{force} is ignored here (same as \code{\link[=assert_parents_ready]{assert_parents_ready()}}): assumed
+\code{given} steps must already have outputs on disk.
 }
 \keyword{internal}

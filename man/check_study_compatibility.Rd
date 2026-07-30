@@ -26,7 +26,9 @@ check_study_compatibility(
 }
 \value{
 A \code{study_system_compatibility} list with \code{ready},
-\code{install_needed}, and per-engine \code{dependencies}.
+\code{install_needed}, per-engine \code{dependencies}, and when not ready
+stable \code{message} / \code{error} fields (maintainer hint text) for
+Shiny and verification consumers.
 }
 \description{
 Reads \code{languages:}, \code{paper.dependencies},

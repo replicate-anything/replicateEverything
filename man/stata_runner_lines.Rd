@@ -25,7 +25,7 @@ Stata do-file (see \code{stata_path_in_do()}).}
 \code{\link[=stata_windows_hidden_shell_vbs_lines]{stata_windows_hidden_shell_vbs_lines()}} script for \code{$S_SHELL}.}
 
 \item{rscript_path}{Optional absolute Rscript path for
-\code{$REPLICATE_RSCRIPT} (Hahn LBD and similar Stata\to R shells).}
+\code{$REPLICATE_RSCRIPT} (Hahn LBD and similar Stata to R shells).}
 }
 \value{
 Character vector of do-file lines.

@@ -1,3 +1,30 @@
+# replicateEverything 0.7.56
+
+## Shared Shiny Display / Run helpers
+
+* New package helpers [shiny_display_action()] and [shiny_run_action()] own the
+  bare Display / Live Run button paths (artifact vs leaf-only live, chrome
+  gates, resolve). `inst/shiny/app.R` and `shiny_verification.qmd` call these
+  so semantics stay in lockstep.
+* Grey Display clicks short-circuit when `!shiny_step_show_display` (no full
+  failing artifact load).
+* [check_study_compatibility()] / [study_system_compatibility()] attach stable
+  `message` / `error` fields (maintainer hint text) when not ready.
+* Long-run estimate gate: WZB still hard-blocks above
+  `replicate_shiny.wzb_live_run_max_seconds`; local/non-WZB sessions soft-warn
+  and allow Run.
+
+## Live Run DAG: given = parents must be leaf-only
+
+* [plan_study_run()] with `given = "parents"` previously left **grandparents**
+  in `step_ids` (only direct parents were subtracted from ancestors). Deep DAGs
+  such as AER `fig_4` → `compute_mvpf_main` → `cost_curve_data_r` then tried to
+  re-run R-only grandparents under the leaf's path language (`stata`) and failed
+  with "not available for language stata". Fix: assume all ancestors complete
+  when parents are given so Live Run is truly leaf-only.
+* [execute_study_plan()] no longer propagates the target path-box `language`
+  onto upstream steps; only the target and its format child receive it.
+
 # replicateEverything 0.7.55
 
 ## Shiny Live Run: leaf-only (given = parents)

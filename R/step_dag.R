@@ -227,11 +227,19 @@ plan_study_run <- function(target_id, given, format, graph) {
   }
 
   given_ids <- resolve_given_set(given, target_id, graph)
-  if (!identical(normalize_given_argument(given), "parents")) {
+  given_norm <- normalize_given_argument(given)
+  if (!identical(given_norm, "parents")) {
     validate_given_downward_closure(given_ids, graph)
   }
 
   ancestors <- step_ancestors(target_id, graph)
+  # given = "parents": only direct parents are in given_ids, but Live Run must
+  # not rebuild grandparents either — their work is already in the parent sinks
+  # (assert_parents_ready checks those sinks). Expand the assumed-complete set
+  # to all ancestors so to_run is leaf-only.
+  if (identical(given_norm, "parents")) {
+    given_ids <- unique(c(given_ids, ancestors))
+  }
   to_run <- setdiff(ancestors, given_ids)
   to_run <- topological_step_sort(to_run, graph)
   to_run <- c(to_run, target_id)

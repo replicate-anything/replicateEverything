@@ -61,10 +61,10 @@ execute_study_plan <- function(
       executed <- c(executed, step_id)
       next
     }
-    lang <- if (is_format) language else NULL
-    if (!is_format && !is.null(language)) {
-      lang <- language
-    }
+    # Path-box language applies to the target (and its format child). Upstream
+    # steps use their own engine default — never force e.g. language=stata onto
+    # an R-only parent such as cost_curve_data_r.
+    lang <- if (is_target || is_format) language else NULL
     message("Running step: ", step_id)
     step_force <- isTRUE(force) || is_target
     result <- render_replication_step(

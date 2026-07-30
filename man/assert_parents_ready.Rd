@@ -7,6 +7,8 @@
 assert_parents_ready(target_id, graph, ctx, meta, force = FALSE)
 }
 \description{
-Check that immediate parents have outputs (given = parents semantics)
+\code{force} is ignored here: it only controls whether the \emph{target} is
+recomputed in \code{\link[=execute_study_plan]{execute_study_plan()}}, not whether parent sinks must exist
+when \code{given = "parents"}.
 }
 \keyword{internal}
