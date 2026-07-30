@@ -1,3 +1,14 @@
+# replicateEverything 0.7.52
+
+## Python notebooks: sanitize stream outputs before nbconvert
+
+* [run_python_notebook()] now writes a temp sanitized copy via
+  [sanitize_notebook_for_nbconvert()] before `jupyter nbconvert --execute`.
+  Stream outputs missing required `name` (`stdout`/`stderr`) are fixed so
+  current nbformat validation does not fail with
+  `NotebookValidationError: 'name' is a required property` on older or
+  hand-edited `.ipynb` files (e.g. Jiang RF notebook).
+
 # replicateEverything 0.7.51
 
 ## Skills: Parents + Shiny Live Run

@@ -473,19 +473,105 @@ run_python_script <- function(python, script_path, run_dir, log_path) {
   )
 }
 
+#' Sanitize a Jupyter notebook so nbformat validation accepts it
+#'
+#' Older or hand-edited notebooks sometimes omit required stream-output
+#' fields (notably \code{name}: \code{stdout}/\code{stderr}). Current
+#' \code{nbconvert} validates the input notebook before execute and fails
+#' with \code{NotebookValidationError: 'name' is a required property}.
+#' Writes a sanitized copy and returns its path.
+#'
+#' @param notebook_path Path to the source \code{.ipynb}.
+#' @param dest_path Optional destination path. Defaults to a temp file.
+#' @return Character path to the sanitized notebook.
+#' @keywords internal
+sanitize_notebook_for_nbconvert <- function(notebook_path, dest_path = NULL) {
+  notebook_path <- normalizePath(notebook_path, winslash = "/", mustWork = TRUE)
+  nb <- tryCatch(
+    jsonlite::fromJSON(notebook_path, simplifyVector = FALSE),
+    error = function(e) {
+      stop("Failed to parse notebook JSON: ", notebook_path, "\n", conditionMessage(e), call. = FALSE)
+    }
+  )
+  cells <- nb$cells
+  if (is.null(cells) || !length(cells)) {
+    if (is.null(dest_path)) {
+      return(notebook_path)
+    }
+    file.copy(notebook_path, dest_path, overwrite = TRUE)
+    return(normalizePath(dest_path, winslash = "/", mustWork = FALSE))
+  }
+  for (i in seq_along(cells)) {
+    outs <- cells[[i]]$outputs
+    if (is.null(outs) || !length(outs)) {
+      next
+    }
+    for (j in seq_along(outs)) {
+      o <- outs[[j]]
+      if (!identical(o$output_type, "stream")) {
+        next
+      }
+      nm <- o$name
+      if (is.null(nm) || !nzchar(as.character(nm)[[1]])) {
+        o$name <- "stdout"
+        outs[[j]] <- o
+      }
+    }
+    cells[[i]]$outputs <- outs
+  }
+  nb$cells <- cells
+  if (is.null(dest_path) || !nzchar(as.character(dest_path))) {
+    dest_path <- tempfile(
+      pattern = paste0(tools::file_path_sans_ext(basename(notebook_path)), "_sanitized_"),
+      fileext = ".ipynb"
+    )
+  }
+  dir.create(dirname(dest_path), recursive = TRUE, showWarnings = FALSE)
+  jsonlite::write_json(
+    nb,
+    dest_path,
+    pretty = TRUE,
+    auto_unbox = TRUE,
+    null = "null"
+  )
+  normalizePath(dest_path, winslash = "/", mustWork = TRUE)
+}
+
 #' @keywords internal
 run_python_notebook <- function(python, notebook_path, run_dir, log_path) {
   out_nb <- file.path(
     dirname(notebook_path),
     paste0(tools::file_path_sans_ext(basename(notebook_path)), "_executed.ipynb")
   )
+  # Sanitize before nbconvert: input notebooks are validated strictly and
+  # fail if stream outputs omit required "name" (stdout/stderr).
+  sanitize_tmp <- NULL
+  sanitized <- tryCatch(
+    {
+      sanitize_tmp <<- sanitize_notebook_for_nbconvert(notebook_path)
+      sanitize_tmp
+    },
+    error = function(e) {
+      warning(
+        "Notebook sanitize failed; executing original: ",
+        conditionMessage(e),
+        call. = FALSE
+      )
+      normalizePath(notebook_path, winslash = "/", mustWork = TRUE)
+    }
+  )
+  on.exit({
+    if (!is.null(sanitize_tmp) && file.exists(sanitize_tmp)) {
+      unlink(sanitize_tmp)
+    }
+  }, add = TRUE)
   args <- c(
     "-m", "jupyter", "nbconvert",
     "--execute",
     "--to", "notebook",
     "--output", shQuote(basename(out_nb)),
     "--output-dir", shQuote(dirname(notebook_path)),
-    shQuote(normalizePath(notebook_path, winslash = "/", mustWork = TRUE))
+    shQuote(sanitized)
   )
   old_root <- Sys.getenv("REPLICATE_STUDY_ROOT", unset = NA)
   on.exit({

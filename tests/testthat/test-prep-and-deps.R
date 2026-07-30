@@ -146,3 +146,38 @@ test_that("python_replication_deps merges entry and study-wide packages", {
   deps <- replicateEverything:::python_replication_deps(rep, meta)
   expect_true(all(c("matplotlib", "pandas", "numpy") %in% deps))
 })
+
+test_that("sanitize_notebook_for_nbconvert adds missing stream name", {
+  nb <- list(
+    nbformat = 4L,
+    nbformat_minor = 5L,
+    metadata = list(),
+    cells = list(
+      list(
+        cell_type = "code",
+        metadata = list(),
+        source = list("print('hi')\n"),
+        outputs = list(
+          list(
+            output_type = "stream",
+            text = list("hi\n")
+          ),
+          list(
+            output_type = "stream",
+            name = "stderr",
+            text = list("warn\n")
+          )
+        )
+      )
+    )
+  )
+  src <- tempfile(fileext = ".ipynb")
+  on.exit(unlink(src), add = TRUE)
+  jsonlite::write_json(nb, src, pretty = TRUE, auto_unbox = TRUE, null = "null")
+  out <- replicateEverything:::sanitize_notebook_for_nbconvert(src)
+  on.exit(unlink(out), add = TRUE)
+  expect_false(identical(normalizePath(out), normalizePath(src)))
+  fixed <- jsonlite::fromJSON(out, simplifyVector = FALSE)
+  expect_identical(fixed$cells[[1]]$outputs[[1]]$name, "stdout")
+  expect_identical(fixed$cells[[1]]$outputs[[2]]$name, "stderr")
+})
