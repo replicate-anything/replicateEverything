@@ -86,7 +86,7 @@ shiny_step_show_display <- function(
   TRUE
 }
 
-#' Format a lengthy user-facing warning for audit-timeout / long Runs
+#' Format a user-facing warning for audit-timeout / long Runs
 #'
 #' @param timeout_seconds Audit patience / cap in seconds when known.
 #' @param seconds Elapsed seconds from the audit row (often equals the cap).
@@ -123,12 +123,7 @@ format_long_run_warning <- function(
       (!is.finite(cap) || cap <= 0 ||
          (is.finite(seconds) && is.finite(cap) &&
             abs(as.numeric(seconds) - cap) < 1))) {
-    cap_txt <- bake_txt
-    source_bit <- paste0(
-      "last successful bake took ",
-      bake_txt,
-      "; the registry audit hit its time cap before finishing"
-    )
+    source_bit <- paste0("last successful bake took ", bake_txt)
   } else {
     cap_txt <- fmt_dur(cap) %||% "the configured audit time limit"
     source_bit <- paste0(
@@ -148,12 +143,8 @@ format_long_run_warning <- function(
   paste0(
     "Long run warning: ",
     source_bit,
-    ". A live Run can take a long time — often as long as the last known ",
-    "completion, and sometimes longer — and may not finish during a typical ",
-    "browser session. Display shows a precomputed result when one is available. ",
-    "If you start Run, leave this tab open and expect a substantial wait. ",
-    "For a complete live result, consider running locally with a higher ",
-    "audit patience setting."
+    ". A live Run may not complete during a typical browser session. ",
+    "For a complete live result, consider running locally."
   )
 }
 

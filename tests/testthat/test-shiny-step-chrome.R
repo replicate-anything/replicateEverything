@@ -114,7 +114,8 @@ test_that("format_long_run_warning uses timeout_seconds when available", {
   msg <- format_long_run_warning(timeout_seconds = 90, seconds = 90)
   expect_match(msg, "Long run warning")
   expect_match(msg, "2 minute")
-  expect_match(msg, "precomputed")
+  expect_match(msg, "browser session")
+  expect_match(msg, "running locally")
 
   short <- format_long_run_warning(timeout_seconds = 20)
   expect_match(short, "20 seconds")

@@ -2,7 +2,7 @@
 % Please edit documentation in R/shiny_step_chrome.R
 \name{format_long_run_warning}
 \alias{format_long_run_warning}
-\title{Format a lengthy user-facing warning for audit-timeout / long Runs}
+\title{Format a user-facing warning for audit-timeout / long Runs}
 \usage{
 format_long_run_warning(
   timeout_seconds = NA_real_,
@@ -19,6 +19,6 @@ format_long_run_warning(
 Character scalar.
 }
 \description{
-Format a lengthy user-facing warning for audit-timeout / long Runs
+Format a user-facing warning for audit-timeout / long Runs
 }
 \keyword{internal}

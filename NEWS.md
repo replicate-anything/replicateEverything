@@ -1,3 +1,10 @@
+# replicateEverything 0.7.49
+
+## Shorter Shiny long-run warning
+
+* [format_long_run_warning()] copy shortened: bake duration plus a brief
+  browser-session / run-locally note (no lengthy audit-cap essay).
+
 # replicateEverything 0.7.48
 
 ## Shiny `shiny_run: false` UX wording
