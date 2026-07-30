@@ -262,11 +262,12 @@ format_child_for_step <- function(step_id, graph) {
 }
 
 #' Check that immediate parents have outputs (given = parents semantics)
+#'
+#' \code{force} is ignored here: it only controls whether the *target* is
+#' recomputed in [execute_study_plan()], not whether parent sinks must exist
+#' when \code{given = "parents"}.
 #' @keywords internal
 assert_parents_ready <- function(target_id, graph, ctx, meta, force = FALSE) {
-  if (isTRUE(force)) {
-    return(invisible(NULL))
-  }
   parents <- step_direct_parents(target_id, graph)
   if (length(parents) == 0L) {
     return(invisible(NULL))
@@ -286,8 +287,9 @@ assert_parents_ready <- function(target_id, graph, ctx, meta, force = FALSE) {
     stop(
       "Parent step output(s) missing for '", target_id, "': ",
       paste(missing, collapse = ", "),
-      ". Run upstream step(s) first, use given = \"nothing\", ",
-      "or set force = TRUE to re-run.",
+      ". Bake and commit those parent `outputs:` sinks, or run upstream ",
+      "with given = \"nothing\". Live Run / given = \"parents\" does not ",
+      "rebuild parents (force only recomputes the target).",
       call. = FALSE
     )
   }
@@ -295,9 +297,12 @@ assert_parents_ready <- function(target_id, graph, ctx, meta, force = FALSE) {
 }
 
 #' Check that all steps in given set have outputs ready
+#'
+#' \code{force} is ignored here (same as [assert_parents_ready()]): assumed
+#' \code{given} steps must already have outputs on disk.
 #' @keywords internal
 assert_given_outputs_ready <- function(given_ids, graph, ctx, meta, force = FALSE) {
-  if (isTRUE(force) || length(given_ids) == 0L) {
+  if (length(given_ids) == 0L) {
     return(invisible(NULL))
   }
   step_by_id <- setNames(graph$steps, graph$ids)
@@ -315,7 +320,8 @@ assert_given_outputs_ready <- function(given_ids, graph, ctx, meta, force = FALS
     stop(
       "given step output(s) missing: ",
       paste(missing, collapse = ", "),
-      ". Run upstream steps or use given = \"nothing\".",
+      ". Bake and commit those `outputs:` sinks, or run upstream with ",
+      "given = \"nothing\".",
       call. = FALSE
     )
   }

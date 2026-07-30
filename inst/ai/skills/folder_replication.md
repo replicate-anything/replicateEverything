@@ -296,15 +296,18 @@ See `inst/docs/step-dag-design.md` in the package for `given` downward-closure r
 ### Parents + Shiny Live Run (study authors)
 
 **Shiny Live Run runs the selected leaf only.** It does **not** re-execute DAG
-parents. With `force=TRUE`-style live runs, missing parent sinks are **not**
-auto-rebuilt — the leaf fails if its inputs are not already on disk in the
-study clone.
+parents. Same as [run_replication()] with `given = "parents"` and `force = TRUE`:
+`force` recomputes the **target** only; missing parent sinks are **not**
+auto-rebuilt — the leaf fails with a clear bake/commit message if its inputs
+are not already on disk in the study clone (or resolvable from shared `data/`).
 
 Before registry sync, **verify that every parent `outputs:` sink a
 Shiny-runnable display step needs is git-tracked** (or that the leaf is
-self-contained with tracked inputs). Local `run_replication` can look fine
-because `materialize_declared_data` fetches Dataverse — **that is not proof
-Shiny Live Run will work** on a thin server clone.
+self-contained with tracked inputs, or that oversized root `.dta` resolve from
+shared `data/<study_folder>/` — see **Shiny Server (large files)** below).
+Local `run_replication` can look fine because `materialize_declared_data`
+fetches Dataverse — **that is not proof Shiny Live Run will work** on a thin
+server clone.
 
 #### Rules
 
@@ -315,10 +318,14 @@ Shiny Live Run will work** on a thin server clone.
    parent step**, that file must stay **git-tracked** (or Live Run breaks after
    thin clone). Prefer a parent `access_*` / transform that writes
    `outputs/…`, then bake + commit that sink.
-3. **`shiny_run: false`** — escape hatch when Live Run cannot be made
+3. **Large gitignored root data** — multi-hundred-MB `.dta` may stay out of
+   study git. Place basenames under monorepo/server
+   `data/<study_folder>/`. [ensure_study_data_files()] links/copies into the
+   study tree at run time. Prefer committing sinks ≤ ~50 MB under `outputs/`.
+4. **`shiny_run: false`** — escape hatch when Live Run cannot be made
    offline-safe; Display can still show baked artifacts. Prefer this over
    `incomplete: true` when the step should still run from R / bake / audit.
-4. **Do not** treat a green local `run_replication` (with materialize) as
+5. **Do not** treat a green local `run_replication` (with materialize) as
    evidence that Shiny Live Run will succeed.
 
 Motivating shape (e.g. a figure that once read a Pattern-A CSV): add
@@ -332,6 +339,7 @@ bake the parent sink — then Live Run only needs the leaf.
 | Declare `parents:` but do not commit parent sinks | Bake + commit every parent `outputs:` the leaf reads |
 | Gitignore the only input the leaf reads (no parent bake) | Track the input, or add a parent access/transform → committed `outputs/` |
 | Rely on Pattern A materialize for Shiny Live Run | Prefer Pattern B access → baked `outputs/`, or commit the raw root |
+| Commit multi-GB junk into study git | Stage under shared `data/<study_folder>/` (app-sibling on server) |
 | Assume local Run proves server Live Run | Test against a thin clone / missing-cache state |
 
 Cross-links: `dataverse_to_replicateEverything.md` (Pattern A vs B),
@@ -532,7 +540,16 @@ write products under `outputs/`.
 prefers `data:` when both are set; for simple studies list the file once under
 `inputs:` only (do not duplicate the same path under both).
 
-**Shiny Server (large files):** place files at `data/<study_folder>/<basename>` beside the app. Use the study repo folder name (`paper.study_folder` or `rep-<doi-with-hyphens>`), not the registry stub folder (`10.x_y`).
+**Shiny Server / monorepo (large files):** place basenames at
+`data/<study_folder>/<basename>` beside the Shiny app (or under the monorepo
+root locally). Use the study repo folder name (`paper.study_folder` or
+`rep-<doi-with-hyphens>`), not the registry stub folder (`10.x_y`).
+[ensure_study_data_files()] resolves study checkout → sibling monorepo study →
+`<study_data_root>/data/<study_folder>/`. On the WZB host the app root is
+typically `/wzb/samba/user/ipi/ShinyApps/replicate` with sibling `data/`.
+Set `options(replicateEverything.study_data_root = …)` only when the app cwd
+is not that root. Prefer baking ≤ ~50 MB parent sinks into study `outputs/`
+git; keep multi-hundred-MB `.dta` in shared `data/` only.
 
 **Tables without format step:** omit `format:`; declare the `.html` product under `outputs:`.
 

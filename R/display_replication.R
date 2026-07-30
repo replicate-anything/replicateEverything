@@ -150,6 +150,12 @@ load_replication_for_display <- function(
   list(ok = FALSE, missing = TRUE, source = "artifact")
 }
 
+#' Live Run for Shiny / prefer=live: leaf-only (given = parents)
+#'
+#' Same semantics as [run_replication()] with \code{given = "parents"},
+#' \code{force = TRUE}, and formatting applied for display. Does **not** call
+#' [ensure_study_ancestor_steps()]; missing parent sinks fail clearly.
+#'
 #' @keywords internal
 run_live_display <- function(
   doi,
@@ -159,15 +165,16 @@ run_live_display <- function(
   repo = NULL,
   folder = NULL
 ) {
-  # Live Run must re-execute the target (match run_replication force = TRUE).
-  result <- try_render_for_display(
-    doi,
-    what,
-    language = language,
-    install_deps = install_deps,
-    repo = repo,
-    folder = folder,
-    force = TRUE
+  result <- tryCatch(
+    render_live_replication_for_display(
+      doi,
+      what,
+      language = language,
+      install_deps = install_deps,
+      repo = repo,
+      folder = folder
+    ),
+    error = function(e) e
   )
   if (inherits(result, "error")) {
     return(list(ok = FALSE, error = result, source = "live"))
@@ -188,6 +195,71 @@ run_live_display <- function(
     return(list(ok = FALSE, missing = TRUE, source = "live"))
   }
   list(ok = TRUE, value = value, source = "live", raw = result)
+}
+
+#' Render one Live Run via prepare/execute (given = parents)
+#'
+#' Package-backed studies still use [render_for_display()]. Folder studies use
+#' [prepare_study_run()] + [execute_study_plan()] so parent readiness is
+#' asserted and ancestors are not rebuilt.
+#'
+#' @keywords internal
+render_live_replication_for_display <- function(
+  doi,
+  what,
+  language = NULL,
+  install_deps = TRUE,
+  repo = NULL,
+  folder = NULL
+) {
+  meta <- get_replication_meta(doi, repo = repo, folder = folder)
+  stop_if_step_blocked(meta, what)
+  if (is_package_replication(meta)) {
+    return(render_for_display(
+      doi,
+      what,
+      language = language,
+      install_deps = install_deps,
+      repo = repo,
+      folder = folder,
+      force = TRUE
+    ))
+  }
+
+  prepared <- prepare_study_run(
+    doi,
+    what,
+    given = "parents",
+    format = TRUE,
+    force = TRUE,
+    repo = repo,
+    folder = folder
+  )
+  executed <- execute_study_plan(
+    prepared$plan,
+    doi,
+    meta = prepared$meta,
+    ctx = prepared$ctx,
+    language = language,
+    install_deps = install_deps,
+    force = TRUE,
+    format = TRUE,
+    repo = repo,
+    folder = folder
+  )
+  result <- executed$result
+  display <- format_for_display(
+    replication_object(result),
+    doi,
+    what,
+    language = language,
+    install_deps = install_deps,
+    repo = repo,
+    folder = folder
+  )
+  result$display <- display
+  result$display_format <- infer_result_format(display, result$type)
+  result
 }
 
 #' Resolve display output for an already-selected result

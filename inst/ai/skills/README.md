@@ -24,8 +24,10 @@ only when fetch is not a claimed step; full archive only when Pattern C
 justified. OpenICPSR (no public file API): commit needed inputs only, still
 yaml-declare. Blocked steps: `incomplete:` + `requires_engine:` or
 `data_unavailable:` (audit skips). **Shiny Live Run runs the selected leaf
-only** — bake+commit parent sinks (or track leaf inputs); local materialize
-is not Live Run proof (`folder_replication.md` § Parents + Shiny Live Run).
+only** (`given = "parents"`, `force = TRUE` recomputes the target only — missing
+parent sinks fail; no ancestor rebuild). Bake+commit parent sinks (or track leaf
+inputs); local materialize is not Live Run proof
+(`folder_replication.md` § Parents + Shiny Live Run).
 
 **Public maintainer API:** `register_study()` / `refresh_registry()` /
 `audit_everything()` / `audit_report()`. Contribute: `check_and_bake_study()` /

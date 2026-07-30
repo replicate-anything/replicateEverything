@@ -1,3 +1,16 @@
+# replicateEverything 0.7.55
+
+## Shiny Live Run: leaf-only (given = parents)
+
+* Shiny Live Run ([run_live_display()] / `prefer = "live"`) now goes through
+  [prepare_study_run()] + [execute_study_plan()] with `given = "parents"` and
+  `force = TRUE` — same leaf-only semantics as [run_replication()]. It no
+  longer uses bare [render_replication()] + [ensure_study_ancestor_steps()]
+  to rebuild missing parents. Display still uses `prefer = "artifact"`.
+* [assert_parents_ready()] (and [assert_given_outputs_ready()]) check parent /
+  given sinks even when `force = TRUE`. `force` only recomputes the **target**;
+  missing parents fail with a bake/commit `outputs:` message.
+
 # replicateEverything 0.7.54
 
 ## Prep / transform Live Run: honor make_* formals

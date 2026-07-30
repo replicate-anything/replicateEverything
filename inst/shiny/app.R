@@ -9783,6 +9783,8 @@ server <- function(input, output, session) {
           "Running replication"
         }
         ensure_study_replication_package(doi, folder = state$registry_folder, repo = state$registry_repo)
+        # Live Run = leaf only (given = "parents"): missing parent sinks fail;
+        # do not rebuild ancestors via ensure_study_ancestor_steps.
         loaded <- replicate_fn(
           "load_replication_for_display",
           doi,

@@ -26,7 +26,10 @@ run_replication(doi, "tab_1", force = FALSE)
 ```
 
 Display / [load_artifact()] use precomputed files under `outputs/`.
-[run_replication()] defaults to `force = TRUE` so Run is always live.
+[run_replication()] defaults to `force = TRUE` so the **target** always
+recomputes. With `given = "parents"`, `force` does **not** skip parent
+existence checks — missing parent sinks fail; Shiny Live Run uses the same
+leaf-only path.
 
 ## given validation
 

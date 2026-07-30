@@ -17,7 +17,7 @@ Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `re
 
 **Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml; **gold example** `rep-template`), `include-study-in-registry` (maintainer `register_study`).
 
-**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse`; Pattern A materialize → `data/` only when fetch is not a claimed product; full archive only when Pattern C justified (see root `AI.md`). **Shiny Live Run = leaf only** — bake+commit parent sinks (or track leaf inputs); see folder-replication **Parents + Shiny Live Run**.
+**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse`; Pattern A materialize → `data/` only when fetch is not a claimed product; full archive only when Pattern C justified (see root `AI.md`). **Shiny Live Run = leaf only** — bake+commit parent sinks (or track leaf inputs); oversized root `.dta` may resolve from shared `data/<study_folder>/` (app-sibling on server / monorepo `data/`) via [ensure_study_data_files()] — see folder-replication **Parents + Shiny Live Run**.
 
 **Not OpenICPSR:** if the deposit is on openicpsr.org / ICPSR (often AER), use
 `openicpsr_to_replicateEverything.md` instead — usually no public per-file API;
@@ -655,8 +655,11 @@ Downstream tables/figures set `parents: [construct_analysis_dataset]` (and other
 transforms as needed).
 
 `run_replication(..., "tab_1", given = "nothing")` runs upstream transforms first.
-By default `force = TRUE` (live Run). With `force = FALSE`, existing upstream
-`outputs/` are reused; the target step still recomputes.
+By default `force = TRUE` (live Run of the **target**). With `force = FALSE`,
+existing upstream `outputs/` are reused when `given = "nothing"`; the target
+still recomputes. With default `given = "parents"`, `force` does **not** skip
+parent existence checks — missing parent sinks fail (Shiny Live Run uses this
+leaf-only path).
 
 **Audit:** `audit_everything()` walks all non-format steps â€” verify after onboarding.
 
