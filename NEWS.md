@@ -1,3 +1,15 @@
+# replicateEverything 0.7.46
+
+## Linux/Shiny: Stata child can find Rscript
+
+* [run_stata_system2()] now prepends Rscript's bin to `PATH` on **all**
+  platforms (not only Windows). Linux Shiny service accounts often give Stata
+  a thinner PATH than the parent R process, so Hahn `shell Rscript` /
+  `which Rscript` failed even when R was installed for Shiny.
+* Generated Stata runners also set `$REPLICATE_RSCRIPT` to the absolute path
+  from the parent R session ([find_rscript_for_stata()]) so study probes do
+  not depend on Stata's PATH alone.
+
 # replicateEverything 0.7.45
 
 ## Windows: suppress Stata `shell` CMD focus flashes

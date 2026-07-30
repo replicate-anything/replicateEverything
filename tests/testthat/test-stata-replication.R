@@ -50,6 +50,21 @@ test_that("stata_runner_lines still wires up staging dir globals", {
   expect_true(any(grepl('capture noisily nobreak do "C:/study/code/tab_1.do"', lines, fixed = TRUE)))
 })
 
+test_that("stata_runner_lines injects REPLICATE_RSCRIPT when provided", {
+  lines <- replicateEverything:::stata_runner_lines(
+    "C:/study/code/tab_1.do", "C:/study",
+    rscript_path = "/usr/bin/Rscript"
+  )
+  expect_true(any(grepl('global REPLICATE_RSCRIPT "/usr/bin/Rscript"', lines, fixed = TRUE)))
+})
+
+test_that("find_rscript_for_stata returns a usable path when Rscript exists", {
+  hit <- replicateEverything:::find_rscript_for_stata()
+  skip_if_not(nzchar(Sys.which("Rscript")) || nzchar(Sys.which("Rscript.exe")))
+  expect_true(nzchar(hit))
+  expect_true(file.exists(hit))
+})
+
 test_that("stata_deps_install_lines_from_packages never emits a bare ssc install", {
   # Same dialog risk as stata_runner_lines() but for maintainer-only install
   # scripts: a network hiccup mid-install must not leave Stata "interrupted".

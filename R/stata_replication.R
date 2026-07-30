@@ -306,6 +306,58 @@ cleanup_stata_stray_batch_logs <- function(dirs, log_name, keep = NULL) {
   invisible(paths)
 }
 
+#' Locate Rscript for Stata child PATH / REPLICATE_RSCRIPT injection
+#'
+#' Stata batch (Windows System PATH; Linux Shiny service accounts) often cannot
+#' see the same Rscript as the parent R session. Prefer \code{Sys.which}, then
+#' \code{R.home("bin")}.
+#'
+#' @return Absolute path (possibly empty).
+#' @keywords internal
+find_rscript_for_stata <- function() {
+  rscript <- Sys.which("Rscript")
+  if (!nzchar(rscript) && .Platform$OS.type == "windows") {
+    rscript <- Sys.which("Rscript.exe")
+  }
+  if (!nzchar(rscript)) {
+    cand <- file.path(
+      R.home("bin"),
+      if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript"
+    )
+    if (file.exists(cand)) {
+      rscript <- cand
+    }
+  }
+  if (!nzchar(rscript)) {
+    return("")
+  }
+  normalizePath(rscript, winslash = "/", mustWork = FALSE)
+}
+
+#' PATH / env overrides so Stata \code{shell Rscript} sees the parent R
+#'
+#' Applies on Windows and Unix (Linux Shiny hosts included). Returns
+#' \code{list(system2 = ..., processx = ...)} or both \code{NULL}.
+#'
+#' @keywords internal
+stata_rscript_path_env <- function() {
+  rscript <- find_rscript_for_stata()
+  if (!nzchar(rscript)) {
+    return(list(system2 = NULL, processx = NULL))
+  }
+  rbin <- dirname(normalizePath(
+    rscript,
+    winslash = if (.Platform$OS.type == "windows") "\\" else "/",
+    mustWork = FALSE
+  ))
+  sep <- if (.Platform$OS.type == "windows") ";" else ":"
+  path_val <- paste0(rbin, sep, Sys.getenv("PATH", unset = ""))
+  list(
+    system2 = paste0("PATH=", path_val),
+    processx = c(PATH = path_val)
+  )
+}
+
 #' Run Stata in batch mode with an optional timeout
 #'
 #' Uses \pkg{processx} when available so overdue runs can be killed and the R
@@ -322,23 +374,13 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   # Windows: always hide the process. Combined with /q (no /e batch mode) and
   # exit, clear STATA in the generated runner, this keeps the GUI off the
   # desktop. Clicking a visible Stata window can still inject Break / r(1).
-  # Also prepend Rscript's directory to PATH: StataMP often sees only the
-  # machine System PATH (no user PATH), so bare `shell Rscript` fails even
+  # Prepend Rscript's directory to PATH on all platforms: Stata often sees a
+  # thinner PATH than the parent R session (Windows System PATH; Linux Shiny
+  # service accounts), so bare `shell Rscript` / `which Rscript` fails even
   # when the parent R session can find Rscript (Hahn LBD cost-curve).
-  stata_env <- NULL
-  stata_env_processx <- NULL
-  if (.Platform$OS.type == "windows") {
-    rscript <- Sys.which("Rscript")
-    if (!nzchar(rscript)) {
-      rscript <- Sys.which("Rscript.exe")
-    }
-    if (nzchar(rscript)) {
-      rbin <- dirname(normalizePath(rscript, winslash = "\\", mustWork = FALSE))
-      path_val <- paste0(rbin, ";", Sys.getenv("PATH", unset = ""))
-      stata_env <- paste0("PATH=", path_val)
-      stata_env_processx <- c(PATH = path_val)
-    }
-  }
+  path_env <- stata_rscript_path_env()
+  stata_env <- path_env$system2
+  stata_env_processx <- path_env$processx
   use_timeout <- length(timeout) == 1L && !is.na(timeout) && timeout > 0L
   if (.Platform$OS.type == "windows" && !use_timeout) {
     sys_args <- list(
@@ -355,7 +397,17 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
     return(do.call(system2, sys_args))
   }
   if (!use_timeout) {
-    return(system2(stata, batch_args, wait = TRUE, stdout = "", stderr = ""))
+    sys_args <- list(
+      command = stata,
+      args = batch_args,
+      wait = TRUE,
+      stdout = "",
+      stderr = ""
+    )
+    if (!is.null(stata_env)) {
+      sys_args$env <- stata_env
+    }
+    return(do.call(system2, sys_args))
   }
   if (requireNamespace("processx", quietly = TRUE)) {
     # Discard stdio (Stata /e already writes a .log). Piping to "|" without a
@@ -370,12 +422,12 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
     )
     if (.Platform$OS.type == "windows") {
       proc_args$windows_hide <- TRUE
-      if (!is.null(stata_env_processx)) {
-        # Merge onto full inherited env so only PATH is overridden.
-        full_env <- Sys.getenv()
-        full_env[["PATH"]] <- stata_env_processx[["PATH"]]
-        proc_args$env <- full_env
-      }
+    }
+    if (!is.null(stata_env_processx)) {
+      # Merge onto full inherited env so only PATH is overridden.
+      full_env <- Sys.getenv()
+      full_env[["PATH"]] <- stata_env_processx[["PATH"]]
+      proc_args$env <- full_env
     }
     proc <- tryCatch(
       do.call(processx::process$new, proc_args),
@@ -398,7 +450,17 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
         }
         return(as.integer(do.call(system2, sys_args)))
       }
-      stop(proc)
+      sys_args <- list(
+        command = stata,
+        args = batch_args,
+        wait = TRUE,
+        stdout = "",
+        stderr = ""
+      )
+      if (!is.null(stata_env)) {
+        sys_args$env <- stata_env
+      }
+      return(as.integer(do.call(system2, sys_args)))
     }
     proc$wait(timeout = timeout * 1000)
     if (proc$is_alive()) {
@@ -416,13 +478,30 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   }
   # Fallback without processx: no kill-on-timeout, but still hide on Windows.
   if (.Platform$OS.type == "windows") {
-    return(system2(
-      stata, batch_args,
-      wait = TRUE, stdout = "", stderr = "",
+    sys_args <- list(
+      command = stata,
+      args = batch_args,
+      wait = TRUE,
+      stdout = "",
+      stderr = "",
       invisible = TRUE
-    ))
+    )
+    if (!is.null(stata_env)) {
+      sys_args$env <- stata_env
+    }
+    return(do.call(system2, sys_args))
   }
-  system2(stata, batch_args, wait = TRUE, stdout = "", stderr = "")
+  sys_args <- list(
+    command = stata,
+    args = batch_args,
+    wait = TRUE,
+    stdout = "",
+    stderr = ""
+  )
+  if (!is.null(stata_env)) {
+    sys_args$env <- stata_env
+  }
+  do.call(system2, sys_args)
 }
 
 #' VBScript that runs a command via hidden cmd.exe (Windows Stata $S_SHELL)
@@ -484,10 +563,13 @@ stata_windows_hidden_shell_vbs_lines <- function() {
 #' @param staging_dir Optional writable directory for \code{$result} output.
 #' @param hidden_shell_vbs Optional Windows path to
 #'   [stata_windows_hidden_shell_vbs_lines()] script for \code{$S_SHELL}.
+#' @param rscript_path Optional absolute Rscript path for
+#'   \code{$REPLICATE_RSCRIPT} (Hahn LBD and similar Stata\to R shells).
 #' @return Character vector of do-file lines.
 #' @keywords internal
 stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL,
-                               log_in_do = NULL, hidden_shell_vbs = NULL) {
+                               log_in_do = NULL, hidden_shell_vbs = NULL,
+                               rscript_path = NULL) {
   runner_lines <- c(
     "version 17",
     "clear all",
@@ -535,6 +617,13 @@ stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL,
     sprintf("local root \"%s\"", wd_in_do),
     "cd \"`root'\""
   )
+  if (!is.null(rscript_path) && nzchar(rscript_path)) {
+    rscript_in_do <- stata_path_in_do(rscript_path)
+    runner_lines <- c(
+      runner_lines,
+      sprintf("global REPLICATE_RSCRIPT \"%s\"", rscript_in_do)
+    )
+  }
   if (!is.null(staging_dir) && nzchar(staging_dir)) {
     staging_dir <- normalizePath(staging_dir, winslash = "/", mustWork = FALSE)
     dir.create(staging_dir, recursive = TRUE, showWarnings = FALSE)
@@ -626,12 +715,14 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL,
       useBytes = TRUE
     )
   }
+  rscript_path <- find_rscript_for_stata()
   runner_lines <- stata_runner_lines(
     do_in_do,
     wd_in_do,
     staging_dir = staging_dir,
     log_in_do = log_in_do,
-    hidden_shell_vbs = hidden_shell_vbs
+    hidden_shell_vbs = hidden_shell_vbs,
+    rscript_path = if (nzchar(rscript_path)) rscript_path else NULL
   )
 
   writeLines(runner_lines, runner, useBytes = TRUE)
