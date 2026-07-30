@@ -521,12 +521,15 @@ render_replication <- function(
         source_replication_scripts(rep, run_ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)
         fn <- get_analysis_function(env, what, rep$type %||% "step")
         data_paths <- replication_data_paths(rep)
-        if (length(data_paths) > 0L) {
-          data <- load_replication_data(data_paths, run_ctx, meta = meta)
-          retry_with_missing_package(fn(data), install_missing = allow_dependency_install(install_deps))
+        data <- if (length(data_paths) > 0L) {
+          load_replication_data(data_paths, run_ctx, meta = meta)
         } else {
-          retry_with_missing_package(fn(), install_missing = allow_dependency_install(install_deps))
+          NULL
         }
+        retry_with_missing_package(
+          call_analysis_function(fn, data),
+          install_missing = allow_dependency_install(install_deps)
+        )
       })
       status_msg <- "Pipeline step finished."
     }
@@ -637,7 +640,7 @@ render_replication <- function(
     source_replication_scripts(rep, run_ctx, env, install_deps = install_deps, include_format = FALSE, meta = meta)
     analysis_fn <- get_analysis_function(env, what, rep$type)
     retry_with_missing_package(
-      analysis_fn(data),
+      call_analysis_function(analysis_fn, data),
       install_missing = allow_dependency_install(install_deps)
     )
   })

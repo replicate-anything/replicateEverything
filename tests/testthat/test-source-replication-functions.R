@@ -190,3 +190,28 @@ test_that("study_engines_for_plan scopes probes to planned steps", {
   engines <- replicateEverything:::study_engines_for_plan(meta, plan)
   expect_equal(engines, "r")
 })
+
+test_that("call_analysis_function skips data when make_* has no data formal", {
+  called_with <- NULL
+  fn_no_data <- function() {
+    called_with <<- "none"
+    "ok"
+  }
+  expect_identical(call_analysis_function(fn_no_data, data = data.frame(x = 1)), "ok")
+  expect_identical(called_with, "none")
+
+  fn_data <- function(data) {
+    called_with <<- data
+    nrow(data)
+  }
+  expect_identical(call_analysis_function(fn_data, data = data.frame(x = 1:3)), 3L)
+  expect_true(is.data.frame(called_with))
+
+  fn_dots <- function(...) {
+    args <- list(...)
+    called_with <<- names(args)
+    length(args)
+  }
+  expect_identical(call_analysis_function(fn_dots, data = 1), 1L)
+  expect_identical(called_with, "data")
+})

@@ -493,7 +493,17 @@ study_declared_displayable_rels <- function(rep) {
   }
   outs <- vapply(outs, function(x) as.character(x[[1]] %||% x), character(1))
   outs <- outs[nzchar(outs)]
-  outs[grepl(displayable_output_ext_regex(), outs, ignore.case = TRUE)]
+  outs <- outs[grepl(displayable_output_ext_regex(), outs, ignore.case = TRUE)]
+  # Tables that also write benchmarks/csv side products: Display and bake must
+  # use the HTML sink. Loading csv+html as multi-panels breaks format_* (expects
+  # the analysis object) and as_table_ui (shows raw / blank content).
+  if (identical(as.character(rep$type %||% ""), "table")) {
+    html <- outs[grepl("\\.html$", outs, ignore.case = TRUE)]
+    if (length(html)) {
+      return(html)
+    }
+  }
+  outs
 }
 
 #' Candidate display artifact paths under \code{outputs/}

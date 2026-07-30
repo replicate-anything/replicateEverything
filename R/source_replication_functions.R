@@ -334,3 +334,23 @@ get_analysis_function <- function(env, what, type) {
     call. = FALSE
   )
 }
+
+#' Call a make_* / analysis function with optional loaded data
+#'
+#' Passes \code{data} only when the function has a \code{data} formal or
+#' \code{...}. Transform steps often list \code{inputs:} for DAG / docs while
+#' defining \code{make_*()} with no data argument (e.g. sourcing author
+#' scripts that read paths themselves). Blindly calling \code{fn(data)} then
+#' fails with \code{unused argument (data)}.
+#'
+#' @param fn Analysis function.
+#' @param data Loaded replication data (or \code{NULL}).
+#' @keywords internal
+call_analysis_function <- function(fn, data = NULL) {
+  fmls <- names(formals(fn))
+  if ("data" %in% fmls || "..." %in% fmls) {
+    fn(data = data)
+  } else {
+    fn()
+  }
+}

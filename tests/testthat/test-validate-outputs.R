@@ -1,3 +1,19 @@
+test_that("study_declared_displayable_rels prefers HTML for tables with CSV side products", {
+  rep <- list(
+    id = "tab_3",
+    type = "table",
+    outputs = list(
+      "outputs/tab_3/tab_3_benchmarks.csv",
+      "outputs/tab_3.html"
+    )
+  )
+  expect_identical(
+    study_declared_displayable_rels(rep),
+    "outputs/tab_3.html"
+  )
+  expect_identical(study_artifact_rel_path(rep), "outputs/tab_3.html")
+})
+
 test_that("default artifact path uses png for figures", {
   rep <- list(type = "figure")
   expect_equal(default_artifact_path(rep, "fig_1"), "outputs/fig_1.png")

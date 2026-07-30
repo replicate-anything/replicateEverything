@@ -1,3 +1,19 @@
+# replicateEverything 0.7.54
+
+## Prep / transform Live Run: honor make_* formals
+
+* [call_analysis_function()] passes loaded `data` only when `make_*` has a
+  `data` formal or `...`. Transform steps that list `inputs:` for the DAG but
+  define `make_*()` with no data argument (e.g. Velez `prep_studies` sourcing
+  author `recodes_*.R`) no longer fail with `unused argument (data)`.
+
+## Table Display: prefer HTML over CSV side products
+
+* [study_declared_displayable_rels()] for `type: table` keeps only `.html`
+  sinks when both HTML and tabular (csv/dta) outputs are declared. Avoids
+  loading benchmarks CSV + HTML as multi-panels, which broke `format_*` and
+  showed blank / raw HTML on Display (Velez Table 3).
+
 # replicateEverything 0.7.53
 
 ## Fix: nbconvert argv dropped notebook path (help text)
