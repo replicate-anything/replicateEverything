@@ -45,17 +45,21 @@ step_shiny_run_message <- function(entry) {
   "[live run not available on shiny]"
 }
 
-#' Whether Shiny should show a Display control for a step
+#' Whether a Shiny step has a Display-available object
+#'
+#' Used for Display chrome (not for omitting the control): when this returns
+#' \code{FALSE}, Shiny still shows Display but greys it (still clickable so
+#' users can open Code / see the short unavailable note). When \code{TRUE},
+#' Display uses the same filled dark style as enabled Run.
 #'
 #' Correct enablement (do \strong{not} invert):
 #' \itemize{
-#'   \item Baked sink present (\code{output_exists}): always show Display,
-#'     including engine/data gaps that still have a precomputed artifact.
-#'   \item Engine/data gap or generic incomplete \emph{without} a sink: omit
-#'     Display entirely (padlock / wrench open Code). Never treat gap kind as
-#'     a reason to show an active Display affordance.
-#'   \item Normal runnable step without a detected sink: still show Display
-#'     (prep preview / live path may work; avoids greying available steps).
+#'   \item Baked sink present (\code{output_exists}): available, including
+#'     engine/data gaps that still have a precomputed artifact.
+#'   \item Engine/data gap or generic incomplete \emph{without} a sink: not
+#'     available (padlock / wrench; grey Display).
+#'   \item Normal runnable step without a detected sink: still available
+#'     (prep preview / live path may work).
 #' }
 #'
 #' The historical bug was \code{displayable = output_exists || is_gap}, which

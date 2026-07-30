@@ -1417,14 +1417,6 @@ artifact_candidate_report <- function(path) {
 
 artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "output",
                                  blocked_message = NULL) {
-  candidates <- tryCatch(
-    replicate_fn("artifact_lookup_candidates", doi, what, folder = folder, repo = repo),
-    error = function(e) character(0)
-  )
-  reports <- lapply(candidates, function(p) tryCatch(artifact_candidate_report(p), error = function(e) NULL))
-  reports <- Filter(Negate(is.null), reports)
-  exists_but_unloaded <- Filter(function(r) isTRUE(r$exists) && !isTRUE(r$loadable), reports)
-
   if (is.null(blocked_message) || !nzchar(as.character(blocked_message))) {
     blocked_message <- tryCatch({
       meta <- replicate_fn("get_replication_meta", doi, folder = folder, repo = repo)
@@ -1432,90 +1424,32 @@ artifact_missing_ui <- function(doi, what, folder = NULL, repo = NULL, kind = "o
     }, error = function(e) NULL)
   }
 
-  is_gap <- !is.null(blocked_message) && nzchar(as.character(blocked_message))
-  headline <- if (is_gap) {
+  headline <- if (!is.null(blocked_message) && nzchar(as.character(blocked_message))) {
     as.character(blocked_message)
   } else {
-    paste0("No precomputed ", kind, " available.")
+    paste0("This ", kind, " is not available.")
   }
 
-  tagList(
-    tags$div(
-      class = "alert alert-secondary",
-      tags$strong(headline),
-      if (length(exists_but_unloaded) > 0) {
-        tags$div(
-          class = "alert alert-warning small",
-          tags$strong("But the artifact file does exist. "),
-          "It was found at the location below but could not be loaded into this session. ",
-          "Likely causes: a transient network/proxy/TLS problem reaching ",
-          tags$code("raw.githubusercontent.com"),
-          ", or the running app is on a stale build. ",
-          "Reload the page; if it persists, reinstall the package and relaunch."
-        )
-      },
-      if (is_gap) {
-        tags$p(
-          class = "mb-0",
-          "This step is marked unavailable in ",
-          tags$code("replication.yml"),
-          ". Open the ",
-          tags$strong("Code"),
-          " tab to inspect the replication script; Display cannot produce this output here."
-        )
-      } else {
-        tags$p(
-          "The registry lists this replication, but the artifact file is not available yet.",
-          " Maintainer: bake via ",
-          tags$code("build_study_outputs()"),
-          " / ",
-          tags$code("check_and_bake_study()"),
-          " so Display never reaches this state for registered studies."
-        )
-      },
-      tags$p(
-        class = "small mb-0",
-        "Folder-backed studies: run ",
-        tags$code("build_study_outputs()"),
-        " in the study repository (writes ",
-        tags$code("outputs/"),
-        " paths declared in ",
-        tags$code("replication.yml"),
-        "). ",
-        "Registry studies: build ",
-        tags$code("outputs/"),
-        " with ",
-        tags$code("registry/scripts/build_artifacts.R"),
-        ". ",
-        "Package-backed studies: run ",
-        tags$code("build_study_outputs()"),
-        " in the study R package ",
-        "(writes ",
-        tags$code("inst/report/artifacts/"),
-        ")."
-      ),
-      if (length(reports) > 0) {
-        tagList(
-          tags$p(class = "mb-1", tags$strong("Expected artifact:")),
-          tags$ul(
-            class = "small mb-0",
-            lapply(reports, function(r) {
-              badge_class <- if (isTRUE(r$exists) && isTRUE(r$loadable)) {
-                "text-success"
-              } else if (isTRUE(r$exists)) {
-                "text-warning"
-              } else {
-                "text-danger"
-              }
-              tags$li(
-                tags$code(r$path),
-                tags$span(class = paste("ms-2", badge_class), paste0("[", r$status, "]"))
-              )
-            })
-          )
-        )
-      }
+  tags$div(
+    class = "alert alert-secondary mb-0",
+    tags$strong(headline),
+    tags$p(
+      class = "mb-0 mt-1 small",
+      "Open the Code tab to inspect the replication script."
     )
+  )
+}
+
+#' Shared filled dark chrome for Shiny sidebar Display / Run
+#'
+#' Enabled look is white-on-dark for both controls. Pass
+#' \code{unavailable = TRUE} to grey Display without disabling it
+#' (still clickable). Run uses the same base class plus
+#' \code{disabled} when unavailable.
+step_action_btn_class <- function(unavailable = FALSE) {
+  paste(
+    "btn-dark btn-sm btn-step-action",
+    if (isTRUE(unavailable)) "is-unavailable" else NULL
   )
 }
 
@@ -6804,20 +6738,40 @@ ui <- tagList(
       line-height: 0;
       opacity: 0.95;
     }
-    .replication-row.is-blocked {
-      opacity: 0.55;
-    }
     .replication-row.is-blocked .replication-label {
       text-decoration: line-through;
       text-decoration-color: rgba(108, 117, 125, 0.6);
+      opacity: 0.55;
     }
-    /* Grey out Display/Run when a step is incomplete / missing an engine */
-    .replication-row .btn:disabled,
-    .replication-row .btn.disabled {
+    /* Filled white-on-dark Display/Run (figures, tables, and data/prep) */
+    .replication-row .btn-step-action {
+      background-color: #374151;
+      border-color: #374151;
+      color: #fff;
+    }
+    .replication-row .btn-step-action:hover:not(:disabled):not(.disabled):not(.is-unavailable),
+    .replication-row .btn-step-action:focus:not(:disabled):not(.disabled):not(.is-unavailable) {
+      background-color: #1f2937;
+      border-color: #1f2937;
+      color: #fff;
+    }
+    /* Display only: grey when object unavailable, but stay clickable */
+    .replication-row .btn-step-action.is-unavailable:not(:disabled):not(.disabled) {
+      opacity: 0.4;
+      filter: grayscale(0.6);
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    /* Run: greyed <-> disabled */
+    .replication-row .btn-step-action:disabled,
+    .replication-row .btn-step-action.disabled {
       opacity: 0.4;
       filter: grayscale(0.6);
       cursor: not-allowed;
       pointer-events: none;
+      background-color: #374151;
+      border-color: #374151;
+      color: #fff;
     }
     /* data_unavailable / missing-engine: icon replaces Run; click opens Code */
     .replication-row .run-unavailable-lock,
@@ -8834,8 +8788,8 @@ server <- function(input, output, session) {
     is_engine_gap <- identical(gap$kind, "hammer")
     # Strikethrough only for generic incomplete (neither padlock nor hammer).
     use_strikethrough <- is_blocked && !is_data_gap && !is_engine_gap
-    # Display only when a sink exists for gap/incomplete rows; omit otherwise
-    # (no greyed false affordance). Normal runnable rows keep Display.
+    # Display chrome: always offer the control. Grey (not disabled) when
+    # shiny_step_show_display says the object is unavailable for this path.
     displayable <- tryCatch(
       isTRUE(replicate_fn(
         "shiny_step_show_display",
@@ -8856,17 +8810,39 @@ server <- function(input, output, session) {
       },
       if (use_strikethrough) "is-blocked" else ""
     )
-    display_btn <- function(title = NULL) {
+    display_btn <- function(title = NULL, unavailable = FALSE) {
       actionButton(
         paste0("display_", safe_group),
         "Display",
-        class = "btn-outline-secondary btn-sm",
+        class = step_action_btn_class(unavailable = unavailable),
         title = title,
         onclick = sprintf(
           "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
           group
         )
       )
+    }
+    run_btn <- function(title = NULL, enabled = TRUE) {
+      if (isTRUE(enabled)) {
+        actionButton(
+          paste0("replicate_", safe_group),
+          "Run",
+          class = step_action_btn_class(unavailable = FALSE),
+          title = title %||% "Run live replication",
+          onclick = sprintf(
+            "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
+            group
+          )
+        )
+      } else {
+        actionButton(
+          paste0("replicate_", safe_group),
+          "Run",
+          class = step_action_btn_class(unavailable = TRUE),
+          disabled = "disabled",
+          title = title
+        )
+      }
     }
     engine_pick_icon <- function(eng) {
       switch(
@@ -9051,15 +9027,17 @@ server <- function(input, output, session) {
               if (isTRUE(output_exists)) "Not reproducible" else "Unavailable"
             )
           },
-          if (isTRUE(displayable)) {
-            display_btn(
-              title = if (isTRUE(output_exists) && (is_data_gap || is_engine_gap || use_strikethrough)) {
-                paste0(blocked_msg, " (baked output can still be shown)")
-              } else {
-                blocked_msg
-              }
-            )
-          },
+          display_btn(
+            title = if (isTRUE(displayable) && isTRUE(output_exists) &&
+              (is_data_gap || is_engine_gap || use_strikethrough)) {
+              paste0(blocked_msg, " (baked output can still be shown)")
+            } else if (!isTRUE(displayable)) {
+              blocked_msg
+            } else {
+              NULL
+            },
+            unavailable = !isTRUE(displayable)
+          ),
           if (is_data_gap) {
             run_unavailable_padlock_button(group, blocked_msg, data_tok)
           } else if (is_engine_gap) {
@@ -9069,13 +9047,7 @@ server <- function(input, output, session) {
               gap$engine %||% req_eng
             )
           } else if (shiny_live_run_enabled()) {
-            actionButton(
-              paste0("replicate_", safe_group),
-              "Run",
-              class = "btn-primary btn-sm",
-              disabled = "disabled",
-              title = blocked_msg
-            )
+            run_btn(title = blocked_msg, enabled = FALSE)
           }
         )
       ))
@@ -9086,25 +9058,14 @@ server <- function(input, output, session) {
       tags$div(
         class = "replication-actions",
         engine_picks,
-        actionButton(
-          paste0("display_", safe_group),
-          "Display",
-          class = "btn-outline-secondary btn-sm",
-          onclick = sprintf(
-            "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
-            group
-          )
-        ),
+        display_btn(unavailable = !isTRUE(displayable)),
         if (shiny_live_run_enabled()) {
           run_title <- "Run live replication"
           long_mark <- NULL
           if (!isTRUE(shiny_run_on)) {
-            actionButton(
-              paste0("replicate_", safe_group),
-              "Run",
-              class = "btn-secondary btn-sm",
-              disabled = "disabled",
-              title = shiny_run_msg %||% "[live run not available on shiny]"
+            run_btn(
+              title = shiny_run_msg %||% "[live run not available on shiny]",
+              enabled = FALSE
             )
           } else {
           rt <- tryCatch(
@@ -9141,16 +9102,7 @@ server <- function(input, output, session) {
           }
           tagList(
             long_mark,
-            actionButton(
-              paste0("replicate_", safe_group),
-              "Run",
-              class = "btn-primary btn-sm",
-              title = run_title,
-              onclick = sprintf(
-                "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
-                group
-              )
-            )
+            run_btn(title = run_title, enabled = TRUE)
           )
           }
         }
@@ -9360,34 +9312,46 @@ server <- function(input, output, session) {
                     if (isTRUE(step_out_exists)) "Not reproducible" else "Unavailable"
                   )
                 },
-                if (isTRUE(step_displayable)) {
-                  actionButton(
-                    paste0("data_display_", safe_id),
-                    "Display",
-                    class = "btn-outline-secondary btn-sm",
-                    title = if (step_blocked || step_data_gap || step_engine_gap) {
-                      if (isTRUE(step_out_exists)) {
-                        paste0(step_blocked_reason, " (baked output can still be shown)")
-                      } else {
-                        step_blocked_reason
-                      }
+                actionButton(
+                  paste0("data_display_", safe_id),
+                  "Display",
+                  class = step_action_btn_class(unavailable = !isTRUE(step_displayable)),
+                  title = if (!isTRUE(step_displayable)) {
+                    step_blocked_reason
+                  } else if (step_blocked || step_data_gap || step_engine_gap) {
+                    if (isTRUE(step_out_exists)) {
+                      paste0(step_blocked_reason, " (baked output can still be shown)")
                     } else {
-                      NULL
-                    },
-                    onclick = sprintf(
-                      "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
-                      step_id
-                    )
+                      step_blocked_reason
+                    }
+                  } else {
+                    NULL
+                  },
+                  onclick = sprintf(
+                    "Shiny.setInputValue('replication_action', 'display:%s', {priority: 'event'})",
+                    step_id
                   )
-                },
-                if (shiny_live_run_enabled() && !step_blocked && !step_data_gap && !step_engine_gap) {
-                  if (!isTRUE(shiny_run_on)) {
+                ),
+                if (step_data_gap) {
+                  run_unavailable_padlock_button(step_id, step_blocked_reason, data_tok)
+                } else if (step_engine_gap) {
+                  run_unavailable_hammer_button(
+                    step_id,
+                    step_blocked_reason,
+                    step_gap$engine %||% req_eng
+                  )
+                } else if (shiny_live_run_enabled()) {
+                  if (step_blocked || !isTRUE(shiny_run_on)) {
                     actionButton(
                       paste0("data_run_", safe_id),
                       "Run",
-                      class = "btn-outline-secondary btn-sm",
+                      class = step_action_btn_class(unavailable = TRUE),
                       disabled = "disabled",
-                      title = shiny_run_msg %||% "[live run not available on shiny]"
+                      title = if (!isTRUE(shiny_run_on) && !step_blocked) {
+                        shiny_run_msg %||% "[live run not available on shiny]"
+                      } else {
+                        step_blocked_reason
+                      }
                     )
                   } else {
                   step_run_title <- "Run live replication"
@@ -9430,7 +9394,7 @@ server <- function(input, output, session) {
                     actionButton(
                       paste0("data_run_", safe_id),
                       "Run",
-                      class = "btn-outline-primary btn-sm",
+                      class = step_action_btn_class(unavailable = FALSE),
                       title = step_run_title,
                       onclick = sprintf(
                         "Shiny.setInputValue('replication_action', 'replicate:%s', {priority: 'event'})",
@@ -9439,22 +9403,6 @@ server <- function(input, output, session) {
                     )
                   )
                   }
-                } else if (step_data_gap) {
-                  run_unavailable_padlock_button(step_id, step_blocked_reason, data_tok)
-                } else if (step_engine_gap) {
-                  run_unavailable_hammer_button(
-                    step_id,
-                    step_blocked_reason,
-                    step_gap$engine %||% req_eng
-                  )
-                } else if (shiny_live_run_enabled() && step_blocked) {
-                  actionButton(
-                    paste0("data_run_", safe_id),
-                    "Run",
-                    class = "btn-outline-primary btn-sm",
-                    disabled = "disabled",
-                    title = step_blocked_reason
-                  )
                 }
               )
             )

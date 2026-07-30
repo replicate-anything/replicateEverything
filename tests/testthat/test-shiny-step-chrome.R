@@ -1,4 +1,4 @@
-test_that("shiny_step_show_display omits Display for gaps without sinks", {
+test_that("shiny_step_show_display marks gaps without sinks unavailable", {
   expect_true(shiny_step_show_display(output_exists = TRUE, gap_kind = "padlock"))
   expect_true(shiny_step_show_display(output_exists = TRUE, gap_kind = "hammer"))
   expect_false(shiny_step_show_display(output_exists = FALSE, gap_kind = "padlock"))
@@ -17,7 +17,7 @@ test_that("shiny_step_show_display omits Display for gaps without sinks", {
 
 test_that("shiny_step_show_display does not invert Hahn-style prep chrome", {
   # Available prep without html/png sink (e.g. clean_data / macros / no_lbd):
-  # must stay Display-enabled. Engine-gap prep without sink must not.
+  # must stay Display-available. Engine-gap prep without sink must not.
   available <- list(
     list(id = "clean_data", incomplete = FALSE, gap_kind = NULL, exists = FALSE),
     list(id = "macros", incomplete = FALSE, gap_kind = NULL, exists = FALSE),
@@ -59,7 +59,7 @@ test_that("shiny_step_show_display does not invert Hahn-style prep chrome", {
     gap_kind = "hammer",
     incomplete = TRUE
   ))
-  # Baked Mathematica fig: Display stays (view-only).
+  # Baked Mathematica fig: Display stays available (view-only).
   expect_true(shiny_step_show_display(
     output_exists = TRUE,
     gap_kind = "hammer",

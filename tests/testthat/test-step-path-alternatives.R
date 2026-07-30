@@ -131,7 +131,7 @@ test_that("find_replication_entry resolves path languages for same engine", {
   )
 })
 
-test_that("shiny_step_show_display still omits Display for mathematica path gaps", {
+test_that("shiny_step_show_display marks mathematica path gaps unavailable", {
   expect_false(shiny_step_show_display(
     output_exists = FALSE,
     gap_kind = "hammer",

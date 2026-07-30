@@ -1,3 +1,17 @@
+# replicateEverything 0.7.50
+
+## Shiny Run/Display button chrome
+
+* **Run** and **Display** both use the same filled white-on-dark style for
+  enabled controls (figures/tables and data/prep). No more outline-primary
+  (prep) vs filled primary (figures) split.
+* **Run** is greyed and disabled whenever the selected engine/path is
+  unavailable (`shiny_run: false`, incomplete, or padlock/hammer gap icons).
+* **Display** is always offered; greyed only when
+  [shiny_step_show_display()] says the object is unavailable, but remains
+  clickable (Code / short note). Missing-output panel is a short note, not a
+  long bake/log dump. Blocked-row opacity no longer dims action buttons.
+
 # replicateEverything 0.7.49
 
 ## Shorter Shiny long-run warning
