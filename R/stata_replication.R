@@ -425,6 +425,35 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
   system2(stata, batch_args, wait = TRUE, stdout = "", stderr = "")
 }
 
+#' VBScript that runs a command via hidden cmd.exe (Windows Stata $S_SHELL)
+#'
+#' Stata for Windows opens a visible console on every \code{shell}/\code{!}.
+#' Setting global \code{S_SHELL} to \code{wscript //nologo //B <this.vbs>}
+#' routes those calls through a wait + window-style-0 cmd, so focus is not
+#' stolen. The script accepts an optional leading \code{/c} (cmd-style).
+#'
+#' @keywords internal
+stata_windows_hidden_shell_vbs_lines <- function() {
+  c(
+    "Option Explicit",
+    "Dim sh, cmd, i, a",
+    "Set sh = CreateObject(\"WScript.Shell\")",
+    "cmd = \"\"",
+    "For i = 0 To WScript.Arguments.Count - 1",
+    "  a = WScript.Arguments(i)",
+    "  If Not (i = 0 And (a = \"/c\" Or a = \"/C\")) Then",
+    "    If InStr(a, \" \") > 0 Or InStr(a, \"\"\"\") > 0 Then",
+    "      a = \"\"\"\" & Replace(a, \"\"\"\", \"\"\"\"\"\"\") & \"\"\"\"",
+    "    End If",
+    "    If Len(cmd) > 0 Then cmd = cmd & \" \"",
+    "    cmd = cmd & a",
+    "  End If",
+    "Next",
+    "If Len(cmd) = 0 Then WScript.Quit 0",
+    "WScript.Quit sh.Run(\"cmd.exe /c \" & cmd, 0, True)"
+  )
+}
+
 #' Build the do-file lines for the package's generated Stata batch runner
 #'
 #' Always wraps the actual step do-file in \code{capture noisily do ...}
@@ -453,10 +482,12 @@ run_stata_system2 <- function(stata, batch_args, timeout = 900L) {
 #'   Stata do-file (see \code{stata_path_in_do()}).
 #' @param wd_in_do Working directory, same formatting.
 #' @param staging_dir Optional writable directory for \code{$result} output.
+#' @param hidden_shell_vbs Optional Windows path to
+#'   [stata_windows_hidden_shell_vbs_lines()] script for \code{$S_SHELL}.
 #' @return Character vector of do-file lines.
 #' @keywords internal
 stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL,
-                               log_in_do = NULL) {
+                               log_in_do = NULL, hidden_shell_vbs = NULL) {
   runner_lines <- c(
     "version 17",
     "clear all",
@@ -468,8 +499,27 @@ stata_runner_lines <- function(do_in_do, wd_in_do, staging_dir = NULL,
     "cap set netmsg off"
   )
   # Windows non-/e launch: keep the GUI out of the way (processx also hides).
+  # Route `shell` through a hidden-cmd VBScript via $S_SHELL so child
+  # CMD/Rscript consoles do not flash and steal focus (Hahn LBD shells many
+  # Rscript calls). Linux/macOS keep the default shell unchanged.
   if (.Platform$OS.type == "windows") {
     runner_lines <- c(runner_lines, "cap window manage minimize")
+    if (!is.null(hidden_shell_vbs) && nzchar(hidden_shell_vbs)) {
+      vbs_in_do <- stata_path_in_do(hidden_shell_vbs)
+      runner_lines <- c(
+        runner_lines,
+        paste0(
+          "global S_SHELL `\"wscript //nologo //B \"",
+          vbs_in_do,
+          "\"\"'"
+        )
+      )
+    } else {
+      runner_lines <- c(
+        runner_lines,
+        "global S_SHELL \"powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden\""
+      )
+    }
   }
   # Without Windows /e, Stata does not auto-write a batch .log; open one
   # explicitly when the caller supplies a path (same basename as the runner).
@@ -567,11 +617,21 @@ run_stata_do <- function(do_path, workdir, timeout = 900L, staging_dir = NULL,
   } else {
     NULL
   }
+  hidden_shell_vbs <- NULL
+  if (.Platform$OS.type == "windows") {
+    hidden_shell_vbs <- file.path(run_dir, "re_hidden_shell.vbs")
+    writeLines(
+      stata_windows_hidden_shell_vbs_lines(),
+      hidden_shell_vbs,
+      useBytes = TRUE
+    )
+  }
   runner_lines <- stata_runner_lines(
     do_in_do,
     wd_in_do,
     staging_dir = staging_dir,
-    log_in_do = log_in_do
+    log_in_do = log_in_do,
+    hidden_shell_vbs = hidden_shell_vbs
   )
 
   writeLines(runner_lines, runner, useBytes = TRUE)

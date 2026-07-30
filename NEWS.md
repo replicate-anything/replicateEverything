@@ -1,3 +1,17 @@
+# replicateEverything 0.7.45
+
+## Windows: suppress Stata `shell` CMD focus flashes
+
+* Generated Stata runners on Windows set `$S_SHELL` to
+  `wscript //nologo //B <temp>/re_hidden_shell.vbs` (VBScript runs
+  `cmd /c …` with window style 0 and waits). Stata's default `cmd.exe`
+  shell opens a visible console on every `shell` / `!` (Hahn LBD
+  `shell Rscript`, `shell dir`, `ping`, etc.), stealing focus during long
+  local runs. Fallback if the VBS path is missing: PowerShell
+  `-WindowStyle Hidden`. Linux/macOS runners unchanged (no `$S_SHELL`
+  override). Stata GUI itself was already hidden via processx
+  `windows_hide` / `system2(invisible=TRUE)`.
+
 # replicateEverything 0.7.44
 
 ## Skills + docs: public API only; Stata/Excel lessons

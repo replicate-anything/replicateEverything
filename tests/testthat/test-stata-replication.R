@@ -21,6 +21,22 @@ test_that("stata_runner_lines wraps the step do-file in capture noisily, not a b
   expect_true(any(grepl("REPLICATE_STEP_RC", lines, fixed = TRUE)))
   expect_true(any(grepl("display as error", lines, fixed = TRUE)))
   expect_true(any(grepl("exit `REPLICATE_STEP_RC'", lines, fixed = TRUE)))
+  if (.Platform$OS.type == "windows") {
+    expect_true(any(grepl("S_SHELL", lines, fixed = TRUE)))
+    # Without a VBS path, runner falls back to PowerShell Hidden.
+    expect_true(any(grepl("WindowStyle Hidden", lines, fixed = TRUE)))
+    vbs <- tempfile(fileext = ".vbs")
+    on.exit(unlink(vbs), add = TRUE)
+    writeLines("WScript.Quit 0", vbs)
+    lines_vbs <- replicateEverything:::stata_runner_lines(
+      "C:/study/code/tab_1.do", "C:/study",
+      hidden_shell_vbs = vbs
+    )
+    expect_true(any(grepl("wscript //nologo //B", lines_vbs, fixed = TRUE)))
+    expect_true(any(grepl("re_hidden_shell|\\.vbs", lines_vbs)))
+  } else {
+    expect_false(any(grepl("S_SHELL", lines, fixed = TRUE)))
+  }
 })
 
 test_that("stata_runner_lines still wires up staging dir globals", {
