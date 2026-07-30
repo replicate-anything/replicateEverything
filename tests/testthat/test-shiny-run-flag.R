@@ -10,17 +10,23 @@ test_that("step_shiny_run_enabled respects shiny_run: false", {
   expect_false(step_shiny_run_enabled(list(id = "clean_data", shiny_run = "no")))
 })
 
-test_that("step_shiny_run_message prefers blocked_reason", {
-  msg <- step_shiny_run_message(list(
-    id = "macros",
-    shiny_run = FALSE,
-    blocked_reason = "Temporarily off in Shiny."
-  ))
-  expect_identical(msg, "Temporarily off in Shiny.")
-
-  default <- step_shiny_run_message(list(id = "macros", shiny_run = FALSE))
-  expect_match(default, "Live Run disabled")
-  expect_match(default, "run_replication")
+test_that("step_shiny_run_message is the fixed short label", {
+  expect_identical(
+    step_shiny_run_message(list(
+      id = "macros",
+      shiny_run = FALSE,
+      blocked_reason = "Temporarily off in Shiny."
+    )),
+    "[live run not available on shiny]"
+  )
+  expect_identical(
+    step_shiny_run_message(list(id = "macros", shiny_run = FALSE)),
+    "[live run not available on shiny]"
+  )
+  expect_identical(
+    step_shiny_run_message(NULL),
+    "[live run not available on shiny]"
+  )
 })
 
 test_that("shiny_run false is not treated as incomplete / gap", {

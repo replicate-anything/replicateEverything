@@ -7,14 +7,16 @@
 step_shiny_run_message(entry)
 }
 \arguments{
-\item{entry}{Step list (yaml entry or Shiny row fields as a list).}
+\item{entry}{Step list (yaml entry or Shiny row fields as a list).
+Ignored; accepted so call sites can pass the step entry uniformly.}
 }
 \value{
-Character scalar.
+Character scalar: \code{"[live run not available on shiny]"}.
 }
 \description{
-Prefers yaml \code{blocked_reason:} when present (even without
-\code{incomplete:}); otherwise a short default explaining Display / package
-Run still work.
+Fixed short label shown on the greyed Shiny \strong{Run} control (tooltip /
+gate message) when \code{shiny_run: false}. Display / Code / package Run
+are unchanged. Yaml \code{blocked_reason:} is not used here (that field
+remains for \code{incomplete:} / engine / data gaps).
 }
 \keyword{internal}

@@ -32,25 +32,17 @@ step_shiny_run_enabled <- function(entry) {
 
 #' User-facing reason when Shiny Live Run is disabled for a step
 #'
-#' Prefers yaml \code{blocked_reason:} when present (even without
-#' \code{incomplete:}); otherwise a short default explaining Display / package
-#' Run still work.
+#' Fixed short label shown on the greyed Shiny **Run** control (tooltip /
+#' gate message) when \code{shiny_run: false}. Display / Code / package Run
+#' are unchanged. Yaml \code{blocked_reason:} is not used here (that field
+#' remains for \code{incomplete:} / engine / data gaps).
 #'
 #' @param entry Step list (yaml entry or Shiny row fields as a list).
-#' @return Character scalar.
+#'   Ignored; accepted so call sites can pass the step entry uniformly.
+#' @return Character scalar: \code{"[live run not available on shiny]"}.
 #' @keywords internal
 step_shiny_run_message <- function(entry) {
-  reason <- trimws(as.character(
-    entry$blocked_reason[[1]] %||% entry$blocked_reason %||% ""
-  ))
-  if (nzchar(reason)) {
-    return(reason)
-  }
-  paste0(
-    "Live Run disabled for this step in Shiny. ",
-    "Display still shows baked outputs when available; ",
-    "package run_replication() / bake can still run it."
-  )
+  "[live run not available on shiny]"
 }
 
 #' Whether Shiny should show a Display control for a step

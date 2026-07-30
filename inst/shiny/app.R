@@ -8776,7 +8776,7 @@ server <- function(input, output, session) {
         ))
       }
     }, error = function(e) {
-      "Live Run disabled for this step in Shiny."
+      "[live run not available on shiny]"
     })
     req_eng <- tolower(as.character((sel_entry$requires_engine %||% row$requires_engine[[1]]) %||% ""))
     data_tok <- tolower(as.character((sel_entry$data_unavailable %||% row$data_unavailable[[1]]) %||% ""))
@@ -9102,9 +9102,9 @@ server <- function(input, output, session) {
             actionButton(
               paste0("replicate_", safe_group),
               "Run",
-              class = "btn-primary btn-sm",
+              class = "btn-secondary btn-sm",
               disabled = "disabled",
-              title = shiny_run_msg
+              title = shiny_run_msg %||% "[live run not available on shiny]"
             )
           } else {
           rt <- tryCatch(
@@ -9217,9 +9217,9 @@ server <- function(input, output, session) {
             shiny_run_msg <- tryCatch(
               as.character(replicate_fn(
                 "step_shiny_run_message",
-                list(blocked_reason = row$blocked_reason[[1]] %||% "")
+                list(id = step_id, shiny_run = row$shiny_run[[1]] %||% TRUE)
               )),
-              error = function(e) "Live Run disabled for this step in Shiny."
+              error = function(e) "[live run not available on shiny]"
             )
             # A requires_engine naming a proprietary tool (Mathematica, ...) is
             # this step's true identity for display, even when it is
@@ -9385,9 +9385,9 @@ server <- function(input, output, session) {
                     actionButton(
                       paste0("data_run_", safe_id),
                       "Run",
-                      class = "btn-outline-primary btn-sm",
+                      class = "btn-outline-secondary btn-sm",
                       disabled = "disabled",
-                      title = shiny_run_msg
+                      title = shiny_run_msg %||% "[live run not available on shiny]"
                     )
                   } else {
                   step_run_title <- "Run live replication"
@@ -9716,7 +9716,7 @@ server <- function(input, output, session) {
     if (!isTRUE(shiny_run_gate$enabled)) {
       msg <- shiny_run_gate$message
       if (!nzchar(as.character(msg %||% ""))) {
-        msg <- "Live Run disabled for this step in Shiny."
+        msg <- "[live run not available on shiny]"
       }
       state$selected_result <- simpleError(msg)
       state$selected_source <- "live"

@@ -1,13 +1,23 @@
+# replicateEverything 0.7.48
+
+## Shiny `shiny_run: false` UX wording
+
+* Greyed / disabled **Run** (secondary button styling) when
+  `shiny_run: false`. Fixed user-facing label:
+  `[live run not available on shiny]` (tooltip + Live Run gate). Display /
+  Code unchanged. [step_shiny_run_message()] no longer surfaces yaml
+  `blocked_reason:` for this path (`blocked_reason:` remains for incomplete /
+  engine / data gaps).
+
 # replicateEverything 0.7.47
 
 ## Shiny-only Live Run disable (`shiny_run: false`)
 
 * Steps may declare `shiny_run: false` in `replication.yml` to disable **Shiny
-  Live Run** only (greyed Run button + tooltip; optional `blocked_reason:`).
-  Display of baked sinks, Code tab, and package APIs (`run_replication()`,
-  bake, audit) are unchanged. Prefer this over `incomplete: true` when the
-  step should still run from R. Helpers: [step_shiny_run_enabled()],
-  [step_shiny_run_message()].
+  Live Run** only (greyed Run button + tooltip). Display of baked sinks,
+  Code tab, and package APIs (`run_replication()`, bake, audit) are unchanged.
+  Prefer this over `incomplete: true` when the step should still run from R.
+  Helpers: [step_shiny_run_enabled()], [step_shiny_run_message()].
 
 # replicateEverything 0.7.46
 
