@@ -1547,7 +1547,7 @@ ALL_STUDIES_COLLECTION <- "__all_studies__"
 #' Load Studies list from registry-baked shiny_studies.json (no live yaml)
 load_studies_session_data <- function() {
   cache <- tryCatch(
-    replicateEverything::load_shiny_studies_cache(),
+    replicate_fn("load_shiny_studies_cache"),
     error = function(e) NULL
   )
   if (is.null(cache)) {
@@ -8357,7 +8357,8 @@ server <- function(input, output, session) {
       return(tags$p(class = "text-muted", "Loading studies…"))
     }
     rows_data <- tryCatch(
-      replicateEverything::studies_table_data(
+      replicate_fn(
+        "studies_table_data",
         cache,
         collection = input$studies_collection_filter
       ),

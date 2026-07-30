@@ -1,3 +1,12 @@
+# replicateEverything 0.7.42
+
+## Shiny: restore Studies menu after API unexport
+
+* Studies dropdown / bibliography used `replicateEverything::load_shiny_studies_cache()`
+  and `::studies_table_data()`; after 0.7.41 made those internal, `::` failed and
+  the app's `tryCatch` returned an empty menu. Call via `replicate_fn()` (namespace
+  lookup) instead — same pattern as other Shiny helpers.
+
 # replicateEverything 0.7.41
 
 ## Maintainer API: four public registry verbs
