@@ -205,10 +205,7 @@ build_package_outputs_impl <- function(
     stop("No figure/table replications to build.", call. = FALSE)
   }
 
-  prep_steps <- prep_steps_for_build(
-    meta,
-    if (is.null(ids)) NULL else display_reps
-  )
+  prep_steps <- prep_steps_for_build(meta, display_reps)
   prep_result <- run_build_prep_steps(
     meta,
     ctx,
@@ -369,10 +366,7 @@ build_folder_outputs_impl <- function(
   # Caller already resolved the study repo; pin it so prep/display do not fall
   # back to getwd()-relative lookup (e.g. tests/testthat during testthat runs).
   ctx$local_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
-  prep_steps <- prep_steps_for_build(
-    meta,
-    if (is.null(ids)) NULL else display_reps
-  )
+  prep_steps <- prep_steps_for_build(meta, display_reps)
   prep_result <- run_build_prep_steps(
     meta,
     ctx,

@@ -78,6 +78,7 @@ build_display_artifact_entries <- function(
   for (rep in display_reps) {
     rep_id <- rep$id
     message("Building ", rep_id, " ...")
+    t0 <- proc.time()[["elapsed"]]
 
     status <- tryCatch({
       result <- render_replication(
@@ -112,7 +113,8 @@ build_display_artifact_entries <- function(
           png = "ggplot",
           rds = "rds",
           result$format
-        )
+        ),
+        engine = result$engine %||% result$language %||% NULL
       )
     }, error = function(e) {
       msg <- if (!is.null(study_root) && nzchar(study_root)) {
@@ -123,6 +125,20 @@ build_display_artifact_entries <- function(
       failures <<- c(failures, paste0(rep_id, ": ", msg))
       list(status = "error", message = msg)
     })
+
+    if (identical(status$status, "ok") && !is.null(study_root) && nzchar(study_root)) {
+      elapsed <- proc.time()[["elapsed"]] - t0
+      tryCatch(
+        record_study_replication_timing(
+          study_root,
+          rep_id,
+          elapsed,
+          engine = status$engine
+        ),
+        error = function(e) NULL
+      )
+    }
+    status$engine <- NULL
 
     manifest[[rep_id]] <- status
   }

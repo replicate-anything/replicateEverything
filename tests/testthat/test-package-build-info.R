@@ -9,6 +9,50 @@ test_that("package_build_info returns version and optional sha", {
   expect_equal(info$sha, info$bundled_sha)
 })
 
+test_that("format_shiny_deploy_stale_note is silent when versions match", {
+  expect_null(
+    replicateEverything:::format_shiny_deploy_stale_note(
+      version_stale = FALSE,
+      deploy_version = "0.7.35",
+      installed_version = "0.7.35"
+    )
+  )
+  # Stale flag alone is not enough if the strings already agree.
+  expect_null(
+    replicateEverything:::format_shiny_deploy_stale_note(
+      version_stale = TRUE,
+      deploy_version = "0.7.35",
+      installed_version = "0.7.35"
+    )
+  )
+})
+
+test_that("format_shiny_deploy_stale_note names version clash briefly", {
+  note <- replicateEverything:::format_shiny_deploy_stale_note(
+    version_stale = TRUE,
+    deploy_version = "0.7.34",
+    installed_version = "0.7.35"
+  )
+  expect_identical(
+    note,
+    "stamp version: 0.7.34 · installed: 0.7.35 [possibly stale]"
+  )
+})
+
+test_that("format_shiny_deploy_stale_note can combine mismatch kinds", {
+  note <- replicateEverything:::format_shiny_deploy_stale_note(
+    version_stale = TRUE,
+    deploy_version = "0.7.34",
+    installed_version = "0.7.35",
+    deploy_lib_stale = TRUE,
+    namespace_stale = TRUE
+  )
+  expect_match(note, "stamp version: 0\\.7\\.34")
+  expect_match(note, "installed: 0\\.7\\.35")
+  expect_match(note, "loaded namespace")
+  expect_match(note, "deploy lib")
+})
+
 test_that("read_build_sha_file reads bundled shiny stamp", {
   path <- system.file("shiny", "BUNDLE_SHA", package = "replicateEverything")
   skip_if_not(nzchar(path))

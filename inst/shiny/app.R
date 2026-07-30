@@ -714,8 +714,14 @@ replicate_everything_build_info <- function() {
     nzchar(disk_ver) && nzchar(ns_ver) && !identical(disk_ver, ns_ver)
   }
   version_stale <- nzchar(deploy_version) && !identical(deploy_version, version)
+  deploy_lib_stale <- isTRUE(
+    nzchar(deploy_lib) &&
+      nzchar(library_path) &&
+      !identical(normalizePath(deploy_lib, winslash = "/", mustWork = FALSE), library_path)
+  )
   list(
     version = version,
+    deploy_version = deploy_version,
     package_sha = package_sha,
     app_sha = app_sha,
     sha = package_sha,
@@ -726,11 +732,7 @@ replicate_everything_build_info <- function() {
     git_root = git$repo_root,
     library_path = library_path,
     deploy_lib = deploy_lib,
-    deploy_lib_stale = isTRUE(
-      nzchar(deploy_lib) &&
-        nzchar(library_path) &&
-        !identical(normalizePath(deploy_lib, winslash = "/", mustWork = FALSE), library_path)
-    ),
+    deploy_lib_stale = deploy_lib_stale,
     namespace_stale = namespace_stale,
     version_stale = version_stale,
     app_bundle_mismatch = isTRUE(
@@ -738,13 +740,7 @@ replicate_everything_build_info <- function() {
         nzchar(package_sha %||% "") &&
         !identical(app_sha, package_sha)
     ),
-    app_stale = isTRUE(
-      version_stale ||
-        namespace_stale ||
-        (nzchar(deploy_lib) &&
-          nzchar(library_path) &&
-          !identical(normalizePath(deploy_lib, winslash = "/", mustWork = FALSE), library_path))
-    )
+    app_stale = isTRUE(version_stale || namespace_stale || deploy_lib_stale)
   )
 }
 
@@ -773,32 +769,58 @@ replicate_everything_build_label <- function() {
   paste(parts, collapse = " · ")
 }
 
+# Deploy-stamp / namespace mismatches are reported in the footer only
+# (see shiny_app_stale_footer_note_ui). Kept as a no-op so deferred-banner
+# call sites stay stable across partially updated deploy copies.
 shiny_app_stale_banner_ui <- function() {
-  info <- replicate_everything_build_info()
-  if (!isTRUE(info$app_stale)) {
+  NULL
+}
+
+shiny_app_stale_footer_note <- function(info = replicate_everything_build_info()) {
+  if (requireNamespace("replicateEverything", quietly = TRUE)) {
+    ns <- asNamespace("replicateEverything")
+    if (exists("format_shiny_deploy_stale_note", envir = ns, inherits = FALSE)) {
+      return(tryCatch(
+        get("format_shiny_deploy_stale_note", envir = ns)(
+          version_stale = info$version_stale,
+          deploy_version = info$deploy_version %||% "",
+          installed_version = info$version %||% "",
+          deploy_lib_stale = info$deploy_lib_stale,
+          namespace_stale = info$namespace_stale
+        ),
+        error = function(e) NULL
+      ))
+    }
+  }
+  # Inline fallback for workers whose installed package predates the helper.
+  notes <- character()
+  deploy_version <- as.character(info$deploy_version %||% "")
+  installed_version <- as.character(info$version %||% "")
+  if (isTRUE(info$version_stale) && nzchar(deploy_version) && nzchar(installed_version) &&
+      !identical(deploy_version, installed_version)) {
+    notes <- c(
+      notes,
+      paste0("stamp version: ", deploy_version, " · installed: ", installed_version, " [possibly stale]")
+    )
+  }
+  if (isTRUE(info$namespace_stale)) {
+    notes <- c(notes, "loaded namespace \u2260 installed [restart workers]")
+  }
+  if (isTRUE(info$deploy_lib_stale)) {
+    notes <- c(notes, "deploy lib \u2260 loaded package")
+  }
+  if (!length(notes)) {
     return(NULL)
   }
-  detail <- if (isTRUE(info$namespace_stale)) {
-    paste0(
-      "This Shiny worker loaded an older replicateEverything namespace. ",
-      "Restart Shiny Server / Connect after updating the package."
-    )
-  } else if (isTRUE(info$version_stale)) {
-    paste0(
-      "Deploy stamp version differs from the installed package (",
-      info$version, "). Run ",
-      "replicateEverything::save_local_shiny('<deploy-dir>') after updating."
-    )
-  } else if (isTRUE(info$deploy_lib_stale)) {
-    "Deploy library path differs from the loaded package. Re-run save_local_shiny() from the current R library."
-  } else {
-    "Deployment metadata looks stale relative to the installed package."
+  paste(notes, collapse = " · ")
+}
+
+shiny_app_stale_footer_note_ui <- function() {
+  note <- shiny_app_stale_footer_note()
+  if (is.null(note) || !nzchar(note)) {
+    return(NULL)
   }
-  tags$div(
-    class = "alert alert-warning py-2 px-3 mb-0 rounded-0 border-0 border-bottom",
-    tags$strong("Shiny deployment may be stale. "),
-    detail
-  )
+  tags$span(class = "text-warning", note)
 }
 
 shiny_display_only_banner_ui <- function() {
@@ -839,7 +861,6 @@ shiny_auto_update_banner_ui <- function() {
 }
 
 app_build_footer_ui <- function() {
-  info <- replicate_everything_build_info()
   tags$footer(
     class = "app-footer text-muted small px-3 py-2 border-top",
     tags$div(
@@ -850,12 +871,7 @@ app_build_footer_ui <- function() {
         # Reactive slot: a health-bar rendering failure shows a discreet
         # maintainer note here instead of a red Shiny error banner up top.
         uiOutput("app_footer_health_note", inline = TRUE),
-        if (isTRUE(info$deploy_lib_stale)) {
-          tags$span(
-            class = "text-warning",
-            "deploy lib differs from loaded package"
-          )
-        }
+        shiny_app_stale_footer_note_ui()
       )
     )
   )

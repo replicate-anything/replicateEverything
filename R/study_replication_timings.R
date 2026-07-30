@@ -117,15 +117,36 @@ record_study_replication_timing <- function(
   }
   timings$steps[[step_id]] <- rec
   timings$generated_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  # Atomic write: Dropbox-paused / locked destination can make a direct
+  # write_json fail silently under the old tryCatch; stage to a sibling temp
+  # then rename so a successful bake always leaves a readable timings file.
+  tmp <- paste0(path, ".tmp")
   ok <- tryCatch({
     jsonlite::write_json(
       timings,
-      path,
+      tmp,
       auto_unbox = TRUE,
       pretty = TRUE,
       null = "null"
     )
-    TRUE
-  }, error = function(e) FALSE)
+    if (file.exists(path)) {
+      unlink(path)
+    }
+    file.rename(tmp, path) || {
+      file.copy(tmp, path, overwrite = TRUE)
+      unlink(tmp)
+      file.exists(path)
+    }
+  }, error = function(e) {
+    if (file.exists(tmp)) {
+      unlink(tmp)
+    }
+    warning(
+      "record_study_replication_timing: could not write ", path, ": ",
+      conditionMessage(e),
+      call. = FALSE
+    )
+    FALSE
+  })
   invisible(if (isTRUE(ok)) path else NULL)
 }

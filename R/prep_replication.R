@@ -554,8 +554,10 @@ collect_required_prep_ids <- function(meta, replications) {
 
 #' Prep / transform steps to run before building display artifacts
 #'
-#' When \code{display_reps} is \code{NULL}, returns every transform step.
-#' Otherwise returns only ancestors required by the given display steps.
+#' When \code{display_reps} is \code{NULL}, returns every runnable transform
+#' step (skips \code{incomplete:} / blocked paths such as Mathematica-only
+#' siblings). Otherwise returns only ancestors required by the given display
+#' steps, still excluding incomplete entries.
 #'
 #' @param meta Parsed replication metadata.
 #' @param display_reps Optional list of table/figure entries being built.
@@ -563,7 +565,8 @@ collect_required_prep_ids <- function(meta, replications) {
 prep_steps_for_build <- function(meta, display_reps = NULL) {
   steps <- tryCatch(normalize_study_steps(meta), error = function(e) list())
   all_prep <- steps[vapply(steps, function(x) {
-    is_pipeline_step_type(x$type %||% "")
+    is_pipeline_step_type(x$type %||% "") &&
+      !isTRUE(x$incomplete %||% FALSE)
   }, logical(1))]
   if (length(all_prep) == 0L) {
     return(list())
@@ -626,6 +629,7 @@ run_build_prep_steps <- function(
   for (prep in prep_steps) {
     step_id <- as.character(prep$id)
     message("Running prep step: ", step_id, " ...")
+    t0 <- proc.time()[["elapsed"]]
     status <- tryCatch({
       if (!force && prep_output_ready(prep, ctx, meta = meta)) {
         path <- prep_output_path(prep, ctx, meta = meta)
@@ -645,7 +649,8 @@ run_build_prep_steps <- function(
         list(
           status = "ok",
           output = prep_manifest_output_path(path, study_root),
-          source = result$source %||% "prep"
+          source = result$source %||% "prep",
+          engine = result$engine %||% result$language %||% NULL
         )
       }
     }, error = function(e) {
@@ -657,6 +662,20 @@ run_build_prep_steps <- function(
       failures <<- c(failures, paste0(step_id, ": ", msg))
       list(status = "error", message = msg)
     })
+    # Record only freshly run prep (not cache hits) so bake timings stay real.
+    if (identical(status$status, "ok") && !is.null(study_root) && nzchar(study_root)) {
+      elapsed <- proc.time()[["elapsed"]] - t0
+      tryCatch(
+        record_study_replication_timing(
+          study_root,
+          step_id,
+          elapsed,
+          engine = status$engine
+        ),
+        error = function(e) NULL
+      )
+    }
+    status$engine <- NULL
     statuses[[step_id]] <- status
   }
 

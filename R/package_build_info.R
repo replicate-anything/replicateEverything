@@ -467,6 +467,51 @@ write_shiny_bundle_sha <- function(dest, package = "replicateEverything") {
   invisible(sha)
 }
 
+#' Brief footer note when deploy stamp disagrees with the running package
+#'
+#' Used by the Shiny footer instead of a top-of-page warning banner. Returns
+#' \code{NULL} when there is nothing to report.
+#'
+#' @param version_stale Logical; deploy stamp version differs from installed.
+#' @param deploy_version Version string recorded in \code{deploy-options.R}.
+#' @param installed_version Currently installed package version.
+#' @param deploy_lib_stale Logical; deploy library path differs from loaded.
+#' @param namespace_stale Logical; loaded namespace version differs from disk.
+#' @return Character scalar note, or \code{NULL}.
+#' @keywords internal
+format_shiny_deploy_stale_note <- function(
+  version_stale = FALSE,
+  deploy_version = "",
+  installed_version = "",
+  deploy_lib_stale = FALSE,
+  namespace_stale = FALSE
+) {
+  notes <- character()
+  deploy_version <- as.character(deploy_version[[1L]] %||% "")
+  installed_version <- as.character(installed_version[[1L]] %||% "")
+  if (isTRUE(version_stale) && nzchar(deploy_version) && nzchar(installed_version) &&
+      !identical(deploy_version, installed_version)) {
+    notes <- c(
+      notes,
+      sprintf(
+        "stamp version: %s · installed: %s [possibly stale]",
+        deploy_version,
+        installed_version
+      )
+    )
+  }
+  if (isTRUE(namespace_stale)) {
+    notes <- c(notes, "loaded namespace ≠ installed [restart workers]")
+  }
+  if (isTRUE(deploy_lib_stale)) {
+    notes <- c(notes, "deploy lib ≠ loaded package")
+  }
+  if (!length(notes)) {
+    return(NULL)
+  }
+  paste(notes, collapse = " · ")
+}
+
 #' Read deploy stamp options from deploy-options.R without sourcing
 #'
 #' @param deploy_dir Deploy directory.

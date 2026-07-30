@@ -1,3 +1,37 @@
+# replicateEverything 0.7.38
+
+## Shiny: move stale-deploy warning into footer
+
+* The yellow/orange **"Shiny deployment may be stale"** top banner is removed.
+  Deploy-stamp mismatches (version, library path, or loaded namespace) now show
+  only as a brief footer note next to the existing version/`pkg`/`app` line,
+  e.g. `stamp version: 0.7.34 · installed: 0.7.35 [possibly stale]`.
+* When stamp and installed package agree, the footer shows **no** extra stale
+  text (matching SHAs alone already signal a consistent deploy).
+
+# replicateEverything 0.7.37
+
+## Fix: bake timings recorded from build_study_outputs
+
+* [build_display_artifact_entries()] and [run_build_prep_steps()] now call
+  [record_study_replication_timing()] after each successful (non-cached)
+  step. Overnight `build_study_outputs()` runs were rewriting figures/tables
+  without refreshing `outputs/replication_timings.json` because only
+  [run_replication()] recorded timings.
+* [record_study_replication_timing()] writes via a sibling `.tmp` then rename
+  (with warning on failure) so Dropbox-paused locks are less likely to leave
+  a stale timings file with no error signal.
+
+# replicateEverything 0.7.36
+
+## Fix: skip incomplete prep siblings during full bake
+
+* [prep_steps_for_build()] / [build_study_outputs()] no longer run
+  `incomplete: true` transform steps (e.g. Hahn
+  `compute_mvpf_main_mathematica`) when baking all outputs. Full bake now
+  walks ancestors of display steps and skips blocked engine paths, so a
+  missing `wolframscript` cannot abort an operable Stata+R bake.
+
 # replicateEverything 0.7.35
 
 ## Shiny launch: frontload Studies UI + health counts; defer auto-update

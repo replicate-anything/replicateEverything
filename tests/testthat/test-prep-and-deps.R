@@ -73,6 +73,41 @@ test_that("prep_steps_for_build selects required prep in DAG order", {
   expect_length(all_steps, 3L)
 })
 
+test_that("prep_steps_for_build skips incomplete transforms", {
+  meta <- list(
+    steps = list(
+      list(id = "macros", type = "transform"),
+      list(
+        id = "compute_mvpf_main",
+        type = "transform",
+        parents = list("macros")
+      ),
+      list(
+        id = "compute_mvpf_main_mathematica",
+        type = "transform",
+        parents = list("macros"),
+        incomplete = TRUE,
+        requires_engine = "mathematica"
+      ),
+      list(
+        id = "tab_1",
+        type = "table",
+        parents = list("compute_mvpf_main")
+      )
+    )
+  )
+  prep <- replicateEverything:::prep_steps_for_build(
+    meta,
+    replicateEverything:::folder_display_replications(meta)
+  )
+  ids <- vapply(prep, function(x) as.character(x$id), character(1))
+  expect_true("compute_mvpf_main" %in% ids)
+  expect_false("compute_mvpf_main_mathematica" %in% ids)
+  all_prep <- replicateEverything:::prep_steps_for_build(meta, NULL)
+  all_ids <- vapply(all_prep, function(x) as.character(x$id), character(1))
+  expect_false("compute_mvpf_main_mathematica" %in% all_ids)
+})
+
 test_that("collect_required_prep_ids follows transitive parents", {
   meta <- list(
     steps = list(
