@@ -68,39 +68,19 @@ reference:
   - get_study
   - summary_study
   - summary.replicate_study
-  - print.replicate_study
   - list_replications
-  - paper_article_url
-  - paper_source_repository
-  - paper_source_repositories
-  - source_repository_kind
-  - source_repository_href
-  - registry_source_repository_gaps
 - title: 'Contribute: build & check'
   desc: Bake precomputed outputs and validate a study repo before registration.
   contents:
   - build_study_outputs
-  - check_replication
   - check_and_bake_study
-  - fetch_dataverse_file
-  - materialize_declared_data
-  - lookup_study_replication_timing
-  - read_study_replication_timings
-  - record_study_replication_timing
 - title: 'Maintainer: registry ops'
-  desc: Register studies, sync stubs, rebuild the index, and audit the registry.
+  desc: Register studies, refresh derived registry files, and audit the portfolio.
   contents:
   - register_study
-  - sync_study_to_registry
   - refresh_registry
-  - build_registry_index
-  - build_shiny_studies_cache
-  - load_shiny_studies_cache
-  - studies_table_data
   - audit_everything
-  - audit_result_status
-  - seed_registry_audit_jobs
-  - refresh_registry_audit_summary
+  - audit_report
 - title: 'Maintainer: setup & diagnostics'
   desc: Probe and install study dependencies; local monorepo and deploy diagnostics.
   contents:

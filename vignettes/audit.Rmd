@@ -38,7 +38,7 @@ Key behaviour:
 - **Incomplete / unavailable steps are skipped** — yaml `incomplete: true` (including `requires_engine:` / `data_unavailable:` gaps) is **not** attempted. Rows are recorded with status **Skipped** and a reason, and are **not** counted as success or failure. Distinct from fail/timeout.
 - **Report fields** — study, object id, engine, success, skipped flag, elapsed seconds, timeout_seconds (audit cap), timed-out flag, and a short error / skip-reason snippet.
 - **Substantive checks** (default `substantive = TRUE`) — when a study defines `tests/substantive/<step_id>.R`, the audit compares replicated estimates to published benchmarks (see Fearon & Laitin `tab_1`). Failures appear as `[substantive]` in the printed summary.
-- **Related studies** are compiled when the registry index is rebuilt (`build_registry_index()`): upstream from `paper.related` / `paper.extends`, downstream by reversing those pointers. Use `summary(get_study(doi))` for a quick console view; the audit itself does not re-fetch related links per run.
+- **Related studies** are compiled when the registry index is rebuilt ([refresh_registry()] / internal index build): upstream from `paper.related` / `paper.extends`, downstream by reversing those pointers. Use `summary(get_study(doi))` for a quick console view; the audit itself does not re-fetch related links per run.
 
 ```{r, eval = FALSE}
 library(replicateEverything)
@@ -54,9 +54,9 @@ audit <- audit_everything(patience = 20)
 print(audit)
 ```
 
-## Incremental CSV job store (0.7.40)
+## Incremental CSV job store
 
-As of replicateEverything **0.7.40**, registry audits no longer replace the whole portfolio snapshot on every call. When a registry root is set, each run **upserts** into a flat CSV and rebuilds derived files from the **full** store.
+As of replicateEverything **0.7.40+**, registry audits no longer replace the whole portfolio snapshot on every call. When a registry root is set, each run **upserts** into a flat CSV and rebuilds derived files from the **full** store.
 
 ### Source of truth: `registry/audit_jobs.csv`
 
@@ -67,6 +67,31 @@ As of replicateEverything **0.7.40**, registry audits no longer replace the whol
 | `audit_latest.rds` | Derived full `audit_everything` object rebuilt from the CSV |
 
 Upsert means: rows for jobs in this run are updated; every other study’s rows stay put. A one-DOI or one-collection audit therefore **does not wipe** the Shiny health bar or drop other studies from the derived summary.
+
+### Maintainer verbs (0.7.41)
+
+Four public maintainer verbs cover registration and audit:
+
+| Verb | Role |
+|------|------|
+| [register_study()] | Validate + sync one study stub into the registry |
+| [refresh_registry()] | **Light by default**: rebuild index + Shiny cache, seed CSV gaps, rebuild summary. Pass `audit = TRUE` or `audit = <dois>` for live runs |
+| [audit_everything()] | Manual / heavy / Quarto live audit |
+| [audit_report()] | **Read-only** portfolio health from CSV / summary (no writes) |
+
+```{r, eval = FALSE}
+# Light refresh (no live engines)
+refresh_registry("registry")
+
+# Light refresh + full live audit
+refresh_registry("registry", audit = TRUE, patience = 20)
+
+# Light refresh + subset live audit
+refresh_registry("registry", audit = "10.1257/aer.91.5.1369")
+
+# Read-only console / dataframe view
+audit_report("registry")
+```
 
 ### Full portfolio vs add / refresh a subset
 
@@ -79,27 +104,11 @@ audit <- audit_everything(patience = 30, dois = "10.1257/aer.91.5.1369")
 audit <- audit_everything(patience = 20, collections = "APSR")
 ```
 
-After either kind of run, disk holds the **full** portfolio: `write_registry_audit_record()` merges this run into `audit_jobs.csv`, then rebuilds JSON and RDS from every CSV row.
+After either kind of run, disk holds the **full** portfolio: the run merges into `audit_jobs.csv`, then rebuilds JSON and RDS from every CSV row.
 
 ### Seed without live runs
 
-`seed_registry_audit_jobs()` fills gaps so the health bar is not empty before the first full audit. It does **not** execute replications.
-
-- From a prior `audit_latest.rds` (`from_rds = TRUE`)
-- From bake timings / local artifact mtimes as provisional ok rows (`from_bake = TRUE`)
-- Existing `source = "audit"` rows are kept; bake/artifact rows only fill gaps (or refresh provisional bake rows)
-
-```{r, eval = FALSE}
-seed_registry_audit_jobs(registry_root = "registry")
-```
-
-### Rebuild summary from CSV only
-
-`refresh_registry_audit_summary()` rewrites `audit_summary.json` and `audit_latest.rds` from the current CSV without running audits. Use after manual CSV edits or after seeding.
-
-```{r, eval = FALSE}
-refresh_registry_audit_summary(registry_root = "registry")
-```
+[refresh_registry()] (default `audit = FALSE`) seeds gaps so the health bar is not empty before the first full audit. It does **not** execute replications: prior `audit_latest.rds`, bake timings / artifact mtimes fill missing rows; existing `source = "audit"` rows are kept.
 
 A normal `audit_everything()` already upserts and refreshes derived files; you do not need a separate rebuild after a live audit.
 
@@ -249,7 +258,7 @@ studies <- unique(results$title)
 for (study in studies) {
   cat("\n\n#### ", study, "\n\n", sep = "")
   sub <- results[results$title == study, , drop = FALSE]
-  sub$status <- replicateEverything::audit_result_status(
+  sub$status <- replicateEverything:::audit_result_status(
     sub$success, sub$timed_out, sub$skipped
   )
   sub$seconds <- ifelse(is.na(sub$seconds), NA, round(sub$seconds, 2))
@@ -272,7 +281,7 @@ if (nrow(fails) == 0) {
   cat("All recorded runnable jobs succeeded (or were skipped).\n")
 } else {
   fails$seconds <- ifelse(is.na(fails$seconds), NA, round(fails$seconds, 2))
-  fails$status <- replicateEverything::audit_result_status(
+  fails$status <- replicateEverything:::audit_result_status(
     fails$success, fails$timed_out, fails$skipped
   )
   show <- fails[, c(
@@ -338,8 +347,10 @@ file.copy(
 # Full HTML report: quarto render audit_everything.qmd (in the registry repo)
 ```
 
-After adding or updating registry stubs, maintainers typically run [refresh_registry()] so `index.csv` and the audit stay in sync:
+After adding or updating registry stubs, maintainers typically run [refresh_registry()] so `index.csv`, the Shiny cache, and the audit summary stay in sync:
 
 ```{r, eval = FALSE}
+refresh_registry("../registry")                      # light
 refresh_registry("../registry", audit = TRUE, patience = 20)
+audit_report("../registry")
 ```

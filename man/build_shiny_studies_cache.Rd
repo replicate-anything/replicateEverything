@@ -29,9 +29,4 @@ Called from \code{\link[=build_registry_index]{build_registry_index()}}. Gap fla
 \code{notes:} (written by \code{\link[=sync_study_to_registry]{sync_study_to_registry()}}), declared languages
 (mathematica → missing engine), and the latest audit snapshot when present.
 }
-\examples{
-\dontrun{
-build_shiny_studies_cache("../registry")
-}
-
-}
+\keyword{internal}

@@ -520,12 +520,7 @@ shiny_studies_record_from_row <- function(
 #' @param metas Optional list of stub metas aligned with \code{index} rows.
 #' @return Invisibly, a list with \code{path}, \code{n}, and \code{cache}.
 #'
-#' @examples
-#' \dontrun{
-#' build_shiny_studies_cache("../registry")
-#' }
-#'
-#' @export
+#' @keywords internal
 build_shiny_studies_cache <- function(
   registry_root,
   index = NULL,
@@ -623,13 +618,7 @@ shiny_studies_mtime_token <- function(path) {
 #' @return List with \code{studies}, \code{n}, \code{generated_at},
 #'   \code{schema_version}, and \code{source} / \code{mtime}.
 #'
-#' @examples
-#' \dontrun{
-#' cache <- load_shiny_studies_cache()
-#' length(cache$studies)
-#' }
-#'
-#' @export
+#' @keywords internal
 load_shiny_studies_cache <- function(registry_root = NULL, force = FALSE) {
   if (is.null(registry_root) || !nzchar(as.character(registry_root))) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
@@ -708,12 +697,7 @@ load_shiny_studies_cache <- function(registry_root = NULL, force = FALSE) {
 #'   \code{"__all_studies__"} for all.
 #' @return List of study records.
 #'
-#' @examples
-#' \dontrun{
-#' rows <- studies_table_data(load_shiny_studies_cache(), collection = "APSR")
-#' }
-#'
-#' @export
+#' @keywords internal
 studies_table_data <- function(cache, collection = NULL) {
   studies <- if (is.list(cache) && !is.null(cache$studies)) {
     cache$studies

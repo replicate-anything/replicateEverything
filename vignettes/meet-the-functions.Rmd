@@ -212,15 +212,14 @@ Study repos hold `replication.yml`, `code/`, `data/`, and `outputs/`. See `vigne
 build_study_outputs(".", install_deps = TRUE)
 ```
 
-[check_replication()] runs a transparent checklist: layout, yaml, outputs, tests, and optional live runs.
+[check_and_bake_study()] is the contributor entrypoint: optional bake of
+`outputs/`, then a transparent checklist (layout, yaml, outputs, tests, and
+optional live runs). It writes nothing into a registry.
 
 ```{r}
-check_replication(".", full_replication = FALSE)
+check_and_bake_study(".", build_artifacts = TRUE)
+check_and_bake_study(".", build_artifacts = FALSE, full_replication = FALSE)
 ```
-
-`check_and_bake_study()` runs the same checklist and (optionally) bakes
-`outputs/` first — the single contributor entrypoint. It writes nothing into
-the study repo or a registry; it only validates.
 
 Before running the full checklist, a manual smoke check with `"local"` is a
 fast way to confirm the study resolves and runs — no registry required:
@@ -236,19 +235,15 @@ check_and_bake_study(".", build_artifacts = TRUE)
 ### Registry sync (maintainer)
 
 There is **no study-local registry handoff**. A maintainer with a local
-registry checkout writes the stub directly from the study's `replication.yml`:
+registry checkout registers from the study's `replication.yml`, then refreshes
+derived files:
 
 ```{r}
 options(replicateEverything.registry_root = "../registry")
-sync_study_to_registry("../rep-10.1177-00491241211036161")
-refresh_registry("../registry", audit = TRUE)
-```
-
-`register_study()` runs `check_and_bake_study()` then `sync_study_to_registry()`
-in one call:
-
-```{r}
 register_study("../rep-10.1177-00491241211036161", registry_root = "../registry")
+refresh_registry("../registry")                 # light: index + seed + summary
+refresh_registry("../registry", audit = TRUE)   # also run live audit
+audit_report("../registry")                     # read-only health view
 ```
 
 See `vignette("maintainer-setup")` for the full maintainer workflow.
@@ -270,12 +265,12 @@ Package-backed studies must **not** define or ship `run_replication()`,
 `list_replications()`, `load_artifact()`, or `get_code()` — those verbs live
 only in **replicateEverything**. Study packages export pure `make_*()` /
 `format_*()` analysis helpers named in yaml. Validate with
-[check_replication()] (or [check_and_bake_study()]), then a maintainer syncs
-the stub with `sync_study_to_registry()` — no `inst/registry/` handoff files.
+[check_and_bake_study()], then a maintainer registers with `register_study()`
+— no `inst/registry/` handoff files.
 
 ```{r}
-check_replication("../rep-10.1371-journal.pone.0278337")
-check_replication("../rep-10.1371-journal.pone.0278337", full_replication = TRUE)
+check_and_bake_study("../rep-10.1371-journal.pone.0278337")
+check_and_bake_study("../rep-10.1371-journal.pone.0278337", full_replication = TRUE)
 ```
 
 See `vignette("package-replication-checklist")` for layout and API requirements.
@@ -317,14 +312,11 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | Install deps (all studies) | `install_dependencies("everywhere")` |
 | Build study outputs | `build_study_outputs()` |
 | Validate (+ optional bake) | `check_and_bake_study()` |
-| Validate study (checklist only) | `check_replication()` |
 | Check precomputed outputs | `validate_outputs()` |
 | **Maintainer** | |
-| Validate then sync in one call | `register_study()` |
-| Sync study into registry | `sync_study_to_registry()` |
-| Rebuild index + audit all | `refresh_registry()` |
-| Rebuild index only | `build_registry_index()` |
+| Validate then sync | `register_study()` |
+| Light refresh (index + seed + summary) | `refresh_registry()` |
+| Light refresh + live audit | `refresh_registry(audit = TRUE)` or `audit = <dois>` |
+| Live audit (manual / Quarto) | `audit_everything()` |
+| Read-only portfolio health | `audit_report()` |
 | Registry output check | `validate_outputs(doi = "everywhere", what = "everything")` |
-| Registry health check | `audit_everything()` |
-| Seed audit jobs CSV (no live runs) | `seed_registry_audit_jobs()` |
-| Rebuild audit summary from CSV | `refresh_registry_audit_summary()` |

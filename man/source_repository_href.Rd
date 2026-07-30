@@ -16,3 +16,4 @@ Character URL, or \code{NULL}.
 Returns an http(s) URL when \code{value} is already a link, or maps the
 bare credit \code{"replicateEverything"} to the package GitHub page.
 }
+\keyword{internal}

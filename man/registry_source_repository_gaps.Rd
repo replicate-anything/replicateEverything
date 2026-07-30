@@ -19,3 +19,4 @@ source repository credit.
 Reads registry stubs (and falls back to legacy aliases). Used by
 \code{\link[=audit_everything]{audit_everything()}} summary and maintainer messaging.
 }
+\keyword{internal}

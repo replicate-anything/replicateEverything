@@ -31,3 +31,4 @@ Writes (or updates) \code{outputs/replication_timings.json} under the study
 root. Safe to call from bake helpers; failures are swallowed so they never
 break a successful replication.
 }
+\keyword{internal}

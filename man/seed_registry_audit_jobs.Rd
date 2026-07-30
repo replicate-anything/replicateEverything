@@ -33,3 +33,4 @@ Populates missing study×step rows so the health bar is not empty before the
 first full portfolio audit. Existing \code{source = "audit"} rows are kept;
 bake/artifact rows only fill gaps (or refresh provisional bake rows).
 }
+\keyword{internal}

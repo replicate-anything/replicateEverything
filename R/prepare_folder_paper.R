@@ -92,12 +92,13 @@ check_and_bake_study <- function(
   invisible(structure(result, class = cls))
 }
 
-#' Sync a study into the registry repository (maintainer)
+#' Sync a study into the registry repository (internal)
 #'
 #' Builds a lightweight registry stub from the study's root `replication.yml`
 #' (via [build_registry_stub_from_meta()]) and writes it to
 #' `studies/<folder>.yml` in a registry checkout, then rebuilds `index.csv`
-#' via [build_registry_index()].
+#' via [build_registry_index()]. Prefer the public [register_study()] entry
+#' point for validate-then-sync.
 #'
 #' Stub and index files belong in the **registry** repository only — not in the
 #' study repo.
@@ -111,14 +112,7 @@ check_and_bake_study <- function(
 #' @param verbose Passed to [audit_everything()] when `audit = TRUE`.
 #' @return Invisibly, a list with `stub_path`, `index_updated`, `folder`, and
 #'   optional `audit`.
-#'
-#' @examples
-#' \dontrun{
-#' options(replicateEverything.registry_root = "../registry")
-#' sync_study_to_registry(".")
-#' }
-#'
-#' @export
+#' @keywords internal
 sync_study_to_registry <- function(
   location = ".",
   registry_root = NULL,
@@ -202,8 +196,9 @@ sync_study_to_registry <- function(
 
 #' Validate then sync a study into the registry (maintainer)
 #'
-#' Runs [check_and_bake_study()] then [sync_study_to_registry()]. Use when a
-#' maintainer has a study checkout and a local registry checkout.
+#' Runs [check_and_bake_study()] then syncs a lightweight stub into the local
+#' registry checkout and rebuilds `index.csv`. Use when a maintainer has a
+#' study checkout and a registry checkout.
 #'
 #' @inheritParams check_and_bake_study
 #' @param dry_run If `TRUE`, run checks only; do not write registry files.
@@ -211,6 +206,12 @@ sync_study_to_registry <- function(
 #' @return Invisibly, the checklist result; when registration succeeds, also
 #'   includes `stub_path` and `index_updated`.
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#' options(replicateEverything.registry_root = "../registry")
+#' register_study(".", registry_root = "../registry")
+#' }
 register_study <- function(
   location = ".",
   build_artifacts = FALSE,
@@ -250,32 +251,46 @@ register_study <- function(
   invisible(result)
 }
 
-#' Refresh the registry index and optionally rerun the full audit (maintainer)
+#' Refresh registry derived files (maintainer; light by default)
 #'
-#' Recompiles `index.csv` from all `studies/*.yml` stubs, then optionally runs
-#' [audit_everything()] across the registry.
+#' Light path (`audit = FALSE`, default):
+#' 1. Rebuild `index.csv` from `studies/*.yml` stubs
+#' 2. Rebuild `shiny_studies.json` (via [build_registry_index()])
+#' 3. Seed `audit_jobs.csv` gaps from bake timings / artifacts / prior RDS
+#'    (no live engines)
+#' 4. Rebuild `audit_summary.json` / `audit_latest.rds` (Shiny health bar)
+#'
+#' Heavy path: set `audit = TRUE` for a full live [audit_everything()], or pass
+#' a character vector of DOIs/handles to audit only those studies. Live audit
+#' always runs after the light path and refreshes the derived summary.
 #'
 #' @param registry_root Path to the registry repository root.
-#' @param audit If `TRUE`, run [audit_everything()] after rebuilding the index.
+#' @param audit `FALSE` (default) for light refresh only; `TRUE` for a full
+#'   live audit; or a character vector of DOIs/handles for a subset audit.
 #' @param patience Seconds per replication when auditing.
 #' @param install_deps Passed to [audit_everything()].
-#' @param verbose Passed to [audit_everything()].
+#' @param verbose Passed to seed / [audit_everything()].
 #' @param substantive Passed to [audit_everything()].
-#' @return Invisibly, a list with `index` and optional `audit`.
+#' @param seed If `TRUE` (default), fill audit CSV gaps before rebuilding the
+#'   summary. Set `FALSE` to rebuild the summary from the existing CSV only.
+#' @return Invisibly, a list with `index`, optional `seed`, and optional `audit`.
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' options(replicateEverything.registry_root = "../registry")
-#' refresh_registry(audit = TRUE)
+#' refresh_registry()
+#' refresh_registry(audit = TRUE, patience = 20)
+#' refresh_registry(audit = "10.1177/00491241211036161")
 #' }
 refresh_registry <- function(
   registry_root = NULL,
-  audit = TRUE,
+  audit = FALSE,
   patience = 20,
   install_deps = FALSE,
   verbose = TRUE,
-  substantive = TRUE
+  substantive = TRUE,
+  seed = TRUE
 ) {
   if (is.null(registry_root) || !nzchar(registry_root)) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
@@ -287,15 +302,56 @@ refresh_registry <- function(
       call. = FALSE
     )
   }
+  registry_root <- normalizePath(registry_root, winslash = "/", mustWork = FALSE)
 
   index <- build_registry_index(registry_root)
   message("Rebuilt index: ", index$index_path, " (", index$n, " studies)")
+  if (!is.null(index$shiny_studies_path) && nzchar(index$shiny_studies_path)) {
+    message("Rebuilt Shiny studies cache: ", index$shiny_studies_path)
+  }
+
+  seed_out <- NULL
+  if (isTRUE(seed)) {
+    seed_out <- seed_registry_audit_jobs(
+      registry_root = registry_root,
+      index = index$index,
+      verbose = verbose
+    )
+  } else {
+    refresh_registry_audit_summary(registry_root = registry_root)
+  }
 
   audit_out <- NULL
+  audit_dois <- NULL
+  run_live <- FALSE
   if (isTRUE(audit)) {
-    message("Running audit_everything across the registry")
+    run_live <- TRUE
+  } else if (is.character(audit)) {
+    audit_dois <- unique(trimws(as.character(audit)))
+    audit_dois <- audit_dois[nzchar(audit_dois)]
+    if (length(audit_dois) > 0L) {
+      run_live <- TRUE
+    }
+  } else if (!identical(audit, FALSE) && !is.null(audit)) {
+    stop(
+      "`audit` must be FALSE, TRUE, or a character vector of DOIs/handles.",
+      call. = FALSE
+    )
+  }
+
+  if (isTRUE(run_live)) {
+    if (is.null(audit_dois)) {
+      message("Running audit_everything across the registry")
+    } else {
+      message(
+        "Running audit_everything for ",
+        length(audit_dois),
+        " DOI(s)/handle(s)"
+      )
+    }
     audit_out <- audit_everything(
       patience = patience,
+      dois = audit_dois,
       install_deps = install_deps,
       verbose = verbose,
       registry_root = registry_root,
@@ -303,5 +359,5 @@ refresh_registry <- function(
     )
   }
 
-  invisible(list(index = index, audit = audit_out))
+  invisible(list(index = index, seed = seed_out, audit = audit_out))
 }

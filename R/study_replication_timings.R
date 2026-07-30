@@ -21,7 +21,7 @@ study_replication_timings_path <- function(study_root) {
 #' @param study_root Study repository root (or NULL to return empty).
 #' @return List with \code{generated_at} and \code{steps} (named list of
 #'   records with at least \code{seconds}).
-#' @export
+#' @keywords internal
 read_study_replication_timings <- function(study_root) {
   empty <- list(generated_at = NULL, steps = list())
   if (is.null(study_root) || !nzchar(as.character(study_root[[1]] %||% ""))) {
@@ -50,7 +50,7 @@ read_study_replication_timings <- function(study_root) {
 #' @param study_root Study root.
 #' @param step_id Step / replication id.
 #' @return Numeric seconds, or \code{NA_real_} when unknown.
-#' @export
+#' @keywords internal
 lookup_study_replication_timing <- function(study_root, step_id) {
   step_id <- as.character(step_id[[1L]] %||% "")
   if (!nzchar(step_id)) {
@@ -80,7 +80,7 @@ lookup_study_replication_timing <- function(study_root, step_id) {
 #' @param engine Optional engine label.
 #' @param status Optional status string (default \code{"ok"}).
 #' @return Invisibly, the path written (or \code{NULL} on skip/failure).
-#' @export
+#' @keywords internal
 record_study_replication_timing <- function(
   study_root,
   step_id,

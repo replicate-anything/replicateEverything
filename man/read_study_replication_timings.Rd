@@ -16,3 +16,4 @@ records with at least \code{seconds}).
 \description{
 Read study bake timings
 }
+\keyword{internal}

@@ -177,13 +177,14 @@ any file into the study package. A maintainer syncs directly from your
 ```{r, eval = FALSE}
 options(replicateEverything.registry_root = "../registry")
 
-sync_study_to_registry(
+register_study(
   "../rep-10.1371-journal.pone.0278337",
   registry_root = "../registry",
   audit = TRUE
 )
 
-# After several syncs:
+# After several registrations:
+refresh_registry("../registry")
 refresh_registry("../registry", audit = TRUE)
 ```
 

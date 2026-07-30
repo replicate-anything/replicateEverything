@@ -14,17 +14,7 @@
 #'   registry stub.
 #' @param meta Optional full parsed metadata (uses \code{meta$paper}).
 #' @return Character URL, or \code{NULL} when no link can be formed.
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' # Fearon & Laitin: registry stub supplies paper.article_url
-#' paper_article_url(doi = "10.1017/S0003055403000534")
-#' paper_article_url(doi = "10.1017/S0003055422000284")
-#' paper_article_url(doi = "10.1257/aer.91.5.1369")
-#' st <- get_study("10.1017/S0003055403000534")
-#' paper_article_url(doi = st$doi)
-#' }
+#' @keywords internal
 paper_article_url <- function(doi = NULL, paper = NULL, meta = NULL) {
   if (is.null(paper) && !is.null(meta)) {
     paper <- meta$paper %||% NULL

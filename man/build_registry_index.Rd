@@ -23,9 +23,4 @@ inferred by reversing those pointers across the registry. Also writes
 \code{\link[=build_shiny_studies_cache]{build_shiny_studies_cache()}} → \code{shiny_studies.json} for the Shiny
 Studies tab (no live yaml at list time).
 }
-\examples{
-\dontrun{
-build_registry_index("../registry")
-}
-
-}
+\keyword{internal}

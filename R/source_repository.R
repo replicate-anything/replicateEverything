@@ -33,7 +33,7 @@ normalize_source_repository_values <- function(val) {
 #'   registry stub.
 #' @param meta Optional full parsed metadata (uses \code{meta$paper}).
 #' @return Character vector (possibly empty).
-#' @export
+#' @keywords internal
 paper_source_repositories <- function(paper = NULL, meta = NULL) {
   if (is.null(paper) && !is.null(meta)) {
     paper <- meta$paper %||% NULL
@@ -63,7 +63,7 @@ paper_source_repositories <- function(paper = NULL, meta = NULL) {
 #'   registry stub.
 #' @param meta Optional full parsed metadata (uses \code{meta$paper}).
 #' @return Character scalar, or \code{NULL} when unset.
-#' @export
+#' @keywords internal
 paper_source_repository <- function(paper = NULL, meta = NULL) {
   vals <- paper_source_repositories(paper = paper, meta = meta)
   if (!length(vals)) {
@@ -81,7 +81,7 @@ paper_source_repository <- function(paper = NULL, meta = NULL) {
 #' @return One of \code{"dataverse"}, \code{"osf"}, \code{"worldbank"},
 #'   \code{"icpsr"}, \code{"git"}, \code{"personal"},
 #'   \code{"replicateEverything"}, or \code{"other"}.
-#' @export
+#' @keywords internal
 source_repository_kind <- function(value) {
   raw <- trimws(as.character(value %||% ""))
   if (!nzchar(raw)) {
@@ -172,7 +172,7 @@ source_repository_kind_label <- function(kind) {
 #'
 #' @param value Character from [paper_source_repository()].
 #' @return Character URL, or \code{NULL}.
-#' @export
+#' @keywords internal
 source_repository_href <- function(value) {
   raw <- trimws(as.character(value %||% ""))
   if (!nzchar(raw)) {
@@ -224,7 +224,7 @@ check_paper_source_repository <- function(paper) {
 #' @param index Optional index data frame.
 #' @return Character vector of study keys (DOI or handle) that are missing a
 #'   source repository credit.
-#' @export
+#' @keywords internal
 registry_source_repository_gaps <- function(registry_root = NULL, index = NULL) {
   root <- registry_root %||% getOption("replicateEverything.registry_root", NULL)
   if (is.null(root) || !nzchar(as.character(root)) || !dir.exists(root)) {

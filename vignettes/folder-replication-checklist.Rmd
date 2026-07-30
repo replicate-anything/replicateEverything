@@ -41,7 +41,7 @@ rep-<doi-slug>/
 
 There is **no study-local `registry/` folder**. A maintainer with a local
 registry checkout writes `studies/<folder>.yml` directly from this repo's
-root `replication.yml` via `sync_study_to_registry()` (step 4) — nothing is
+root `replication.yml` via `register_study()` (step 4) — nothing is
 generated or committed here.
 
 ## Required `replication.yml` fields
@@ -216,22 +216,22 @@ Maintainers work from a local [registry](https://github.com/replicate-anything/r
 ```{r, eval = FALSE}
 options(replicateEverything.registry_root = "../registry")
 
-sync_study_to_registry(
+register_study(
   "../rep-10.1177-00491241211036161",
   registry_root = "../registry"
 )
 ```
 
-This builds a lightweight stub straight from the study repo's root
+This validates the study, builds a lightweight stub from the study repo's root
 `replication.yml` (`maintainer`, `collections`, `languages`, and repo
 pointers — never the full `steps:` list), writes it to
-`registry/studies/<folder>.yml`, and runs [build_registry_index()].
-`register_study(".", registry_root = "../registry")` runs
-`check_and_bake_study()` then `sync_study_to_registry()` in one call.
+`registry/studies/<folder>.yml`, and rebuilds `index.csv`.
 
-After syncing several studies, refresh the whole registry and rerun the audit:
+After registering several studies, light-refresh derived files (and optionally
+run a live audit):
 
 ```{r, eval = FALSE}
+refresh_registry("../registry")
 refresh_registry("../registry", audit = TRUE, patience = 20)
 ```
 
@@ -266,7 +266,7 @@ Call the same function from `tests/testthat/test-<step_id>.R` so `testthat::test
 
 ```{r, eval = FALSE}
 options(replicateEverything.registry_root = "../registry")
-sync_study_to_registry("../rep-10.1177-00491241211036161", audit = TRUE)
+register_study("../rep-10.1177-00491241211036161", audit = TRUE)
 ```
 
 ## Reference implementations

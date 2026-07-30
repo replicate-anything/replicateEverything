@@ -36,6 +36,13 @@ Invisibly, the checklist result; when registration succeeds, also
 includes \code{stub_path} and \code{index_updated}.
 }
 \description{
-Runs \code{\link[=check_and_bake_study]{check_and_bake_study()}} then \code{\link[=sync_study_to_registry]{sync_study_to_registry()}}. Use when a
-maintainer has a study checkout and a local registry checkout.
+Runs \code{\link[=check_and_bake_study]{check_and_bake_study()}} then syncs a lightweight stub into the local
+registry checkout and rebuilds \code{index.csv}. Use when a maintainer has a
+study checkout and a registry checkout.
+}
+\examples{
+\dontrun{
+options(replicateEverything.registry_root = "../registry")
+register_study(".", registry_root = "../registry")
+}
 }

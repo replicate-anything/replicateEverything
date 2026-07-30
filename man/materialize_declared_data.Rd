@@ -34,11 +34,4 @@ Fetches files listed under \code{dataverse.files} / \code{data_files:} into
 their declared local \code{path}s when missing. Not a pipeline step — call
 automatically before runs, or explicitly for smoke checks.
 }
-\examples{
-\dontrun{
-# Blair et al. APSR: surgical Dataverse file wiring in replication.yml
-materialize_declared_data("10.1017/S0003055422000284")
-materialize_declared_data("10.1017/S0003055403000534")
-}
-
-}
+\keyword{internal}

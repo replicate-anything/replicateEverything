@@ -22,10 +22,4 @@ Prefers a local registry checkout's \code{shiny_studies.json}, then the
 GitHub raw URL. Memoized in-process keyed by path + mtime so Shiny tab
 switches do not rebuild.
 }
-\examples{
-\dontrun{
-cache <- load_shiny_studies_cache()
-length(cache$studies)
-}
-
-}
+\keyword{internal}

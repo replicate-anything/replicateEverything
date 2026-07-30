@@ -2,40 +2,58 @@
 % Please edit documentation in R/prepare_folder_paper.R
 \name{refresh_registry}
 \alias{refresh_registry}
-\title{Refresh the registry index and optionally rerun the full audit (maintainer)}
+\title{Refresh registry derived files (maintainer; light by default)}
 \usage{
 refresh_registry(
   registry_root = NULL,
-  audit = TRUE,
+  audit = FALSE,
   patience = 20,
   install_deps = FALSE,
   verbose = TRUE,
-  substantive = TRUE
+  substantive = TRUE,
+  seed = TRUE
 )
 }
 \arguments{
 \item{registry_root}{Path to the registry repository root.}
 
-\item{audit}{If \code{TRUE}, run \code{\link[=audit_everything]{audit_everything()}} after rebuilding the index.}
+\item{audit}{\code{FALSE} (default) for light refresh only; \code{TRUE} for a full
+live audit; or a character vector of DOIs/handles for a subset audit.}
 
 \item{patience}{Seconds per replication when auditing.}
 
 \item{install_deps}{Passed to \code{\link[=audit_everything]{audit_everything()}}.}
 
-\item{verbose}{Passed to \code{\link[=audit_everything]{audit_everything()}}.}
+\item{verbose}{Passed to seed / \code{\link[=audit_everything]{audit_everything()}}.}
 
 \item{substantive}{Passed to \code{\link[=audit_everything]{audit_everything()}}.}
+
+\item{seed}{If \code{TRUE} (default), fill audit CSV gaps before rebuilding the
+summary. Set \code{FALSE} to rebuild the summary from the existing CSV only.}
 }
 \value{
-Invisibly, a list with \code{index} and optional \code{audit}.
+Invisibly, a list with \code{index}, optional \code{seed}, and optional \code{audit}.
 }
 \description{
-Recompiles \code{index.csv} from all \verb{studies/*.yml} stubs, then optionally runs
-\code{\link[=audit_everything]{audit_everything()}} across the registry.
+Light path (\code{audit = FALSE}, default):
+\enumerate{
+\item Rebuild \code{index.csv} from \verb{studies/*.yml} stubs
+\item Rebuild \code{shiny_studies.json} (via \code{\link[=build_registry_index]{build_registry_index()}})
+\item Seed \code{audit_jobs.csv} gaps from bake timings / artifacts / prior RDS
+(no live engines)
+\item Rebuild \code{audit_summary.json} / \code{audit_latest.rds} (Shiny health bar)
+}
+}
+\details{
+Heavy path: set \code{audit = TRUE} for a full live \code{\link[=audit_everything]{audit_everything()}}, or pass
+a character vector of DOIs/handles to audit only those studies. Live audit
+always runs after the light path and refreshes the derived summary.
 }
 \examples{
 \dontrun{
 options(replicateEverything.registry_root = "../registry")
-refresh_registry(audit = TRUE)
+refresh_registry()
+refresh_registry(audit = TRUE, patience = 20)
+refresh_registry(audit = "10.1177/00491241211036161")
 }
 }

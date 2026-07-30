@@ -2,7 +2,7 @@
 % Please edit documentation in R/prepare_folder_paper.R
 \name{sync_study_to_registry}
 \alias{sync_study_to_registry}
-\title{Sync a study into the registry repository (maintainer)}
+\title{Sync a study into the registry repository (internal)}
 \usage{
 sync_study_to_registry(
   location = ".",
@@ -35,16 +35,11 @@ optional \code{audit}.
 Builds a lightweight registry stub from the study's root \code{replication.yml}
 (via \code{\link[=build_registry_stub_from_meta]{build_registry_stub_from_meta()}}) and writes it to
 \verb{studies/<folder>.yml} in a registry checkout, then rebuilds \code{index.csv}
-via \code{\link[=build_registry_index]{build_registry_index()}}.
+via \code{\link[=build_registry_index]{build_registry_index()}}. Prefer the public \code{\link[=register_study]{register_study()}} entry
+point for validate-then-sync.
 }
 \details{
 Stub and index files belong in the \strong{registry} repository only — not in the
 study repo.
 }
-\examples{
-\dontrun{
-options(replicateEverything.registry_root = "../registry")
-sync_study_to_registry(".")
-}
-
-}
+\keyword{internal}

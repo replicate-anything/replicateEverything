@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.41</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
+<li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/index.html">All articles</a></li>
@@ -123,11 +123,11 @@ replicated estimates to published benchmarks (see Fearon &amp; Laitin
 the printed summary.</li>
 <li>
 <strong>Related studies</strong> are compiled when the registry
-index is rebuilt (<code><a href="../reference/build_registry_index.html">build_registry_index()</a></code>): upstream from
-<code>paper.related</code> / <code>paper.extends</code>, downstream by
-reversing those pointers. Use <code>summary(get_study(doi))</code> for a
-quick console view; the audit itself does not re-fetch related links per
-run.</li>
+index is rebuilt ([refresh_registry()] / internal index build): upstream
+from <code>paper.related</code> / <code>paper.extends</code>, downstream
+by reversing those pointers. Use <code>summary(get_study(doi))</code>
+for a quick console view; the audit itself does not re-fetch related
+links per run.</li>
 </ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/replicate-anything/replicateEverything" class="external-link">replicateEverything</a></span><span class="op">)</span></span>
@@ -143,10 +143,10 @@ run.</li>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="incremental-csv-job-store-0-7-40">Incremental CSV job store (0.7.40)<a class="anchor" aria-label="anchor" href="#incremental-csv-job-store-0-7-40"></a>
+<h2 id="incremental-csv-job-store">Incremental CSV job store<a class="anchor" aria-label="anchor" href="#incremental-csv-job-store"></a>
 </h2>
-<p>As of replicateEverything <strong>0.7.40</strong>, registry audits no
-longer replace the whole portfolio snapshot on every call. When a
+<p>As of replicateEverything <strong>0.7.40+</strong>, registry audits
+no longer replace the whole portfolio snapshot on every call. When a
 registry root is set, each run <strong>upserts</strong> into a flat CSV
 and rebuilds derived files from the <strong>full</strong> store.</p>
 <div class="section level3">
@@ -187,9 +187,59 @@ study’s rows stay put. A one-DOI or one-collection audit therefore
 studies from the derived summary.</p>
 </div>
 <div class="section level3">
+<h3 id="maintainer-verbs-0-7-41">Maintainer verbs (0.7.41)<a class="anchor" aria-label="anchor" href="#maintainer-verbs-0-7-41"></a>
+</h3>
+<p>Four public maintainer verbs cover registration and audit:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Verb</th>
+<th>Role</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>[register_study()]</td>
+<td>Validate + sync one study stub into the registry</td>
+</tr>
+<tr class="even">
+<td>[refresh_registry()]</td>
+<td>
+<strong>Light by default</strong>: rebuild index + Shiny cache, seed
+CSV gaps, rebuild summary. Pass <code>audit = TRUE</code> or
+<code>audit = &lt;dois&gt;</code> for live runs</td>
+</tr>
+<tr class="odd">
+<td>[audit_everything()]</td>
+<td>Manual / heavy / Quarto live audit</td>
+</tr>
+<tr class="even">
+<td>[audit_report()]</td>
+<td>
+<strong>Read-only</strong> portfolio health from CSV / summary (no
+writes)</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Light refresh (no live engines)</span></span>
+<span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"registry"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Light refresh + full live audit</span></span>
+<span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Light refresh + subset live audit</span></span>
+<span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"registry"</span>, audit <span class="op">=</span> <span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Read-only console / dataframe view</span></span>
+<span><span class="fu"><a href="../reference/audit_report.html">audit_report</a></span><span class="op">(</span><span class="st">"registry"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
 <h3 id="full-portfolio-vs-add-refresh-a-subset">Full portfolio vs add / refresh a subset<a class="anchor" aria-label="anchor" href="#full-portfolio-vs-add-refresh-a-subset"></a>
 </h3>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Full registry (every index row)</span></span>
 <span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
@@ -197,36 +247,17 @@ studies from the derived summary.</p>
 <span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">30</span>, dois <span class="op">=</span> <span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span>
 <span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span></code></pre></div>
 <p>After either kind of run, disk holds the <strong>full</strong>
-portfolio: <code><a href="../reference/write_registry_audit_record.html">write_registry_audit_record()</a></code> merges this run
-into <code>audit_jobs.csv</code>, then rebuilds JSON and RDS from every
-CSV row.</p>
+portfolio: the run merges into <code>audit_jobs.csv</code>, then
+rebuilds JSON and RDS from every CSV row.</p>
 </div>
 <div class="section level3">
 <h3 id="seed-without-live-runs">Seed without live runs<a class="anchor" aria-label="anchor" href="#seed-without-live-runs"></a>
 </h3>
-<p><code><a href="../reference/seed_registry_audit_jobs.html">seed_registry_audit_jobs()</a></code> fills gaps so the health bar
-is not empty before the first full audit. It does <strong>not</strong>
-execute replications.</p>
-<ul>
-<li>From a prior <code>audit_latest.rds</code>
-(<code>from_rds = TRUE</code>)</li>
-<li>From bake timings / local artifact mtimes as provisional ok rows
-(<code>from_bake = TRUE</code>)</li>
-<li>Existing <code>source = "audit"</code> rows are kept; bake/artifact
-rows only fill gaps (or refresh provisional bake rows)</li>
-</ul>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/seed_registry_audit_jobs.html">seed_registry_audit_jobs</a></span><span class="op">(</span>registry_root <span class="op">=</span> <span class="st">"registry"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level3">
-<h3 id="rebuild-summary-from-csv-only">Rebuild summary from CSV only<a class="anchor" aria-label="anchor" href="#rebuild-summary-from-csv-only"></a>
-</h3>
-<p><code><a href="../reference/refresh_registry_audit_summary.html">refresh_registry_audit_summary()</a></code> rewrites
-<code>audit_summary.json</code> and <code>audit_latest.rds</code> from
-the current CSV without running audits. Use after manual CSV edits or
-after seeding.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry_audit_summary.html">refresh_registry_audit_summary</a></span><span class="op">(</span>registry_root <span class="op">=</span> <span class="st">"registry"</span><span class="op">)</span></span></code></pre></div>
+<p>[refresh_registry()] (default <code>audit = FALSE</code>) seeds gaps
+so the health bar is not empty before the first full audit. It does
+<strong>not</strong> execute replications: prior
+<code>audit_latest.rds</code>, bake timings / artifact mtimes fill
+missing rows; existing <code>source = "audit"</code> rows are kept.</p>
 <p>A normal <code><a href="../reference/audit_everything.html">audit_everything()</a></code> already upserts and
 refreshes derived files; you do not need a separate rebuild after a live
 audit.</p>
@@ -288,7 +319,7 @@ as the portfolio when writing vignette snapshots or reports.</td>
 </table>
 <p>For vignette or package snapshots, copy the registry RDS (full
 portfolio), not <code>saveRDS(audit)</code> from a filtered call:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"replicateEverything.registry_root"</span><span class="op">)</span>, <span class="st">"audit_latest.rds"</span><span class="op">)</span>,</span>
 <span>  <span class="st">"inst/vignette-data/audit_latest.rds"</span>,</span>
@@ -303,7 +334,7 @@ Render it (or <code>scripts/run_audit.R</code>) to run a live audit and
 write the HTML report. After write, disk always holds the
 <strong>full</strong> portfolio CSV + derived JSON/RDS, even when params
 restrict <code>dois</code> / <code>collections</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Quarto report lives in the registry repo (sibling registry/ in a monorepo)</span></span>
 <span><span class="fu">quarto</span><span class="fu">::</span><span class="fu"><a href="https://quarto-dev.github.io/quarto-r/reference/quarto_render.html" class="external-link">quarto_render</a></span><span class="op">(</span><span class="fu"><a href="../reference/audit_everything_qmd.html">audit_everything_qmd</a></span><span class="op">(</span><span class="op">)</span>, execute_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">quarto</span><span class="fu">::</span><span class="fu"><a href="https://quarto-dev.github.io/quarto-r/reference/quarto_render.html" class="external-link">quarto_render</a></span><span class="op">(</span></span>
@@ -385,7 +416,7 @@ so this article’s tables stay current.</p>
 package (<code>inst/vignette-data/audit_latest.rds</code>). Set
 <code>REPLICATE_AUDIT_LIVE=true</code> (and point at a local monorepo)
 only when you intend to refresh that snapshot.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">monorepo</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"REPLICATE_MONOREPO"</span>, unset <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
@@ -469,7 +500,7 @@ only when you intend to refresh that snapshot.</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">attempted</span> <span class="op">&lt;-</span> <span class="va">sm</span><span class="op">$</span><span class="va">runs</span> <span class="op">-</span> <span class="op">(</span><span class="va">sm</span><span class="op">$</span><span class="va">skipped</span> <span class="op"><a href="../reference/grapes-or-or-grapes.html">%||%</a></span> <span class="fl">0L</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="va">attempted</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">pct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">sm</span><span class="op">$</span><span class="va">success</span> <span class="op">/</span> <span class="va">attempted</span>, <span class="fl">1</span><span class="op">)</span></span>
@@ -480,7 +511,7 @@ only when you intend to refresh that snapshot.</p>
 <div class="section level3">
 <h3 id="results-by-study">Results by study<a class="anchor" aria-label="anchor" href="#results-by-study"></a>
 </h3>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="st">"skipped"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">results</span><span class="op">$</span><span class="va">skipped</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
 <span><span class="op">}</span></span>
@@ -488,7 +519,7 @@ only when you intend to refresh that snapshot.</p>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">study</span> <span class="kw">in</span> <span class="va">studies</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\n\n#### "</span>, <span class="va">study</span>, <span class="st">"\n\n"</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
 <span>  <span class="va">sub</span> <span class="op">&lt;-</span> <span class="va">results</span><span class="op">[</span><span class="va">results</span><span class="op">$</span><span class="va">title</span> <span class="op">==</span> <span class="va">study</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
-<span>  <span class="va">sub</span><span class="op">$</span><span class="va">status</span> <span class="op">&lt;-</span> <span class="fu">replicateEverything</span><span class="fu">::</span><span class="fu"><a href="../reference/audit_result_status.html">audit_result_status</a></span><span class="op">(</span></span>
+<span>  <span class="va">sub</span><span class="op">$</span><span class="va">status</span> <span class="op">&lt;-</span> <span class="fu">replicateEverything</span><span class="fu">:::</span><span class="fu"><a href="../reference/audit_result_status.html">audit_result_status</a></span><span class="op">(</span></span>
 <span>    <span class="va">sub</span><span class="op">$</span><span class="va">success</span>, <span class="va">sub</span><span class="op">$</span><span class="va">timed_out</span>, <span class="va">sub</span><span class="op">$</span><span class="va">skipped</span></span>
 <span>  <span class="op">)</span></span>
 <span>  <span class="va">sub</span><span class="op">$</span><span class="va">seconds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">sub</span><span class="op">$</span><span class="va">seconds</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sub</span><span class="op">$</span><span class="va">seconds</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
@@ -1558,7 +1589,7 @@ sympathetic and unsympathetic respondents</td>
 <div class="section level3">
 <h3 id="failures-concise">Failures (concise)<a class="anchor" aria-label="anchor" href="#failures-concise"></a>
 </h3>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="st">"skipped"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">results</span><span class="op">$</span><span class="va">skipped</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
 <span><span class="op">}</span></span>
@@ -1567,7 +1598,7 @@ sympathetic and unsympathetic respondents</td>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"All recorded runnable jobs succeeded (or were skipped).\n"</span><span class="op">)</span></span>
 <span><span class="op">}</span> <span class="kw">else</span> <span class="op">{</span></span>
 <span>  <span class="va">fails</span><span class="op">$</span><span class="va">seconds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">fails</span><span class="op">$</span><span class="va">seconds</span><span class="op">)</span>, <span class="cn">NA</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">fails</span><span class="op">$</span><span class="va">seconds</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="va">fails</span><span class="op">$</span><span class="va">status</span> <span class="op">&lt;-</span> <span class="fu">replicateEverything</span><span class="fu">::</span><span class="fu"><a href="../reference/audit_result_status.html">audit_result_status</a></span><span class="op">(</span></span>
+<span>  <span class="va">fails</span><span class="op">$</span><span class="va">status</span> <span class="op">&lt;-</span> <span class="fu">replicateEverything</span><span class="fu">:::</span><span class="fu"><a href="../reference/audit_result_status.html">audit_result_status</a></span><span class="op">(</span></span>
 <span>    <span class="va">fails</span><span class="op">$</span><span class="va">success</span>, <span class="va">fails</span><span class="op">$</span><span class="va">timed_out</span>, <span class="va">fails</span><span class="op">$</span><span class="va">skipped</span></span>
 <span>  <span class="op">)</span></span>
 <span>  <span class="va">show</span> <span class="op">&lt;-</span> <span class="va">fails</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -1735,7 +1766,7 @@ limit</td>
 <div class="section level3">
 <h3 id="skipped-incomplete-unavailable">Skipped (incomplete / unavailable)<a class="anchor" aria-label="anchor" href="#skipped-incomplete-unavailable"></a>
 </h3>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="st">"skipped"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">results</span><span class="op">$</span><span class="va">skipped</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
 <span><span class="op">}</span></span>
@@ -1809,7 +1840,7 @@ incomplete yaml steps appear as <strong>Skipped</strong>, not Failed or
 Timed out.</li>
 </ul>
 <p>Re-run locally and refresh the package vignette snapshot:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>REPLICATE_AUDIT_LIVE <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything/registry"</span>,</span>
@@ -1827,10 +1858,12 @@ Timed out.</li>
 <span></span>
 <span><span class="co"># Full HTML report: quarto render audit_everything.qmd (in the registry repo)</span></span></code></pre></div>
 <p>After adding or updating registry stubs, maintainers typically run
-[refresh_registry()] so <code>index.csv</code> and the audit stay in
-sync:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
+[refresh_registry()] so <code>index.csv</code>, the Shiny cache, and the
+audit summary stay in sync:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span><span class="op">)</span>                      <span class="co"># light</span></span>
+<span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/audit_report.html">audit_report</a></span><span class="op">(</span><span class="st">"../registry"</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

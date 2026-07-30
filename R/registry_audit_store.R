@@ -676,11 +676,7 @@ write_derived_registry_audit_summary <- function(
 #'
 #' @param registry_root Optional registry repository root.
 #' @return Invisibly, a list with paths \code{summary}, \code{rds}, \code{jobs}.
-#' @examples
-#' \dontrun{
-#' refresh_registry_audit_summary(registry_root = "registry")
-#' }
-#' @export
+#' @keywords internal
 refresh_registry_audit_summary <- function(registry_root = NULL) {
   if (!is.null(registry_root) && nzchar(registry_root) && dir.exists(registry_root)) {
     options(
@@ -709,11 +705,7 @@ refresh_registry_audit_summary <- function(registry_root = NULL) {
 #'   local artifacts for jobs not yet in the CSV.
 #' @param verbose Print progress.
 #' @return Invisibly, list with \code{jobs} path, row counts, and summary paths.
-#' @examples
-#' \dontrun{
-#' seed_registry_audit_jobs(registry_root = "registry")
-#' }
-#' @export
+#' @keywords internal
 seed_registry_audit_jobs <- function(
   registry_root = NULL,
   index = NULL,
@@ -967,4 +959,142 @@ seed_registry_audit_jobs <- function(
     rows_before = n_before,
     rows_after = nrow(jobs_final)
   ))
+}
+
+#' Read-only portfolio view of registry audit health
+#'
+#' Loads derived `audit_summary.json` (and optionally `audit_jobs.csv`) and
+#' returns health-bar bucket counts plus an optional per-study table. Does
+#' **not** write files or run live replications. For live audits use
+#' [audit_everything()] or [refresh_registry()] with `audit = TRUE`.
+#'
+#' @param registry_root Optional registry repository root.
+#' @param by_study If `TRUE` (default), include a per-study summary table when
+#'   job rows are available.
+#' @return An object of class `audit_report` (a list) with components
+#'   `summary`, `progress`, and optional `by_study`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' audit_report("../registry")
+#' audit_report(by_study = FALSE)
+#' }
+audit_report <- function(registry_root = NULL, by_study = TRUE) {
+  if (!is.null(registry_root) && nzchar(registry_root) && dir.exists(registry_root)) {
+    options(
+      replicateEverything.registry_root = normalizePath(
+        registry_root,
+        winslash = "/",
+        mustWork = FALSE
+      )
+    )
+  }
+
+  summary <- load_registry_audit_summary(registry_root)
+  jobs <- tryCatch(
+    read_registry_audit_jobs(registry_root),
+    error = function(e) empty_audit_jobs_df()
+  )
+  if (is.null(jobs) || !is.data.frame(jobs)) {
+    jobs <- empty_audit_jobs_df()
+  }
+
+  progress <- audit_progress_counts(summary = summary, results = NULL)
+  if (
+    identical(as.integer(progress[["total"]] %||% 0L), 0L) &&
+      nrow(jobs) > 0L
+  ) {
+    # Prefer classifying from CSV when summary progress is empty.
+    results_like <- jobs
+    if (!"substantive_ok" %in% names(results_like)) {
+      results_like$substantive_ok <- NA
+    }
+    progress <- audit_progress_counts(summary = summary, results = results_like)
+  }
+
+  by_study_df <- NULL
+  if (isTRUE(by_study) && nrow(jobs) > 0L) {
+    title <- as.character(jobs$title %||% jobs$doi %||% "")
+    doi <- as.character(jobs$doi %||% "")
+    success <- jobs$success %||% NA
+    timed_out <- isTRUE_vec(jobs$timed_out %||% FALSE)
+    skipped <- isTRUE_vec(jobs$skipped %||% FALSE)
+    status <- audit_result_status(success, timed_out, skipped)
+    key <- ifelse(nzchar(trimws(title)), title, doi)
+    split_idx <- split(seq_along(key), key)
+    rows <- lapply(names(split_idx), function(nm) {
+      ix <- split_idx[[nm]]
+      st <- status[ix]
+      data.frame(
+        study = nm,
+        doi = doi[[ix[[1]]]] %||% "",
+        jobs = length(ix),
+        ok = sum(st == "OK", na.rm = TRUE),
+        failed = sum(st == "Failed", na.rm = TRUE),
+        timed_out = sum(st == "Timed out", na.rm = TRUE),
+        skipped = sum(st == "Skipped", na.rm = TRUE),
+        stringsAsFactors = FALSE
+      )
+    })
+    by_study_df <- do.call(rbind, rows)
+    rownames(by_study_df) <- NULL
+    if (!is.null(by_study_df) && nrow(by_study_df) > 0L) {
+      by_study_df <- by_study_df[order(by_study_df$study), , drop = FALSE]
+    }
+  }
+
+  structure(
+    list(
+      summary = summary,
+      progress = progress,
+      by_study = by_study_df,
+      registry_root = registry_root %||%
+        getOption("replicateEverything.registry_root", NULL),
+      n_jobs = nrow(jobs)
+    ),
+    class = "audit_report"
+  )
+}
+
+#' @keywords internal
+isTRUE_vec <- function(x) {
+  x <- as.logical(x)
+  !is.na(x) & x
+}
+
+#' @export
+#' @exportS3Method print audit_report
+print.audit_report <- function(x, ...) {
+  prog <- x$progress %||% integer(0)
+  sm <- x$summary %||% list()
+  cat("Registry audit report (read-only)\n")
+  if (!is.null(x$registry_root) && nzchar(as.character(x$registry_root %||% ""))) {
+    cat("  registry: ", as.character(x$registry_root), "\n", sep = "")
+  }
+  if (length(sm)) {
+    cat(
+      "  studies: ", as.integer(sm$studies %||% NA_integer_),
+      "  runs: ", as.integer(sm$runs %||% x$n_jobs %||% NA_integer_),
+      "  success: ", as.integer(sm$success %||% NA_integer_),
+      "  failed: ", as.integer(sm$failed %||% NA_integer_),
+      "\n",
+      sep = ""
+    )
+  }
+  if (length(prog)) {
+    cat("  health buckets:\n")
+    for (nm in c(
+      "replicating", "timed_out", "substantive_fail", "missing_engine", "other", "total"
+    )) {
+      if (nm %in% names(prog)) {
+        cat(sprintf("    %-18s %s\n", nm, as.integer(prog[[nm]])))
+      }
+    }
+  }
+  if (!is.null(x$by_study) && is.data.frame(x$by_study) && nrow(x$by_study) > 0L) {
+    cat("\nPer-study job counts:\n")
+    print(x$by_study, row.names = FALSE)
+  }
+  invisible(x)
 }

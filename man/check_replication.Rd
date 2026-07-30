@@ -42,7 +42,7 @@ A list with \code{ok} (logical), \code{checks} (data frame), and \code{study_pat
 A list with \code{ok} (logical), \code{checks} (data frame), and \code{package_path}.
 
 A list with \code{ok} (logical), \code{checks} (data frame), and \code{study_path}
-or \code{package_path}.
+or \code{package_path}. Prefer the public \code{\link[=check_and_bake_study]{check_and_bake_study()}} entry point.
 }
 \description{
 Runs a transparent checklist: study layout, \code{replication.yml}, code and data
@@ -69,25 +69,4 @@ study \verb{make_*} / \verb{format_*} helpers, baked artifacts, substantive
 live execution of every table and figure via replicateEverything.
 
 }}
-\examples{
-\dontrun{
-# setwd() to the study repo (or open its RStudio project) first, then:
-setwd("path/to/rep-my-study")
-
-# Quick manual smoke check before the full checklist:
-list_replications("local")
-describe_study_dag("local")
-run_replication("local", "tab_1")  # one light step
-
-check_replication(".")
-check_replication(".", full_replication = TRUE)
-
-# Or pass a sibling study checkout / GitHub slug by path:
-check_replication("../rep-10.1017-S0003055403000534")
-check_replication("../rep-10.1017-s0003055422000284")
-check_replication("../rep-10.1257-aer.91.5.1369")
-check_replication("../rep-template")
-}
-
-}
 \keyword{internal}

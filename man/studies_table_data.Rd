@@ -19,9 +19,4 @@ List of study records.
 \description{
 Trivial collection filter only — no yaml fetch.
 }
-\examples{
-\dontrun{
-rows <- studies_table_data(load_shiny_studies_cache(), collection = "APSR")
-}
-
-}
+\keyword{internal}

@@ -16,3 +16,4 @@ Invisibly, a list with paths \code{summary}, \code{rds}, \code{jobs}.
 Does not re-run audits. Use after manual CSV edits or after
 \code{\link[=seed_registry_audit_jobs]{seed_registry_audit_jobs()}}.
 }
+\keyword{internal}

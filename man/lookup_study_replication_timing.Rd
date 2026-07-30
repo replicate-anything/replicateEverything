@@ -17,3 +17,4 @@ Numeric seconds, or \code{NA_real_} when unknown.
 \description{
 Look up last known bake seconds for a step id
 }
+\keyword{internal}

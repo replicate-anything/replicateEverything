@@ -25,9 +25,10 @@ A typical workflow using the package is:
 \item Launch the bundled Shiny demo with \code{run_shiny_app()}, or deploy it
 with \code{save_local_shiny()}.
 \item Contribute a study with \code{build_study_outputs()},
-\code{check_replication()}, \code{check_and_bake_study()}, and
-\code{sync_study_to_registry()} (maintainer).
-\item Audit the full registry with \code{audit_everything()}.
+\code{check_and_bake_study()}, and \code{register_study()} (maintainer).
+\item Refresh derived registry files with \code{refresh_registry()}, inspect
+health with \code{audit_report()}, or run a live audit with
+\code{audit_everything()}.
 }
 
 See \code{vignette("meet-the-functions")} for a tour of every main function.

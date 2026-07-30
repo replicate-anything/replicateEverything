@@ -22,3 +22,4 @@ aliases \code{source_url} and \code{source_repo} are accepted when the
 canonical field is empty. When multiple sources are declared, the first is
 treated as primary (see \code{\link[=paper_source_repository]{paper_source_repository()}}).
 }
+\keyword{internal}

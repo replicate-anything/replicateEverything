@@ -18,29 +18,8 @@
 #'   in a monorepo). Defaults to
 #'   `getOption("replicateEverything.registry_root")`.
 #' @return A list with `ok` (logical), `checks` (data frame), and `study_path`
-#'   or `package_path`.
-#'
-#' @examples
-#' \dontrun{
-#' # setwd() to the study repo (or open its RStudio project) first, then:
-#' setwd("path/to/rep-my-study")
-#'
-#' # Quick manual smoke check before the full checklist:
-#' list_replications("local")
-#' describe_study_dag("local")
-#' run_replication("local", "tab_1")  # one light step
-#'
-#' check_replication(".")
-#' check_replication(".", full_replication = TRUE)
-#'
-#' # Or pass a sibling study checkout / GitHub slug by path:
-#' check_replication("../rep-10.1017-S0003055403000534")
-#' check_replication("../rep-10.1017-s0003055422000284")
-#' check_replication("../rep-10.1257-aer.91.5.1369")
-#' check_replication("../rep-template")
-#' }
-#'
-#' @export
+#'   or `package_path`. Prefer the public [check_and_bake_study()] entry point.
+#' @keywords internal
 check_replication <- function(
   location = ".",
   full_replication = FALSE,

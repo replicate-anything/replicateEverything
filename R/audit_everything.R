@@ -117,7 +117,7 @@ audit_step_skip_reason <- function(rep) {
 #' @param timed_out Logical vector of timeout flags.
 #' @param skipped Logical vector of skip flags (incomplete / blocked steps).
 #' @return Character vector of status labels, same length as the inputs.
-#' @export
+#' @keywords internal
 audit_result_status <- function(success, timed_out = FALSE, skipped = FALSE) {
   n <- max(length(success), length(timed_out), length(skipped), 1L)
   success <- rep_len(success, n)

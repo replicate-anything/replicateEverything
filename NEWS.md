@@ -1,3 +1,35 @@
+# replicateEverything 0.7.41
+
+## Maintainer API: four public registry verbs
+
+* Public maintainer surface is now [register_study()], [refresh_registry()],
+  [audit_everything()], and [audit_report()].
+* [refresh_registry()] defaults to a **light** path (`audit = FALSE`): rebuild
+  `index.csv` + `shiny_studies.json`, seed `audit_jobs.csv` gaps from bake /
+  artifacts / prior RDS (no live engines), and rebuild `audit_summary.json` /
+  RDS. Pass `audit = TRUE` or `audit = <dois>` for live [audit_everything()].
+* New [audit_report()] — read-only portfolio health view from CSV / summary
+  (no writes, no live runs).
+* Moved internal (use [refresh_registry()] / [register_study()] instead):
+  [sync_study_to_registry()], [build_registry_index()],
+  [build_shiny_studies_cache()], [load_shiny_studies_cache()],
+  [studies_table_data()], [seed_registry_audit_jobs()],
+  [refresh_registry_audit_summary()], [audit_result_status()].
+* Also internal (helpers still used by Shiny / checklists):
+  [paper_article_url()], [paper_source_repository()],
+  [paper_source_repositories()], [source_repository_kind()],
+  [source_repository_href()], [registry_source_repository_gaps()], and the
+  `print.replicate_study` S3 method (still registered for `print()`).
+
+## Contribute surface: prefer check_and_bake_study()
+
+* Public contribute entry remains [check_and_bake_study()] (with
+  [build_study_outputs()]). [check_replication()] and the folder/package
+  checklist implementations are internal.
+* Also internal: [fetch_dataverse_file()], [materialize_declared_data()],
+  [lookup_study_replication_timing()], [read_study_replication_timings()],
+  [record_study_replication_timing()].
+
 # replicateEverything 0.7.40
 
 ## Audit: incremental CSV job store + derived health bar
@@ -11,7 +43,7 @@
   with bake-timing / artifact-mtime fallback.
 * New [seed_registry_audit_jobs()] (RDS + bake/artifact provisional rows) and
   [refresh_registry_audit_summary()] (rebuild summary from CSV without
-  re-running audits).
+  re-running audits) — now internal; prefer [refresh_registry()].
 * Maintainer notes: commit `registry/audit_jobs.csv` with the derived JSON/RDS;
   see `registry/guides/registry-management.md` and the *Registry audit* vignette.
 

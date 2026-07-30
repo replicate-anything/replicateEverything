@@ -207,12 +207,7 @@ resolve_registry_handle <- function(x) {
 #' @return Invisibly, a list with `index_path`, `index`, `n`, and
 #'   `shiny_studies_path`.
 #'
-#' @examples
-#' \dontrun{
-#' build_registry_index("../registry")
-#' }
-#'
-#' @export
+#' @keywords internal
 build_registry_index <- function(registry_root = NULL) {
   if (is.null(registry_root) || !nzchar(registry_root)) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)

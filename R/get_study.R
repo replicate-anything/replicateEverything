@@ -300,14 +300,7 @@ study_gap_step_counts <- function(entries) {
 #' @param x A \code{replicate_study} object.
 #' @param ... Ignored.
 #' @return \code{x}, invisibly.
-#'
-#' @examples
-#' \dontrun{
-#' get_study("10.1017/S0003055403000534")
-#' get_study("rep-template")
-#' }
-#'
-#' @export
+#' @keywords internal
 #' @exportS3Method print replicate_study
 print.replicate_study <- function(x, ...) {
   title <- trimws(as.character(x$title %||% ""))

@@ -23,3 +23,4 @@ list of sources; this helper returns the \strong{primary} (first) entry. Use
 \code{source_url} and \code{source_repo} are accepted when the canonical
 field is empty.
 }
+\keyword{internal}

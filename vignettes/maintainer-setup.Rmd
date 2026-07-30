@@ -99,9 +99,9 @@ See also *Meet the functions*, the folder replication checklist, and `inst/ai/sk
 There is **no study-local registry handoff** — not `registry/` in a
 folder-backed repo, not `inst/registry/` in a package. Contributors validate
 with [check_and_bake_study()]; a maintainer with a local checkout of the
-[registry repository](https://github.com/replicate-anything/registry) writes
-the stub **directly from the study's own `replication.yml`** with
-[sync_study_to_registry()] — nothing is copied from the study repo.
+[registry repository](https://github.com/replicate-anything/registry) uses
+[register_study()] to validate then write the stub **directly from the study's
+own `replication.yml`** — nothing is copied from the study repo.
 
 Point R at your monorepo checkout:
 
@@ -109,37 +109,8 @@ Point R at your monorepo checkout:
 options(replicateEverything.registry_root = "../registry")
 ```
 
-**Sync one study** — build `registry/studies/<folder>.yml` from the study's
-root yaml and rebuild `index.csv`:
-
-```{r}
-sync_study_to_registry(
-  "../rep-10.1177-00491241211036161",
-  registry_root = "../registry"
-)
-```
-
-Optional per-study audit after sync (upserts that DOI into `audit_jobs.csv`; does **not** wipe the portfolio health bar):
-
-```{r}
-sync_study_to_registry(
-  "../rep-10.1177-00491241211036161",
-  registry_root = "../registry",
-  audit = TRUE,
-  patience = 20
-)
-```
-
-**Refresh the whole registry** after a batch of syncs — recompile `index.csv` from all stubs and rerun [audit_everything()]:
-
-```{r}
-refresh_registry("../registry", audit = TRUE, patience = 20)
-```
-
-Audit disk layout (as of 0.7.40): `registry/audit_jobs.csv` is the source of truth (upsert by doi × object × engine). Derived `audit_summary.json` / `audit_latest.rds` are rebuilt from the **full** CSV after each write. To fill gaps without live runs, use [seed_registry_audit_jobs()]; to rebuild JSON/RDS only, [refresh_registry_audit_summary()]. Commit `audit_jobs.csv` together with the derived JSON and RDS (and the Quarto HTML if you publish the registry report). See `vignette("audit")` and `registry/guides/registry-management.md`.
-
-**One call, check + sync:** [register_study()] runs `check_and_bake_study()`
-then `sync_study_to_registry()` for both folder- and package-backed studies:
+**One call, check + sync:** [register_study()] validates (and optionally bakes)
+then writes `registry/studies/<folder>.yml` and rebuilds `index.csv`:
 
 ```{r}
 register_study(
@@ -148,6 +119,26 @@ register_study(
   audit = TRUE
 )
 ```
+
+**Light refresh** after a batch of registrations — rebuild `index.csv` +
+`shiny_studies.json`, seed audit CSV gaps (no live engines), and rebuild the
+health-bar summary:
+
+```{r}
+refresh_registry("../registry")
+```
+
+**Live audit** when you want engines to run (full portfolio or selected DOIs):
+
+```{r}
+refresh_registry("../registry", audit = TRUE, patience = 20)
+refresh_registry("../registry", audit = "10.1177/00491241211036161")
+```
+
+Or call [audit_everything()] directly for Quarto / heavy one-off runs.
+Read-only portfolio view (no writes): [audit_report()].
+
+Audit disk layout (as of 0.7.41): `registry/audit_jobs.csv` is the source of truth (upsert by doi × object × engine). Derived `audit_summary.json` / `audit_latest.rds` are rebuilt from the **full** CSV after each write. Prefer [refresh_registry()] for the light path; commit `audit_jobs.csv` together with the derived JSON and RDS (and the Quarto HTML if you publish the registry report). See `vignette("audit")` and `registry/guides/registry-management.md`.
 
 ## Check precomputed outputs
 
@@ -180,12 +171,11 @@ Or from the registry repo: `Rscript scripts/validate_outputs.R`.
 | Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |
 | **Contributor:** validate (+ optional bake) | `check_and_bake_study(path)` |
-| **Maintainer:** sync stub into registry | `sync_study_to_registry(path, registry_root = ...)` |
-| **Maintainer:** validate then sync in one call | `register_study(path, registry_root = ...)` |
-| **Maintainer:** rebuild index + audit all | `refresh_registry(registry_root, audit = TRUE)` |
-| Rebuild index only | `build_registry_index(registry_root)` |
-| Seed audit CSV (no live runs) | `seed_registry_audit_jobs(registry_root)` |
-| Rebuild audit JSON/RDS from CSV | `refresh_registry_audit_summary(registry_root)` |
+| **Maintainer:** validate then sync | `register_study(path, registry_root = ...)` |
+| **Maintainer:** light refresh (index + seed + summary) | `refresh_registry(registry_root)` |
+| **Maintainer:** light refresh + live audit | `refresh_registry(registry_root, audit = TRUE)` |
+| **Maintainer:** live audit (manual / Quarto) | `audit_everything(...)` |
+| **Maintainer:** read-only health view | `audit_report(registry_root)` |
 
 ## Package website (pkgdown)
 

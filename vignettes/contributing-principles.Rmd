@@ -53,7 +53,7 @@ That validates the yaml DAG and writes display products under `outputs/` (plus `
 
 ### 4. Then share
 
-Push a **public** study repo so Shiny can fetch root `replication.yml`. Contributor stops at a green bake; a registry **maintainer** syncs the stub — no study-local `registry/` folder. See the folder/package checklists for `sync_study_to_registry()` / `register_study()`.
+Push a **public** study repo so Shiny can fetch root `replication.yml`. Contributor stops at a green bake; a registry **maintainer** syncs the stub — no study-local `registry/` folder. See the folder/package checklists for `register_study()` / `refresh_registry()`.
 
 ---
 

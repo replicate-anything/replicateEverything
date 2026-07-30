@@ -24,7 +24,7 @@ Stub yaml and `index.csv` belong **only** in the registry repository
 (`registry/studies/<folder>.yml` + `registry/index.csv`).
 
 Do **not** commit `registry/` or `inst/registry/` handoff folders inside study
-repos. `sync_study_to_registry()` reads the study root `replication.yml` and
+repos. `register_study()` reads the study root `replication.yml` and
 writes the stub into the registry checkout.
 
 `outputs/` is for replication products only (`manifest.json`, tables, figures,
@@ -78,10 +78,10 @@ check_and_bake_study("../rep-10.1371-journal.pone.0278337")
 ```
 - [ ] 1. Study PR merged; root `replication.yml` complete
 - [ ] 2. Re-validate if needed: `check_replication()` / `check_and_bake_study()`
-- [ ] 3. Sync stub from study yaml: `sync_study_to_registry(study_path, registry_root = "../registry")`
-   (or `register_study()` for check + sync in one call)
-- [ ] 4. Full refresh: `refresh_registry("../registry", audit = TRUE)`
-- [ ] 4b. Check display outputs: `validate_outputs(doi = "everywhere", what = "everything")`
+- [ ] 3. Register: `register_study(study_path, registry_root = "../registry")`
+- [ ] 4. Light refresh: `refresh_registry("../registry")` (index + seed + summary)
+- [ ] 4b. Optional live audit: `refresh_registry("../registry", audit = TRUE)` or `audit = <dois>`
+- [ ] 4c. Check display outputs: `validate_outputs(doi = "everywhere", what = "everything")`
 - [ ] 5. Commit registry: `studies/<folder>.yml`, `index.csv`, audit outputs
 - [ ] 6. Deploy Shiny / clear study cache if needed
 ```
@@ -90,14 +90,15 @@ check_and_bake_study("../rep-10.1371-journal.pone.0278337")
 library(replicateEverything)
 options(replicateEverything.registry_root = "../registry")
 
-# One study — builds stub from study replication.yml into registry/studies/
-sync_study_to_registry("../rep-10.1177-00491241211036161", audit = TRUE)
-
-# Or check + sync:
+# Check + sync stub from study replication.yml into registry/studies/
 register_study("../rep-10.1177-00491241211036161", build_artifacts = TRUE)
 
-# After batch of syncs — recompile index + audit everything
+# After batch of registrations — light refresh (no live engines)
+refresh_registry("../registry")
+
+# Optional: live audit all or selected DOIs
 refresh_registry("../registry", audit = TRUE)
+audit_report("../registry")
 ```
 
 ### Maintainer shortcuts
@@ -106,9 +107,10 @@ refresh_registry("../registry", audit = TRUE)
 |------|----------|
 | Check + bake | `check_and_bake_study(study_path)` |
 | Check + sync | `register_study(study_path)` |
-| Sync stub only | `sync_study_to_registry(study_path)` |
-| Rebuild index only | `build_registry_index("../registry")` → `index.csv` + `shiny_studies.json` |
-| Index + full audit | `refresh_registry("../registry")` |
+| Light refresh (index + seed + summary) | `refresh_registry("../registry")` |
+| Light + live audit | `refresh_registry("../registry", audit = TRUE)` |
+| Read-only health | `audit_report("../registry")` |
+| Live audit (manual / Quarto) | `audit_everything(...)` |
 
 ## Registry stub contents
 
@@ -119,4 +121,4 @@ Short yaml includes only what the registry needs:
 - optional `notes:` (`data_unavailable` / `missing_engine`) for the Shiny Studies list
 
 No `steps:` block in the stub — the study repo yaml is authoritative for the DAG.
-`build_registry_index()` also writes `shiny_studies.json` (Studies tab cache).
+[refresh_registry()] also rebuilds `shiny_studies.json` (Studies tab cache).

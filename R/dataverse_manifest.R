@@ -313,18 +313,7 @@ download_dataverse_file <- function(
 #' @param study_root Local study root; defaults to \code{REPLICATE_STUDY_ROOT} or \code{"."}.
 #' @param force Re-download existing files.
 #' @return Invisibly, absolute destination path.
-#'
-#' @examples
-#' \dontrun{
-#' # Blair et al. APSR analysis .dta (Harvard Dataverse file id)
-#' fetch_dataverse_file(
-#'   file_id = "14058927",
-#'   path = "outputs/analysis.dta",
-#'   study_root = "../rep-10.1017-s0003055422000284"
-#' )
-#' }
-#'
-#' @export
+#' @keywords internal
 fetch_dataverse_file <- function(
   file_id = NULL,
   path,

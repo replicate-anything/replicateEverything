@@ -21,3 +21,4 @@ Maps success / timeout / skipped flags to \code{"OK"}, \code{"Timed out"},
 \code{"Failed"}, or \code{"Skipped"}. Used by registry audit reports and the
 package audit vignette.
 }
+\keyword{internal}

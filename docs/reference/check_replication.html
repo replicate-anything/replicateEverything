@@ -15,7 +15,7 @@ execution of every table and figure."><meta property="og:image" content="https:/
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.41</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -112,7 +112,7 @@ in a monorepo). Defaults to
     <p>A list with <code>ok</code> (logical), <code>checks</code> (data frame), and <code>study_path</code>.</p>
 <p>A list with <code>ok</code> (logical), <code>checks</code> (data frame), and <code>package_path</code>.</p>
 <p>A list with <code>ok</code> (logical), <code>checks</code> (data frame), and <code>study_path</code>
-or <code>package_path</code>.</p>
+or <code>package_path</code>. Prefer the public <code><a href="check_and_bake_study.html">check_and_bake_study()</a></code> entry point.</p>
     </div>
     <div class="section level2">
     <h2 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a></h2>
@@ -130,29 +130,6 @@ study <code>make_*</code> / <code>format_*</code> helpers, baked artifacts, subs
 live execution of every table and figure via replicateEverything.</p></li>
 </ul></div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># setwd() to the study repo (or open its RStudio project) first, then:</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/getwd.html" class="external-link">setwd</a></span><span class="op">(</span><span class="st">"path/to/rep-my-study"</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Quick manual smoke check before the full checklist:</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="list_replications.html">list_replications</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="describe_study_dag.html">describe_study_dag</a></span><span class="op">(</span><span class="st">"local"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="run_replication.html">run_replication</a></span><span class="op">(</span><span class="st">"local"</span>, <span class="st">"tab_1"</span><span class="op">)</span>  <span class="co"># one light step</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu">check_replication</span><span class="op">(</span><span class="st">"."</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">check_replication</span><span class="op">(</span><span class="st">"."</span>, full_replication <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Or pass a sibling study checkout / GitHub slug by path:</span></span></span>
-<span class="r-in"><span><span class="fu">check_replication</span><span class="op">(</span><span class="st">"../rep-10.1017-S0003055403000534"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">check_replication</span><span class="op">(</span><span class="st">"../rep-10.1017-s0003055422000284"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">check_replication</span><span class="op">(</span><span class="st">"../rep-10.1257-aer.91.5.1369"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu">check_replication</span><span class="op">(</span><span class="st">"../rep-template"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>
 

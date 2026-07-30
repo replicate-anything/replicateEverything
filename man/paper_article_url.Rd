@@ -28,13 +28,4 @@ back to \code{https://doi.org/...}.
 \code{paper.study_url} is the GitHub study repository and is intentionally
 ignored here — use the Shiny Repo column / study materials link for that.
 }
-\examples{
-\dontrun{
-# Fearon & Laitin: registry stub supplies paper.article_url
-paper_article_url(doi = "10.1017/S0003055403000534")
-paper_article_url(doi = "10.1017/S0003055422000284")
-paper_article_url(doi = "10.1257/aer.91.5.1369")
-st <- get_study("10.1017/S0003055403000534")
-paper_article_url(doi = st$doi)
-}
-}
+\keyword{internal}

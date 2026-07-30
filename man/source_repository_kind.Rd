@@ -18,3 +18,4 @@ One of \code{"dataverse"}, \code{"osf"}, \code{"worldbank"},
 Heuristics from the URL / credit string. Authors only need to set
 \code{paper.source_repository}; optional explicit kinds are not required.
 }
+\keyword{internal}
