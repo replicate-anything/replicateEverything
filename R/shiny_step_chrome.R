@@ -1,3 +1,58 @@
+#' Whether Shiny Live Run is allowed for a step
+#'
+#' Reads yaml \code{shiny_run:} (default \code{TRUE}). When \code{false}, the
+#' Shiny app greys out / disables Live Run for that step only. Display of baked
+#' sinks, the Code tab, and package APIs (\code{run_replication()}, bake,
+#' audit) are unchanged. Do \strong{not} use \code{incomplete: true} for this
+#' purpose — that also skips package Run / audit.
+#'
+#' @param entry Step list (yaml entry or Shiny row fields as a list).
+#' @return Logical; \code{TRUE} when Live Run should be offered.
+#' @keywords internal
+step_shiny_run_enabled <- function(entry) {
+  if (is.null(entry) || !is.list(entry)) {
+    return(TRUE)
+  }
+  raw <- entry$shiny_run[[1]] %||% entry$shiny_run %||% NULL
+  if (is.null(raw)) {
+    return(TRUE)
+  }
+  if (is.logical(raw)) {
+    return(isTRUE(raw))
+  }
+  tok <- tolower(trimws(as.character(raw)))
+  if (!nzchar(tok) || tok %in% c("true", "yes", "1", "on")) {
+    return(TRUE)
+  }
+  if (tok %in% c("false", "no", "0", "off")) {
+    return(FALSE)
+  }
+  TRUE
+}
+
+#' User-facing reason when Shiny Live Run is disabled for a step
+#'
+#' Prefers yaml \code{blocked_reason:} when present (even without
+#' \code{incomplete:}); otherwise a short default explaining Display / package
+#' Run still work.
+#'
+#' @param entry Step list (yaml entry or Shiny row fields as a list).
+#' @return Character scalar.
+#' @keywords internal
+step_shiny_run_message <- function(entry) {
+  reason <- trimws(as.character(
+    entry$blocked_reason[[1]] %||% entry$blocked_reason %||% ""
+  ))
+  if (nzchar(reason)) {
+    return(reason)
+  }
+  paste0(
+    "Live Run disabled for this step in Shiny. ",
+    "Display still shows baked outputs when available; ",
+    "package run_replication() / bake can still run it."
+  )
+}
+
 #' Whether Shiny should show a Display control for a step
 #'
 #' Correct enablement (do \strong{not} invert):

@@ -237,7 +237,8 @@ sidebar and labels are unused there.
 | `incomplete` | `true` when the step cannot be produced here — **audit skips** (not success/fail) |
 | `requires_engine` | System engine token when missing engine is the block (`mathematica`, `matlab`, …) |
 | `data_unavailable` | Data-access class when proprietary/restricted/missing data is the block (`proprietary`, …) |
-| `blocked_reason` | Human text for Shiny hover / tooltips |
+| `blocked_reason` | Human text for Shiny hover / tooltips (also used when `shiny_run: false`) |
+| `shiny_run` | `false` to disable **Shiny Live Run only** (greyed Run + tooltip). Display / Code / package `run_replication()` / bake / audit are unchanged. Prefer this over `incomplete:` when the step still runs from R. Default `true` (omit when runnable). |
 | `group` | Logical claim id when siblings are alternatives (classic bilingual or multi-language paths) |
 | `languages` (step) | Languages on this **path** (e.g. `[stata, r]`) — Shiny path-box label when grouped |
 | `languages` (root) | Study engines for registry / system checks |
@@ -251,6 +252,9 @@ Three **distinct** classes — do not conflate them with audit fail/timeout:
 | Missing system engine | `incomplete: true` + `requires_engine: mathematica` (+ `blocked_reason:`) | “`{output} not available because of missing {Engine} engine`” vs “`… not reproducible …`” when baked; Shiny **hammer** in Run slot; Mathematica (etc.) icon; study **partial-replication** popup | Skipped |
 | Proprietary / restricted data | `incomplete: true` + `data_unavailable: proprietary` (+ `blocked_reason:`) | **Padlock** in Run slot + study popup; DAG mark | Skipped (unavailable ≠ success/failure) |
 | Other incomplete | `incomplete: true` + `blocked_reason:` | Generic not available / not reproducible | Skipped |
+| Shiny Live Run off (step still package-runnable) | `shiny_run: false` (+ optional `blocked_reason:` for tooltip) | Greyed / disabled **Run** in Shiny; Display + Code unchanged | **Runs** (not a gap) |
+
+**Do not** use `incomplete: true` merely to hide a heavy step from Shiny Live Run — that also skips package bake / `run_replication()` / audit. Use `shiny_run: false` for Shiny-only disable.
 
 **Rule of thumb — DAG membership:** put a step in `steps:` **only if it is a
 replication claim** (something you want in Display / audit). Proprietary prep

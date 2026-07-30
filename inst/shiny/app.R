@@ -3606,6 +3606,10 @@ prep_to_df <- function(prep_steps) {
     label <- as.character(x$label %||% x$id)
     desc <- replication_entry_description(x)
     label_full <- if (nzchar(desc)) desc else label
+    shiny_run <- tryCatch(
+      isTRUE(replicate_fn("step_shiny_run_enabled", x)),
+      error = function(e) TRUE
+    )
     data.frame(
       id = as.character(x$id),
       label = truncate_label(label, 40L),
@@ -3613,6 +3617,7 @@ prep_to_df <- function(prep_steps) {
       engine = entry_engine(x),
       type = "transform",
       incomplete = isTRUE(x$incomplete %||% FALSE),
+      shiny_run = shiny_run,
       blocked_reason = as.character(x$blocked_reason %||% ""),
       requires_engine = entry_requires_engine_token(x),
       data_unavailable = entry_data_unavailable_token(x),
@@ -3727,6 +3732,10 @@ replications_to_df <- function(reps) {
       },
       type = as.character(primary$type),
       incomplete = isTRUE(primary$incomplete %||% FALSE),
+      shiny_run = tryCatch(
+        isTRUE(replicate_fn("step_shiny_run_enabled", primary)),
+        error = function(e) TRUE
+      ),
       blocked_reason = as.character(primary$blocked_reason %||% ""),
       requires_engine = entry_requires_engine_token(primary),
       data_unavailable = entry_data_unavailable_token(primary),
@@ -8750,6 +8759,25 @@ server <- function(input, output, session) {
     if (!nzchar(blocked_reason)) {
       blocked_reason <- "This object cannot be created for this study - see the study notes."
     }
+    shiny_run_on <- tryCatch({
+      if (!is.null(sel_entry)) {
+        isTRUE(replicate_fn("step_shiny_run_enabled", sel_entry))
+      } else {
+        !isFALSE(row$shiny_run[[1]] %||% TRUE)
+      }
+    }, error = function(e) !isFALSE(row$shiny_run[[1]] %||% TRUE))
+    shiny_run_msg <- tryCatch({
+      if (!is.null(sel_entry)) {
+        as.character(replicate_fn("step_shiny_run_message", sel_entry))
+      } else {
+        as.character(replicate_fn(
+          "step_shiny_run_message",
+          list(blocked_reason = row$blocked_reason[[1]] %||% "")
+        ))
+      }
+    }, error = function(e) {
+      "Live Run disabled for this step in Shiny."
+    })
     req_eng <- tolower(as.character((sel_entry$requires_engine %||% row$requires_engine[[1]]) %||% ""))
     data_tok <- tolower(as.character((sel_entry$data_unavailable %||% row$data_unavailable[[1]]) %||% ""))
 
@@ -9070,6 +9098,15 @@ server <- function(input, output, session) {
         if (shiny_live_run_enabled()) {
           run_title <- "Run live replication"
           long_mark <- NULL
+          if (!isTRUE(shiny_run_on)) {
+            actionButton(
+              paste0("replicate_", safe_group),
+              "Run",
+              class = "btn-primary btn-sm",
+              disabled = "disabled",
+              title = shiny_run_msg
+            )
+          } else {
           rt <- tryCatch(
             replicate_fn(
               "lookup_replication_audit_runtime",
@@ -9115,6 +9152,7 @@ server <- function(input, output, session) {
               )
             )
           )
+          }
         }
       )
     )
@@ -9175,6 +9213,14 @@ server <- function(input, output, session) {
             req_eng <- tolower(as.character(row$requires_engine[[1]] %||% ""))
             data_tok <- tolower(as.character(row$data_unavailable[[1]] %||% ""))
             step_blocked <- isTRUE(row$incomplete[[1]] %||% FALSE)
+            shiny_run_on <- !isFALSE(row$shiny_run[[1]] %||% TRUE)
+            shiny_run_msg <- tryCatch(
+              as.character(replicate_fn(
+                "step_shiny_run_message",
+                list(blocked_reason = row$blocked_reason[[1]] %||% "")
+              )),
+              error = function(e) "Live Run disabled for this step in Shiny."
+            )
             # A requires_engine naming a proprietary tool (Mathematica, ...) is
             # this step's true identity for display, even when it is
             # technically dispatched via Stata/R glue code. For a blocked step,
@@ -9335,6 +9381,15 @@ server <- function(input, output, session) {
                   )
                 },
                 if (shiny_live_run_enabled() && !step_blocked && !step_data_gap && !step_engine_gap) {
+                  if (!isTRUE(shiny_run_on)) {
+                    actionButton(
+                      paste0("data_run_", safe_id),
+                      "Run",
+                      class = "btn-outline-primary btn-sm",
+                      disabled = "disabled",
+                      title = shiny_run_msg
+                    )
+                  } else {
                   step_run_title <- "Run live replication"
                   step_long_mark <- NULL
                   step_rt <- tryCatch(
@@ -9383,6 +9438,7 @@ server <- function(input, output, session) {
                       )
                     )
                   )
+                  }
                 } else if (step_data_gap) {
                   run_unavailable_padlock_button(step_id, step_blocked_reason, data_tok)
                 } else if (step_engine_gap) {
@@ -9640,6 +9696,29 @@ server <- function(input, output, session) {
   run_live_replication <- function(doi, what, language = "r") {
     if (!shiny_live_run_enabled()) {
       state$selected_result <- simpleError("Live Run is disabled in this deployment.")
+      state$selected_source <- "live"
+      state$progress <- NULL
+      return(invisible(NULL))
+    }
+    shiny_run_gate <- tryCatch({
+      meta <- replicate_fn(
+        "get_replication_meta",
+        doi,
+        folder = state$registry_folder,
+        repo = state$registry_repo
+      )
+      entry <- replicate_fn("find_replication_entry", meta, what, language = language)
+      list(
+        enabled = isTRUE(replicate_fn("step_shiny_run_enabled", entry)),
+        message = as.character(replicate_fn("step_shiny_run_message", entry))
+      )
+    }, error = function(e) list(enabled = TRUE, message = ""))
+    if (!isTRUE(shiny_run_gate$enabled)) {
+      msg <- shiny_run_gate$message
+      if (!nzchar(as.character(msg %||% ""))) {
+        msg <- "Live Run disabled for this step in Shiny."
+      }
+      state$selected_result <- simpleError(msg)
       state$selected_source <- "live"
       state$progress <- NULL
       return(invisible(NULL))

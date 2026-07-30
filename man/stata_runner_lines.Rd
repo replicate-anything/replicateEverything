@@ -4,7 +4,14 @@
 \alias{stata_runner_lines}
 \title{Build the do-file lines for the package's generated Stata batch runner}
 \usage{
-stata_runner_lines(do_in_do, wd_in_do, staging_dir = NULL, log_in_do = NULL)
+stata_runner_lines(
+  do_in_do,
+  wd_in_do,
+  staging_dir = NULL,
+  log_in_do = NULL,
+  hidden_shell_vbs = NULL,
+  rscript_path = NULL
+)
 }
 \arguments{
 \item{do_in_do}{Do-file path already escaped/formatted for use inside a
@@ -13,6 +20,12 @@ Stata do-file (see \code{stata_path_in_do()}).}
 \item{wd_in_do}{Working directory, same formatting.}
 
 \item{staging_dir}{Optional writable directory for \code{$result} output.}
+
+\item{hidden_shell_vbs}{Optional Windows path to
+\code{\link[=stata_windows_hidden_shell_vbs_lines]{stata_windows_hidden_shell_vbs_lines()}} script for \code{$S_SHELL}.}
+
+\item{rscript_path}{Optional absolute Rscript path for
+\code{$REPLICATE_RSCRIPT} (Hahn LBD and similar Stata\to R shells).}
 }
 \value{
 Character vector of do-file lines.
