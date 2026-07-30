@@ -22,8 +22,8 @@
 - **Artifacts** — load, validate, and save precomputed outputs (PNG, HTML, RDS) for fast display
 - **Display pipeline** — optional `format_*` steps turn analysis objects into HTML tables and ggplot figures
 - **Shiny demo** — [live app](https://shiny2.wzb.eu/ipi/replicate/); `run_shiny_app()` locally; `save_local_shiny()` to deploy on Shiny Server
-- **Contributor tooling** — validate with `check_and_bake_study()`, then a maintainer registers with `sync_study_to_registry()` / `register_study()` — no study-local registry handoff
-- **Checks** — `check_replication()` and `audit_everything()` cover structure, precomputed outputs, and optional published-value substantive benchmarks
+- **Contributor tooling** — validate with `check_and_bake_study()`, then a maintainer registers with `register_study()` — no study-local registry handoff
+- **Checks** — `check_and_bake_study()` and `audit_everything()` cover structure, precomputed outputs, and optional published-value substantive benchmarks
 - **Bundled AI skills** — markdown workflow guides for assistants (`ai_skills()`, `ai_skill()`)
 
 ## Project status
@@ -235,10 +235,10 @@ testthat::test_dir("tests/testthat")
 check_and_bake_study(".", build_artifacts = FALSE, registry_root = "../registry")
 
 # 4. Maintainer: write the stub into a local registry checkout
-sync_study_to_registry(".", registry_root = "../registry")
+register_study(".", registry_root = "../registry")
 
-# One-call alternative for a maintainer (check + sync):
-# register_study(".", registry_root = "../registry")
+# Or light-refresh after a batch of registrations:
+# refresh_registry("../registry")
 ```
 
 See `vignette("folder-replication-checklist", package = "replicateEverything")` for the full workflow.
@@ -270,8 +270,7 @@ no study-local registry handoff):
 options(replicateEverything.registry_root = "/path/to/registry")
 
 check_and_bake_study("/path/to/rep_package", full_replication = FALSE)
-sync_study_to_registry("/path/to/rep_package")
-# or in one call: register_study("/path/to/rep_package")
+register_study("/path/to/rep_package")
 ```
 
 See `vignette("package-replication-checklist", package = "replicateEverything")` for requirements.
@@ -310,13 +309,13 @@ must **not** define or ship `run_replication()`, `list_replications()`,
 | Build study outputs (folder or package) | `build_study_outputs()` |
 | Build outputs by DOI/scope (registry-wide with `doi = "everywhere"`) | `build_outputs()` |
 | Validate a study (+ optional bake) | `check_and_bake_study()` |
-| Validate study layout + tests | `check_replication()` |
-| Sync a study into the registry (maintainer) | `sync_study_to_registry()` |
-| Validate then sync in one call (maintainer) | `register_study()` |
+| Sync a study into the registry (maintainer) | `register_study()` |
+| Light refresh derived registry files | `refresh_registry()` |
 | Check precomputed outputs exist | `validate_outputs()` |
 | Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | List bundled AI skills | `ai_skills()`, `ai_skill()` |
-| Registry health check | `audit_everything()` |
+| Registry health check (live) | `audit_everything()` |
+| Registry health view (read-only) | `audit_report()` |
 | Shiny demo | `run_shiny_app()`, `save_local_shiny()` |
 
 Set `install_deps = TRUE` on run functions to install missing CRAN dependencies automatically.
@@ -355,10 +354,10 @@ options(replicateEverything.index = read.csv("/path/to/registry/index.csv"))
 3. **Add your data and code** — place processed data in `data/` and scripts in `code/` (or in the package's `R/` + `data/` for package-backed studies)
 4. **Bake and test locally** — `build_study_outputs(".")`, then `testthat::test_dir("tests/testthat")`
 5. **Validate** — `check_and_bake_study(".")`; this checks structure, yaml, outputs, and tests. It never writes into the study repo or a registry — it only reports pass/fail
-6. **Hand off to a maintainer** — send the study repo (or package) address; a maintainer with a local [registry](https://github.com/replicate-anything/registry) checkout runs `sync_study_to_registry(path)` (or `register_study(path)` to validate + sync in one call), which writes `studies/<folder>.yml` and rebuilds `index.csv` directly from your `replication.yml` — **no study-local `registry/` handoff, ever**
+6. **Hand off to a maintainer** — send the study repo (or package) address; a maintainer with a local [registry](https://github.com/replicate-anything/registry) checkout runs `register_study(path)`, which writes `studies/<folder>.yml` and rebuilds `index.csv` directly from your `replication.yml` — **no study-local `registry/` handoff, ever**
 
 There is exactly **one** registry entrypoint for both layouts:
-`sync_study_to_registry()` / `register_study()`. Full study materials
+`register_study()` (plus `refresh_registry()` after batches). Full study materials
 (`code/`, `data/`, `outputs/`, package source) are never copied into the
 registry repository — only the lightweight stub and `index.csv` row live
 there.

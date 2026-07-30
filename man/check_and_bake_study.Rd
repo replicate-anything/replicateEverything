@@ -31,9 +31,9 @@ Invisibly, a checklist result (\code{folder_replication_check} or
 }
 \description{
 Optionally bakes display artifacts with \code{\link[=build_study_outputs]{build_study_outputs()}}, then runs
-\code{\link[=check_replication]{check_replication()}}. On success the study is ready for a maintainer to
-register it with \code{\link[=sync_study_to_registry]{sync_study_to_registry()}} (stub written only into the
-central registry repository).
+the contributor checklist (internal \code{check_replication()}). On success the
+study is ready for a maintainer to register it with \code{\link[=register_study]{register_study()}}
+(stub written only into the central registry repository).
 }
 \examples{
 \dontrun{

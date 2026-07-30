@@ -95,7 +95,7 @@ resolve_package_location <- function(location) {
   if (!nzchar(git)) {
     stop(
       "Git is required to clone ", slug,
-      ". Clone the repository locally and pass the package path to register_study() or sync_study_to_registry().",
+      ". Clone the repository locally and pass the package path to register_study().",
       call. = FALSE
     )
   }

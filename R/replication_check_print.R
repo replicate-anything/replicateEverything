@@ -1,7 +1,7 @@
 #' Print a replication checklist result
 #'
-#' @param x Result from [check_replication()], [check_and_bake_study()], or
-#'   [register_study()].
+#' @param x Result from [check_and_bake_study()], [register_study()], or the
+#'   internal checklist (`check_replication()`).
 #' @param ... Ignored.
 #' @keywords internal
 #' @exportS3Method print package_replication_check

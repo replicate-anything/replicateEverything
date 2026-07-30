@@ -38,7 +38,7 @@ Invisibly, a list with \code{index}, optional \code{seed}, and optional \code{au
 Light path (\code{audit = FALSE}, default):
 \enumerate{
 \item Rebuild \code{index.csv} from \verb{studies/*.yml} stubs
-\item Rebuild \code{shiny_studies.json} (via \code{\link[=build_registry_index]{build_registry_index()}})
+\item Rebuild \code{shiny_studies.json} (via internal \code{build_registry_index()})
 \item Seed \code{audit_jobs.csv} gaps from bake timings / artifacts / prior RDS
 (no live engines)
 \item Rebuild \code{audit_summary.json} / \code{audit_latest.rds} (Shiny health bar)

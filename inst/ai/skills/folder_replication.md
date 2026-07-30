@@ -26,7 +26,8 @@ Turn delivered analysis materials into a **folder-backed study repository** wire
 | **Minimal step yaml** | Declare `outputs:` (not deprecated `artifact:`). **Omit** empty `parents: []`. Format children: no unused `label:`. Use `description:` for Shiny hover + Display title (`label_full`). |
 | **Pure helpers** | `make_<id>()` / `format_<id>()` only — **no required** `sys.nframe()` footers. Prefer replicateEverything / established packages over study-local utilities. |
 | **Code tips** | [get_code()] defaults to `mode = "definitions"`; `mode = "run"` appends the yaml-implied load → make → format recipe. Tips are engine-aware (R / Stata / Python). |
-| **Registry stub** | Maintainer runs [sync_study_to_registry()] from study root yaml — **no** study-local `registry/` handoff folder. |
+| **Registry stub** | Maintainer runs [register_study()] (or [refresh_registry()] after batch) from study root yaml — **no** study-local `registry/` handoff folder. |
+| **Public maintainer API** | [register_study()], [refresh_registry()], [audit_everything()], [audit_report()]. Contribute: [check_and_bake_study()], [build_study_outputs()]. |
 
 ## Target layout
 
@@ -69,8 +70,8 @@ Copy and track progress:
 
 **Every study repo must declare `maintainer:` (name + email) and should declare
 `collections:` (APSR, PED, World Bank, IPI, AER, …) in root `replication.yml`.**
-These fields copy into the registry stub and `index.csv` (via `build_registry_index()`)
-for the Studies tab filter and maintainer link.
+These fields copy into the registry stub and `index.csv` (via [refresh_registry()] /
+[register_study()]) for the Studies tab filter and maintainer link.
 
 **Also declare `paper.source_repository`:** URL of the original data / materials
 deposit (Dataverse, OpenICPSR, World Bank catalog, GitHub analysis repo, personal
@@ -81,8 +82,8 @@ repo); for a template with no external deposit they may be the same URL. Shiny
 shows **Source repository** with a kind icon inferred from the URL (Dataverse,
 OSF, World Bank, ICPSR/OpenICPSR, Git, replicateEverything); other http(s) URLs
 fall back to **personal**. Legacy aliases `source_url` / `source_repo` are still
-read. `check_replication()` fails when the field is missing; `audit_everything()`
-summarizes gaps via `registry_source_repository_gaps()`.
+read. [check_and_bake_study()] fails when the field is missing; [audit_everything()] /
+[audit_report()] surface source-repository gaps.
 
 
 ```
@@ -98,7 +99,7 @@ summarizes gaps via `registry_source_repository_gaps()`.
 - [ ] 7. Build outputs; write outputs/manifest.json
 - [ ] 8. Add testthat tests (run_replication + output match)
 - [ ] 8b. Add substantive checks under `tests/substantive/<step_id>.R` when published benchmarks are available (see Fearon & Laitin tab_1)
-- [ ] 9. Maintainer: **`sync_study_to_registry()`** (no study-local `registry/`); **`build_registry_index()`** / refresh so `index.csv` has repo, **collections**, **maintainer**, **languages**
+- [ ] 9. Maintainer: **`register_study()`** (no study-local `registry/`); **`refresh_registry()`** so `index.csv` has repo, **collections**, **maintainer**, **languages**
 - [ ] 10. Remove code/data from registry study folder (if migrating)
 - [ ] 11. Verify replicateEverything + Shiny (Display + Run + system compatibility check)
 - [ ] 12. Commit and push study repo + registry
@@ -627,8 +628,8 @@ binaries in git. Keep the study repo **as light as possible**.
 
 | Situation | Action |
 |-----------|--------|
-| Public Dataverse/ICPSR file id(s) known | **Pattern B (default):** surgical `access_*` step (`engine: dataverse` or thin `fetch_dataverse_file()`) → `outputs/…`. Document `api/access/datafile/<id>?format=original`. Gitignore fetched binaries. Later steps `parents:` the access step. |
-| Many raw roots; fetch is **not** a claimed product | **Pattern A (exception):** declare under `dataverse.files` / `data_files:` → package [materialize_declared_data()] into `data/`. |
+| Public Dataverse/ICPSR file id(s) known | **Pattern B (default):** surgical `access_*` step (`engine: dataverse`) → `outputs/…`. Document `api/access/datafile/<id>?format=original`. Gitignore fetched binaries. Later steps `parents:` the access step. |
+| Many raw roots; fetch is **not** a claimed product | **Pattern A (exception):** declare under `dataverse.files` / `data_files:` → package materialize into `data/` (internal helper; prefer yaml declaration + bake). |
 | Author scripts need deposit layout | **Pattern C:** manifest with **file ids** (surgical per-file into `outputs/deposit/`). Use `fetch: archive_original` **only** when file ids cannot reconstruct the needed tree — document why. |
 | No usable fetch API (private / offline / **OpenICPSR** typical) | **Commit fallback:** download once to `original_studies/`; commit **only needed** inputs ≤50 MB under `data/`; yaml-declare; do not ship unused deposit bulk. Else registry data area. See `openicpsr_to_replicateEverything.md`. |
 
@@ -681,9 +682,9 @@ outputs/staging/
 ### Functions / helpers
 
 Studies provide **wiring and thin runners**, not duplicated fetch utilities.
-Prefer `replicateEverything::fetch_dataverse_file()`, `engine: dataverse`,
-[materialize_declared_data()], or package Dataverse helpers. Grep for accidental
-study-local downloads before submit (see `check_study_submission.md` § B).
+Prefer `engine: dataverse` and package Dataverse helpers over study-local
+`httr::GET` / `download.file`. Grep for accidental study-local downloads before
+submit (see `check_study_submission.md` § B).
 
 Full Dataverse patterns (B default / A / C): skill
 `dataverse_to_replicateEverything.md`.
@@ -725,7 +726,7 @@ display code.
 
 Transform steps write to paths declared in `outputs:` (under `outputs/<step_id>/`).
 
-`check_replication()` flags R table/figure scripts that are missing `make_*`.
+[check_and_bake_study()] flags R table/figure scripts that are missing `make_*`.
 
 Reference: `rep-template/code/tab_1.R`, `rep-10.1017-S0003055403000534/code/tab_1.R`.
 
@@ -803,7 +804,7 @@ Maintainer, from a monorepo checkout:
 ```r
 library(replicateEverything)
 options(replicateEverything.registry_root = "../registry")
-sync_study_to_registry(".", audit = TRUE)   # or path to the study repo
+register_study(".", audit = TRUE)   # or path to the study repo
 # or batch: refresh_registry("../registry", audit = TRUE)
 ```
 
@@ -863,14 +864,14 @@ Replication scripts often call other files via R `source()` / `sys.source()` or 
 When onboarding, trace every `source()` / `do` in declared runner scripts and confirm
 the target file exists at the resolved path — not only that the runner itself exists.
 
-`check_replication()` runs **`check_code_links()`** automatically and reports errors
+[check_and_bake_study()] runs code-link checks automatically and reports errors
 like:
 
 ```
 In code/tables/tab_1.R line 12: cannot resolve source('../helpers/foo.R') → expected code/helpers/foo.R
 ```
 
-Fix broken links before `check_and_bake_study()`. The code viewer / live Run
+Fix broken links before [check_and_bake_study()]. The code viewer / live Run
 uses the same resolution logic, so broken links fail both submission checks and Shiny
 navigation.
 
@@ -882,7 +883,7 @@ Run in order; stop on failure.
 |-------|------------------|
 | Yaml parses | `yaml::read_yaml("replication.yml")` |
 | Each `code:` file exists | `file.exists()` |
-| Code file links resolve | `check_replication()` (`code_links` check) |
+| Code file links resolve | [check_and_bake_study()] (code_links check) |
 | Each `data:` file exists | if specified |
 | `run_replication` | `replicateEverything::run_replication(doi, id)` |
 | Formatted output | `format = TRUE` when `format:` in yaml |
@@ -949,7 +950,7 @@ See `registry/guides/folder-replication.md` in the monorepo.
 
 ## Registry `index.csv` columns
 
-When merging a study row into [registry/index.csv](https://github.com/replicate-anything/registry/blob/main/index.csv), **`maintainer`**, **`collections`**, and **`languages`** live in the registry stub yaml (`studies/<folder>.yml`) copied from the study repo. Rebuild the full index with `build_registry_index(registry_root)` — no fetch from individual study repos required.
+When merging a study row into [registry/index.csv](https://github.com/replicate-anything/registry/blob/main/index.csv), **`maintainer`**, **`collections`**, and **`languages`** live in the registry stub yaml (`studies/<folder>.yml`) copied from the study repo. Rebuild the full index with [refresh_registry()] — no fetch from individual study repos required.
 
 | Column | Source |
 |--------|--------|
@@ -957,7 +958,7 @@ When merging a study row into [registry/index.csv](https://github.com/replicate-
 | `maintainer_name`, `maintainer_email` | stub `maintainer:` block |
 | `languages` | Semicolon-separated engines from stub `languages:` |
 
-`check_and_bake_study()` / `sync_study_to_registry()` copy these fields into
+[check_and_bake_study()] / [register_study()] copy these fields into
 `registry/studies/<folder>.yml`. **Every new contribution must name a maintainer** —
 do not leave these blank. Do not write study-local `registry/` handoff folders.
 
@@ -968,14 +969,14 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 - **Orphan Unavailable nodes** — proprietary prep (etc.) not on the path to a claimed output → document in README / popup, do **not** add to `steps:`
 - **Marking unavailable without searching for precomputed gold** — check deposit/repo `outputs/` first
 - **Conflating engine-missing, proprietary-data, and audit fail** — use `requires_engine:` vs `data_unavailable:`; audit **skips** `incomplete:` (not fail)
-- **Broken code links** — `source("../helpers/foo.R")` from `code/tables/tab_1.R` must resolve to `code/helpers/foo.R`; run `check_replication()` before submit
+- **Broken code links** — `source("../helpers/foo.R")` from `code/tables/tab_1.R` must resolve to `code/helpers/foo.R`; run [check_and_bake_study()] before submit
 - **Inventing the DAG without reading the author repo** — wrong `parents:` breaks Run and inheritance; always trace README + file I/O first (Step 1b)
 - **Skipping Step 4a** — yaml missing `reghdfe`, `require`, `haven`, or `pandas` because only the main script was read
 - **`reghdfe` without `require`** — probe can pass while table code fails at runtime with `r(9)` on shared servers
 - **No maintainer** — every study repo needs `maintainer:` (name + email)
 - **Stata names in `paper.dependencies`** — use `stata_packages:` instead
 - Putting the **stub** yaml in the study repo (must be **full** yaml with `steps:`)
-- Committing study-local `registry/` handoff — use maintainer `sync_study_to_registry()` instead
+- Committing study-local `registry/` handoff — use maintainer [register_study()] instead
 - Writing empty `parents: []` — omit the field on root steps
 - Using `artifact:` / `output:` / `stata_output:` / `requires:` / `depends_on:` — all hard-error; use `outputs:` and `parents:` only
 - Adding unused `label:` on `type: format` children
@@ -983,3 +984,42 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 - Extension study listing every base step — only `inherit:` / local steps belong in the extension yaml
 - Tests without `replicateEverything.index` override for the new `repo` slug
 - Using Pattern A / silent materialize when Pattern B access → `outputs/` would make the fetch a claimed step
+
+### Stata / Excel / heavy-pipeline pitfalls
+
+Generic lessons from large OpenICPSR/AER-style Stata pipelines (e.g. Hahn AER
+`10.1257/aer.20250166`). No study-specific branching in package code — conventions only.
+
+- **Excel template + `data_export`:** Authors often copy a formatted `TABLE` (or
+  similar) sheet from a template and only refresh machine-readable numbers with
+  `export excel … sheet("data_export")`. Prefer sheet name **`data_export`** for
+  live values when creating that dual-sheet pattern. Display
+  (`xlsx_preview_sheet_names`) and substantive tests should read `data_export`
+  when present — unrecalculated formula caches on presentation sheets mislead
+  `readxl` and can make Display disagree with passing tests. Do **not** invent
+  the sheet if authors do not use the pattern.
+- **Stata early `exit` + `cap copy`:** Package may report “Expected output not
+  found / Stata ran: yes” in a few seconds. Check the Stata log for real `r()`;
+  prefer failing loudly. When author code writes timestamped *and* fixed result
+  folders, add alias/fallback paths so the declared `outputs:` sink is found.
+- **Appendix / result dirs:** `mkdir` (or `cap mkdir`) paths in `init` helpers if
+  scripts write there — missing dirs look like mysterious copy failures.
+- **Staging → outputs locks (Dropbox):** erase/retry copies; open Excel or sync
+  locks surface as Stata `r(693)`. Harden staging helpers; pause sync for long
+  bakes when possible.
+- **Substantive tests vs Display:** can diverge if they read different Excel
+  sheets — keep both on `data_export` (or the same live sheet).
+- **Concurrent Stata instances:** overlapping batch runs often exit `-1`. One
+  Stata engine at a time per machine/study bake.
+- **Audit CSV upsert vs wipe:** light [refresh_registry()] rebuilds index + seeds
+  gaps + summary **without** live engines; heavy [audit_everything()] /
+  `refresh_registry(audit = TRUE)` runs live jobs. Prefer upsert into
+  `audit_jobs.csv` over wiping the portfolio summary.
+- **Engine probe ≠ recompute:** a cost-curve / dependency probe only checks the
+  shell; figures may re-run full policy batches, not just plot. Do not treat probe
+  success as a cheap bake.
+- **Temp-file / I/O churn:** hot intermediates on Dropbox-synced trees amplify
+  lock waits and CSV round-trips. Prefer local scratch / in-memory frames, write
+  one final artifact into synced `outputs/`. See study notes memo when present
+  (e.g. monorepo `notes/HAHN_*_suggests.md`) for profiled suspects — keep skills
+  generic.

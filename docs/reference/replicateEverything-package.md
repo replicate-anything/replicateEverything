@@ -32,13 +32,14 @@ A typical workflow using the package is:
 
 7.  Contribute a study with
     [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md),
-    [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
     [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md),
     and
-    [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
-    (maintainer).
-
-8.  Audit the full registry with
+    [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md)
+    (maintainer). Refresh with
+    [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md);
+    inspect health with
+    [`audit_report()`](https://replicate-anything.github.io/replicateEverything/reference/audit_report.md)
+    or live-audit with
     [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md).
 
 See

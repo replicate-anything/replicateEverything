@@ -71,7 +71,7 @@ Ideal: **yaml points at what is needed**; do not ship unused deposit material;
 - [ ] **Surgical pulls:** file-id / `?format=original` only — no `archive_original` / full DVN zip unless Pattern C justified in README
 - [ ] Prefer Pattern B access → `outputs/` (or Pattern A materialize when fetch is not a claimed product) over committing raw when file ids exist
 - [ ] OpenICPSR / no file API: commit **only** yaml-declared inputs; full unzip stays in `original_studies/` — no unused deposit bulk
-- [ ] Prefer package `fetch_dataverse_file()` / `engine: dataverse` — no study-local `httr::GET` / `download.file` download helpers
+- [ ] Prefer package `engine: dataverse` (or declared `dataverse.files`) — no study-local `httr::GET` / `download.file` download helpers
 - [ ] Prefer sourcing author scripts in place (Pattern C) over rewriting when scripts are standalone; still use file-id manifest rows when possible
 - [ ] For monolithic `.Rmd` only: thin `make_*` extracts are OK — document the Rmd chunk mapping in README
 - [ ] No empty directories (no `data/raw/` with only a placeholder README if nothing is committed there — document fetch in root README instead, or commit ≤50 MB data)
@@ -128,7 +128,7 @@ git ls-files "data/**" "outputs/**/*.dta" "outputs/**/*.csv" 2>/dev/null | head
 ```
 - [ ] Pure `make_<id>()` / `format_<id>()` — interactive `sys.nframe()` footers optional, not required
 - [ ] Analysis vs format split where Display needs it
-- [ ] `source()` / `do` links resolve (`check_replication()` → code_links)
+- [ ] `source()` / `do` links resolve (`check_and_bake_study()` → code_links)
 - [ ] Dependencies searched (Step 4a) and declared (`paper.dependencies`, `stata_packages`, `python_dependencies`)
 - [ ] Tests call package APIs (`run_replication` / `load_artifact`), not only raw `source()`
 ```
@@ -138,7 +138,7 @@ git ls-files "data/**" "outputs/**/*.dta" "outputs/**/*.csv" 2>/dev/null | head
 ```
 - [ ] Study repo pushed and **public** (or otherwise fetchable by the Shiny host)
 - [ ] Contributor: `check_and_bake_study(".")` — no study-local stub
-- [ ] Maintainer: `sync_study_to_registry()` + `build_registry_index()` / `refresh_registry()`
+- [ ] Maintainer: `register_study()` / `refresh_registry()`
 - [ ] `index.csv` has repo, collections, maintainer_*, languages (never hand-thin the CSV)
 ```
 
@@ -151,7 +151,6 @@ setwd("path/to/rep-…")
 yaml::read_yaml("replication.yml")
 list_replications("local", include = "all")
 describe_study_dag("local")
-check_replication("local")          # or doi / path
 check_and_bake_study(".", build_artifacts = TRUE)
 ```
 

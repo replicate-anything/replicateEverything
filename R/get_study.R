@@ -13,7 +13,7 @@
 #'     \code{st$title}, \code{st$languages}, \code{st$step_counts},
 #'     \code{st$related}, \code{st$gaps}, \code{st$repo}, \ldots).
 #'   \item Feed DOI / handle strings into other consumer verbs — e.g.
-#'     [list_replications()], [run_replication()], [check_replication()]
+#'     [list_replications()], [run_replication()], [check_and_bake_study()]
 #'     (via a local path), [describe_study_dag()], [get_code()] — which take
 #'     character keys, not the handle object itself:
 #'     \code{list_replications(st$doi)} or \code{describe_study_dag(st$handle)}.

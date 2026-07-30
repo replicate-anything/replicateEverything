@@ -25,6 +25,15 @@ justified. OpenICPSR (no public file API): commit needed inputs only, still
 yaml-declare. Blocked steps: `incomplete:` + `requires_engine:` or
 `data_unavailable:` (audit skips).
 
+**Public maintainer API:** `register_study()` / `refresh_registry()` /
+`audit_everything()` / `audit_report()`. Contribute: `check_and_bake_study()` /
+`build_study_outputs()`. Prefer these over unexported helpers
+(`sync_study_to_registry`, `check_replication`, `fetch_dataverse_file`, …).
+
+**Excel dual-sheet exports:** when onboarding Stata → Excel tables that keep a
+formatted presentation sheet and a machine-readable numbers sheet, name the live
+values sheet **`data_export`** (Display + substantive tests prefer it when present).
+
 **File provenance headers:** every code file gets a short top-of-file comment
 naming one of `connector` / `author-original` / `translation (X -> Y)` /
 `author-edited` (see `folder_replication.md` § File provenance headers).

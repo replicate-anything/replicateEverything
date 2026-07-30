@@ -91,6 +91,27 @@ test_that("format_xlsx_preview_df rounds numeric columns and keeps text", {
   expect_identical(out2[[2]][[2]], "keep")
 })
 
+test_that("xlsx_preview_sheet_names prefers data_export over presentation sheets", {
+  # Hahn-style: TABLE holds stale formula cache; data_export has live numbers.
+  expect_identical(
+    xlsx_preview_sheet_names(c("TABLE", "data_export")),
+    "data_export"
+  )
+  expect_identical(
+    xlsx_preview_sheet_names(c("data_export", "TABLE")),
+    "data_export"
+  )
+  expect_identical(
+    xlsx_preview_sheet_names(c("TABLE", "Metadata", "readme")),
+    "TABLE"
+  )
+  expect_identical(
+    xlsx_preview_sheet_names(c("Sheet1", "Sheet2")),
+    c("Sheet1", "Sheet2")
+  )
+  expect_identical(xlsx_preview_sheet_names(character(0)), character(0))
+})
+
 test_that("get_artifact_paths returns all declared figure panels that exist", {
   local_root <- withr::local_tempdir()
   study_dir <- file.path(local_root, "rep-10.5555-panels")

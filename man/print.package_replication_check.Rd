@@ -13,8 +13,8 @@
 \method{print}{replication_check}(x, ...)
 }
 \arguments{
-\item{x}{Result from \code{\link[=check_replication]{check_replication()}}, \code{\link[=check_and_bake_study]{check_and_bake_study()}}, or
-\code{\link[=register_study]{register_study()}}.}
+\item{x}{Result from \code{\link[=check_and_bake_study]{check_and_bake_study()}}, \code{\link[=register_study]{register_study()}}, or the
+internal checklist (\code{check_replication()}).}
 
 \item{...}{Ignored.}
 }

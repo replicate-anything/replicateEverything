@@ -568,7 +568,7 @@ validate_registry_outputs <- function(registry_root = NULL, folders = NULL) {
 #' @param language Optional engine language for multi-engine replications.
 #' @return A \code{validate_outputs_result} on success (auto-prints PASS/FAIL,
 #'   DOI/what, and checked paths). Use \code{$ok} for the logical flag.
-#' @seealso [check_replication()], [build_outputs()], [build_study_outputs()]
+#' @seealso [check_and_bake_study()], [build_outputs()], [build_study_outputs()]
 #' @export
 #'
 #' @examples

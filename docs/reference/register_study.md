@@ -2,9 +2,8 @@
 
 Runs
 [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
-then
-[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md).
-Use when a maintainer has a study checkout and a local registry
+then syncs a lightweight stub into the local registry checkout and rebuilds
+`index.csv`. Use when a maintainer has a study checkout and a local registry
 checkout.
 
 ## Usage

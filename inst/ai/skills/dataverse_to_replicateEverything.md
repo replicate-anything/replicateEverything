@@ -15,9 +15,9 @@ Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `re
 `Codebook.pdf`, monolithic `.do` / `.Rmd` files, mixed Stata/R/Python) into a
 **folder-backed study repo** wired to [replicateEverything](https://github.com/replicate-anything/replicateEverything) and the [registry](https://github.com/replicate-anything/registry).
 
-**Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml; **gold example** `rep-template`), `include-study-in-registry` (maintainer `sync_study_to_registry`).
+**Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml; **gold example** `rep-template`), `include-study-in-registry` (maintainer `register_study`).
 
-**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse` / `fetch_dataverse_file()`; Pattern A materialize → `data/` only when fetch is not a claimed product; full archive only when Pattern C justified (see root `AI.md`).
+**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse`; Pattern A materialize → `data/` only when fetch is not a claimed product; full archive only when Pattern C justified (see root `AI.md`).
 
 **Not OpenICPSR:** if the deposit is on openicpsr.org / ICPSR (often AER), use
 `openicpsr_to_replicateEverything.md` instead — usually no public per-file API;
@@ -50,25 +50,25 @@ Every study needs **`maintainer:`** (name + email) and **`collections:`** in roo
 `replication.yml`. Set **`collections: [APSR]` only when the deposit metadata cites
 *American Political Science Review*** (journal block or `publicationCitation`); otherwise
 use the appropriate tag (`PED`, `World Bank`, `IPI`, â€¦) or omit until known. Sync to
-registry `index.csv` with **`build_registry_index()`** after copying the stub â€” see
-folder-replication Step 4b.
+registry `index.csv` with **`refresh_registry()`** after registering the stub —
+see folder-replication Step 4b.
 
 ```
 - [ ] 1. **Read author README** (download from Dataverse if no local zip) + Codebook; list main-text tables/figures
 - [ ] 2. **Reconstruct step DAG** from README order + script file I/O (folder-replication Step 1b)
 - [ ] 3. Inventory engines (Stata / R / Python) and pipeline order
 - [ ] 4. Create study repo layout (see Target layout)
-- [ ] 5. **Data (light repo, Pattern B default):** surgical `access_*` → `outputs/` via file id / `?format=original` (`engine: dataverse` / `fetch_dataverse_file()`); **no full DVN zip** unless Pattern C justified
+- [ ] 5. **Data (light repo, Pattern B default):** surgical `access_*` → `outputs/` via file id / `?format=original` (`engine: dataverse`); **no full DVN zip** unless Pattern C justified
 - [ ] 5b. **Check native format** — inspect `originalFileName` / `originalFormatLabel` before any `.tab` conversion
 - [ ] 5c. **Pattern A / commit only if needed** — silent materialize → `data/` when fetch is not a claimed product; commit raw only when no fetch API
 - [ ] 6. **Search all code for dependencies** — folder-replication Step 4a + Dataverse delivery patterns below
-- [ ] 6b. **No study-local download helpers** — use package `fetch_dataverse_file()` / materialize / `dataverse`
+- [ ] 6b. **No study-local download helpers** — use package `engine: dataverse` / declared `dataverse.files` (not study-local `httr::GET`)
 - [ ] 7. Add dependency automation (Stata install script, R CRAN, Python pip)
 - [ ] 8. Extract pipeline â†’ code/steps/ + transform steps in replication.yml
 - [ ] 9. Split monolithic .do â†’ code/tables/tab_N.do + mk_tab_N.do
 - [ ] 10. Port figures â†’ code/figures/fig_N.{R,py}; helpers â†’ code/helpers/
 - [ ] 11. **Write replication.yml** â€” `steps:` DAG + deps (folder-replication Step 4b)
-- [ ] 12. Registry stub + run **`build_registry_index()`**
+- [ ] 12. Registry stub via **`register_study()`** / **`refresh_registry()`**
 - [ ] 13. testthat smoke tests
 - [ ] 14. Build outputs/ + manifest.json (`build_study_outputs(..., install_deps = TRUE)`)
 - [ ] 15. Validate engines + Shiny (Display + Run + Check system compatibility)
@@ -318,8 +318,8 @@ Or by Dataverse file id (native upload behind a `.tab` listing):
       original: true
 ```
 
-`replicateEverything::materialize_declared_data()` (also called from
-`prepare_study_run` / `ensure_study_data_files`) downloads missing paths.
+Package materialize helpers (internal; called from prepare / bake) download
+missing paths declared under `dataverse.files` / `data_files:`.
 Downstream transforms list those paths under `inputs:` with **no** `parents`
 for the fetch — roots are `data/`, not a step.
 
@@ -377,9 +377,9 @@ outputs/data.dta
 
 | Call | Fetches when `data/raw/*.dta` missing? |
 |------|------------------------------------------|
-| `materialize_declared_data(doi)` | Yes |
+| [build_study_outputs()] / prepare | Yes (auto via declared files) |
 | `run_replication(doi, "analysis_data", given = "nothing")` | Yes (auto) |
-| `build_study_outputs()` | Yes (via prepare_study_run) |
+| [build_study_outputs()] | Yes (via prepare_study_run) |
 
 **Run semantics (legacy access_data step):**
 
@@ -394,7 +394,7 @@ artifacts (`outputs/tab_1.html`) stay committed; intermediate `.dta` is local ca
 
 **Publish:** init git in the study folder, `.gitignore` `outputs/data.dta`, commit
 code + yaml + display artifacts, push to `replicate-anything/rep-<doi-slug>` on
-GitHub. Registry stub sync stays in the monorepo via `sync_study_to_registry()`.
+GitHub. Registry stub sync stays in the monorepo via [register_study()].
 
 ### Pattern C â€” Full deposit cache + source author scripts in place
 
@@ -804,7 +804,7 @@ Do **not** hand-edit a stub into the study repo. Maintainer syncs from study
 `replication.yml`:
 
 ```r
-sync_study_to_registry("../rep-10.1017-s0003055426101749", registry_root = "../registry")
+register_study("../rep-10.1017-s0003055426101749", registry_root = "../registry")
 refresh_registry("../registry", audit = TRUE)
 ```
 

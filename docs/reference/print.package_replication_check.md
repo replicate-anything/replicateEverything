@@ -20,10 +20,9 @@ print(x, ...)
 - x:
 
   Result from
-  [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
   [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md),
-  or
-  [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md).
+  [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md),
+  or the internal checklist (`check_replication()`).
 
 - ...:
 

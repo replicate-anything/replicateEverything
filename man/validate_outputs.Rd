@@ -60,5 +60,5 @@ validate_outputs(doi = "everywhere", folders = "10.1017_s0003055403000534")
 }
 }
 \seealso{
-\code{\link[=check_replication]{check_replication()}}, \code{\link[=build_outputs]{build_outputs()}}, \code{\link[=build_study_outputs]{build_study_outputs()}}
+\code{\link[=check_and_bake_study]{check_and_bake_study()}}, \code{\link[=build_outputs]{build_outputs()}}, \code{\link[=build_study_outputs]{build_study_outputs()}}
 }

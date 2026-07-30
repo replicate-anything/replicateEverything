@@ -2,10 +2,9 @@
 
 Optionally bakes display artifacts with
 [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md),
-then runs
-[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md).
+then runs the contributor checklist (internal `check_replication()`).
 On success the study is ready for a maintainer to register it with
-[`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
+[`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md)
 (stub written only into the central registry repository).
 
 ## Usage

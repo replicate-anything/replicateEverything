@@ -204,7 +204,8 @@ check_and_bake_study(
 )
 ```
 
-This runs [check_replication()] against your study root `replication.yml`.
+This runs the contributor checklist against your study root `replication.yml`
+(via [check_and_bake_study()], which uses an internal checker).
 It **validates only** — it does not write a registry stub or any handoff
 file into the study repo. Commit your study once checks pass; a registry
 **maintainer** writes the stub directly from your yaml (step 4).
@@ -256,11 +257,11 @@ substantive_check_tab_1 <- function(object) {
 }
 ```
 
-`check_glm_table_benchmark()` is injected when the package loads substantive check scripts (via [audit_everything()] or [check_replication()]). Study-specific benchmark values belong in the study repo, not the package.
+`check_glm_table_benchmark()` is injected when the package loads substantive check scripts (via [audit_everything()] or [check_and_bake_study()] with `full_replication = TRUE`). Study-specific benchmark values belong in the study repo, not the package.
 
 Call the same function from `tests/testthat/test-<step_id>.R` so `testthat::test_dir()` exercises it locally.
 
-**Maintainers:** [check_replication()] reports substantive coverage (`substantive_<step_id>` rows). Use `full_replication = TRUE` to run defined checks. [audit_everything()] runs them registry-wide by default (`substantive = TRUE`); failures appear as `[substantive]` in the audit summary.
+**Maintainers:** [check_and_bake_study()] with `full_replication = TRUE` runs defined substantive checks. [audit_everything()] runs them registry-wide by default (`substantive = TRUE`); failures appear as `[substantive]` in the audit summary.
 
 ### Maintainer shortcut
 
@@ -276,4 +277,4 @@ register_study("../rep-10.1177-00491241211036161", audit = TRUE)
 
 ## Package-backed studies
 
-For studies maintained as R packages, see `vignette("package-replication-checklist", package = "replicateEverything")` and `check_replication()`.
+For studies maintained as R packages, see `vignette("package-replication-checklist", package = "replicateEverything")` and [check_and_bake_study()].

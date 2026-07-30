@@ -68,7 +68,7 @@ Keep study repos **light**. Yaml points at originals; do not ship wholesale depo
 ```{=html}
 <ul class="task-list">
 <li><input type="checkbox" id="w1"><label for="w1">Prefer <strong>yaml wiring</strong> (declared URLs / file ids / <code>engine: dataverse</code>) over shipping raw deposits</label></li>
-<li><input type="checkbox" id="w2"><label for="w2">Prefer package helpers (<code>fetch_dataverse_file()</code>, <code>materialize_declared_data()</code>, <code>run_replication()</code>) over study-local <code>httr::GET</code> / <code>download.file</code> / unzip utilities</label></li>
+<li><input type="checkbox" id="w2"><label for="w2">Prefer package helpers (<code>engine: dataverse</code>, declared <code>dataverse.files</code>, <code>run_replication()</code>) over study-local <code>httr::GET</code> / <code>download.file</code> / unzip utilities</label></li>
 <li><input type="checkbox" id="w3"><label for="w3">Thin runners and pure <code>make_*</code> / <code>format_*</code> only — do not reimplement package verbs in the study</label></li>
 <li><input type="checkbox" id="w4"><label for="w4">Do not copy wholesale archives into the study when a deposit API can serve the files you need</label></li>
 </ul>
@@ -93,7 +93,7 @@ When the replication lives on **Harvard Dataverse** or **ICPSR / OpenICPSR**, fe
 
 | Source | Typical entry | Prefer |
 |--------|---------------|--------|
-| Harvard Dataverse | `doi:10.7910/DVN/…` | File-id URL with `?format=original`; package `engine: dataverse` / `fetch_dataverse_file()` |
+| Harvard Dataverse | `doi:10.7910/DVN/…` | File-id URL with `?format=original`; package `engine: dataverse` |
 | OpenICPSR / ICPSR | project page (often JS-gated; no public per-file API) | Download once → `original_studies/`; commit **only** yaml-declared inputs ≤50 MB; do not ship unused deposit bulk. See OpenICPSR skill |
 | No usable fetch API (private, offline) | — | Same commit fallback; document why; larger → registry data area |
 

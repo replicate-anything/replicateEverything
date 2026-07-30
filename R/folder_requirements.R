@@ -414,6 +414,37 @@ format_xlsx_preview_df <- function(df) {
   out
 }
 
+#' Choose workbook sheet(s) for Shiny Excel Display preview
+#'
+#' Prefers a \code{data_export} sheet when present. Author pipelines often write
+#' live numbers there and leave a formatted presentation sheet (e.g. TABLE)
+#' with Excel formulas whose cached values stay stale until Excel recalculates;
+#' \code{readxl} only returns those cached values. Skips \code{metadata} /
+#' \code{readme}. When \code{data_export} is absent, returns remaining sheets
+#' (up to the caller to cap how many to render).
+#'
+#' @param sheets Character vector of sheet names from
+#'   \code{readxl::excel_sheets()}.
+#' @return Character vector of preferred sheet names (may be empty).
+#' @keywords internal
+xlsx_preview_sheet_names <- function(sheets) {
+  sheets <- as.character(sheets)
+  sheets <- sheets[nzchar(sheets) & !is.na(sheets)]
+  if (!length(sheets)) {
+    return(character(0))
+  }
+  skip <- tolower(sheets) %in% c("metadata", "readme")
+  usable <- sheets[!skip]
+  if (!length(usable)) {
+    usable <- sheets
+  }
+  de <- which(tolower(usable) == "data_export")
+  if (length(de)) {
+    return(usable[[de[[1L]]]])
+  }
+  usable
+}
+
 #' Regex for \code{outputs:} paths that Shiny Display can open
 #'
 #' Includes spreadsheet sinks (Hahn \code{tab_1}/\code{tab_2} \code{.xlsx}) and

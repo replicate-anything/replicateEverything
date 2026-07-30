@@ -31,7 +31,8 @@ Invisibly, \code{dest}.
 }
 \description{
 Prefers surgical file-level fetches (\verb{api/access/datafile/<id>?format=original})
-over full dataset archives. Studies should call \code{\link[=fetch_dataverse_file]{fetch_dataverse_file()}} rather
-than inventing local \code{httr::GET} helpers.
+over full dataset archives. Studies should use \code{engine: dataverse} or declared
+\code{dataverse.files} rather than inventing local \code{httr::GET} helpers
+(\code{fetch_dataverse_file()} is an internal helper).
 }
 \keyword{internal}

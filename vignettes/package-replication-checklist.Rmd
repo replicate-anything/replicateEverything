@@ -122,7 +122,7 @@ Do **not** put these in the study package — they live only in **replicateEvery
 | `run_replication(doi, id)` | Calls package `make_*` then `format_*` |
 | `load_artifact(doi, id)` | Display HTML or PNG path |
 | `get_code(doi, id)` | Source for Code tab |
-| `check_replication(".")` | Validate package study |
+| `check_and_bake_study(".")` | Validate package study |
 
 ## Artifacts (Display tab)
 
@@ -165,7 +165,6 @@ check_and_bake_study(
   "../rep-10.1371-journal.pone.0278337",
   build_artifacts = TRUE
 )
-check_replication("../rep-10.1371-journal.pone.0278337")
 ```
 
 `check_and_bake_study()` validates only — it never writes a registry stub or
@@ -188,15 +187,10 @@ refresh_registry("../registry")
 refresh_registry("../registry", audit = TRUE)
 ```
 
-### Checks only
+### Full live checks
 
 ```{r, eval = FALSE}
-check_replication(
-  "../rep-10.1371-journal.pone.0278337",
-  full_replication = FALSE
-)
-
-check_replication(
+check_and_bake_study(
   "../rep-10.1371-journal.pone.0278337",
   full_replication = TRUE
 )
@@ -204,7 +198,7 @@ check_replication(
 
 ## Substantive (published-value) checks
 
-Package-backed studies use the same `tests/substantive/<step_id>.R` convention as folder-backed repos. Define `substantive_check_<step_id>(object)` and call it from `tests/testthat/`. [check_replication()] reports coverage; `full_replication = TRUE` runs defined checks. [audit_everything()] includes them in the registry audit (`substantive = TRUE`, default).
+Package-backed studies use the same `tests/substantive/<step_id>.R` convention as folder-backed repos. Define `substantive_check_<step_id>(object)` and call it from `tests/testthat/`. [check_and_bake_study()] with `full_replication = TRUE` runs defined checks; [audit_everything()] includes them in the registry audit (`substantive = TRUE`, default).
 
 See Fearon & Laitin Table 1 in [rep-10.1017-S0003055403000534](https://github.com/replicate-anything/rep-10.1017-S0003055403000534) for a reference substantive check (study-specific benchmarks live in the study repo).
 

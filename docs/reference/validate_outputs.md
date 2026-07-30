@@ -66,7 +66,7 @@ and checked paths). Use `$ok` for the logical flag.
 
 ## See also
 
-[`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md),
+[`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md),
 [`build_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_outputs.md),
 [`build_study_outputs()`](https://replicate-anything.github.io/replicateEverything/reference/build_study_outputs.md)
 

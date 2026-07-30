@@ -1,9 +1,9 @@
 #' Build outputs and validate a study (contributor)
 #'
 #' Optionally bakes display artifacts with [build_study_outputs()], then runs
-#' [check_replication()]. On success the study is ready for a maintainer to
-#' register it with [sync_study_to_registry()] (stub written only into the
-#' central registry repository).
+#' the contributor checklist (internal `check_replication()`). On success the
+#' study is ready for a maintainer to register it with [register_study()]
+#' (stub written only into the central registry repository).
 #'
 #' @param location Study repo path or GitHub address. Defaults to `"."` — the
 #'   current working directory, i.e. the same study `doi = "local"` resolves
@@ -76,7 +76,7 @@ check_and_bake_study <- function(
 
   message("All checks passed (", nrow(result$checks), " items).")
   message(
-    "A registry maintainer can register this study with sync_study_to_registry() ",
+    "A registry maintainer can register this study with register_study() ",
     "(stub is written only into the registry repository)."
   )
 
@@ -255,7 +255,7 @@ register_study <- function(
 #'
 #' Light path (`audit = FALSE`, default):
 #' 1. Rebuild `index.csv` from `studies/*.yml` stubs
-#' 2. Rebuild `shiny_studies.json` (via [build_registry_index()])
+#' 2. Rebuild `shiny_studies.json` (via internal `build_registry_index()`)
 #' 3. Seed `audit_jobs.csv` gaps from bake timings / artifacts / prior RDS
 #'    (no live engines)
 #' 4. Rebuild `audit_summary.json` / `audit_latest.rds` (Shiny health bar)

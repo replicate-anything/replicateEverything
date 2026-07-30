@@ -265,8 +265,9 @@ manifest_row_use_original <- function(row) {
 #' Download a Harvard Dataverse file by id
 #'
 #' Prefers surgical file-level fetches (`api/access/datafile/<id>?format=original`)
-#' over full dataset archives. Studies should call [fetch_dataverse_file()] rather
-#' than inventing local `httr::GET` helpers.
+#' over full dataset archives. Studies should use `engine: dataverse` or declared
+#' `dataverse.files` rather than inventing local `httr::GET` helpers
+#' (`fetch_dataverse_file()` is an internal helper).
 #'
 #' @param file_id Dataverse numeric file id.
 #' @param dest Destination path.

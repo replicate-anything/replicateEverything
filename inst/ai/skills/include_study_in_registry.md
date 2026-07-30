@@ -15,7 +15,7 @@ Use this skill when a study repository is ready for the central
 
 | Role | What they do |
 |------|----------------|
-| **Contributor** | Validates the study (`check_and_bake_study` / `check_replication`) |
+| **Contributor** | Validates the study ([check_and_bake_study()]) |
 | **Maintainer** | Builds stub **from study `replication.yml`** into the registry, rebuilds `index.csv`, audits |
 
 ## Important: no study-local registry handoff
@@ -41,7 +41,7 @@ The full contract stays at repo root: `replication.yml` (folder) or
 - [ ] 2. `maintainer:` (name + email) and `collections:` declared
 - [ ] 3. Build outputs: `build_study_outputs()`
 - [ ] 3b. Manual smoke check: `list_replications("local")`, `describe_study_dag("local")`, `run_replication("local", "<id>")`
-- [ ] 4. Validate: `check_replication()` (includes substantive-check coverage)
+- [ ] 4. Validate: `check_and_bake_study(".")` (includes substantive-check coverage)
 - [ ] 4b. Add `tests/substantive/<step_id>.R` for published benchmarks where possible
 - [ ] 5. Prepare / validate: `check_and_bake_study(".")`
 - [ ] 5b. Light-repo / surgical pulls: no full DVN zip unless Pattern C justified; prefer Pattern B access → `outputs/`; OpenICPSR = needed inputs only
@@ -77,7 +77,7 @@ check_and_bake_study("../rep-10.1371-journal.pone.0278337")
 
 ```
 - [ ] 1. Study PR merged; root `replication.yml` complete
-- [ ] 2. Re-validate if needed: `check_replication()` / `check_and_bake_study()`
+- [ ] 2. Re-validate if needed: `check_and_bake_study()`
 - [ ] 3. Register: `register_study(study_path, registry_root = "../registry")`
 - [ ] 4. Light refresh: `refresh_registry("../registry")` (index + seed + summary)
 - [ ] 4b. Optional live audit: `refresh_registry("../registry", audit = TRUE)` or `audit = <dois>`

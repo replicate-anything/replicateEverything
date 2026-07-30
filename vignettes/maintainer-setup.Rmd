@@ -166,7 +166,7 @@ Or from the registry repo: `Rscript scripts/validate_outputs.R`.
 | Install one study (all kinds, all languages) | `install_dependencies(doi)` |
 | Install entire registry | `install_dependencies("everywhere")` |
 | Build study outputs | `build_study_outputs(location, install_deps = TRUE)` |
-| Validate study | `check_replication(location)` |
+| Validate study | `check_and_bake_study(location)` |
 | Check precomputed outputs | `validate_outputs(location)` or `validate_outputs(doi, what = "everything")` |
 | Registry-wide output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Hint text for errors / UI | `maintainer_dependency_hint(doi)` |

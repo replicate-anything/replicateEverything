@@ -5052,7 +5052,20 @@ as_table_ui <- function(result) {
     if (!length(sheets)) {
       return(tags$div(class = "alert alert-warning mb-0", "Could not read workbook sheets for this table."))
     }
-    preferred <- sheets[!tolower(sheets) %in% c("data_export", "metadata", "readme")]
+    # Prefer data_export when present: presentation sheets often hold
+    # unrecalculated Excel formula caches (readxl does not evaluate formulas).
+    preferred <- if (
+      requireNamespace("replicateEverything", quietly = TRUE) &&
+        exists("xlsx_preview_sheet_names", envir = asNamespace("replicateEverything"), inherits = FALSE)
+    ) {
+      replicate_fn("xlsx_preview_sheet_names", sheets)
+    } else {
+      skip <- tolower(sheets) %in% c("metadata", "readme")
+      usable <- sheets[!skip]
+      if (!length(usable)) usable <- sheets
+      de <- which(tolower(usable) == "data_export")
+      if (length(de)) usable[[de[[1L]]]] else usable
+    }
     if (!length(preferred)) {
       preferred <- sheets
     }

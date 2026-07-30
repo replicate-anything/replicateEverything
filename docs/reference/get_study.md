@@ -46,7 +46,7 @@ for a console overview, use the handle to:
 - Feed DOI / handle strings into other consumer verbs — e.g.
   [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md),
   [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md),
-  [`check_replication()`](https://replicate-anything.github.io/replicateEverything/reference/check_replication.md)
+  [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
   (via a local path),
   [`describe_study_dag()`](https://replicate-anything.github.io/replicateEverything/reference/describe_study_dag.md),
   [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)

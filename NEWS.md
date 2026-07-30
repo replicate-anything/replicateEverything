@@ -1,3 +1,28 @@
+# replicateEverything 0.7.44
+
+## Skills + docs: public API only; Stata/Excel lessons
+
+* Package AI skills (`inst/ai/skills/`) capture generic Stata/Excel dual-sheet
+  lessons (`data_export` sheet preference), early-exit / staging / concurrent
+  Stata pitfalls, audit light vs heavy path, and the public maintainer API
+  (`register_study` / `refresh_registry` / `audit_everything` / `audit_report`;
+  contribute via `check_and_bake_study` / `build_study_outputs`).
+* User-facing docs (README, vignettes, registry guides, exported Rd) no longer
+  recommend unexported helpers as the public path; remaining mentions are
+  marked internal (e.g. `:::audit_result_status` in Quarto, checklist internals).
+
+# replicateEverything 0.7.43
+
+## Display: prefer Excel `data_export` sheet
+
+* Shiny Excel table preview previously **skipped** `data_export` and showed
+  presentation sheets first (e.g. Hahn `TABLE`). Those sheets often keep
+  unrecalculated formula caches (~6.24 template values) while Stata only
+  refreshes `data_export` (~5.87 live). Substantive checks already read
+  `data_export`, so Display disagreed with passing checks.
+* **Fix (generic):** [xlsx_preview_sheet_names()] prefers `data_export` when
+  present; still skips `metadata` / `readme`. No study-specific branching.
+
 # replicateEverything 0.7.42
 
 ## Shiny: restore Studies menu after API unexport

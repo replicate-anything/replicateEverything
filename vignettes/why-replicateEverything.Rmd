@@ -235,13 +235,13 @@ ai_skills()
 # dataverse-to-replicate-everything — Harvard Dataverse replication deposits
 ```
 
-Point Cursor (or another agent) at the skill, give it your replication folder, and ask it to produce `replication.yml` with a `steps:` DAG, `outputs/` paths, tests, and a registry stub. The skills spell out layout, dependency probing, substantive tests, and `check_replication()`.
+Point Cursor (or another agent) at the skill, give it your replication folder, and ask it to produce `replication.yml` with a `steps:` DAG, `outputs/` paths, tests, and a registry stub. The skills spell out layout, dependency probing, substantive tests, and `check_and_bake_study()`.
 
 Practical tips without an agent:
 
 1. **Start from the published code**, not a rewrite — discover the true pipeline (what reads what) before you yaml it.
 2. **One script per step**; declare inputs, outputs, and parents in `steps:`.
-3. **Run** `check_and_bake_study()` (which calls `check_replication()`) before opening a registry PR.
+3. **Run** `check_and_bake_study()` before opening a registry PR.
 4. **Add substantive tests** under `tests/substantive/` when you have published benchmarks (see Fearon & Laitin `tab_1`).
 
 Skill files live at `system.file("ai/skills", package = "replicateEverything")` after install.
