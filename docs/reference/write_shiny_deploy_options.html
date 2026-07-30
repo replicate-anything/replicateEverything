@@ -13,7 +13,7 @@ local.R is sourced afterward and may override."><meta property="og:image" conten
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,6 +70,7 @@ when the deployed <code>app.R</code> starts (always overwritten on deploy, like
 <span>  live_run <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  feedback_enabled <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  feedback_file <span class="op">=</span> <span class="va">SHINY_FEEDBACK_DEFAULT_FILE</span>,</span>
+<span>  wzb_live_run_max_seconds <span class="op">=</span> <span class="fl">600</span>,</span>
 <span>  package <span class="op">=</span> <span class="st">"replicateEverything"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -93,6 +94,12 @@ server-side CSV logging.</p></dd>
 
 <dt id="arg-feedback-file">feedback_file<a class="anchor" aria-label="anchor" href="#arg-feedback-file"></a></dt>
 <dd><p>Relative or absolute feedback CSV path.</p></dd>
+
+
+<dt id="arg-wzb-live-run-max-seconds">wzb_live_run_max_seconds<a class="anchor" aria-label="anchor" href="#arg-wzb-live-run-max-seconds"></a></dt>
+<dd><p>Max estimated live-run duration allowed on
+the WZB Shiny host before the app politely asks users to run locally.
+Default <code>600</code> seconds (10 minutes). Set <code>Inf</code> to disable.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -14,7 +14,8 @@ save_local_shiny(
   overwrite = TRUE,
   live_run = TRUE,
   feedback_enabled = TRUE,
-  feedback_file = "data/feedback.csv"
+  feedback_file = "data/feedback.csv",
+  wzb_live_run_max_seconds = 600
 )
 ```
 
@@ -48,6 +49,12 @@ save_local_shiny(
 
   Relative or absolute path for the feedback CSV (default
   `data/feedback.csv`, relative to the deploy directory).
+
+- wzb_live_run_max_seconds:
+
+  Max estimated live-run duration allowed on the WZB Shiny host before
+  the app asks users to run locally. Default `600` seconds (10 minutes).
+  Set `Inf` to disable.
 
 ## Value
 

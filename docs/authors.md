@@ -14,13 +14,13 @@ Source:
 [`DESCRIPTION`](https://github.com/replicate-anything/replicateEverything/blob/HEAD/DESCRIPTION)
 
 Humphreys M, Washington V, Masche C (2026). *replicateEverything: Tools
-to Replicate Empirical Research Papers*. R package version 0.7.19,
+to Replicate Empirical Research Papers*. R package version 0.7.40,
 <https://github.com/replicate-anything/replicateEverything>.
 
     @Manual{,
       title = {replicateEverything: Tools to Replicate Empirical Research Papers},
       author = {Macartan Humphreys and Vermon Washington and Cord Masche},
       year = {2026},
-      note = {R package version 0.7.19},
+      note = {R package version 0.7.40},
       url = {https://github.com/replicate-anything/replicateEverything},
     }

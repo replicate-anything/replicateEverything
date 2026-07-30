@@ -3,7 +3,8 @@
 Distinguishes private/404/network fetch failures, yaml parse problems,
 and a genuine empty stub. Shiny surfaces this via
 [`list_replications()`](https://replicate-anything.github.io/replicateEverything/reference/list_replications.md)
-errors and `replication_error_message()`.
+errors and
+[`replication_error_message()`](https://replicate-anything.github.io/replicateEverything/reference/replication_error_message.md).
 
 ## Usage
 

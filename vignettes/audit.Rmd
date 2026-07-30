@@ -54,19 +54,125 @@ audit <- audit_everything(patience = 20)
 print(audit)
 ```
 
-You can restrict to specific DOIs, a **collection** tag, or render the Quarto report in the [registry repository](https://github.com/replicate-anything/registry):
+## Incremental CSV job store (0.7.40)
+
+As of replicateEverything **0.7.40**, registry audits no longer replace the whole portfolio snapshot on every call. When a registry root is set, each run **upserts** into a flat CSV and rebuilds derived files from the **full** store.
+
+### Source of truth: `registry/audit_jobs.csv`
+
+| File | Role |
+|------|------|
+| `audit_jobs.csv` | **Source of truth** — one row per job, keyed by **doi × object × engine** |
+| `audit_summary.json` | Derived portfolio counts + `progress` (Shiny health bar) |
+| `audit_latest.rds` | Derived full `audit_everything` object rebuilt from the CSV |
+
+Upsert means: rows for jobs in this run are updated; every other study’s rows stay put. A one-DOI or one-collection audit therefore **does not wipe** the Shiny health bar or drop other studies from the derived summary.
+
+### Full portfolio vs add / refresh a subset
 
 ```{r, eval = FALSE}
+# Full registry (every index row)
+audit <- audit_everything(patience = 20)
+
+# Add or refresh only these DOIs / collections (upsert; others kept)
 audit <- audit_everything(patience = 30, dois = "10.1257/aer.91.5.1369")
 audit <- audit_everything(patience = 20, collections = "APSR")
+```
 
+After either kind of run, disk holds the **full** portfolio: `write_registry_audit_record()` merges this run into `audit_jobs.csv`, then rebuilds JSON and RDS from every CSV row.
+
+### Seed without live runs
+
+`seed_registry_audit_jobs()` fills gaps so the health bar is not empty before the first full audit. It does **not** execute replications.
+
+- From a prior `audit_latest.rds` (`from_rds = TRUE`)
+- From bake timings / local artifact mtimes as provisional ok rows (`from_bake = TRUE`)
+- Existing `source = "audit"` rows are kept; bake/artifact rows only fill gaps (or refresh provisional bake rows)
+
+```{r, eval = FALSE}
+seed_registry_audit_jobs(registry_root = "registry")
+```
+
+### Rebuild summary from CSV only
+
+`refresh_registry_audit_summary()` rewrites `audit_summary.json` and `audit_latest.rds` from the current CSV without running audits. Use after manual CSV edits or after seeding.
+
+```{r, eval = FALSE}
+refresh_registry_audit_summary(registry_root = "registry")
+```
+
+A normal `audit_everything()` already upserts and refreshes derived files; you do not need a separate rebuild after a live audit.
+
+### `last_success_at`
+
+Each CSV row carries `last_success_at`:
+
+1. On a **successful** audit for that job → set to this run’s finish time.
+2. Otherwise → keep the prior CSV value when present.
+3. If still empty → fall back to bake timing `recorded_at`, else the local artifact’s mtime.
+
+Failed or timed-out passes therefore do not erase the last known success time.
+
+## How to read audit outputs
+
+| Source | What it represents |
+|--------|--------------------|
+| `audit_jobs.csv` | Full portfolio job history (canonical). Inspect or edit here. |
+| `audit_summary.json` | Baked counts + `progress` buckets for the **Shiny health bar**. Prefer this for first paint / lightweight consumers. |
+| `audit_latest.rds` | Full `audit_everything` object derived from the **entire** CSV (not just the last call’s subset). |
+| In-memory return of `audit_everything()` | **This run only** — if you passed `dois =` / `collections =`, `$results` and `$summary` cover that subset. Do not treat the return value as the portfolio when writing vignette snapshots or reports. |
+
+For vignette or package snapshots, copy the registry RDS (full portfolio), not `saveRDS(audit)` from a filtered call:
+
+```{r, eval = FALSE}
+file.copy(
+  file.path(getOption("replicateEverything.registry_root"), "audit_latest.rds"),
+  "inst/vignette-data/audit_latest.rds",
+  overwrite = TRUE
+)
+```
+
+## Quarto report
+
+The Quarto document in the registry repo still works the same way. Render it (or `scripts/run_audit.R`) to run a live audit and write the HTML report. After write, disk always holds the **full** portfolio CSV + derived JSON/RDS, even when params restrict `dois` / `collections`.
+
+```{r, eval = FALSE}
 # Quarto report lives in the registry repo (sibling registry/ in a monorepo)
 quarto::quarto_render(audit_everything_qmd(), execute_params = list(patience = 20))
 quarto::quarto_render(
   audit_everything_qmd(),
   execute_params = list(patience = 20, collections = "APSR")
 )
+
+# Or: live R audit, then HTML from saved RDS (no second live run)
+# Rscript scripts/run_audit.R
+# quarto render audit_everything.qmd -P refresh:false
 ```
+
+## Console progress tags (0.7.39)
+
+With `verbose = TRUE` (default), each finished job prints a short status tag aligned with the health-bar buckets:
+
+| Tag | Meaning |
+|-----|---------|
+| `ok` | Runnable job succeeded (including substantive checks when defined) |
+| `timeout` | Hit the `patience` audit cap |
+| `substantive_fail` | Replication ran but published-value check failed |
+| `missing_engine` | Engine / dependency gap (e.g. Stata not found) |
+| `other` | Other failure or skip bucket |
+
+Example line: `  - Table 1 (table, r) [ok]`.
+
+## Commit checklist (registry repo)
+
+After an audit (or seed + refresh) that you want on GitHub / Shiny:
+
+1. `audit_jobs.csv` — always commit with the derived files
+2. `audit_summary.json` — health bar
+3. `audit_latest.rds` — full snapshot
+4. `audit_everything.html` (+ `audit_everything_files/` if present) — only if you are publishing the Quarto report
+
+Push the **registry** repository so remote consumers see the new summary. Optional: copy `audit_latest.rds` into `replicateEverything/inst/vignette-data/` and rebuild pkgdown so this article’s tables stay current.
 
 ## Latest audit results
 
@@ -221,7 +327,13 @@ options(
   replicateEverything.use_sibling_packages = TRUE
 )
 audit <- audit_everything(patience = 20)
-saveRDS(audit, "inst/vignette-data/audit_latest.rds")
+# Prefer the registry portfolio RDS (derived from audit_jobs.csv), not a
+# filtered in-memory return value:
+file.copy(
+  file.path(getOption("replicateEverything.registry_root"), "audit_latest.rds"),
+  "inst/vignette-data/audit_latest.rds",
+  overwrite = TRUE
+)
 
 # Full HTML report: quarto render audit_everything.qmd (in the registry repo)
 ```

@@ -177,6 +177,34 @@ audit_progress_category <- function(
   "other"
 }
 
+#' Console-friendly label for an audit progress category
+#'
+#' Maps health-bar ids to short console tags: \code{ok}, \code{timeout},
+#' \code{substantive_fail}, \code{missing_engine}, \code{other}.
+#'
+#' @param category Character scalar from [audit_progress_category()].
+#' @return Character scalar label.
+#' @keywords internal
+audit_progress_console_label <- function(category) {
+  cat <- as.character(category[[1]] %||% "")
+  switch(
+    cat,
+    replicating = "ok",
+    timed_out = "timeout",
+    substantive_fail = "substantive_fail",
+    missing_engine = "missing_engine",
+    other = "other",
+    if (nzchar(cat)) cat else "other"
+  )
+}
+
+#' Print one audit job progress line with status
+#' @keywords internal
+audit_job_status_message <- function(label, what, engine, category) {
+  status <- audit_progress_console_label(category)
+  message(sprintf("  - %s (%s, %s) [%s]", label, what, engine, status))
+}
+
 #' Vectorized progress categories for an audit results data frame
 #' @keywords internal
 audit_progress_categories_from_results <- function(results) {
@@ -819,8 +847,9 @@ audit_run_one <- function(
 #' @param install_deps Logical. Passed to [render_replication()].
 #' @param verbose Logical. Print progress messages.
 #' @param registry_root Optional path to the registry repository. When set,
-#'   writes \code{audit_summary.json} (and \code{audit_latest.rds}) there after
-#'   the audit completes.
+#'   upserts into \code{audit_jobs.csv} and rebuilds derived
+#'   \code{audit_summary.json} (and \code{audit_latest.rds}) from the full
+#'   CSV after the audit completes (one-DOI audits do not wipe other studies).
 #' @param substantive Logical. When \code{TRUE} (default), run published-value
 #'   checks from \code{tests/substantive/<step_id>.R} when a study defines them.
 #' @return An object of class \code{audit_everything} with components
@@ -991,8 +1020,17 @@ audit_everything <- function(
       }
 
       if (nzchar(skip_reason)) {
+        err_snippet <- audit_error_snippet(skip_reason)
         if (isTRUE(verbose)) {
-          message(sprintf("  - %s (%s, %s) [skipped]", label, what, engine))
+          audit_job_status_message(
+            label,
+            what,
+            engine,
+            audit_progress_category(
+              skipped = TRUE,
+              error_snippet = err_snippet
+            )
+          )
         }
         results[[length(results) + 1L]] <- data.frame(
           doi = doi,
@@ -1009,14 +1047,14 @@ audit_everything <- function(
           timed_out = FALSE,
           skipped = TRUE,
           timeout_seconds = as.numeric(patience),
-          error_snippet = audit_error_snippet(skip_reason),
+          error_snippet = err_snippet,
           stringsAsFactors = FALSE
         )
         next
       }
 
       if (isTRUE(verbose)) {
-        message(sprintf("  - %s (%s, %s)", label, what, engine))
+        message(sprintf("  - %s (%s, %s) ...", label, what, engine))
       }
 
       run <- audit_run_one(
@@ -1041,6 +1079,21 @@ audit_everything <- function(
         audit_error_snippet(run$substantive_message)
       } else {
         audit_error_snippet(run$error)
+      }
+
+      if (isTRUE(verbose)) {
+        message(sprintf(
+          "    [%s]",
+          audit_progress_console_label(
+            audit_progress_category(
+              success = run$success,
+              timed_out = run$timed_out,
+              skipped = FALSE,
+              substantive_ok = run$substantive_ok,
+              error_snippet = err_snippet
+            )
+          )
+        ))
       }
 
       results[[length(results) + 1L]] <- data.frame(
@@ -1278,50 +1331,39 @@ registry_audit_rds_path <- function(registry_root = NULL) {
 
 #' Write audit results into the registry repository
 #'
-#' Writes \code{audit_summary.json} for Shiny and lightweight consumers, and
-#' \code{audit_latest.rds} with the full \code{audit_everything} object.
+#' Upserts this audit's jobs into flat \code{audit_jobs.csv} (by
+#' doi × object × engine), then rebuilds derived \code{audit_summary.json}
+#' and \code{audit_latest.rds} from the **full** CSV so a one-DOI audit
+#' never wipes the portfolio health bar.
+#'
+#' \code{last_success_at} is set to the audit finish time on success; otherwise
+#' the prior CSV value is kept, with bake-timing / artifact-mtime fallback.
 #'
 #' @param audit An \code{audit_everything} object.
 #' @param registry_root Registry repository root.
-#' @return Invisibly, a list with paths \code{summary} and \code{rds}.
+#' @return Invisibly, a list with paths \code{summary}, \code{rds}, and
+#'   \code{jobs}.
 #' @keywords internal
+#' @seealso [refresh_registry_audit_summary()], [seed_registry_audit_jobs()]
 write_registry_audit_record <- function(audit, registry_root = NULL) {
   summary_path <- registry_audit_summary_path(registry_root)
-  rds_path <- registry_audit_rds_path(registry_root)
   if (!nzchar(summary_path)) {
     stop("Could not resolve registry root for audit record.", call. = FALSE)
   }
 
-  sm <- audit$summary
-  progress <- sm$progress %||% as.list(audit_progress_counts(
-    summary = sm,
-    results = audit$results
-  ))
-  payload <- list(
-    patience = audit$patience,
-    started_at = format(audit$started_at, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
-    finished_at = format(audit$finished_at, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
-    studies = sm$studies,
-    runs = sm$runs,
-    success = sm$success,
-    failed = sm$failed,
-    timed_out = sm$timed_out,
-    skipped = sm$skipped %||% 0L,
-    substantive_failed = sm$substantive_failed %||% 0L,
-    missing_engine = sm$missing_engine %||% progress$missing_engine %||% 0L,
-    progress = progress,
-    missing_source_repository = as.list(sm$missing_source_repository %||% character(0))
+  prior <- read_registry_audit_jobs(registry_root)
+  new_rows <- audit_results_to_jobs_rows(
+    audit$results,
+    checked_at = audit$finished_at %||% Sys.time(),
+    source = "audit",
+    prior_jobs = prior
   )
-  jsonlite::write_json(
-    payload,
-    summary_path,
-    pretty = TRUE,
-    auto_unbox = TRUE,
-    null = "null"
+  jobs <- upsert_registry_audit_jobs(new_rows, registry_root)
+  write_derived_registry_audit_summary(
+    jobs,
+    audit = audit,
+    registry_root = registry_root
   )
-  saveRDS(audit, rds_path)
-
-  invisible(list(summary = summary_path, rds = rds_path))
 }
 
 #' Load the registry audit summary

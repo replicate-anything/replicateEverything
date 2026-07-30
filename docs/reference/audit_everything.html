@@ -27,7 +27,7 @@ audit_everything_qmd())."><meta property="og:image" content="https://replicate-a
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -133,8 +133,9 @@ when <code>NULL</code>.</p></dd>
 
 <dt id="arg-registry-root">registry_root<a class="anchor" aria-label="anchor" href="#arg-registry-root"></a></dt>
 <dd><p>Optional path to the registry repository. When set,
-writes <code>audit_summary.json</code> (and <code>audit_latest.rds</code>) there after
-the audit completes.</p></dd>
+upserts into <code>audit_jobs.csv</code> and rebuilds derived
+<code>audit_summary.json</code> (and <code>audit_latest.rds</code>) from the full
+CSV after the audit completes (one-DOI audits do not wipe other studies).</p></dd>
 
 
 <dt id="arg-substantive">substantive<a class="anchor" aria-label="anchor" href="#arg-substantive"></a></dt>

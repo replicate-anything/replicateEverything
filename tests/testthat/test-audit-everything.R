@@ -210,6 +210,50 @@ test_that("registry audit summary paths resolve under registry root", {
   )
 })
 
+test_that("audit_progress_console_label maps health-bar buckets", {
+  expect_equal(
+    replicateEverything:::audit_progress_console_label("replicating"),
+    "ok"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_console_label("timed_out"),
+    "timeout"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_console_label("substantive_fail"),
+    "substantive_fail"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_console_label("missing_engine"),
+    "missing_engine"
+  )
+  expect_equal(
+    replicateEverything:::audit_progress_console_label("other"),
+    "other"
+  )
+})
+
+test_that("audit_job_status_message includes console status", {
+  expect_message(
+    replicateEverything:::audit_job_status_message(
+      "Figure 1",
+      "fig_1",
+      "stata",
+      "replicating"
+    ),
+    "Figure 1 \\(fig_1, stata\\) \\[ok\\]"
+  )
+  expect_message(
+    replicateEverything:::audit_job_status_message(
+      "Figure 2",
+      "fig_2",
+      "stata",
+      "timed_out"
+    ),
+    "\\[timeout\\]"
+  )
+})
+
 test_that("audit_progress_category buckets status fields", {
   expect_equal(
     replicateEverything:::audit_progress_category(success = TRUE),
@@ -307,4 +351,136 @@ test_that("audit_progress_counts aggregates from results and summary", {
   expect_equal(unname(baked[["replicating"]]), 85L)
   expect_equal(unname(baked[["other"]]), 4L)
   expect_equal(unname(baked[["total"]]), 96L)
+})
+
+test_that("one-DOI audit upsert preserves other CSV rows and summary totals", {
+  root <- tempfile("audit-jobs-")
+  dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+
+  prior <- data.frame(
+    doi = c("10.1111/aaa", "10.1111/bbb"),
+    folder = c("a", "b"),
+    title = c("Study A", "Study B"),
+    object = c("fig_1", "tab_1"),
+    object_label = c("Figure 1", "Table 1"),
+    type = c("figure", "table"),
+    engine = c("r", "r"),
+    success = c(TRUE, TRUE),
+    run_ok = c(TRUE, TRUE),
+    substantive_ok = c(NA, NA),
+    seconds = c(1.5, 2.0),
+    runtime_category = c("short", "short"),
+    timed_out = c(FALSE, FALSE),
+    skipped = c(FALSE, FALSE),
+    timeout_seconds = c(20, 20),
+    error_snippet = c("", ""),
+    progress_category = c("replicating", "replicating"),
+    last_checked_at = c("2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"),
+    last_success_at = c("2026-01-01T00:00:00Z", "2026-01-01T00:00:00Z"),
+    source = c("audit", "audit"),
+    stringsAsFactors = FALSE
+  )
+  replicateEverything:::write_registry_audit_jobs(prior, registry_root = root)
+
+  audit <- structure(
+    list(
+      patience = 20,
+      substantive = TRUE,
+      collections = NULL,
+      started_at = as.POSIXct("2026-07-30 12:00:00", tz = "UTC"),
+      finished_at = as.POSIXct("2026-07-30 12:01:00", tz = "UTC"),
+      results = data.frame(
+        doi = "10.1111/aaa",
+        title = "Study A",
+        object = "fig_1",
+        object_label = "Figure 1",
+        type = "figure",
+        engine = "r",
+        success = FALSE,
+        run_ok = FALSE,
+        substantive_ok = NA,
+        seconds = 20,
+        runtime_category = "short",
+        timed_out = TRUE,
+        skipped = FALSE,
+        timeout_seconds = 20,
+        error_snippet = "Timed out after 20 seconds (audit cap)",
+        stringsAsFactors = FALSE
+      ),
+      summary = list(
+        studies = 1L,
+        runs = 1L,
+        success = 0L,
+        failed = 1L,
+        timed_out = 1L,
+        skipped = 0L,
+        substantive_failed = 0L,
+        missing_engine = 0L,
+        progress = list(
+          replicating = 0L,
+          timed_out = 1L,
+          substantive_fail = 0L,
+          missing_engine = 0L,
+          other = 0L,
+          total = 1L
+        ),
+        missing_source_repository = character(0)
+      )
+    ),
+    class = "audit_everything"
+  )
+
+  paths <- replicateEverything:::write_registry_audit_record(
+    audit,
+    registry_root = root
+  )
+  expect_true(file.exists(paths$jobs))
+  expect_true(file.exists(paths$summary))
+
+  jobs <- replicateEverything:::read_registry_audit_jobs(root)
+  expect_equal(nrow(jobs), 2L)
+  expect_true("10.1111/bbb" %in% jobs$doi)
+
+  aaa <- jobs[jobs$doi == "10.1111/aaa", , drop = FALSE]
+  expect_equal(nrow(aaa), 1L)
+  expect_true(isTRUE(aaa$timed_out[[1]]))
+  expect_equal(aaa$progress_category[[1]], "timed_out")
+  # Prior success time preserved on timeout.
+  expect_equal(aaa$last_success_at[[1]], "2026-01-01T00:00:00Z")
+
+  sm <- jsonlite::fromJSON(paths$summary)
+  expect_equal(as.integer(sm$runs), 2L)
+  expect_equal(as.integer(sm$progress$replicating), 1L)
+  expect_equal(as.integer(sm$progress$timed_out), 1L)
+  expect_equal(as.integer(sm$progress$total), 2L)
+})
+
+test_that("refresh_registry_audit_summary rebuilds progress from full CSV", {
+  root <- tempfile("audit-refresh-")
+  dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+
+  jobs <- data.frame(
+    doi = c("10.1/a", "10.1/b", "10.1/c"),
+    object = c("fig_1", "fig_1", "tab_1"),
+    engine = c("r", "stata", "r"),
+    success = c(TRUE, FALSE, NA),
+    timed_out = c(FALSE, TRUE, FALSE),
+    skipped = c(FALSE, FALSE, TRUE),
+    substantive_ok = c(NA, NA, NA),
+    error_snippet = c(
+      "",
+      "Timed out",
+      "Fig not available because of missing Mathematica engine"
+    ),
+    stringsAsFactors = FALSE
+  )
+  replicateEverything:::write_registry_audit_jobs(jobs, registry_root = root)
+  paths <- refresh_registry_audit_summary(registry_root = root)
+  sm <- jsonlite::fromJSON(paths$summary)
+  expect_equal(as.integer(sm$progress$replicating), 1L)
+  expect_equal(as.integer(sm$progress$timed_out), 1L)
+  expect_equal(as.integer(sm$progress$missing_engine), 1L)
+  expect_equal(as.integer(sm$progress$total), 3L)
 })

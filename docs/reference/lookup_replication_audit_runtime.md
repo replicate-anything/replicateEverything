@@ -11,7 +11,8 @@ lookup_replication_audit_runtime(
   doi,
   what,
   engine = NULL,
-  registry_root = NULL
+  registry_root = NULL,
+  study_root = NULL
 )
 ```
 
@@ -36,4 +37,4 @@ lookup_replication_audit_runtime(
 ## Value
 
 List with `available`, `seconds`, `runtime_category`, `advice`,
-`timed_out`, and matching `object`.
+`timed_out`, `timeout_seconds`, and matching `object`.

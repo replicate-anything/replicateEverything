@@ -21,7 +21,8 @@ materialize_declared_data(
 - meta:
 
   Parsed replication metadata, or a study root path / DOI that
-  `get_replication_meta()` can resolve.
+  [`get_replication_meta()`](https://replicate-anything.github.io/replicateEverything/reference/get_replication_meta.md)
+  can resolve.
 
 - study_root:
 

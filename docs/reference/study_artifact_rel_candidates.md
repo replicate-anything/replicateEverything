@@ -1,7 +1,9 @@
 # Candidate display artifact paths under `outputs/`
 
-Uses displayable paths from `outputs:` (html/png/rds/svg), then
-type-based defaults under `outputs/`.
+Uses displayable paths from `outputs:` (html/png/rds/svg/xlsx/csv/dta),
+then declared prep sinks (including `.done`), then type-based defaults
+under `outputs/`. Prep steps with declared sinks skip the misleading
+`outputs/<id>.html`/`.png` fallbacks that produced remote HTTP 404s.
 
 ## Usage
 

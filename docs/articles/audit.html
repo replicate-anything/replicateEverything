@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,19 +141,242 @@ run.</li>
 <span></span>
 <span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">audit</span><span class="op">)</span></span></code></pre></div>
-<p>You can restrict to specific DOIs, a <strong>collection</strong> tag,
-or render the Quarto report in the <a href="https://github.com/replicate-anything/registry" class="external-link">registry
-repository</a>:</p>
+</div>
+<div class="section level2">
+<h2 id="incremental-csv-job-store-0-7-40">Incremental CSV job store (0.7.40)<a class="anchor" aria-label="anchor" href="#incremental-csv-job-store-0-7-40"></a>
+</h2>
+<p>As of replicateEverything <strong>0.7.40</strong>, registry audits no
+longer replace the whole portfolio snapshot on every call. When a
+registry root is set, each run <strong>upserts</strong> into a flat CSV
+and rebuilds derived files from the <strong>full</strong> store.</p>
+<div class="section level3">
+<h3 id="source-of-truth-registryaudit_jobs-csv">Source of truth: <code>registry/audit_jobs.csv</code><a class="anchor" aria-label="anchor" href="#source-of-truth-registryaudit_jobs-csv"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>File</th>
+<th>Role</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>audit_jobs.csv</code></td>
+<td>
+<strong>Source of truth</strong> — one row per job, keyed by
+<strong>doi × object × engine</strong>
+</td>
+</tr>
+<tr class="even">
+<td><code>audit_summary.json</code></td>
+<td>Derived portfolio counts + <code>progress</code> (Shiny health
+bar)</td>
+</tr>
+<tr class="odd">
+<td><code>audit_latest.rds</code></td>
+<td>Derived full <code>audit_everything</code> object rebuilt from the
+CSV</td>
+</tr>
+</tbody>
+</table>
+<p>Upsert means: rows for jobs in this run are updated; every other
+study’s rows stay put. A one-DOI or one-collection audit therefore
+<strong>does not wipe</strong> the Shiny health bar or drop other
+studies from the derived summary.</p>
+</div>
+<div class="section level3">
+<h3 id="full-portfolio-vs-add-refresh-a-subset">Full portfolio vs add / refresh a subset<a class="anchor" aria-label="anchor" href="#full-portfolio-vs-add-refresh-a-subset"></a>
+</h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">30</span>, dois <span class="op">=</span> <span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span>
-<span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Full registry (every index row)</span></span>
+<span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Quarto report lives in the registry repo (sibling registry/ in a monorepo)</span></span>
+<span><span class="co"># Add or refresh only these DOIs / collections (upsert; others kept)</span></span>
+<span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">30</span>, dois <span class="op">=</span> <span class="st">"10.1257/aer.91.5.1369"</span><span class="op">)</span></span>
+<span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span></code></pre></div>
+<p>After either kind of run, disk holds the <strong>full</strong>
+portfolio: <code><a href="../reference/write_registry_audit_record.html">write_registry_audit_record()</a></code> merges this run
+into <code>audit_jobs.csv</code>, then rebuilds JSON and RDS from every
+CSV row.</p>
+</div>
+<div class="section level3">
+<h3 id="seed-without-live-runs">Seed without live runs<a class="anchor" aria-label="anchor" href="#seed-without-live-runs"></a>
+</h3>
+<p><code><a href="../reference/seed_registry_audit_jobs.html">seed_registry_audit_jobs()</a></code> fills gaps so the health bar
+is not empty before the first full audit. It does <strong>not</strong>
+execute replications.</p>
+<ul>
+<li>From a prior <code>audit_latest.rds</code>
+(<code>from_rds = TRUE</code>)</li>
+<li>From bake timings / local artifact mtimes as provisional ok rows
+(<code>from_bake = TRUE</code>)</li>
+<li>Existing <code>source = "audit"</code> rows are kept; bake/artifact
+rows only fill gaps (or refresh provisional bake rows)</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/seed_registry_audit_jobs.html">seed_registry_audit_jobs</a></span><span class="op">(</span>registry_root <span class="op">=</span> <span class="st">"registry"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="rebuild-summary-from-csv-only">Rebuild summary from CSV only<a class="anchor" aria-label="anchor" href="#rebuild-summary-from-csv-only"></a>
+</h3>
+<p><code><a href="../reference/refresh_registry_audit_summary.html">refresh_registry_audit_summary()</a></code> rewrites
+<code>audit_summary.json</code> and <code>audit_latest.rds</code> from
+the current CSV without running audits. Use after manual CSV edits or
+after seeding.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry_audit_summary.html">refresh_registry_audit_summary</a></span><span class="op">(</span>registry_root <span class="op">=</span> <span class="st">"registry"</span><span class="op">)</span></span></code></pre></div>
+<p>A normal <code><a href="../reference/audit_everything.html">audit_everything()</a></code> already upserts and
+refreshes derived files; you do not need a separate rebuild after a live
+audit.</p>
+</div>
+<div class="section level3">
+<h3 id="last_success_at">
+<code>last_success_at</code><a class="anchor" aria-label="anchor" href="#last_success_at"></a>
+</h3>
+<p>Each CSV row carries <code>last_success_at</code>:</p>
+<ol style="list-style-type: decimal">
+<li>On a <strong>successful</strong> audit for that job → set to this
+run’s finish time.</li>
+<li>Otherwise → keep the prior CSV value when present.</li>
+<li>If still empty → fall back to bake timing <code>recorded_at</code>,
+else the local artifact’s mtime.</li>
+</ol>
+<p>Failed or timed-out passes therefore do not erase the last known
+success time.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="how-to-read-audit-outputs">How to read audit outputs<a class="anchor" aria-label="anchor" href="#how-to-read-audit-outputs"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="28%">
+<col width="71%">
+</colgroup>
+<thead><tr class="header">
+<th>Source</th>
+<th>What it represents</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>audit_jobs.csv</code></td>
+<td>Full portfolio job history (canonical). Inspect or edit here.</td>
+</tr>
+<tr class="even">
+<td><code>audit_summary.json</code></td>
+<td>Baked counts + <code>progress</code> buckets for the <strong>Shiny
+health bar</strong>. Prefer this for first paint / lightweight
+consumers.</td>
+</tr>
+<tr class="odd">
+<td><code>audit_latest.rds</code></td>
+<td>Full <code>audit_everything</code> object derived from the
+<strong>entire</strong> CSV (not just the last call’s subset).</td>
+</tr>
+<tr class="even">
+<td>In-memory return of <code><a href="../reference/audit_everything.html">audit_everything()</a></code>
+</td>
+<td>
+<strong>This run only</strong> — if you passed <code>dois =</code> /
+<code>collections =</code>, <code>$results</code> and
+<code>$summary</code> cover that subset. Do not treat the return value
+as the portfolio when writing vignette snapshots or reports.</td>
+</tr>
+</tbody>
+</table>
+<p>For vignette or package snapshots, copy the registry RDS (full
+portfolio), not <code>saveRDS(audit)</code> from a filtered call:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"replicateEverything.registry_root"</span><span class="op">)</span>, <span class="st">"audit_latest.rds"</span><span class="op">)</span>,</span>
+<span>  <span class="st">"inst/vignette-data/audit_latest.rds"</span>,</span>
+<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="quarto-report">Quarto report<a class="anchor" aria-label="anchor" href="#quarto-report"></a>
+</h2>
+<p>The Quarto document in the registry repo still works the same way.
+Render it (or <code>scripts/run_audit.R</code>) to run a live audit and
+write the HTML report. After write, disk always holds the
+<strong>full</strong> portfolio CSV + derived JSON/RDS, even when params
+restrict <code>dois</code> / <code>collections</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Quarto report lives in the registry repo (sibling registry/ in a monorepo)</span></span>
 <span><span class="fu">quarto</span><span class="fu">::</span><span class="fu"><a href="https://quarto-dev.github.io/quarto-r/reference/quarto_render.html" class="external-link">quarto_render</a></span><span class="op">(</span><span class="fu"><a href="../reference/audit_everything_qmd.html">audit_everything_qmd</a></span><span class="op">(</span><span class="op">)</span>, execute_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">quarto</span><span class="fu">::</span><span class="fu"><a href="https://quarto-dev.github.io/quarto-r/reference/quarto_render.html" class="external-link">quarto_render</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/audit_everything_qmd.html">audit_everything_qmd</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  execute_params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span>, collections <span class="op">=</span> <span class="st">"APSR"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Or: live R audit, then HTML from saved RDS (no second live run)</span></span>
+<span><span class="co"># Rscript scripts/run_audit.R</span></span>
+<span><span class="co"># quarto render audit_everything.qmd -P refresh:false</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="console-progress-tags-0-7-39">Console progress tags (0.7.39)<a class="anchor" aria-label="anchor" href="#console-progress-tags-0-7-39"></a>
+</h2>
+<p>With <code>verbose = TRUE</code> (default), each finished job prints
+a short status tag aligned with the health-bar buckets:</p>
+<table class="table">
+<colgroup>
+<col width="35%">
+<col width="64%">
+</colgroup>
+<thead><tr class="header">
+<th>Tag</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>ok</code></td>
+<td>Runnable job succeeded (including substantive checks when
+defined)</td>
+</tr>
+<tr class="even">
+<td><code>timeout</code></td>
+<td>Hit the <code>patience</code> audit cap</td>
+</tr>
+<tr class="odd">
+<td><code>substantive_fail</code></td>
+<td>Replication ran but published-value check failed</td>
+</tr>
+<tr class="even">
+<td><code>missing_engine</code></td>
+<td>Engine / dependency gap (e.g. Stata not found)</td>
+</tr>
+<tr class="odd">
+<td><code>other</code></td>
+<td>Other failure or skip bucket</td>
+</tr>
+</tbody>
+</table>
+<p>Example line: <code>- Table 1 (table, r) [ok]</code>.</p>
+</div>
+<div class="section level2">
+<h2 id="commit-checklist-registry-repo">Commit checklist (registry repo)<a class="anchor" aria-label="anchor" href="#commit-checklist-registry-repo"></a>
+</h2>
+<p>After an audit (or seed + refresh) that you want on GitHub /
+Shiny:</p>
+<ol style="list-style-type: decimal">
+<li>
+<code>audit_jobs.csv</code> — always commit with the derived
+files</li>
+<li>
+<code>audit_summary.json</code> — health bar</li>
+<li>
+<code>audit_latest.rds</code> — full snapshot</li>
+<li>
+<code>audit_everything.html</code> (+
+<code>audit_everything_files/</code> if present) — only if you are
+publishing the Quarto report</li>
+</ol>
+<p>Push the <strong>registry</strong> repository so remote consumers see
+the new summary. Optional: copy <code>audit_latest.rds</code> into
+<code>replicateEverything/inst/vignette-data/</code> and rebuild pkgdown
+so this article’s tables stay current.</p>
 </div>
 <div class="section level2">
 <h2 id="latest-audit-results">Latest audit results<a class="anchor" aria-label="anchor" href="#latest-audit-results"></a>
@@ -162,7 +385,7 @@ repository</a>:</p>
 package (<code>inst/vignette-data/audit_latest.rds</code>). Set
 <code>REPLICATE_AUDIT_LIVE=true</code> (and point at a local monorepo)
 only when you intend to refresh that snapshot.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="kw">if</span> <span class="op">(</span><span class="va">run_live</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">monorepo</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"REPLICATE_MONOREPO"</span>, unset <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
@@ -210,54 +433,54 @@ only when you intend to refresh that snapshot.</p>
 <tbody>
 <tr class="odd">
 <td align="left">Patience (seconds per object)</td>
-<td align="right">120</td>
+<td align="right">60</td>
 </tr>
 <tr class="even">
 <td align="left">Studies audited</td>
-<td align="right">11</td>
+<td align="right">14</td>
 </tr>
 <tr class="odd">
 <td align="left">Replication runs</td>
-<td align="right">79</td>
+<td align="right">96</td>
 </tr>
 <tr class="even">
 <td align="left">Successful</td>
-<td align="right">79</td>
+<td align="right">85</td>
 </tr>
 <tr class="odd">
 <td align="left">Failed</td>
-<td align="right">0</td>
+<td align="right">10</td>
 </tr>
 <tr class="even">
 <td align="left">Timed out</td>
-<td align="right">0</td>
+<td align="right">7</td>
 </tr>
 <tr class="odd">
 <td align="left">Skipped</td>
-<td align="right">0</td>
+<td align="right">1</td>
 </tr>
 <tr class="even">
 <td align="left">Audit started</td>
-<td align="right">2026-07-15 21:41</td>
+<td align="right">2026-07-29 10:53</td>
 </tr>
 <tr class="odd">
 <td align="left">Audit finished</td>
-<td align="right">2026-07-15 21:45</td>
+<td align="right">2026-07-29 11:10</td>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">attempted</span> <span class="op">&lt;-</span> <span class="va">sm</span><span class="op">$</span><span class="va">runs</span> <span class="op">-</span> <span class="op">(</span><span class="va">sm</span><span class="op">$</span><span class="va">skipped</span> <span class="op"><a href="../reference/grapes-or-or-grapes.html">%||%</a></span> <span class="fl">0L</span><span class="op">)</span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="va">attempted</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">pct</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">sm</span><span class="op">$</span><span class="va">success</span> <span class="op">/</span> <span class="va">attempted</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"**Pass rate (excluding skipped):** %s%%\n"</span>, <span class="va">pct</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span><span class="co">#&gt; **Pass rate (excluding skipped):** 100%</span></span></code></pre></div>
+<span><span class="co">#&gt; **Pass rate (excluding skipped):** 89.5%</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="results-by-study">Results by study<a class="anchor" aria-label="anchor" href="#results-by-study"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="st">"skipped"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">results</span><span class="op">$</span><span class="va">skipped</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
 <span><span class="op">}</span></span>
@@ -275,6 +498,140 @@ only when you intend to refresh that snapshot.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">show</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Object"</span>, <span class="st">"ID"</span>, <span class="st">"Engine"</span>, <span class="st">"Status"</span>, <span class="st">"Seconds"</span>, <span class="st">"Error"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">show</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
+<div class="section level4">
+<h4 id="a-welfare-analysis-of-policies-impacting-climate-change">A Welfare Analysis of Policies Impacting Climate Change<a class="anchor" aria-label="anchor" href="#a-welfare-analysis-of-policies-impacting-climate-change"></a>
+</h4>
+<table class="table">
+<colgroup>
+<col width="3%">
+<col width="2%">
+<col width="2%">
+<col width="3%">
+<col width="2%">
+<col width="86%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">Figure 1</td>
+<td align="left">fig_1</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.11</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">Figure 2</td>
+<td align="left">fig_2</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.12</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 3</td>
+<td align="left">fig_3</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.11</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">Figure 5</td>
+<td align="left">fig_5</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.21</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 6</td>
+<td align="left">fig_6</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.11</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">Figure 4</td>
+<td align="left">fig_4</td>
+<td align="left">stata</td>
+<td align="left">Failed</td>
+<td align="right">3.96</td>
+<td align="left">Expected Stata output not found. | Expected file:
+C:/WZB Dropbox/Macartan
+Humphreys/5_github/replicate_everything/rep-10.1257-aer.20250166/outputs/mvpf_subsidies_Fig4_scc193.png
+| Stata ran: yes | Executable: C:/Program Files/Stata17/StataM…</td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 7</td>
+<td align="left">fig_7</td>
+<td align="left">stata</td>
+<td align="left">Failed</td>
+<td align="right">3.56</td>
+<td align="left">Expected Stata output not found. | Expected file:
+C:/WZB Dropbox/Macartan
+Humphreys/5_github/replicate_everything/rep-10.1257-aer.20250166/outputs/mvpf_taxes_Fig7_scc193_with_CIs.png
+| Stata ran: yes | Executable: C:/Program Files/Stata17/S…</td>
+</tr>
+<tr class="even">
+<td align="left">Figure 8</td>
+<td align="left">fig_8</td>
+<td align="left">stata</td>
+<td align="left">Failed</td>
+<td align="right">3.58</td>
+<td align="left">Expected Stata output not found. | Expected file:
+C:/WZB Dropbox/Macartan
+Humphreys/5_github/replicate_everything/rep-10.1257-aer.20250166/outputs/mvpf_intl_Fig8_scc193_with_CIs.png
+| Stata ran: yes | Executable: C:/Program Files/Stata17/St…</td>
+</tr>
+<tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.22</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">Table 2</td>
+<td align="left">tab_2</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.30</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+</tbody>
+</table>
+</div>
 <div class="section level4">
 <h4 id="beyond-belief-change-the-persuasive-returns-of-targeting-attitude-relevant-beliefs">Beyond Belief Change: The Persuasive Returns of Targeting
 Attitude-Relevant Beliefs<a class="anchor" aria-label="anchor" href="#beyond-belief-change-the-persuasive-returns-of-targeting-attitude-relevant-beliefs"></a>
@@ -294,7 +651,7 @@ Attitude-Relevant Beliefs<a class="anchor" aria-label="anchor" href="#beyond-bel
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">18.82</td>
+<td align="right">11.96</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -302,7 +659,7 @@ Attitude-Relevant Beliefs<a class="anchor" aria-label="anchor" href="#beyond-bel
 <td align="left">tab_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">4.91</td>
+<td align="right">3.99</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -335,14 +692,6 @@ Attitude-Relevant Beliefs<a class="anchor" aria-label="anchor" href="#beyond-bel
 countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptance-and-hesitancy-in-low--and-middle-income-countries"></a>
 </h4>
 <table class="table">
-<colgroup>
-<col width="59%">
-<col width="8%">
-<col width="8%">
-<col width="8%">
-<col width="9%">
-<col width="6%">
-</colgroup>
 <thead><tr class="header">
 <th align="left">Object</th>
 <th align="left">ID</th>
@@ -353,140 +702,51 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left">Acceptance Rates (disaggregated by group)</td>
-<td align="left">fig_1</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">1.03</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Robustness check using leave-m-out approach</td>
-<td align="left">fig_2</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.25</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Reason not to take vaccine</td>
-<td align="left">fig_3</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.36</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Trust</td>
-<td align="left">fig_4</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">9.13</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Trust by acceptance</td>
-<td align="left">fig_5</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">9.81</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Trust by gender</td>
-<td align="left">fig_6</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">10.07</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Vaccine Data from WGM, WHO</td>
-<td align="left">tab_1</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.32</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Summary of Studies’ Sampling</td>
+<td align="left">Table 2</td>
 <td align="left">tab_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.16</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Differences in Means</td>
-<td align="left">tab_3</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">1.24</td>
+<td align="right">0.33</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Difference in Means (by study)</td>
-<td align="left">tab_4</td>
+<td align="left">Fig. 1</td>
+<td align="left">fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.54</td>
+<td align="right">5.05</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Differences between groups within studies
-(Summary)</td>
-<td align="left">tab_5</td>
+<td align="left">Fig. 2</td>
+<td align="left">fig_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.39</td>
+<td align="right">3.81</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Reason to take</td>
-<td align="left">tab_6</td>
+<td align="left">Fig. 3</td>
+<td align="left">fig_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.25</td>
+<td align="right">7.83</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Reason to take the vaccine. All categories.</td>
-<td align="left">tab_7</td>
+<td align="left">Extended Data Fig. 1</td>
+<td align="left">ext_fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">4.74</td>
+<td align="right">8.52</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Reason to take the vaccine: by age.</td>
-<td align="left">tab_8</td>
+<td align="left">Extended Data Fig. 2</td>
+<td align="left">ext_fig_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.72</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Reason not to take the vaccine</td>
-<td align="left">tab_9</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">4.89</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Vaccination Decision-making: most trusted source.</td>
-<td align="left">tab_10</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">10.31</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Summary Stats</td>
-<td align="left">tab_11</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">8.31</td>
+<td align="right">41.73</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -510,7 +770,7 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.89</td>
+<td align="right">0.53</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -518,16 +778,24 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_1_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">5.80</td>
+<td align="right">5.40</td>
 <td align="left"></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level4">
-<h4 id="illustration-of-re-analysis-repo">Illustration of re-analysis repo<a class="anchor" aria-label="anchor" href="#illustration-of-re-analysis-repo"></a>
+<h4 id="ideological-alignment-and-evidence-based-policy-adoption">Ideological Alignment and Evidence-Based Policy Adoption<a class="anchor" aria-label="anchor" href="#ideological-alignment-and-evidence-based-policy-adoption"></a>
 </h4>
 <table class="table">
+<colgroup>
+<col width="10%">
+<col width="7%">
+<col width="7%">
+<col width="8%">
+<col width="8%">
+<col width="56%">
+</colgroup>
 <thead><tr class="header">
 <th align="left">Object</th>
 <th align="left">ID</th>
@@ -536,14 +804,57 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <th align="right">Seconds</th>
 <th align="left">Error</th>
 </tr></thead>
-<tbody><tr class="odd">
+<tbody>
+<tr class="odd">
+<td align="left">Table H.1</td>
+<td align="left">tab_h1</td>
+<td align="left">stata</td>
+<td align="left">Skipped</td>
+<td align="right">NA</td>
+<td align="left">Table H.1 not available because of proprietary
+data</td>
+</tr>
+<tr class="even">
 <td align="left">Table 1</td>
 <td align="left">tab_1</td>
-<td align="left">r</td>
+<td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">0.25</td>
+<td align="right">9.42</td>
 <td align="left"></td>
-</tr></tbody>
+</tr>
+<tr class="odd">
+<td align="left">Table 2</td>
+<td align="left">tab_2</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.52</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 3</td>
+<td align="left">tab_3</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.25</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 4</td>
+<td align="left">tab_4</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.27</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 2</td>
+<td align="left">fig_2</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">19.39</td>
+<td align="left"></td>
+</tr>
+</tbody>
 </table>
 </div>
 <div class="section level4">
@@ -564,18 +875,198 @@ countries<a class="anchor" aria-label="anchor" href="#covid-19-vaccine-acceptanc
 <td align="left">tab_1</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">20.47</td>
+<td align="right">21.06</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
+<td align="left">Table 2</td>
+<td align="left">tab_2</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">13.47</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table 3</td>
+<td align="left">tab_3</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">11.32</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table A.1</td>
+<td align="left">tab_A_1</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">22.15</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table A.2</td>
+<td align="left">tab_A_2</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">19.72</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table A.3</td>
+<td align="left">tab_A_3</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">19.94</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Table A.4</td>
+<td align="left">tab_A_4</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">20.40</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table A.5</td>
+<td align="left">tab_A_5</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">19.40</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
 <td align="left">Figure 1</td>
 <td align="left">fig_1</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">14.42</td>
+<td align="right">5.42</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 1</td>
+<td align="left">fig_1_panel_b</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.96</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure A.2</td>
+<td align="left">fig_A_2</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.76</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 2</td>
+<td align="left">fig_2_panel_a</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">6.36</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 2</td>
+<td align="left">fig_2_panel_b</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">6.47</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure A.1</td>
+<td align="left">fig_A_1_panel_a</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">7.22</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure A.1</td>
+<td align="left">fig_A_1_panel_b</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">7.45</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 3</td>
+<td align="left">fig_3_panel_a</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">4.88</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 3</td>
+<td align="left">fig_3_panel_b</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.02</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Figure 4</td>
+<td align="left">fig_4_panel_a</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">4.94</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 4</td>
+<td align="left">fig_4_panel_b</td>
+<td align="left">stata</td>
+<td align="left">OK</td>
+<td align="right">5.11</td>
 <td align="left"></td>
 </tr>
 </tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="minimal-folder-backed-template-study">Minimal folder-backed template study<a class="anchor" aria-label="anchor" href="#minimal-folder-backed-template-study"></a>
+</h4>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="left">Simple table</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.1</td>
+<td align="left"></td>
+</tr></tbody>
+</table>
+</div>
+<div class="section level4">
+<h4 id="minimal-reanalysis-template-repo">Minimal reanalysis template repo<a class="anchor" aria-label="anchor" href="#minimal-reanalysis-template-repo"></a>
+</h4>
+<table class="table">
+<thead><tr class="header">
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">0.22</td>
+<td align="left"></td>
+</tr></tbody>
 </table>
 </div>
 <div class="section level4">
@@ -597,7 +1088,7 @@ Political Selection in China<a class="anchor" aria-label="anchor" href="#portrai
 <td align="left">tab_1</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">7.42</td>
+<td align="right">8.43</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -605,7 +1096,7 @@ Political Selection in China<a class="anchor" aria-label="anchor" href="#portrai
 <td align="left">tab_2</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">7.47</td>
+<td align="right">7.28</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -613,7 +1104,7 @@ Political Selection in China<a class="anchor" aria-label="anchor" href="#portrai
 <td align="left">tab_3</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">6.97</td>
+<td align="right">7.12</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -621,7 +1112,7 @@ Political Selection in China<a class="anchor" aria-label="anchor" href="#portrai
 <td align="left">fig_2</td>
 <td align="left">python</td>
 <td align="left">OK</td>
-<td align="right">30.04</td>
+<td align="right">30.74</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -629,7 +1120,7 @@ Political Selection in China<a class="anchor" aria-label="anchor" href="#portrai
 <td align="left">fig_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">3.45</td>
+<td align="right">4.45</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -637,7 +1128,7 @@ Political Selection in China<a class="anchor" aria-label="anchor" href="#portrai
 <td align="left">fig_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.58</td>
+<td align="right">3.51</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -661,7 +1152,7 @@ Security and Justice Provision in Rural Colombia<a class="anchor" aria-label="an
 <td align="left">tab_1</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">3.69</td>
+<td align="right">4.97</td>
 <td align="left"></td>
 </tr></tbody>
 </table>
@@ -685,7 +1176,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">6.23</td>
+<td align="right">4.50</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -693,7 +1184,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">9.16</td>
+<td align="right">8.41</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -701,7 +1192,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">1.57</td>
+<td align="right">1.22</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -709,7 +1200,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">1.48</td>
+<td align="right">1.31</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -717,7 +1208,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.07</td>
+<td align="right">1.88</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -725,7 +1216,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">2.95</td>
+<td align="right">2.61</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -733,7 +1224,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_7</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">4.87</td>
+<td align="right">4.47</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -741,7 +1232,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">fig_8</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">5.31</td>
+<td align="right">4.67</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -749,7 +1240,7 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">tab_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">4.96</td>
+<td align="right">4.00</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -757,19 +1248,19 @@ Evidence from Germany<a class="anchor" aria-label="anchor" href="#public-support
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">3.98</td>
+<td align="right">3.70</td>
 <td align="left"></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level4">
-<h4 id="selection-and-incentives-in-local-service-provision-theory-and-evidence-from-sierra-leone">Selection and Incentives in Local Service Provision: Theory and
-Evidence from Sierra Leone<a class="anchor" aria-label="anchor" href="#selection-and-incentives-in-local-service-provision-theory-and-evidence-from-sierra-leone"></a>
+<h4 id="sovereignty-substance-and-public-support-for-european-courts-human-rights-rulings">Sovereignty, Substance, and Public Support for European Courts’
+Human Rights Rulings<a class="anchor" aria-label="anchor" href="#sovereignty-substance-and-public-support-for-european-courts-human-rights-rulings"></a>
 </h4>
 <table class="table">
 <colgroup>
-<col width="72%">
+<col width="73%">
 <col width="5%">
 <col width="5%">
 <col width="5%">
@@ -786,183 +1277,134 @@ Evidence from Sierra Leone<a class="anchor" aria-label="anchor" href="#selection
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td align="left">Components of performance outcome variable</td>
+<td align="left">Table 3a — Summary statistics, Deportation
+vignette</td>
+<td align="left">tab_3a</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">1.42</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">Table 3b — Summary statistics, Quran burning and
+Eviction vignettes</td>
+<td align="left">tab_3b</td>
+<td align="left">r</td>
+<td align="left">OK</td>
+<td align="right">1.20</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Figure 1 — Treatment summaries</td>
 <td align="left">fig_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.45</td>
+<td align="right">9.62</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Components of quality / surveillance outcome
-variable</td>
-<td align="left">fig_2</td>
+<td align="left">Figure 2a — Effect of EC disagreeing with domestic
+court (H1)</td>
+<td align="left">fig_2a</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.25</td>
+<td align="right">3.00</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Results Service Provider Quality Period 2 (post)</td>
-<td align="left">tab_1</td>
+<td align="left">Figure 2b — Effect of EC disagreeing with domestic
+court, by country</td>
+<td align="left">fig_2b</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.18</td>
+<td align="right">3.93</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Results Service Provider Quality Period 1 (pre)</td>
-<td align="left">tab_2</td>
+<td align="left">Figure 2c — Effect of EC disagreeing with domestic
+court, by country (averaged over vignettes)</td>
+<td align="left">fig_2c</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.17</td>
+<td align="right">2.64</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Results Service Provider Quality (Average)</td>
-<td align="left">tab_3</td>
+<td align="left">Figure 3a — H1 heterogeneity by domestic rule-of-law
+satisfaction</td>
+<td align="left">fig_3a</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.16</td>
+<td align="right">6.47</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Results Service Provider Performance (Effort, Period
-2)</td>
-<td align="left">tab_4</td>
+<td align="left">Figure 3b — H1 heterogeneity by domestic rule-of-law
+satisfaction (UK/Denmark only)</td>
+<td align="left">fig_3b</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.17</td>
+<td align="right">4.48</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Results Service Provider Performance (Effort, Period
-1)</td>
-<td align="left">tab_5</td>
+<td align="left">Figure 3c — Difference in EC-disagreement effect by
+rule-of-law satisfaction (UK/Denmark only)</td>
+<td align="left">fig_3c</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.16</td>
+<td align="right">3.03</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Results Service Provider Performance (Effort,
-Average)</td>
-<td align="left">tab_6</td>
+<td align="left">Figure 4a — Effect of case outcome (H2)</td>
+<td align="left">fig_4a</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.17</td>
+<td align="right">3.31</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Structural Model: Posterior Distributions on Model
-parameters</td>
-<td align="left">fig_3</td>
+<td align="left">Figure 4b — Difference between case outcome effect and
+sovereignty effect</td>
+<td align="left">fig_4b</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.21</td>
+<td align="right">2.73</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Experiments: Expected CAHW Effort</td>
-<td align="left">fig_4</td>
+<td align="left">Figure 5a — H2 interactions by sympathy toward
+applicant</td>
+<td align="left">fig_5a</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.20</td>
+<td align="right">6.97</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Experiments: Posterior Probability that Bureaucratic
-Package Outperforms Community Package</td>
-<td align="left">fig_5</td>
+<td align="left">Figure 5b — Difference in outcome effect between
+sympathetic and unsympathetic respondents</td>
+<td align="left">fig_5b</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.19</td>
+<td align="right">4.44</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
-<td align="left">Model-Based Estimates of Treatment Effects</td>
+<td align="left">Figure 6 — Heterogeneity by nationalism</td>
 <td align="left">fig_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.21</td>
+<td align="right">11.63</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
-<td align="left">Appendix: Performance Index components (without
-standardization)</td>
+<td align="left">Figure 7 — Heterogeneity by authoritarianism</td>
 <td align="left">fig_7</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.20</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Appendix: Variable Description and Summary
-Information</td>
-<td align="left">tab_a5</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.11</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Appendix: Manipulation checks</td>
-<td align="left">tab_a6</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.19</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Appendix: Manipulation checks, frequency reward
-CAHW</td>
-<td align="left">tab_8</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.11</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Appendix: Manipulation checks, frequency motivation
-CAHW</td>
-<td align="left">tab_9</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.10</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Appendix: Timeline</td>
-<td align="left">tab_10</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.13</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Appendix: Balance table</td>
-<td align="left">tab_11</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.14</td>
-<td align="left"></td>
-</tr>
-<tr class="even">
-<td align="left">Appendix: Distribution CAHW Performance Index by
-Treatment Arm</td>
-<td align="left">fig_8</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.25</td>
-<td align="left"></td>
-</tr>
-<tr class="odd">
-<td align="left">Appendix: Results by CAHW Performance Index’s
-Subcomponents</td>
-<td align="left">tab_13</td>
-<td align="left">r</td>
-<td align="left">OK</td>
-<td align="right">0.16</td>
+<td align="right">14.08</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -986,7 +1428,7 @@ Subcomponents</td>
 <td align="left">tab_1</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.91</td>
+<td align="right">0.77</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -994,7 +1436,7 @@ Subcomponents</td>
 <td align="left">tab_1_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">1.11</td>
+<td align="right">1.85</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -1002,7 +1444,7 @@ Subcomponents</td>
 <td align="left">tab_2</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.17</td>
+<td align="right">0.16</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -1010,7 +1452,7 @@ Subcomponents</td>
 <td align="left">tab_2_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">1.98</td>
+<td align="right">2.60</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -1018,7 +1460,7 @@ Subcomponents</td>
 <td align="left">tab_3</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.16</td>
+<td align="right">0.15</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -1026,7 +1468,7 @@ Subcomponents</td>
 <td align="left">tab_3_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">2.09</td>
+<td align="right">2.86</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -1034,7 +1476,7 @@ Subcomponents</td>
 <td align="left">tab_4</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.27</td>
+<td align="right">0.23</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -1042,7 +1484,7 @@ Subcomponents</td>
 <td align="left">tab_4_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">2.21</td>
+<td align="right">2.98</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -1050,7 +1492,7 @@ Subcomponents</td>
 <td align="left">tab_5</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.20</td>
+<td align="right">0.23</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -1058,7 +1500,7 @@ Subcomponents</td>
 <td align="left">tab_5_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">2.22</td>
+<td align="right">3.12</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -1066,7 +1508,7 @@ Subcomponents</td>
 <td align="left">tab_6</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.23</td>
+<td align="right">0.19</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -1074,7 +1516,7 @@ Subcomponents</td>
 <td align="left">tab_6_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">2.27</td>
+<td align="right">3.60</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -1082,7 +1524,7 @@ Subcomponents</td>
 <td align="left">tab_7</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.24</td>
+<td align="right">0.20</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -1090,7 +1532,7 @@ Subcomponents</td>
 <td align="left">tab_7_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">2.33</td>
+<td align="right">3.53</td>
 <td align="left"></td>
 </tr>
 <tr class="odd">
@@ -1098,7 +1540,7 @@ Subcomponents</td>
 <td align="left">tab_8</td>
 <td align="left">r</td>
 <td align="left">OK</td>
-<td align="right">0.38</td>
+<td align="right">0.31</td>
 <td align="left"></td>
 </tr>
 <tr class="even">
@@ -1106,7 +1548,7 @@ Subcomponents</td>
 <td align="left">tab_8_stata</td>
 <td align="left">stata</td>
 <td align="left">OK</td>
-<td align="right">2.78</td>
+<td align="right">3.96</td>
 <td align="left"></td>
 </tr>
 </tbody>
@@ -1116,7 +1558,7 @@ Subcomponents</td>
 <div class="section level3">
 <h3 id="failures-concise">Failures (concise)<a class="anchor" aria-label="anchor" href="#failures-concise"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="st">"skipped"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">results</span><span class="op">$</span><span class="va">skipped</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
 <span><span class="op">}</span></span>
@@ -1136,13 +1578,164 @@ Subcomponents</td>
 <span>    <span class="st">"Study"</span>, <span class="st">"Object"</span>, <span class="st">"ID"</span>, <span class="st">"Engine"</span>, <span class="st">"Status"</span>, <span class="st">"Seconds"</span>, <span class="st">"Error"</span></span>
 <span>  <span class="op">)</span></span>
 <span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">show</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span><span class="co">#&gt; All recorded runnable jobs succeeded (or were skipped).</span></span></code></pre></div>
+<span><span class="op">}</span></span></code></pre></div>
+<table class="table">
+<colgroup>
+<col width="15%">
+<col width="2%">
+<col width="1%">
+<col width="1%">
+<col width="2%">
+<col width="2%">
+<col width="72%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Study</th>
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="right">Seconds</th>
+<th align="left">Error</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 1</td>
+<td align="left">fig_1</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.11</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 2</td>
+<td align="left">fig_2</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.12</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="odd">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 3</td>
+<td align="left">fig_3</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.11</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 5</td>
+<td align="left">fig_5</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.21</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="odd">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 6</td>
+<td align="left">fig_6</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.11</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 4</td>
+<td align="left">fig_4</td>
+<td align="left">stata</td>
+<td align="left">Failed</td>
+<td align="right">3.96</td>
+<td align="left">Expected Stata output not found. | Expected file:
+C:/WZB Dropbox/Macartan
+Humphreys/5_github/replicate_everything/rep-10.1257-aer.20250166/outputs/mvpf_subsidies_Fig4_scc193.png
+| Stata ran: yes | Executable: C:/Program Files/Stata17/StataM…</td>
+</tr>
+<tr class="odd">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 7</td>
+<td align="left">fig_7</td>
+<td align="left">stata</td>
+<td align="left">Failed</td>
+<td align="right">3.56</td>
+<td align="left">Expected Stata output not found. | Expected file:
+C:/WZB Dropbox/Macartan
+Humphreys/5_github/replicate_everything/rep-10.1257-aer.20250166/outputs/mvpf_taxes_Fig7_scc193_with_CIs.png
+| Stata ran: yes | Executable: C:/Program Files/Stata17/S…</td>
+</tr>
+<tr class="even">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Figure 8</td>
+<td align="left">fig_8</td>
+<td align="left">stata</td>
+<td align="left">Failed</td>
+<td align="right">3.58</td>
+<td align="left">Expected Stata output not found. | Expected file:
+C:/WZB Dropbox/Macartan
+Humphreys/5_github/replicate_everything/rep-10.1257-aer.20250166/outputs/mvpf_intl_Fig8_scc193_with_CIs.png
+| Stata ran: yes | Executable: C:/Program Files/Stata17/St…</td>
+</tr>
+<tr class="odd">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Table 1</td>
+<td align="left">tab_1</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.22</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+<tr class="even">
+<td align="left">A Welfare Analysis of Policies Impacting Climate
+Change</td>
+<td align="left">Table 2</td>
+<td align="left">tab_2</td>
+<td align="left">stata</td>
+<td align="left">Timed out</td>
+<td align="right">60.30</td>
+<td align="left">Timed out after 60 seconds (audit cap; timeout_seconds:
+60) | ! Native call to <code>processx_wait</code> failed | Caused by
+error in <code>chain_clean_call(...)</code>: | ! reached elapsed time
+limit</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level3">
 <h3 id="skipped-incomplete-unavailable">Skipped (incomplete / unavailable)<a class="anchor" aria-label="anchor" href="#skipped-incomplete-unavailable"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="st">"skipped"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">results</span><span class="op">$</span><span class="va">skipped</span> <span class="op">&lt;-</span> <span class="cn">FALSE</span></span>
 <span><span class="op">}</span></span>
@@ -1158,8 +1751,35 @@ Subcomponents</td>
 <span>    <span class="st">"Study"</span>, <span class="st">"Object"</span>, <span class="st">"ID"</span>, <span class="st">"Engine"</span>, <span class="st">"Status"</span>, <span class="st">"Reason"</span></span>
 <span>  <span class="op">)</span></span>
 <span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">show</span>, row.names <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span><span class="co">#&gt; No steps were skipped as incomplete / unavailable.</span></span></code></pre></div>
+<span><span class="op">}</span></span></code></pre></div>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="40%">
+<col width="7%">
+<col width="4%">
+<col width="4%">
+<col width="5%">
+<col width="36%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Study</th>
+<th align="left">Object</th>
+<th align="left">ID</th>
+<th align="left">Engine</th>
+<th align="left">Status</th>
+<th align="left">Reason</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="left">Ideological Alignment and Evidence-Based Policy
+Adoption</td>
+<td align="left">Table H.1</td>
+<td align="left">tab_h1</td>
+<td align="left">stata</td>
+<td align="left">Skipped</td>
+<td align="left">Table H.1 not available because of proprietary
+data</td>
+</tr></tbody>
+</table>
 </div>
 </div>
 <div class="section level2">
@@ -1189,7 +1809,7 @@ incomplete yaml steps appear as <strong>Skipped</strong>, not Failed or
 Timed out.</li>
 </ul>
 <p>Re-run locally and refresh the package vignette snapshot:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>REPLICATE_AUDIT_LIVE <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span></span>
 <span>  replicateEverything.registry_root <span class="op">=</span> <span class="st">"/path/to/replicate_everything/registry"</span>,</span>
@@ -1197,13 +1817,19 @@ Timed out.</li>
 <span>  replicateEverything.use_sibling_packages <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">audit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/audit_everything.html">audit_everything</a></span><span class="op">(</span>patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">audit</span>, <span class="st">"inst/vignette-data/audit_latest.rds"</span><span class="op">)</span></span>
+<span><span class="co"># Prefer the registry portfolio RDS (derived from audit_jobs.csv), not a</span></span>
+<span><span class="co"># filtered in-memory return value:</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.copy</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"replicateEverything.registry_root"</span><span class="op">)</span>, <span class="st">"audit_latest.rds"</span><span class="op">)</span>,</span>
+<span>  <span class="st">"inst/vignette-data/audit_latest.rds"</span>,</span>
+<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Full HTML report: quarto render audit_everything.qmd (in the registry repo)</span></span></code></pre></div>
 <p>After adding or updating registry stubs, maintainers typically run
 [refresh_registry()] so <code>index.csv</code> and the audit stay in
 sync:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -142,7 +142,8 @@ sync_study_to_registry(
 )
 ```
 
-Optional per-study audit after sync:
+Optional per-study audit after sync (upserts that DOI into
+`audit_jobs.csv`; does **not** wipe the portfolio health bar):
 
 ``` r
 
@@ -161,6 +162,17 @@ sync_study_to_registry(
 
 refresh_registry("../registry", audit = TRUE, patience = 20)
 ```
+
+Audit disk layout (as of 0.7.40): `registry/audit_jobs.csv` is the
+source of truth (upsert by doi × object × engine). Derived
+`audit_summary.json` / `audit_latest.rds` are rebuilt from the **full**
+CSV after each write. To fill gaps without live runs, use
+\[seed_registry_audit_jobs()\]; to rebuild JSON/RDS only,
+\[refresh_registry_audit_summary()\]. Commit `audit_jobs.csv` together
+with the derived JSON and RDS (and the Quarto HTML if you publish the
+registry report). See
+[`vignette("audit")`](https://replicate-anything.github.io/replicateEverything/articles/audit.md)
+and `registry/guides/registry-management.md`.
 
 **One call, check + sync:** \[register_study()\] runs
 [`check_and_bake_study()`](https://replicate-anything.github.io/replicateEverything/reference/check_and_bake_study.md)
@@ -216,6 +228,8 @@ Or from the registry repo: `Rscript scripts/validate_outputs.R`.
 | **Maintainer:** validate then sync in one call | `register_study(path, registry_root = ...)` |
 | **Maintainer:** rebuild index + audit all | `refresh_registry(registry_root, audit = TRUE)` |
 | Rebuild index only | `build_registry_index(registry_root)` |
+| Seed audit CSV (no live runs) | `seed_registry_audit_jobs(registry_root)` |
+| Rebuild audit JSON/RDS from CSV | `refresh_registry_audit_summary(registry_root)` |
 
 ## Package website (pkgdown)
 

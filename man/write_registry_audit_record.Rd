@@ -12,10 +12,20 @@ write_registry_audit_record(audit, registry_root = NULL)
 \item{registry_root}{Registry repository root.}
 }
 \value{
-Invisibly, a list with paths \code{summary} and \code{rds}.
+Invisibly, a list with paths \code{summary}, \code{rds}, and
+\code{jobs}.
 }
 \description{
-Writes \code{audit_summary.json} for Shiny and lightweight consumers, and
-\code{audit_latest.rds} with the full \code{audit_everything} object.
+Upserts this audit's jobs into flat \code{audit_jobs.csv} (by
+doi × object × engine), then rebuilds derived \code{audit_summary.json}
+and \code{audit_latest.rds} from the \strong{full} CSV so a one-DOI audit
+never wipes the portfolio health bar.
+}
+\details{
+\code{last_success_at} is set to the audit finish time on success; otherwise
+the prior CSV value is kept, with bake-timing / artifact-mtime fallback.
+}
+\seealso{
+\code{\link[=refresh_registry_audit_summary]{refresh_registry_audit_summary()}}, \code{\link[=seed_registry_audit_jobs]{seed_registry_audit_jobs()}}
 }
 \keyword{internal}

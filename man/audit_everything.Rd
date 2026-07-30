@@ -34,8 +34,9 @@ when \code{NULL}.}
 \item{verbose}{Logical. Print progress messages.}
 
 \item{registry_root}{Optional path to the registry repository. When set,
-writes \code{audit_summary.json} (and \code{audit_latest.rds}) there after
-the audit completes.}
+upserts into \code{audit_jobs.csv} and rebuilds derived
+\code{audit_summary.json} (and \code{audit_latest.rds}) from the full
+CSV after the audit completes (one-DOI audits do not wipe other studies).}
 
 \item{substantive}{Logical. When \code{TRUE} (default), run published-value
 checks from \code{tests/substantive/<step_id>.R} when a study defines them.}

@@ -1,6 +1,7 @@
 # Caption for a prep / transform step in Shiny and reports
 
-Caption for a prep / transform step in Shiny and reports
+Prefers a short `path_note:` when present, otherwise a truncated
+`description:`, so Display banners stay readable.
 
 ## Usage
 

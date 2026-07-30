@@ -1,14 +1,8 @@
-# Fetch replication metadata for a paper
+# Fetch replication metadata for a paper (uncached)
 
-Deterministic resolution order (first hit wins; no silent URL
-scavenges):
-
-1.  Local study root (`ctx$local_root` or configured study folders /
-    monorepo)
-
-2.  Configured registry stub (`registry_root/studies/<folder>.yml`)
-
-3.  Remote registry stub URL for the configured registry repo
+Implementation used by
+[`get_replication_meta()`](https://replicate-anything.github.io/replicateEverything/reference/get_replication_meta.md).
+Prefer the memoized wrapper in call sites.
 
 ## Usage
 
@@ -20,7 +14,8 @@ get_replication_meta_impl(doi, repo = NULL, folder = NULL)
 
 - doi:
 
-  Character. DOI of the paper.
+  Character. DOI of the paper (or study handle / local path accepted by
+  [`prepare_doi_for_replication()`](https://replicate-anything.github.io/replicateEverything/reference/prepare_doi_for_replication.md)).
 
 - repo:
 

@@ -363,7 +363,9 @@ for layout and API requirements.
 [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
 attempts every table and figure in the registry (all engines), with a
 per-object time limit. Use it to check registry health after changes.
-Restrict with `dois =` or `collections =` (e.g. `"APSR"`).
+Restrict with `dois =` or `collections =` (e.g. `"APSR"`); subset runs
+upsert into `audit_jobs.csv` and rebuild the portfolio health-bar
+summary (they do not wipe other studies).
 
 ``` r
 
@@ -408,3 +410,5 @@ for the latest snapshot table shipped with the package.
 | Rebuild index only | [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md) |
 | Registry output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Registry health check | [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md) |
+| Seed audit jobs CSV (no live runs) | [`seed_registry_audit_jobs()`](https://replicate-anything.github.io/replicateEverything/reference/seed_registry_audit_jobs.md) |
+| Rebuild audit summary from CSV | [`refresh_registry_audit_summary()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry_audit_summary.md) |

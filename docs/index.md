@@ -1,7 +1,5 @@
 # replicateEverything
 
-![replicateEverything logo](reference/figures/logo.png)
-
 **Tools to discover, run, and contribute computational replications of
 empirical research papers.**
 

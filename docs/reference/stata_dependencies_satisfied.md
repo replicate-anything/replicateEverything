@@ -32,4 +32,15 @@ stata_dependencies_satisfied(
 
 ## Value
 
-`TRUE`, `FALSE`, or `NA` (no probe configured).
+`TRUE`, `FALSE`, or `NA` (no probe configured), with `stata_executable`
+/ `stata_label` / `missing` attributes.
+
+## Details
+
+The returned logical carries diagnostic attributes so callers can report
+precisely *which* Stata was used and *which* package(s) actually failed,
+instead of blaming every declared package for one broken probe (the
+`moremata` bug): `stata_executable` (path), `stata_label`
+(human-readable), and `missing` (character vector - the specific package
+attributed to the failure when derivable, else all declared packages as
+a conservative fallback).

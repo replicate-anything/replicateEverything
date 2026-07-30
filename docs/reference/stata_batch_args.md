@@ -1,6 +1,6 @@
 # Stata command-line arguments for non-interactive do-file execution
 
-Windows: `/e /i /q do file.do`. Unix/Linux/macOS: `-b -q file.do`.
+Windows: `/q do file.do`. Unix/Linux/macOS: `-b -q file.do`.
 
 ## Usage
 
@@ -21,10 +21,13 @@ Character vector of arguments for
 
 ## Details
 
-On Windows, `/e` exits when the job finishes (no end-of-job OK click).
-`/i` suppresses the Stata taskbar icon (Stata Getting Started with
-Windows (GSW) manual B.5). Without `/i`, the icon appears for the whole
-run; clicking it opens "cancel the batch job?", which injects
-`--Break--` / `r(1)` and then cascades "Would you like the batch job to
-continue?" dialogs as nested do-files unwind. `/q` suppresses the logo.
-Paths with spaces are shortened on Windows when possible.
+On Windows we deliberately avoid `/e` and `/b`. Those flags put Stata
+into batch mode, which *silently ignores* `shell` / `winexec` ("request
+ignored because of batch mode"). That breaks any study that shells out
+(Hahn LBD `shell Rscript`, Wolfram, etc.). StataCorp's recommended
+workaround is a normal `do` launch with `exit, clear STATA` at the end
+of the generated runner (see
+[`stata_runner_lines()`](https://replicate-anything.github.io/replicateEverything/reference/stata_runner_lines.md)).
+`/q` suppresses the logo. The GUI is kept off the desktop via processx
+`windows_hide` (and a best-effort `window manage minimize` in the
+runner). Paths with spaces are shortened on Windows when possible.

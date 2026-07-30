@@ -282,7 +282,7 @@ See `vignette("package-replication-checklist")` for layout and API requirements.
 
 ### Registry audit
 
-`audit_everything()` attempts every table and figure in the registry (all engines), with a per-object time limit. Use it to check registry health after changes. Restrict with `dois =` or `collections =` (e.g. `"APSR"`).
+`audit_everything()` attempts every table and figure in the registry (all engines), with a per-object time limit. Use it to check registry health after changes. Restrict with `dois =` or `collections =` (e.g. `"APSR"`); subset runs upsert into `audit_jobs.csv` and rebuild the portfolio health-bar summary (they do not wipe other studies).
 
 ```{r}
 audit <- audit_everything(patience = 20, dois = "10.1177/00491241211036161")
@@ -326,3 +326,5 @@ See `vignette("audit")` for the latest snapshot table shipped with the package.
 | Rebuild index only | `build_registry_index()` |
 | Registry output check | `validate_outputs(doi = "everywhere", what = "everything")` |
 | Registry health check | `audit_everything()` |
+| Seed audit jobs CSV (no live runs) | `seed_registry_audit_jobs()` |
+| Rebuild audit summary from CSV | `refresh_registry_audit_summary()` |

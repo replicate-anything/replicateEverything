@@ -1,6 +1,6 @@
 # Build a Stata probe from `stata_packages:`
 
-Uses `which` plus `help` (and reghdfe runtime checks when needed).
+Build a Stata probe from `stata_packages:`
 
 ## Usage
 

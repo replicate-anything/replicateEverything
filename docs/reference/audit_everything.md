@@ -61,9 +61,10 @@ audit_everything(
 
 - registry_root:
 
-  Optional path to the registry repository. When set, writes
-  `audit_summary.json` (and `audit_latest.rds`) there after the audit
-  completes.
+  Optional path to the registry repository. When set, upserts into
+  `audit_jobs.csv` and rebuilds derived `audit_summary.json` (and
+  `audit_latest.rds`) from the full CSV after the audit completes
+  (one-DOI audits do not wipe other studies).
 
 - substantive:
 

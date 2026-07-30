@@ -3,8 +3,9 @@
 Writes `registry/shiny_studies.json` with one record per study: citation
 fields, collections, languages/engines, notes flags (data unavailable /
 missing engine), related upstream/downstream (dois, titles, urls),
-article and study/repo urls. Intended for the Shiny Studies tab — no
-live yaml fetch at list time.
+article and study/repo urls, plus a baked `ui` block (select /
+collection choices) so Shiny startup does not reassemble dropdowns.
+Intended for the Shiny Studies tab — no live yaml fetch at list time.
 
 ## Usage
 

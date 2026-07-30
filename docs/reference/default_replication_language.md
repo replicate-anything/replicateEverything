@@ -1,6 +1,8 @@
 # Default engine when multiple entries share a logical id
 
-Prefers R when available, otherwise Stata.
+Prefers a runnable multi-language path whose languages include R when
+[`group_uses_path_boxes()`](https://replicate-anything.github.io/replicateEverything/reference/group_uses_path_boxes.md)
+applies; otherwise prefers an R dispatch engine, then Stata.
 
 ## Usage
 
@@ -20,4 +22,4 @@ default_replication_language(entries, paper_meta = NULL)
 
 ## Value
 
-`"r"` or `"stata"`.
+`"r"`, `"stata"`, `"python"`, or `"mathematica"`.

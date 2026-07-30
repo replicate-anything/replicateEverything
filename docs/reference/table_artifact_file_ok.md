@@ -1,6 +1,7 @@
 # Check whether a baked table artifact file is valid for folder checks
 
-Accepts `.rds`, HTML with a `<table>`, or (for Stata entries) monospace
+Accepts `.rds`, Excel workbooks (`.xlsx` / `.xlsm` / `.xls`), HTML with
+a `<table>`, or (for Stata entries) monospace
 `<pre class="stata-output">` blocks produced when regression output
 cannot be parsed into an HTML table.
 

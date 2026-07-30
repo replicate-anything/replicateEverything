@@ -1155,7 +1155,18 @@ save_artifact <- function(
     writeLines(html, out_path, useBytes = TRUE)
   } else if (format_type == "stata_output" && inherits(object, "stata_replication_result")) {
     src <- object$output_path %||% object$smcl_path
-    file.copy(src, out_path, overwrite = TRUE)
+    if (is.null(src) || !nzchar(as.character(src[[1]] %||% ""))) {
+      stop("stata_output result has no output_path to save.", call. = FALSE)
+    }
+    src_n <- normalizePath(src, winslash = "/", mustWork = FALSE)
+    dest_n <- normalizePath(out_path, winslash = "/", mustWork = FALSE)
+    # Steps that already wrote the declared sink (e.g. tab_1 staging into
+    # outputs/*.xlsx) must not file.copy(src, src).
+    if (!identical(tolower(src_n), tolower(dest_n))) {
+      if (!isTRUE(file.copy(src, out_path, overwrite = TRUE))) {
+        stop("Failed to copy Stata artifact from ", src, " to ", out_path, call. = FALSE)
+      }
+    }
   } else if (format_type == "png" && is.character(object) && length(object) == 1L && file.exists(object)) {
     src <- normalizePath(object, winslash = "/", mustWork = FALSE)
     dest <- normalizePath(out_path, winslash = "/", mustWork = FALSE)

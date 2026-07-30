@@ -1,7 +1,6 @@
-# Format a replication error for user-facing display
+# Strip ANSI color/hyperlink escape codes from text
 
-Unwraps [`conditionMessage()`](https://rdrr.io/r/base/conditions.html)
-and, when present, parent errors and the call that failed.
+Strip ANSI color/hyperlink escape codes from text
 
 ## Usage
 
@@ -13,17 +12,8 @@ strip_ansi_escapes(x)
 
 - x:
 
-  An error condition or character message.
+  Character vector (log lines, error messages, etc.).
 
 ## Value
 
-A single character string suitable for logs or UI.
-
-## Examples
-
-``` r
-if (FALSE) { # \dontrun{
-err <- simpleError("Replication failed", call = quote(run_replication()))
-replication_error_message(err)
-} # }
-```
+Character vector with ANSI escapes removed.

@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -225,7 +225,9 @@ yaml and rebuild <code>index.csv</code>:</p>
 <span>  <span class="st">"../rep-10.1177-00491241211036161"</span>,</span>
 <span>  registry_root <span class="op">=</span> <span class="st">"../registry"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Optional per-study audit after sync:</p>
+<p>Optional per-study audit after sync (upserts that DOI into
+<code>audit_jobs.csv</code>; does <strong>not</strong> wipe the
+portfolio health bar):</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/sync_study_to_registry.html">sync_study_to_registry</a></span><span class="op">(</span></span>
 <span>  <span class="st">"../rep-10.1177-00491241211036161"</span>,</span>
@@ -238,6 +240,16 @@ recompile <code>index.csv</code> from all stubs and rerun
 [audit_everything()]:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/refresh_registry.html">refresh_registry</a></span><span class="op">(</span><span class="st">"../registry"</span>, audit <span class="op">=</span> <span class="cn">TRUE</span>, patience <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
+<p>Audit disk layout (as of 0.7.40):
+<code>registry/audit_jobs.csv</code> is the source of truth (upsert by
+doi × object × engine). Derived <code>audit_summary.json</code> /
+<code>audit_latest.rds</code> are rebuilt from the <strong>full</strong>
+CSV after each write. To fill gaps without live runs, use
+[seed_registry_audit_jobs()]; to rebuild JSON/RDS only,
+[refresh_registry_audit_summary()]. Commit <code>audit_jobs.csv</code>
+together with the derived JSON and RDS (and the Quarto HTML if you
+publish the registry report). See <code><a href="../articles/audit.html">vignette("audit")</a></code> and
+<code>registry/guides/registry-management.md</code>.</p>
 <p><strong>One call, check + sync:</strong> [register_study()] runs
 <code><a href="../reference/check_and_bake_study.html">check_and_bake_study()</a></code> then
 <code><a href="../reference/sync_study_to_registry.html">sync_study_to_registry()</a></code> for both folder- and
@@ -336,6 +348,14 @@ exists on disk (Shiny <strong>Display</strong> mode). This does
 <tr class="odd">
 <td>Rebuild index only</td>
 <td><code>build_registry_index(registry_root)</code></td>
+</tr>
+<tr class="even">
+<td>Seed audit CSV (no live runs)</td>
+<td><code>seed_registry_audit_jobs(registry_root)</code></td>
+</tr>
+<tr class="odd">
+<td>Rebuild audit JSON/RDS from CSV</td>
+<td><code>refresh_registry_audit_summary(registry_root)</code></td>
 </tr>
 </tbody>
 </table>

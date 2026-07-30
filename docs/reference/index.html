@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -169,6 +169,13 @@
 
         <dt>
 
+          <code><a href="paper_source_repositories.html">paper_source_repositories()</a></code>
+
+        </dt>
+        <dd>Resolve all paper.source_repository credits</dd>
+
+        <dt>
+
           <code><a href="source_repository_kind.html">source_repository_kind()</a></code>
 
         </dt>
@@ -231,6 +238,27 @@
 
         </dt>
         <dd>Materialize remotely declared study data into the study root</dd>
+
+        <dt>
+
+          <code><a href="lookup_study_replication_timing.html">lookup_study_replication_timing()</a></code>
+
+        </dt>
+        <dd>Look up last known bake seconds for a step id</dd>
+
+        <dt>
+
+          <code><a href="read_study_replication_timings.html">read_study_replication_timings()</a></code>
+
+        </dt>
+        <dd>Read study bake timings</dd>
+
+        <dt>
+
+          <code><a href="record_study_replication_timing.html">record_study_replication_timing()</a></code>
+
+        </dt>
+        <dd>Record a successful bake / run timing for one step</dd>
       </dl></div><div class="section level2">
       <h2 id="maintainer-registry-ops">Maintainer: registry ops<a class="anchor" aria-label="anchor" href="#maintainer-registry-ops"></a></h2>
 
@@ -303,6 +331,20 @@
 
         </dt>
         <dd>User-facing status label for one audit result row</dd>
+
+        <dt>
+
+          <code><a href="seed_registry_audit_jobs.html">seed_registry_audit_jobs()</a></code>
+
+        </dt>
+        <dd>Seed / refresh audit jobs CSV from bake timings, artifacts, and prior RDS</dd>
+
+        <dt>
+
+          <code><a href="refresh_registry_audit_summary.html">refresh_registry_audit_summary()</a></code>
+
+        </dt>
+        <dd>Rebuild <code>audit_summary.json</code> from the full audit jobs CSV</dd>
       </dl></div><div class="section level2">
       <h2 id="maintainer-setup-diagnostics">Maintainer: setup &amp; diagnostics<a class="anchor" aria-label="anchor" href="#maintainer-setup-diagnostics"></a></h2>
 

@@ -11,7 +11,8 @@ bake_shiny_app_deploy_options(
   app_path,
   live_run = TRUE,
   feedback_enabled = TRUE,
-  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE
+  feedback_file = SHINY_FEEDBACK_DEFAULT_FILE,
+  wzb_live_run_max_seconds = 600
 )
 ```
 
@@ -32,6 +33,12 @@ bake_shiny_app_deploy_options(
 - feedback_file:
 
   Relative or absolute feedback CSV path.
+
+- wzb_live_run_max_seconds:
+
+  Max estimated live-run duration allowed on the WZB Shiny host before
+  the app politely asks users to run locally. Default `600` seconds (10
+  minutes). Set `Inf` to disable.
 
 ## Value
 

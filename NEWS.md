@@ -1,3 +1,28 @@
+# replicateEverything 0.7.40
+
+## Audit: incremental CSV job store + derived health bar
+
+* Registry audits now upsert into flat `audit_jobs.csv` (doi × object ×
+  engine) instead of replacing the whole portfolio summary on every call.
+  Derived `audit_summary.json` / `audit_latest.rds` are rebuilt from the
+  **full** CSV after each write, so `audit_everything(dois = one)` no longer
+  wipes the Shiny health bar.
+* `last_success_at`: set on successful audit; otherwise keep prior CSV value,
+  with bake-timing / artifact-mtime fallback.
+* New [seed_registry_audit_jobs()] (RDS + bake/artifact provisional rows) and
+  [refresh_registry_audit_summary()] (rebuild summary from CSV without
+  re-running audits).
+* Maintainer notes: commit `registry/audit_jobs.csv` with the derived JSON/RDS;
+  see `registry/guides/registry-management.md` and the *Registry audit* vignette.
+
+# replicateEverything 0.7.39
+
+## Audit: per-job status in console progress
+
+* [audit_everything()] prints a health-bar status tag after each job
+  finishes (`ok`, `timeout`, `substantive_fail`, `missing_engine`,
+  `other`), using the same buckets as [audit_progress_category()].
+
 # replicateEverything 0.7.38
 
 ## Shiny: move stale-deploy warning into footer
@@ -8,6 +33,9 @@
   e.g. `stamp version: 0.7.34 · installed: 0.7.35 [possibly stale]`.
 * When stamp and installed package agree, the footer shows **no** extra stale
   text (matching SHAs alone already signal a consistent deploy).
+* [save_artifact()] skips `file.copy` when a Stata step already wrote the
+  declared sink in place (avoids "file can not be copied both 'from' and 'to'"
+  for Hahn tab_1 / tab_2).
 
 # replicateEverything 0.7.37
 

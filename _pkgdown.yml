@@ -72,6 +72,7 @@ reference:
   - list_replications
   - paper_article_url
   - paper_source_repository
+  - paper_source_repositories
   - source_repository_kind
   - source_repository_href
   - registry_source_repository_gaps
@@ -83,6 +84,9 @@ reference:
   - check_and_bake_study
   - fetch_dataverse_file
   - materialize_declared_data
+  - lookup_study_replication_timing
+  - read_study_replication_timings
+  - record_study_replication_timing
 - title: 'Maintainer: registry ops'
   desc: Register studies, sync stubs, rebuild the index, and audit the registry.
   contents:
@@ -95,6 +99,8 @@ reference:
   - studies_table_data
   - audit_everything
   - audit_result_status
+  - seed_registry_audit_jobs
+  - refresh_registry_audit_summary
 - title: 'Maintainer: setup & diagnostics'
   desc: Probe and install study dependencies; local monorepo and deploy diagnostics.
   contents:

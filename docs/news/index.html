@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">replicateEverything</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.21</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,247 @@
       <small>Source: <a href="https://github.com/replicate-anything/replicateEverything/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.40" id="replicateeverything-0740">replicateEverything 0.7.40<a class="anchor" aria-label="anchor" href="#replicateeverything-0740"></a></h2>
+<div class="section level3">
+<h3 id="audit-incremental-csv-job-store--derived-health-bar-0-7-40">Audit: incremental CSV job store + derived health bar<a class="anchor" aria-label="anchor" href="#audit-incremental-csv-job-store--derived-health-bar-0-7-40"></a></h3>
+<ul><li>Registry audits now upsert into flat <code>audit_jobs.csv</code> (doi × object × engine) instead of replacing the whole portfolio summary on every call. Derived <code>audit_summary.json</code> / <code>audit_latest.rds</code> are rebuilt from the <strong>full</strong> CSV after each write, so <code>audit_everything(dois = one)</code> no longer wipes the Shiny health bar.</li>
+<li>
+<code>last_success_at</code>: set on successful audit; otherwise keep prior CSV value, with bake-timing / artifact-mtime fallback.</li>
+<li>New [seed_registry_audit_jobs()] (RDS + bake/artifact provisional rows) and [refresh_registry_audit_summary()] (rebuild summary from CSV without re-running audits).</li>
+<li>Maintainer notes: commit <code>registry/audit_jobs.csv</code> with the derived JSON/RDS; see <code>registry/guides/registry-management.md</code> and the <em>Registry audit</em> vignette.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.39" id="replicateeverything-0739">replicateEverything 0.7.39<a class="anchor" aria-label="anchor" href="#replicateeverything-0739"></a></h2>
+<div class="section level3">
+<h3 id="audit-per-job-status-in-console-progress-0-7-39">Audit: per-job status in console progress<a class="anchor" aria-label="anchor" href="#audit-per-job-status-in-console-progress-0-7-39"></a></h3>
+<ul><li>[audit_everything()] prints a health-bar status tag after each job finishes (<code>ok</code>, <code>timeout</code>, <code>substantive_fail</code>, <code>missing_engine</code>, <code>other</code>), using the same buckets as [audit_progress_category()].</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.38" id="replicateeverything-0738">replicateEverything 0.7.38<a class="anchor" aria-label="anchor" href="#replicateeverything-0738"></a></h2>
+<div class="section level3">
+<h3 id="shiny-move-stale-deploy-warning-into-footer-0-7-38">Shiny: move stale-deploy warning into footer<a class="anchor" aria-label="anchor" href="#shiny-move-stale-deploy-warning-into-footer-0-7-38"></a></h3>
+<ul><li>The yellow/orange <strong>“Shiny deployment may be stale”</strong> top banner is removed. Deploy-stamp mismatches (version, library path, or loaded namespace) now show only as a brief footer note next to the existing version/<code>pkg</code>/<code>app</code> line, e.g. <code>stamp version: 0.7.34 · installed: 0.7.35 [possibly stale]</code>.</li>
+<li>When stamp and installed package agree, the footer shows <strong>no</strong> extra stale text (matching SHAs alone already signal a consistent deploy).</li>
+<li>[save_artifact()] skips <code>file.copy</code> when a Stata step already wrote the declared sink in place (avoids “file can not be copied both ‘from’ and ‘to’” for Hahn tab_1 / tab_2).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.37" id="replicateeverything-0737">replicateEverything 0.7.37<a class="anchor" aria-label="anchor" href="#replicateeverything-0737"></a></h2>
+<div class="section level3">
+<h3 id="fix-bake-timings-recorded-from-build_study_outputs-0-7-37">Fix: bake timings recorded from build_study_outputs<a class="anchor" aria-label="anchor" href="#fix-bake-timings-recorded-from-build_study_outputs-0-7-37"></a></h3>
+<ul><li>[build_display_artifact_entries()] and [run_build_prep_steps()] now call [record_study_replication_timing()] after each successful (non-cached) step. Overnight <code><a href="../reference/build_study_outputs.html">build_study_outputs()</a></code> runs were rewriting figures/tables without refreshing <code>outputs/replication_timings.json</code> because only [run_replication()] recorded timings.</li>
+<li>[record_study_replication_timing()] writes via a sibling <code>.tmp</code> then rename (with warning on failure) so Dropbox-paused locks are less likely to leave a stale timings file with no error signal.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.36" id="replicateeverything-0736">replicateEverything 0.7.36<a class="anchor" aria-label="anchor" href="#replicateeverything-0736"></a></h2>
+<div class="section level3">
+<h3 id="fix-skip-incomplete-prep-siblings-during-full-bake-0-7-36">Fix: skip incomplete prep siblings during full bake<a class="anchor" aria-label="anchor" href="#fix-skip-incomplete-prep-siblings-during-full-bake-0-7-36"></a></h3>
+<ul><li>[prep_steps_for_build()] / [build_study_outputs()] no longer run <code>incomplete: true</code> transform steps (e.g. Hahn <code>compute_mvpf_main_mathematica</code>) when baking all outputs. Full bake now walks ancestors of display steps and skips blocked engine paths, so a missing <code>wolframscript</code> cannot abort an operable Stata+R bake.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.35" id="replicateeverything-0735">replicateEverything 0.7.35<a class="anchor" aria-label="anchor" href="#replicateeverything-0735"></a></h2>
+<div class="section level3">
+<h3 id="shiny-launch-frontload-studies-ui--health-counts-defer-auto-update-0-7-35">Shiny launch: frontload Studies UI + health counts; defer auto-update<a class="anchor" aria-label="anchor" href="#shiny-launch-frontload-studies-ui--health-counts-defer-auto-update-0-7-35"></a></h3>
+<ul><li>
+<strong>Baked Studies widgets:</strong> [build_shiny_studies_cache()] writes a <code>ui</code> block (<code>select_choices</code>, <code>collection_choices</code>) into <code>shiny_studies.json</code> (schema_version 2). Shiny applies those named choices on startup instead of re-sorting authors and rebuilding dropdown labels each session.</li>
+<li>
+<strong>Health bar:</strong> uses baked <code>audit_summary.json</code> <code>progress</code> counts only — no longer loads <code>audit_latest.rds</code> on first paint. [audit_progress_counts()] prefers <code>summary$progress</code> when present.</li>
+<li>
+<strong>Process preload:</strong> worker start parses <code>shiny_studies.json</code> and <code>audit_summary.json</code> once into globals; session <code>onFlushed</code> assigns from that memo instead of reassembling.</li>
+<li>
+<strong>Deferred auto-update:</strong> [ensure_replicate_everything_current()] runs ~2s after Studies are interactive, not on the first flush critical path.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.34" id="replicateeverything-0734">replicateEverything 0.7.34<a class="anchor" aria-label="anchor" href="#replicateeverything-0734"></a></h2>
+<div class="section level3">
+<h3 id="fix-display-for-preptransform-data-steps-hahn-datasets-0-7-34">Fix: Display for prep/transform data steps (Hahn datasets 1–5)<a class="anchor" aria-label="anchor" href="#fix-display-for-preptransform-data-steps-hahn-datasets-0-7-34"></a></h3>
+<ul><li>
+<strong>Bug:</strong> After multi-panel Display (0.7.32), Shiny loaded artifacts via [load_artifact_panels()], which only treated html/png/rds/svg/xlsx as displayable. Prep/transform steps whose <code>outputs:</code> are <code>.done</code> / <code>.dta</code> / <code>.csv</code> (Hahn <code>clean_data</code>, <code>macros</code>, <code>cost_curve_data_r</code>, <code>compute_mvpf_main</code>, <code>compute_mvpf_no_lbd</code>) fell through to invented <code>outputs/&lt;id&gt;.html</code>/<code>.png</code> candidates, then GitHub raw URLs, and surfaced as missing with <strong>HTTP 404</strong> — even when baked local sinks existed and [load_artifact()] already previewed/summarized them correctly.</li>
+<li>
+<strong>Fix:</strong> treat <code>.csv</code>/<code>.dta</code>/<code>.tab</code> as displayable sinks; for prep steps, include declared <code>outputs:</code> (including <code>.done</code>) and skip html/png type fallbacks when sinks are declared; [load_artifact_panels()] delegates prep entries to [load_artifact()] / [load_prep_step_display()]. Local monorepo paths win; no rebake.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.33" id="replicateeverything-0733">replicateEverything 0.7.33<a class="anchor" aria-label="anchor" href="#replicateeverything-0733"></a></h2>
+<div class="section level3">
+<h3 id="fix-excel-display-rounding-actually-reaches-shiny-0-7-33">Fix: Excel Display rounding actually reaches Shiny<a class="anchor" aria-label="anchor" href="#fix-excel-display-rounding-actually-reaches-shiny-0-7-33"></a></h3>
+<ul><li>
+<strong>Bug:</strong> 0.7.32 added [format_xlsx_preview_df()] but Shiny <code>as_table_ui()</code> fell back to bare <code><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character()</a></code> when the installed package lacked that helper (e.g. still on 0.7.31). That preserved Excel float-text artifacts such as Hahn <code>tab_2</code> <code>6.2399425510000004</code> / <code>-113.1814499</code>.</li>
+<li>
+<strong>Fix:</strong> Shiny always rounds preview cells to 3 decimals (inline fallback mirrors the package helper; never raw <code>as.character</code>). Package helper uses <code>sprintf("%.3f", ...)</code> and unwraps length-1 list cells. Does not rebake workbooks.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.32" id="replicateeverything-0732">replicateEverything 0.7.32<a class="anchor" aria-label="anchor" href="#replicateeverything-0732"></a></h2>
+<div class="section level3">
+<h3 id="display-multi-panel-figures--excel-decimal-preview-0-7-32">Display: multi-panel figures + Excel 3-decimal preview<a class="anchor" aria-label="anchor" href="#display-multi-panel-figures--excel-decimal-preview-0-7-32"></a></h3>
+<ul><li>
+<strong>Multi-panel figures:</strong> Shiny Display now stacks every declared displayable <code>outputs:</code> sink for a figure step (png/html/svg), not only the first path returned by [study_artifact_rel_path()]. New helpers [study_declared_displayable_rels()], [get_artifact_paths()], and [load_artifact_panels()] feed [load_replication_for_display()]. Fixes Hahn AER <code>fig_2</code> / <code>fig_3</code> (panels a+b both baked) without study-specific hacks.</li>
+<li>
+<strong>Excel table preview:</strong> numeric cells in the <code>readxl</code> Display preview are rounded to 3 decimal places ([format_xlsx_preview_cell()] / [format_xlsx_preview_df()]); non-numeric text is unchanged. Does not rebake workbooks.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.31" id="replicateeverything-0731">replicateEverything 0.7.31<a class="anchor" aria-label="anchor" href="#replicateeverything-0731"></a></h2>
+<div class="section level3">
+<h3 id="fix-excel-outputs-paths-resolve-for-display-hahn-table--0-7-31">Fix: Excel <code>outputs:</code> paths resolve for Display (Hahn Table 1 / 2)<a class="anchor" aria-label="anchor" href="#fix-excel-outputs-paths-resolve-for-display-hahn-table--0-7-31"></a></h3>
+<ul><li>
+<strong>Bug:</strong> <code><a href="../reference/study_artifact_rel_candidates.html">study_artifact_rel_candidates()</a></code> only treated <code>html|png|rds|svg</code> as displayable, so table steps whose sole <code>outputs:</code> entry was an <code>.xlsx</code> (Hahn <code>tab_1</code> / <code>tab_2</code>) fell through to non-existent <code>outputs/&lt;id&gt;.html</code> and Shiny Display reported a missing object even when the workbook was on disk. The 0.7.30 Excel preview UI never ran because lookup never found the file.</li>
+<li>
+<strong>Fix:</strong> treat <code>.xlsx</code> / <code>.xlsm</code> / <code>.xls</code> as displayable sinks in candidate resolution and Display-sink checks; <code>read_artifact_file()</code> / remote fetch keep the workbook path (like PNG); Shiny <code>as_table_ui()</code> previews a character path to an Excel file via the existing <code>readxl</code> preview (not only Stata result lists); folder <code><a href="../reference/table_artifact_file_ok.html">table_artifact_file_ok()</a></code> accepts Excel sinks.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.30" id="replicateeverything-0730">replicateEverything 0.7.30<a class="anchor" aria-label="anchor" href="#replicateeverything-0730"></a></h2>
+<div class="section level3">
+<h3 id="hahn-tables--wzb-shiny-run-gate-0-7-30">Hahn tables + WZB Shiny run gate<a class="anchor" aria-label="anchor" href="#hahn-tables--wzb-shiny-run-gate-0-7-30"></a></h3>
+<ul><li>
+<strong>Hahn tables:</strong> file-backed Excel table artifacts (e.g. Hahn <code>tab_1</code> / <code>tab_2</code> <code>.xlsx</code> outputs) now preview in Shiny when <code>readxl</code> is available on the host, instead of falling through to a raw text / unreadable file-path view. The table display picks non-<code>data_export</code> sheets first and trims blank rows/columns for a compact preview.</li>
+<li>
+<strong>Stata runner exit codes:</strong> generated runners now preserve the nested step do-file’s <code>_rc</code> and re-raise it on <code>exit</code> (Windows included). Previously a failed step could still report process exit 0 after <code>exit, clear STATA</code>, which surfaced only as a confusing “Expected Stata output not found”.</li>
+<li>
+<strong>WZB Shiny live-run limit:</strong> deployed apps can now set <code>replicate_shiny.wzb_live_run_max_seconds</code> via [save_local_shiny()] / [write_shiny_deploy_options()] / <code>deploy-options.R</code> (default <code>600</code>, i.e. 10 minutes). When the app is running on the WZB Shiny host and a step’s estimated runtime exceeds that threshold, clicking <code>Run</code> shows a polite “please run locally” message and falls back to baked Display output instead of starting the server-side job.</li>
+<li>
+<strong>Registry health layout:</strong> the health legend/key is now explicitly laid out to the right of the bar for a more compact header.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fix-registry-health-bar--crash-persisted-after-the-authors-fix-0-7-30">Fix: registry health bar <code>[[</code> crash persisted after the 0.7.28 authors fix<a class="anchor" aria-label="anchor" href="#fix-registry-health-bar--crash-persisted-after-the-authors-fix-0-7-30"></a></h3>
+<ul><li>
+<strong>Bug:</strong> the 0.7.28 fix guarded the empty-<code>authors</code> <code>strsplit(...)[[1]]</code> sites, but the health bar’s <code>[[</code> crash persisted because it had a second, unrelated cause introduced by the finer replicating / timed out / substantive / missing-engine / other status breakdown: <code>registry_health_bar_ui()</code> built a <em>named</em> integer vector <code>segs</code>, then called <code>segs &lt;- pmax(0L, segs)</code> to clamp negative counts - but <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax()</a></code> silently drops the names attribute when one argument is an unnamed scalar, so every subsequent <code>segs[["replicating"]]</code> (etc.) lookup threw <code>Error in [[: subscript out of bounds</code>. Reproduced end-to-end with <code><a href="https://devtools.r-lib.org/reference/load_all.html" class="external-link">devtools::load_all()</a></code> against the local <code>registry/audit_summary.json</code>.</li>
+<li>
+<strong>Fix:</strong> clamp negatives in place (<code>segs[is.na(segs) | segs &lt; 0L] &lt;- 0L</code>) instead of <code><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax()</a></code>, which preserves names. Also hardened bucket lookups in <code>registry_health_bar_ui()</code> against version-skewed/legacy <code><a href="../reference/audit_progress_counts.html">audit_progress_counts()</a></code> output missing one or more of the newer buckets (falls back to <code>0</code> per-bucket instead of erroring), so an older or partial audit summary degrades gracefully instead of crashing.</li>
+<li>
+<strong>Fail-soft UX:</strong> a health-bar rendering failure (this bug or any future one) no longer surfaces as a big red Shiny error banner at the top of the app. The bar is silently omitted and a small <code>replicateEverything: registry health bar unavailable (see server log)</code> note appears in the footer instead; the underlying error is still logged server-side (<code><a href="https://rdrr.io/r/base/warning.html" class="external-link">warning()</a></code>) for maintainers.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fix-stata-dependency-check-disagreed-with-ssc-install-moremata-0-7-30">Fix: Stata dependency check disagreed with <code>ssc install</code> (moremata)<a class="anchor" aria-label="anchor" href="#fix-stata-dependency-check-disagreed-with-ssc-install-moremata-0-7-30"></a></h3>
+<ul><li>
+<strong>Bug:</strong> <code><a href="../reference/check_study_compatibility.html">check_study_compatibility()</a></code> / <code><a href="../reference/install_dependencies.html">install_dependencies()</a></code> could report Stata packages as missing (e.g. <code>estout</code>, <code>outreg</code>, <code>moremata</code> for the Bertoli <code>10.1596/1813-9450-10626</code> study) even though <code>ssc install</code> confirmed them already installed in the interactive Stata session. Root cause: the auto-generated dependency probe tested every declared package with <code>which &lt;pkg&gt;</code>, but <code>moremata</code> ships no ado command of its own name (it’s a pure Mata function library - <code>lmoremata.mlib</code> + help files, no <code>moremata.ado</code>), so <code>which moremata</code> always fails with <code>r(111)</code> regardless of installation status. Because the probe exits at the first failing check, this single false failure caused <em>every</em> declared package for the study to be reported “missing”, not just <code>moremata</code> - a second, compounding bug. Both the check and the install path already resolved the exact same Stata executable ([find_stata_executable()]); confirmed with a live probe against the actual Stata 17 MP install (<code>C:/Program Files/Stata17/StataMP-64.exe</code>) that <code>which moremata</code> fails while <code>findfile lmoremata.mlib</code> correctly finds the installed library.</li>
+<li>
+<strong>Fix:</strong>
+<ul><li>
+<code>moremata</code> (and any future file-only package) is now probed with <code>findfile lmoremata.mlib</code> instead of <code>which moremata</code> ([stata_package_probe_spec()] / [stata_package_probe_line()]), used consistently by both the install script and the check probe.</li>
+<li>A failing generated probe now attributes the failure to the <em>specific</em> package whose check failed (via its distinct <code>exit</code> code - [stata_deps_probe_plan_from_packages()] / [stata_probe_failure_code()]), instead of blaming every declared package for one broken check.</li>
+<li>
+<code><a href="../reference/check_study_compatibility.html">check_study_compatibility()</a></code>’s <code>$dependencies$stata</code> (and <code><a href="../reference/install_dependencies.html">install_dependencies()</a></code> console output) now always report which Stata binary was used (<code>stata_executable</code> path + a human-readable <code>stata_label</code>, e.g. <code>"Stata 17 MP (C:/Program Files/Stata17/ StataMP-64.exe)"</code> - see [stata_executable_label()]), so a check-vs- install Stata mismatch is visible instead of assumed.</li>
+<li>
+<code><a href="../reference/install_dependencies.html">install_dependencies()</a></code> now reports which packages were already present vs. newly installed, and immediately re-runs the same presence probe after install (“on-the-spot validation”), warning loudly with the specific still-missing package(s) if the probe still fails - so “Dependency install finished” can no longer silently lie.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="fix-broken-description-link-in-roxygen-docs-0-7-30">Fix: broken <code>@description</code> link in roxygen docs<a class="anchor" aria-label="anchor" href="#fix-broken-description-link-in-roxygen-docs-0-7-30"></a></h3>
+<ul><li>
+<code>replication_errors.R</code>: the doc block documenting <code><a href="../reference/replication_error_message.html">replication_error_message()</a></code> was misattached to <code><a href="../reference/strip_ansi_escapes.html">strip_ansi_escapes()</a></code> (defined between the roxygen comment and the intended function), leaving <code>replication_error_message</code> undocumented and breaking the <code>[replication_error_message()]</code> markdown link used elsewhere in the same file (<code><a href="../reference/missing_replication_steps_message.html">missing_replication_steps_message()</a></code>). Moved the doc block to the correct function and gave <code><a href="../reference/strip_ansi_escapes.html">strip_ansi_escapes()</a></code> its own short doc comment; <code><a href="https://devtools.r-lib.org/reference/document.html" class="external-link">devtools::document()</a></code> now builds without that link warning.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.28" id="replicateeverything-0728">replicateEverything 0.7.28<a class="anchor" aria-label="anchor" href="#replicateeverything-0728"></a></h2>
+<div class="section level3">
+<h3 id="shiny-path-picks-standard-chrome-translation-note-moved-to-study-summary-0-7-28">Shiny path picks: standard chrome, translation note moved to study summary<a class="anchor" aria-label="anchor" href="#shiny-path-picks-standard-chrome-translation-note-moved-to-study-summary-0-7-28"></a></h3>
+<ul><li>
+<strong>Path picks (multi-language path groups):</strong> the paired-icon path pick for groups like Stata+R vs Stata+Mathematica now looks like a standard single-icon engine pick (transparent, opacity-based active/inactive state) instead of a bordered box - no visible caption underneath. The only visual difference from an ordinary study is that a pick shows two icons (a language pair) instead of one. The <code>path_note:</code> text (e.g. “R is a translation of the original Mathematica LBD kernel”) still lives in the tooltip / aria-label.</li>
+<li>
+<strong>Study summary:</strong> added [study_path_translation_notes()], a generic (non-study-specific) helper that surfaces each multi-language path group’s <code>path_note:</code> once in the sidebar study summary (“Replication type: …”), instead of as a per-row callout. No study-specific text is hardcoded in the package - it is read from yaml.</li>
+<li>
+<strong>Wrench/hammer gating (confirmed, no behavior change needed):</strong> the missing-system-engine wrench in the row’s Display/Run controls already re-evaluates per the <em>currently selected</em> path, so it only shows when the Mathematica (or other proprietary-engine) path is the active selection, not the R/Stata default. The Studies-table summary column is unaffected.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fix-shiny-crash-on-studies-with-a-blank-authors-field-0-7-28">Fix: Shiny crash on studies with a blank <code>authors</code> field<a class="anchor" aria-label="anchor" href="#fix-shiny-crash-on-studies-with-a-blank-authors-field-0-7-28"></a></h3>
+<ul><li>
+<strong>Bug:</strong> any registry entry with an empty <code>authors</code> string (e.g. a freshly onboarded stub before author metadata is filled in) crashed the Shiny app with <code>Error in [[: subscript out of bounds</code>. The Studies dropdown (<code>nice_doi_choices()</code>) and bibliography ordering (<code>studies_for_bibliography()</code>, <code><a href="../reference/build_shiny_studies_cache.html">build_shiny_studies_cache()</a></code>) sorted rows by first-author surname using <code>strsplit(authors, ",")[[1]][[1]]</code>; an empty <code>authors</code> string splits to <code>character(0)</code>, and indexing it with <code>[[1]]</code> errors instead of returning <code>NA</code>/<code>""</code>.</li>
+<li>
+<strong>Fix:</strong> guard each of the three call sites with a <code><a href="https://rdrr.io/r/base/length.html" class="external-link">length()</a></code> check before indexing, so blank authors sort as “Unknown” instead of crashing.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.27" id="replicateeverything-0727">replicateEverything 0.7.27<a class="anchor" aria-label="anchor" href="#replicateeverything-0727"></a></h2>
+<div class="section level3">
+<h3 id="prep-display-transform--done-sink-summaries-0-7-27">Prep Display: transform / .done sink summaries<a class="anchor" aria-label="anchor" href="#prep-display-transform--done-sink-summaries-0-7-27"></a></h3>
+<ul><li>
+<strong>Display:</strong> transform/prep steps whose primary sink is a <code>.done</code> marker (or other non-tabular product) now show a human summary via [summarize_prep_transform_sink()] — completion stamp, optional yaml <code>products:</code> / <code>display_products:</code> inventory (with cheap row/col notes), output-dir listing, and key inputs — instead of dumping marker text like <code>clean_data completed …</code>.</li>
+<li>
+<strong>Captions:</strong> [prep_step_display_caption()] prefers short <code>path_note:</code> and truncates long <code>description:</code> blurbs so “Showing precomputed result for …” stays readable.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="path-boxes-path_note-for-translation-honesty-0-7-27">Path boxes: <code>path_note:</code> for translation honesty<a class="anchor" aria-label="anchor" href="#path-boxes-path_note-for-translation-honesty-0-7-27"></a></h3>
+<ul><li>Yaml steps may set <code>path_note:</code> (e.g. “R is a translation of the original Mathematica LBD kernel”). Shiny path boxes show it under the paired icons and in tooltips / aria labels ([step_path_note()]).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="audit-health-bar-finer-progress-categories-0-7-27">Audit health bar: finer progress categories<a class="anchor" aria-label="anchor" href="#audit-health-bar-finer-progress-categories-0-7-27"></a></h3>
+<ul><li>Registry top bar segments: <strong>replicating</strong>, <strong>timed out</strong>, <strong>substantive fails</strong>, <strong>missing engines</strong>, <strong>other</strong> (gaps / skipped / incomplete / data unavailable / other fails). Wired from [audit_progress_category()] / [audit_progress_counts()]; summary JSON gains <code>missing_engine</code> and <code>progress</code> when rewritten from an audit snapshot.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.26" id="replicateeverything-0726">replicateEverything 0.7.26<a class="anchor" aria-label="anchor" href="#replicateeverything-0726"></a></h2>
+<div class="section level3">
+<h3 id="shiny-path-boxes-paired-language-icons--yaml-order-data-steps-0-7-26">Shiny path boxes: paired language icons + yaml-order Data steps<a class="anchor" aria-label="anchor" href="#shiny-path-boxes-paired-language-icons--yaml-order-data-steps-0-7-26"></a></h3>
+<ul><li>
+<strong>Shiny:</strong> multi-language path alternatives render as <strong>paired-icon boxes</strong> (e.g. Stata+R icons inside one control, Stata+Mathematica in another), not a single misleading engine pill. Incomplete / <code>requires_engine:</code> paths are dashed+greyed but stay selectable so Code remains reachable; Display / Run still follow [shiny_step_show_display()] / wrench gap rules for the active path only.</li>
+<li>
+<strong>Shiny:</strong> Data steps follow yaml / DAG declaration order via [replication_sidebar_data_order()] — promoted multi-path transforms are interleaved with ordinary prep rows (not forced first). Shared <code>group:</code> siblings collapse to one sidebar key (no duplicate claim rows).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.25" id="replicateeverything-0725">replicateEverything 0.7.25<a class="anchor" aria-label="anchor" href="#replicateeverything-0725"></a></h2>
+<div class="section level3">
+<h3 id="multi-language-path-alternatives-shiny--yaml-0-7-25">Multi-language path alternatives (Shiny + yaml)<a class="anchor" aria-label="anchor" href="#multi-language-path-alternatives-shiny--yaml-0-7-25"></a></h3>
+<ul><li>
+<strong>Yaml:</strong> sibling steps may share <code>group:</code> and declare per-path <code>languages:</code> (e.g. <code>[stata, r]</code> vs <code>[stata, mathematica]</code>) for one claim with multiple engine paths. Documented in <code>folder_replication.md</code> and <code>inst/docs/step-dag-design.md</code>.</li>
+<li>
+<strong>Shiny:</strong> path groups render as labelled boxes (<code>[Stata / R]</code> | <code>[Stata / Mathematica]</code>); selection drives Display / Run / Code. Gap paths reuse [shiny_step_show_display()] / wrench helpers (Code visible; no false Display). Multi-path transforms stay under Data steps in yaml order.</li>
+<li>
+<strong>Resolve:</strong> <code>language = "r"</code> / <code>"mathematica"</code> selects by path languages even when <code>engine: stata</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="windows-stata-allow-shell-drop-e-batch-mode-0-7-25">Windows Stata: allow shell (drop /e batch mode)<a class="anchor" aria-label="anchor" href="#windows-stata-allow-shell-drop-e-batch-mode-0-7-25"></a></h3>
+<ul><li>Windows Stata launches as <code>/q do …</code> instead of <code>/e /i /q do …</code>. Batch mode (<code>/e</code>/<code>/b</code>) ignores <code>shell</code>/<code>winexec</code> (“request ignored because of batch mode”), which blocked Hahn LBD <code>shell Rscript</code> and any other external calls. Generated runner now <code>log using</code> + <code>exit, clear STATA</code>; processx <code>windows_hide</code> keeps the GUI off the desktop. Dependency probes also go through [run_stata_do()] so they exit cleanly (a bare <code>/q do</code> hung until probe timeout and falsely reported every SSC package missing).</li>
+<li>PATH injection for Rscript’s bin is unchanged (still needed when shell runs under a thin System PATH).</li>
+<li>Probe map: SSC <code>labutil</code> → <code>which labmask</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.24" id="replicateeverything-0724">replicateEverything 0.7.24<a class="anchor" aria-label="anchor" href="#replicateeverything-0724"></a></h2>
+<div class="section level3">
+<h3 id="bake-timings-fallback-for-audit-timeouts-0-7-24">Bake timings fallback for audit timeouts<a class="anchor" aria-label="anchor" href="#bake-timings-fallback-for-audit-timeouts-0-7-24"></a></h3>
+<ul><li>New study artifact <code>outputs/replication_timings.json</code>, written by [record_study_replication_timing()] on successful [run_replication()] folder runs. [lookup_study_replication_timing()] / [read_study_replication_timings()] read it.</li>
+<li>[lookup_replication_audit_runtime()] returns <code>bake_seconds</code> and prefers it for advice when audit <code>timed_out</code>. [format_long_run_warning()] / Shiny hourglass copy can say “last successful bake took …”.</li>
+<li>
+<strong>Windows Stata batch:</strong> prepend Rscript’s bin to PATH (and keep that env on the processx→system2 fallback) so LBD <code>shell Rscript</code> works under thin System PATH.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.23" id="replicateeverything-0723">replicateEverything 0.7.23<a class="anchor" aria-label="anchor" href="#replicateeverything-0723"></a></h2>
+<div class="section level3">
+<h3 id="metadata-multiple-source_repository-urls-0-7-23">Metadata: multiple source_repository URLs<a class="anchor" aria-label="anchor" href="#metadata-multiple-source_repository-urls-0-7-23"></a></h3>
+<ul><li>
+<strong><code>paper.source_repository</code></strong> may be a yaml list. New [paper_source_repositories()] returns all credits; [paper_source_repository()] still returns the primary (first). Shiny Source column / study details show one kind icon per URL. Registry stubs preserve the list. Motivated by <code>rep-10.1257-aer.20250166</code> (GitHub Policy-Impacts/mvpf-climate + OpenICPSR).</li>
+<li>
+<strong>Windows Stata batch:</strong> prepend Rscript’s bin dir to PATH so LBD <code>shell Rscript</code> works when Stata only sees the machine System PATH.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="stata--shiny-carry-from-uncommitted-bake-session-0-7-23">Stata / Shiny (carry from uncommitted bake session)<a class="anchor" aria-label="anchor" href="#stata--shiny-carry-from-uncommitted-bake-session-0-7-23"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/save_artifact.html">save_artifact()</a></code></strong> for <code>stata_output</code> uses the real output file extension (xlsx/csv/dta/…) instead of hardcoding <code>.smcl</code>.</li>
+<li>
+<strong>Shiny engine badges:</strong> blocked <code>requires_engine: mathematica</code> steps show Mathematica only (no stray Stata badge); Mathematica recognized as a display/language token for alternate-engine groups.</li>
+<li>
+<strong>Stata log flush wait</strong> after batch exit (Windows/NTFS stale size).</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.7.22" id="replicateeverything-0722">replicateEverything 0.7.22<a class="anchor" aria-label="anchor" href="#replicateeverything-0722"></a></h2>
+<div class="section level3">
+<h3 id="skills-file-provenance-header-convention-0-7-22">Skills: file provenance header convention<a class="anchor" aria-label="anchor" href="#skills-file-provenance-header-convention-0-7-22"></a></h3>
+<ul><li>
+<strong>Docs:</strong> New cross-study convention — every study code file carries a short top-of-file <code>replicateEverything provenance:</code> comment naming one of <code>connector</code> / <code>author-original</code> / <code>translation (X -&gt; Y)</code> / <code>author-edited</code>. Documented in <code>inst/ai/skills/folder_replication.md</code> (§ File provenance headers), the skills <code>README.md</code>, and root <code>AI.md</code>. Large untouched vendored trees (e.g. <code>code/original/</code>) get one folder-level <code>README.md</code> instead of a per-file sweep. Applied to <code>rep-10.1257-aer.20250166</code> as the worked example.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.21" id="replicateeverything-0721">replicateEverything 0.7.21<a class="anchor" aria-label="anchor" href="#replicateeverything-0721"></a></h2>
 <div class="section level3">
@@ -691,7 +932,7 @@
 <li>Fixed Shiny footer crash (<code>do.call(tag, ...)</code> — second argument must be a list) from malformed tag construction in <code>app_build_footer_ui()</code>.</li>
 <li>
 <code>stata_packages:</code> — auto install and probe from SSC (including <code>reghdfe</code> / GitHub conflict handling). Custom <code>stata_dependencies:</code> / <code>stata_deps_probe:</code> <code>.do</code> files are optional for rare cases only.</li>
-<li>Shiny dependency-error UI no longer calls internal <code>replication_error_message()</code> as a global function.</li>
+<li>Shiny dependency-error UI no longer calls internal <code><a href="../reference/replication_error_message.html">replication_error_message()</a></code> as a global function.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="new-functions-0-5-1">New functions<a class="anchor" aria-label="anchor" href="#new-functions-0-5-1"></a></h3>

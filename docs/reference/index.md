@@ -8,6 +8,17 @@ Package overview.
   [`replicateEverything-package`](https://replicate-anything.github.io/replicateEverything/reference/replicateEverything-package.md)
   : replicateEverything: Reproduce Empirical Research Results
 
+## Run & inspect
+
+Run tables and figures and read the code behind them.
+
+- [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
+  : Run a single replication or all replications for a paper
+- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
+  : Retrieve replication code for a paper
+- [`describe_study_dag()`](https://replicate-anything.github.io/replicateEverything/reference/describe_study_dag.md)
+  : Text representation of the study DAG for Shiny / CLI
+
 ## Discovery
 
 Find studies and inspect replication metadata.
@@ -30,23 +41,14 @@ Find studies and inspect replication metadata.
   : Resolve a human-facing URL for a published article
 - [`paper_source_repository()`](https://replicate-anything.github.io/replicateEverything/reference/paper_source_repository.md)
   : Resolve paper.source_repository (with legacy aliases)
+- [`paper_source_repositories()`](https://replicate-anything.github.io/replicateEverything/reference/paper_source_repositories.md)
+  : Resolve all paper.source_repository credits
 - [`source_repository_kind()`](https://replicate-anything.github.io/replicateEverything/reference/source_repository_kind.md)
   : Classify a source-repository credit for display icons
 - [`source_repository_href()`](https://replicate-anything.github.io/replicateEverything/reference/source_repository_href.md)
   : Browse URL for a source-repository credit
 - [`registry_source_repository_gaps()`](https://replicate-anything.github.io/replicateEverything/reference/registry_source_repository_gaps.md)
   : Studies in a registry missing paper.source_repository
-
-## Run & inspect
-
-Run tables and figures and read the code behind them.
-
-- [`run_replication()`](https://replicate-anything.github.io/replicateEverything/reference/run_replication.md)
-  : Run a single replication or all replications for a paper
-- [`get_code()`](https://replicate-anything.github.io/replicateEverything/reference/get_code.md)
-  : Retrieve replication code for a paper
-- [`describe_study_dag()`](https://replicate-anything.github.io/replicateEverything/reference/describe_study_dag.md)
-  : Text representation of the study DAG for Shiny / CLI
 
 ## Contribute: build & check
 
@@ -64,6 +66,12 @@ Bake precomputed outputs and validate a study repo before registration.
   : Fetch a Dataverse file into a study-relative path (surgical pull)
 - [`materialize_declared_data()`](https://replicate-anything.github.io/replicateEverything/reference/materialize_declared_data.md)
   : Materialize remotely declared study data into the study root
+- [`lookup_study_replication_timing()`](https://replicate-anything.github.io/replicateEverything/reference/lookup_study_replication_timing.md)
+  : Look up last known bake seconds for a step id
+- [`read_study_replication_timings()`](https://replicate-anything.github.io/replicateEverything/reference/read_study_replication_timings.md)
+  : Read study bake timings
+- [`record_study_replication_timing()`](https://replicate-anything.github.io/replicateEverything/reference/record_study_replication_timing.md)
+  : Record a successful bake / run timing for one step
 
 ## Maintainer: registry ops
 
@@ -71,23 +79,40 @@ Register studies, sync stubs, rebuild the index, and audit the registry.
 
 - [`register_study()`](https://replicate-anything.github.io/replicateEverything/reference/register_study.md)
   : Validate then sync a study into the registry (maintainer)
+
 - [`sync_study_to_registry()`](https://replicate-anything.github.io/replicateEverything/reference/sync_study_to_registry.md)
   : Sync a study into the registry repository (maintainer)
+
 - [`refresh_registry()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry.md)
   : Refresh the registry index and optionally rerun the full audit
   (maintainer)
+
 - [`build_registry_index()`](https://replicate-anything.github.io/replicateEverything/reference/build_registry_index.md)
   : Compile registry index.csv from study stub yaml files
+
 - [`build_shiny_studies_cache()`](https://replicate-anything.github.io/replicateEverything/reference/build_shiny_studies_cache.md)
   : Build and write the Shiny Studies cache artifact
+
 - [`load_shiny_studies_cache()`](https://replicate-anything.github.io/replicateEverything/reference/load_shiny_studies_cache.md)
   : Load the Shiny Studies cache (session-memoized by file mtime)
+
 - [`studies_table_data()`](https://replicate-anything.github.io/replicateEverything/reference/studies_table_data.md)
   : Filter / sort studies from the precomputed Shiny cache
+
 - [`audit_everything()`](https://replicate-anything.github.io/replicateEverything/reference/audit_everything.md)
   : Audit all registry replications
+
 - [`audit_result_status()`](https://replicate-anything.github.io/replicateEverything/reference/audit_result_status.md)
   : User-facing status label for one audit result row
+
+- [`seed_registry_audit_jobs()`](https://replicate-anything.github.io/replicateEverything/reference/seed_registry_audit_jobs.md)
+  : Seed / refresh audit jobs CSV from bake timings, artifacts, and
+  prior RDS
+
+- [`refresh_registry_audit_summary()`](https://replicate-anything.github.io/replicateEverything/reference/refresh_registry_audit_summary.md)
+  :
+
+  Rebuild `audit_summary.json` from the full audit jobs CSV
 
 ## Maintainer: setup & diagnostics
 

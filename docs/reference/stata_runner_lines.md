@@ -16,7 +16,7 @@ log so `stata_log_error()` still detects the failure.
 ## Usage
 
 ``` r
-stata_runner_lines(do_in_do, wd_in_do, staging_dir = NULL)
+stata_runner_lines(do_in_do, wd_in_do, staging_dir = NULL, log_in_do = NULL)
 ```
 
 ## Arguments

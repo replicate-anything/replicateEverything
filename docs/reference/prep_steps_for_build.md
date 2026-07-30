@@ -1,7 +1,9 @@
 # Prep / transform steps to run before building display artifacts
 
-When `display_reps` is `NULL`, returns every transform step. Otherwise
-returns only ancestors required by the given display steps.
+When `display_reps` is `NULL`, returns every runnable transform step
+(skips `incomplete:` / blocked paths such as Mathematica-only siblings).
+Otherwise returns only ancestors required by the given display steps,
+still excluding incomplete entries.
 
 ## Usage
 
