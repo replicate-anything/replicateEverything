@@ -12,7 +12,9 @@ prep_steps_for_build(meta, display_reps = NULL)
 \item{display_reps}{Optional list of table/figure entries being built.}
 }
 \description{
-When \code{display_reps} is \code{NULL}, returns every transform step.
-Otherwise returns only ancestors required by the given display steps.
+When \code{display_reps} is \code{NULL}, returns every runnable transform
+step (skips \code{incomplete:} / blocked paths such as Mathematica-only
+siblings). Otherwise returns only ancestors required by the given display
+steps, still excluding incomplete entries.
 }
 \keyword{internal}
