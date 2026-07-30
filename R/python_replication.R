@@ -537,6 +537,50 @@ sanitize_notebook_for_nbconvert <- function(notebook_path, dest_path = NULL) {
   normalizePath(dest_path, winslash = "/", mustWork = TRUE)
 }
 
+#' Build \code{python -m jupyter nbconvert --execute} argv
+#'
+#' Always appends a non-empty notebook path ending in \code{.ipynb}. Paths are
+#' shell-quoted for [system2()] (which pastes args into a shell command line).
+#'
+#' @param notebook_path Absolute path to the \code{.ipynb} to execute.
+#' @param output_basename Output notebook filename (no directory).
+#' @param output_dir Directory for the executed notebook.
+#' @return Character vector of arguments following the Python executable.
+#' @keywords internal
+python_nbconvert_args <- function(notebook_path, output_basename, output_dir) {
+  notebook_path <- as.character(notebook_path)
+  if (length(notebook_path) != 1L || !nzchar(notebook_path)) {
+    stop("python_nbconvert_args(): notebook_path must be a non-empty string.", call. = FALSE)
+  }
+  notebook_path <- normalizePath(notebook_path, winslash = "/", mustWork = TRUE)
+  if (!grepl("\\.ipynb$", notebook_path, ignore.case = TRUE)) {
+    stop("python_nbconvert_args(): notebook_path must end in .ipynb: ", notebook_path, call. = FALSE)
+  }
+  output_basename <- basename(as.character(output_basename)[[1]])
+  output_dir <- normalizePath(as.character(output_dir)[[1]], winslash = "/", mustWork = FALSE)
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  quote_type <- if (.Platform$OS.type == "windows") "cmd" else "sh"
+  args <- c(
+    "-m", "jupyter", "nbconvert",
+    "--execute",
+    "--to", "notebook",
+    "--output", shQuote(output_basename, type = quote_type),
+    "--output-dir", shQuote(output_dir, type = quote_type),
+    shQuote(notebook_path, type = quote_type)
+  )
+  # Guard against shQuote(NULL) -> character(0) silently dropping the notebook.
+  last <- args[[length(args)]]
+  stripped <- gsub("^['\"]|['\"]$", "", last)
+  if (!grepl("\\.ipynb$", stripped, ignore.case = TRUE)) {
+    stop(
+      "python_nbconvert_args(): notebook argument missing from argv (got: ",
+      last, ").",
+      call. = FALSE
+    )
+  }
+  args
+}
+
 #' @keywords internal
 run_python_notebook <- function(python, notebook_path, run_dir, log_path) {
   out_nb <- file.path(
@@ -545,33 +589,34 @@ run_python_notebook <- function(python, notebook_path, run_dir, log_path) {
   )
   # Sanitize before nbconvert: input notebooks are validated strictly and
   # fail if stream outputs omit required "name" (stdout/stderr).
+  # Do NOT use <<- here: <<- skips the local binding and can leave a NULL
+  # path, after which shQuote(NULL) is character(0) and drops the notebook
+  # from argv (nbconvert then prints --help).
+  original_nb <- normalizePath(notebook_path, winslash = "/", mustWork = TRUE)
   sanitize_tmp <- NULL
   sanitized <- tryCatch(
-    {
-      sanitize_tmp <<- sanitize_notebook_for_nbconvert(notebook_path)
-      sanitize_tmp
-    },
+    sanitize_notebook_for_nbconvert(original_nb),
     error = function(e) {
       warning(
         "Notebook sanitize failed; executing original: ",
         conditionMessage(e),
         call. = FALSE
       )
-      normalizePath(notebook_path, winslash = "/", mustWork = TRUE)
+      original_nb
     }
   )
+  if (!identical(sanitized, original_nb)) {
+    sanitize_tmp <- sanitized
+  }
   on.exit({
     if (!is.null(sanitize_tmp) && file.exists(sanitize_tmp)) {
       unlink(sanitize_tmp)
     }
   }, add = TRUE)
-  args <- c(
-    "-m", "jupyter", "nbconvert",
-    "--execute",
-    "--to", "notebook",
-    "--output", shQuote(basename(out_nb)),
-    "--output-dir", shQuote(dirname(notebook_path)),
-    shQuote(sanitized)
+  args <- python_nbconvert_args(
+    notebook_path = sanitized,
+    output_basename = basename(out_nb),
+    output_dir = dirname(original_nb)
   )
   old_root <- Sys.getenv("REPLICATE_STUDY_ROOT", unset = NA)
   on.exit({
@@ -594,6 +639,14 @@ run_python_notebook <- function(python, notebook_path, run_dir, log_path) {
     stderr = log_path,
     wait = TRUE
   )
+  # Prepend argv so failed runs that print usage/help still show what was invoked.
+  if (file.exists(log_path)) {
+    body <- readLines(log_path, warn = FALSE)
+    writeLines(
+      c(paste("python", paste(args, collapse = " ")), "", body),
+      log_path
+    )
+  }
   if (!identical(status, 0L)) {
     return(status)
   }

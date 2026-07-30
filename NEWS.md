@@ -1,3 +1,15 @@
+# replicateEverything 0.7.53
+
+## Fix: nbconvert argv dropped notebook path (help text)
+
+* [run_python_notebook()] no longer uses `<<-` when storing the sanitized
+  notebook path. That assignment skipped the local binding, left a `NULL`
+  path, and `shQuote(NULL)` became `character(0)`, silently dropping the
+  `.ipynb` from argv so `jupyter nbconvert` printed usage/help instead of
+  executing (Jiang `run_random_forest` on Shiny).
+* New [python_nbconvert_args()] builds the argv and asserts the last
+  argument is a `.ipynb` path.
+
 # replicateEverything 0.7.52
 
 ## Python notebooks: sanitize stream outputs before nbconvert

@@ -181,3 +181,49 @@ test_that("sanitize_notebook_for_nbconvert adds missing stream name", {
   expect_identical(fixed$cells[[1]]$outputs[[1]]$name, "stdout")
   expect_identical(fixed$cells[[1]]$outputs[[2]]$name, "stderr")
 })
+
+test_that("python_nbconvert_args keeps a .ipynb notebook path after sanitize", {
+  src <- tempfile(fileext = ".ipynb")
+  on.exit(unlink(src), add = TRUE)
+  jsonlite::write_json(
+    list(
+      nbformat = 4L,
+      nbformat_minor = 5L,
+      metadata = list(),
+      cells = list(
+        list(
+          cell_type = "code",
+          metadata = list(),
+          source = list("print(1)\n"),
+          outputs = list(list(output_type = "stream", text = list("1\n")))
+        )
+      )
+    ),
+    src,
+    pretty = TRUE,
+    auto_unbox = TRUE,
+    null = "null"
+  )
+  sanitized <- replicateEverything:::sanitize_notebook_for_nbconvert(src)
+  on.exit(unlink(sanitized), add = TRUE)
+  expect_true(grepl("\\.ipynb$", sanitized, ignore.case = TRUE))
+  out_dir <- tempfile("nbconvert_out_")
+  dir.create(out_dir)
+  on.exit(unlink(out_dir, recursive = TRUE), add = TRUE)
+  args <- replicateEverything:::python_nbconvert_args(
+    notebook_path = sanitized,
+    output_basename = "executed.ipynb",
+    output_dir = out_dir
+  )
+  expect_true(length(args) >= 11L)
+  last <- gsub("^['\"]|['\"]$", "", args[[length(args)]])
+  expect_true(grepl("\\.ipynb$", last, ignore.case = TRUE))
+  expect_equal(
+    normalizePath(last, winslash = "/", mustWork = FALSE),
+    normalizePath(sanitized, winslash = "/", mustWork = FALSE)
+  )
+  # Regression: shQuote(NULL) is character(0) and would drop the notebook,
+  # leaving nbconvert with no input (prints --help).
+  dropped <- c(args[-length(args)], shQuote(NULL))
+  expect_lt(length(dropped), length(args))
+})
