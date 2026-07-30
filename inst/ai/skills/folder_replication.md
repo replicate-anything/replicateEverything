@@ -102,6 +102,7 @@ read. [check_and_bake_study()] fails when the field is missing; [audit_everythin
 - [ ] 9. Maintainer: **`register_study()`** (no study-local `registry/`); **`refresh_registry()`** so `index.csv` has repo, **collections**, **maintainer**, **languages**
 - [ ] 10. Remove code/data from registry study folder (if migrating)
 - [ ] 11. Verify replicateEverything + Shiny (Display + Run + system compatibility check)
+- [ ] 11b. **Parents + Shiny Live Run** — parent `outputs:` sinks baked+committed (or leaf self-contained with tracked inputs); see section below
 - [ ] 12. Commit and push study repo + registry
 ```
 
@@ -291,6 +292,50 @@ run_replication(doi, "tab_1", force = FALSE)       # reuse existing upstream out
 Display uses precomputed `outputs/`; [run_replication()] defaults to `force = TRUE` (live Run).
 
 See `inst/docs/step-dag-design.md` in the package for `given` downward-closure rules.
+
+### Parents + Shiny Live Run (study authors)
+
+**Shiny Live Run runs the selected leaf only.** It does **not** re-execute DAG
+parents. With `force=TRUE`-style live runs, missing parent sinks are **not**
+auto-rebuilt — the leaf fails if its inputs are not already on disk in the
+study clone.
+
+Before registry sync, **verify that every parent `outputs:` sink a
+Shiny-runnable display step needs is git-tracked** (or that the leaf is
+self-contained with tracked inputs). Local `run_replication` can look fine
+because `materialize_declared_data` fetches Dataverse — **that is not proof
+Shiny Live Run will work** on a thin server clone.
+
+#### Rules
+
+1. **Bake + commit parent sinks** under `outputs/` for every parent a
+   Shiny-runnable table/figure needs, **or** make the leaf self-contained with
+   **tracked** inputs (no undeclared fetch at Live Run time).
+2. **Pattern A / Dataverse:** if a figure reads `data/raw/foo.csv` with **no
+   parent step**, that file must stay **git-tracked** (or Live Run breaks after
+   thin clone). Prefer a parent `access_*` / transform that writes
+   `outputs/…`, then bake + commit that sink.
+3. **`shiny_run: false`** — escape hatch when Live Run cannot be made
+   offline-safe; Display can still show baked artifacts. Prefer this over
+   `incomplete: true` when the step should still run from R / bake / audit.
+4. **Do not** treat a green local `run_replication` (with materialize) as
+   evidence that Shiny Live Run will succeed.
+
+Motivating shape (e.g. a figure that once read a Pattern-A CSV): add
+`access_*` → committed `outputs/…`, set `parents: [access_*]` on the figure,
+bake the parent sink — then Live Run only needs the leaf.
+
+#### Anti-patterns
+
+| Avoid | Do instead |
+|-------|------------|
+| Declare `parents:` but do not commit parent sinks | Bake + commit every parent `outputs:` the leaf reads |
+| Gitignore the only input the leaf reads (no parent bake) | Track the input, or add a parent access/transform → committed `outputs/` |
+| Rely on Pattern A materialize for Shiny Live Run | Prefer Pattern B access → baked `outputs/`, or commit the raw root |
+| Assume local Run proves server Live Run | Test against a thin clone / missing-cache state |
+
+Cross-links: `dataverse_to_replicateEverything.md` (Pattern A vs B),
+`include_study_in_registry.md` (pre-sync check), `check_study_submission.md` § C.
 
 ### Extension / reanalysis studies
 
@@ -617,6 +662,7 @@ Maintainers: `install_dependencies(doi)` once. Live Run and Shiny probe only.
 - [ ] describe_study_dag() / Shiny pipeline view looks correct
 - [ ] check_study_compatibility() passes (or documents expected gaps)
 - [ ] outputs/ committed; manifest if used
+- [ ] Parent sinks for Shiny-runnable leaves are **git-tracked** (or leaf self-contained with tracked inputs) — see **Parents + Shiny Live Run**
 - [ ] Registry stub + index.csv repo column updated
 - [ ] study tests: testthat::test_dir("tests/testthat")
 - [ ] audit_everything() or package tests pass with fixture study
@@ -894,7 +940,8 @@ Run in order; stop on failure.
 | Artifact load | `load_artifact(doi, id)` with sibling options |
 | Live vs artifact | study `testthat` tests |
 | Registry stub | `is_folder_study_replication(meta)` TRUE |
-| Shiny | load study; Display + Code tabs |
+| Shiny | load study; Display + Code tabs; Live Run on a thin clone (parent sinks present) |
+| Parent sinks tracked | `git ls-files` covers every parent `outputs:` a Shiny-runnable leaf reads |
 | build_artifacts skip | folder paper skipped in registry script |
 
 **Manual smoke check (no registry needed):** from the study repo root, every
@@ -969,6 +1016,9 @@ do not leave these blank. Do not write study-local `registry/` handoff folders.
 ## Common pitfalls
 
 - **Heavy study repo** — committed raw that Dataverse can serve surgically, or shipping unused OpenICPSR bulk; prefer yaml wiring (`check_study_submission.md` § B)
+- **Parents declared, sinks uncommitted** — Shiny Live Run runs the leaf only; missing parent `outputs/` fail the leaf (see **Parents + Shiny Live Run**)
+- **Gitignored sole leaf input (no parent bake)** — Pattern A / gitignore of `data/raw/…` with no committed parent sink breaks Live Run after thin clone
+- **Local Run as Live Run proof** — `materialize_declared_data` can mask missing tracked inputs; thin-clone before claiming Shiny Run works
 - **One node per micro-script** — prefer wrapper-granularity DAG from README tables
 - **Orphan Unavailable nodes** — proprietary prep (etc.) not on the path to a claimed output → document in README / popup, do **not** add to `steps:`
 - **Marking unavailable without searching for precomputed gold** — check deposit/repo `outputs/` first

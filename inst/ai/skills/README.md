@@ -9,7 +9,7 @@ who clones or installs replicateEverything gets the current guidance.
 
 | File | Skill name | Use for |
 |------|------------|---------|
-| `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 1b DAG from original repo**; Step 4a dependency search + Step 4b `steps:` yaml; blocked steps |
+| `folder_replication.md` | `folder-replication` | Generic folder-backed study repo; **Step 1b DAG from original repo**; Step 4a dependency search + Step 4b `steps:` yaml; blocked steps; **Parents + Shiny Live Run** |
 | `dataverse_to_replicateEverything.md` | `dataverse-to-replicate-everything` | Harvard Dataverse deposits → folder-backed study repo |
 | `openicpsr_to_replicateEverything.md` | `openicpsr-to-replicate-everything` | OpenICPSR / ICPSR (often AER) deposits — download once, commit needed inputs, wrapper DAG |
 | `include_study_in_registry.md` | `include-study-in-registry` | Contributor prepare + maintainer sync into central registry |
@@ -23,7 +23,9 @@ surgical Dataverse file-id pulls → `outputs/`; Pattern A materialize → `data
 only when fetch is not a claimed step; full archive only when Pattern C
 justified. OpenICPSR (no public file API): commit needed inputs only, still
 yaml-declare. Blocked steps: `incomplete:` + `requires_engine:` or
-`data_unavailable:` (audit skips).
+`data_unavailable:` (audit skips). **Shiny Live Run runs the selected leaf
+only** — bake+commit parent sinks (or track leaf inputs); local materialize
+is not Live Run proof (`folder_replication.md` § Parents + Shiny Live Run).
 
 **Public maintainer API:** `register_study()` / `refresh_registry()` /
 `audit_everything()` / `audit_report()`. Contribute: `check_and_bake_study()` /

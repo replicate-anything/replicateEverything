@@ -17,7 +17,7 @@ Turn a **flat Dataverse replication deposit** (`ReadMe.txt` / `README.txt` / `re
 
 **Companion skills:** `folder-replication` (generic layout + **Step 1b DAG discovery** + Step 4 yaml; **gold example** `rep-template`), `include-study-in-registry` (maintainer `register_study`).
 
-**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse`; Pattern A materialize → `data/` only when fetch is not a claimed product; full archive only when Pattern C justified (see root `AI.md`).
+**Architecture:** yaml + [run_replication()] execute; pure `make_*`/`format_*` (no required footers); `outputs:` only; omit empty `parents: []`; format children without unused `label:`; `description:` for hover/Display title. **Light repo / Pattern B default:** surgical file-id pulls → `outputs/` via `engine: dataverse`; Pattern A materialize → `data/` only when fetch is not a claimed product; full archive only when Pattern C justified (see root `AI.md`). **Shiny Live Run = leaf only** — bake+commit parent sinks (or track leaf inputs); see folder-replication **Parents + Shiny Live Run**.
 
 **Not OpenICPSR:** if the deposit is on openicpsr.org / ICPSR (often AER), use
 `openicpsr_to_replicateEverything.md` instead — usually no public per-file API;
@@ -324,6 +324,13 @@ Downstream transforms list those paths under `inputs:` with **no** `parents`
 for the fetch — roots are `data/`, not a step.
 
 `.gitignore` the fetched binaries by name. Document URLs in `data/raw/README.md`.
+
+**Shiny Live Run caveat:** Pattern A materialize runs in local
+`run_replication` / bake, but **Shiny Live Run does not re-fetch parents or
+materialize for you**. If a display leaf reads a gitignored `data/raw/…` file
+with no parent bake, Live Run fails on a thin clone. Prefer Pattern B
+`access_*` → committed `outputs/…`, or keep the raw root **git-tracked**.
+Canonical checklist: folder-replication **Parents + Shiny Live Run**.
 
 **When is a transform step appropriate?** When you **change** the data (merge,
 recode, subset) and write under `outputs/`. Pure “get the file from URL” is
@@ -916,6 +923,7 @@ Shiny UI order: **Tables â†’ Figures â†’ Pipeline steps** (steps below
 | Missing Python packages on server | List PyPI names under entry `dependencies:`; run with `install_deps=TRUE` |
 | Notebook prep fails | Add `jupyter`, `nbconvert` to prep step `dependencies` |
 | Live Run "file not found" for a `.dta` | Input was gitignored without a Dataverse `access_data` step, or `given = "parents"` on fresh clone â€” use `given = "nothing"` or run `access_data` first |
+| Pattern A leaf OK locally, fails on Shiny Live Run | Live Run is leaf-only; bake+commit parent `outputs/` or track the raw input — folder-replication **Parents + Shiny Live Run** |
 | `outputs/data.dta` missing after clone | Expected with Pattern A â€” run `build_study_outputs()` or `run_replication(..., given = "nothing")` |
 | `.dta` >50MB not in git | Expected â€” stage under `registry/data/<folder>/`, deploy to server, document in `data/raw/README.md` |
 | Server missing processed data | `build_study_outputs()` runs prep first; or ship `data/processed/` |

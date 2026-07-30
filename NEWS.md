@@ -1,3 +1,12 @@
+# replicateEverything 0.7.51
+
+## Skills: Parents + Shiny Live Run
+
+* Study-author checklist: Shiny Live Run is leaf-only (does not rebuild
+  parents); bake+commit parent `outputs:` sinks or track leaf inputs;
+  `shiny_run: false` escape hatch; local materialize ≠ Live Run proof
+  (`inst/ai/skills/folder_replication.md` and cross-links).
+
 # replicateEverything 0.7.50
 
 ## Shiny Run/Display button chrome

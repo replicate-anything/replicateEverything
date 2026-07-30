@@ -46,6 +46,7 @@ The full contract stays at repo root: `replication.yml` (folder) or
 - [ ] 5. Prepare / validate: `check_and_bake_study(".")`
 - [ ] 5b. Light-repo / surgical pulls: no full DVN zip unless Pattern C justified; prefer Pattern B access → `outputs/`; OpenICPSR = needed inputs only
 - [ ] 5c. Incomplete steps (`requires_engine:` / `data_unavailable:`) declared; audit will skip them — OK to sync
+- [ ] 5d. **Parents + Shiny Live Run:** parent `outputs:` sinks for Shiny-runnable leaves are **git-tracked** (or leaf self-contained with tracked inputs); local materialize ≠ Live Run proof — see folder-replication
 - [ ] 6. Commit study repo (code, data, outputs, tests, replication.yml) — no registry/
 - [ ] 7. Open PR on study repo; notify registry maintainer
 ```
