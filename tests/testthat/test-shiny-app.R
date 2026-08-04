@@ -308,14 +308,22 @@ test_that("app.R defaults to Studies with one combined welcome modal", {
   replicate_pos <- regexpr('tabPanel\\(\\s*"Replicate"', text, perl = TRUE)
   expect_true(studies_pos > 0L && replicate_pos > studies_pos)
 
-  # Single welcome modal: concise intro + example studies (no hex decoration).
+  # Single welcome modal: concise intro + example studies; small hex left of copy.
   expect_match(
     text,
     "showModal\\s*\\(\\s*modalDialog\\s*\\([\\s\\S]*?app_welcome_intro\\s*\\(\\s*\\)[\\s\\S]*?study_types_guide_ui\\s*\\(\\s*\\)",
     perl = TRUE
   )
-  expect_false(grepl("welcome-logo", text, fixed = TRUE))
-  expect_false(grepl("welcome-intro-layout", text, fixed = TRUE))
+  expect_match(
+    text,
+    'title\\s*=\\s*"Welcome to our replicateEverything Prototype"',
+    perl = TRUE
+  )
+  expect_match(text, "This app \\(still in beta!\\)", perl = TRUE)
+  expect_match(text, "welcome-logo", fixed = TRUE)
+  expect_match(text, "welcome-intro-layout", fixed = TRUE)
+  expect_match(text, "flex-direction:\\s*row", perl = TRUE)
+  expect_match(text, "width:\\s*min\\(56px", perl = TRUE)
 
   # No second first-visit popup on Studies.
   expect_false(grepl("maybeShowStudyTypesGuide", text, fixed = TRUE))

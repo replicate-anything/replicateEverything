@@ -1,3 +1,14 @@
+# replicateEverything 0.7.58
+
+## Shiny welcome modal copy
+
+* Welcome modal heading restored to **Welcome to our replicateEverything
+  Prototype**; body again opens with **This app (still in beta!)…** before
+  the concise examples intro.
+* Small hex sticker returns on the left of the welcome copy (row layout;
+  smaller than the pre-0.7.57 centered hex). Studies-first landing and the
+  single combined modal are unchanged.
+
 # replicateEverything 0.7.57
 
 ## Shiny landing: Studies first, one welcome popup

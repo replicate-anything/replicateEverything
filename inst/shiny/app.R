@@ -65,11 +65,20 @@ app_welcome_intro <- function() {
   tags$div(
     class = "welcome-intro",
     tags$div(
-      class = "welcome-copy",
-      p(
-        "Browse replication materials for published studies, view precomputed ",
-        "tables and figures, or run live replications (beta). Pick an example ",
-        "below, or close this window to browse the full library."
+      class = "welcome-intro-layout",
+      tags$img(
+        src = APP_HEX_LOGO,
+        alt = "Replicate Everything",
+        class = "welcome-logo"
+      ),
+      tags$div(
+        class = "welcome-copy",
+        p(
+          "This app (still in beta!) lets you browse replication materials for ",
+          "published studies, view precomputed tables and figures, or run live ",
+          "replications. Pick an example below, or close this window to browse ",
+          "the full library."
+        )
       )
     )
   )
@@ -6484,8 +6493,20 @@ ui <- tagList(
       display: block;
     }
     .welcome-intro { margin-bottom: 0.85rem; }
+    .welcome-intro-layout {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 0.85rem;
+    }
+    .welcome-logo {
+      width: min(56px, 16vw);
+      height: auto;
+      flex: 0 0 auto;
+      display: block;
+    }
     .welcome-copy {
-      width: 100%;
+      flex: 1 1 auto;
       min-width: 0;
       text-align: left;
     }
@@ -7647,7 +7668,7 @@ server <- function(input, output, session) {
     }
     deep_link_flags$welcome_shown <- TRUE
     showModal(modalDialog(
-      title = "Welcome",
+      title = "Welcome to our replicateEverything Prototype",
       tagList(
         app_welcome_intro(),
         study_types_guide_ui()
