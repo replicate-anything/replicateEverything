@@ -1,3 +1,12 @@
+# replicateEverything 0.7.57
+
+## Shiny landing: Studies first, one welcome popup
+
+* Default navbar tab is **Studies** (library); **Replicate** is second.
+* Single welcome modal: short intro (no hex) above the example / study-types
+  list. Choosing an example closes the modal and opens **Replicate**. The
+  Studies-tab link still reopens the example list alone.
+
 # replicateEverything 0.7.56
 
 ## Shared Shiny Display / Run helpers

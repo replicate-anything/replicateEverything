@@ -297,6 +297,38 @@ test_that("app.R isolates clientData reads when arming welcome from onFlushed", 
   expect_match(text, "deep_link_flags\\s*<-\\s*new\\.env")
 })
 
+test_that("app.R defaults to Studies with one combined welcome modal", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  text <- paste(readLines(file.path(src, "app.R"), warn = FALSE), collapse = "\n")
+  expect_match(text, "selected\\s*=\\s*\"Studies\"")
+  # Studies navbar tab precedes Replicate.
+  studies_pos <- regexpr('tabPanel\\(\\s*"Studies"', text, perl = TRUE)
+  replicate_pos <- regexpr('tabPanel\\(\\s*"Replicate"', text, perl = TRUE)
+  expect_true(studies_pos > 0L && replicate_pos > studies_pos)
+
+  # Single welcome modal: concise intro + example studies (no hex decoration).
+  expect_match(
+    text,
+    "showModal\\s*\\(\\s*modalDialog\\s*\\([\\s\\S]*?app_welcome_intro\\s*\\(\\s*\\)[\\s\\S]*?study_types_guide_ui\\s*\\(\\s*\\)",
+    perl = TRUE
+  )
+  expect_false(grepl("welcome-logo", text, fixed = TRUE))
+  expect_false(grepl("welcome-intro-layout", text, fixed = TRUE))
+
+  # No second first-visit popup on Studies.
+  expect_false(grepl("maybeShowStudyTypesGuide", text, fixed = TRUE))
+  expect_false(grepl("study_types_guide_first_visit", text, fixed = TRUE))
+
+  # Example citations still close modal and switch to Replicate.
+  expect_match(
+    text,
+    "observeEvent\\s*\\(\\s*input\\$go_to_study[\\s\\S]*?removeModal\\s*\\([\\s\\S]*?selected\\s*=\\s*\"Replicate\"",
+    perl = TRUE
+  )
+})
+
 test_that("app.R frontloads Studies cache and defers auto-update off first flush", {
   src <- shiny_app_dir()
   skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")

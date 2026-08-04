@@ -65,37 +65,11 @@ app_welcome_intro <- function() {
   tags$div(
     class = "welcome-intro",
     tags$div(
-      class = "welcome-intro-layout",
-      tags$div(
-        class = "welcome-copy",
-        p(
-          "This app (still in beta!) lets you browse replication materials for published studies, ",
-          "view precomputed tables and figures, and run live replications on demand."
-        ),
-        p(
-          "Choose a study, then click ",
-          strong("Display"),
-          " for a precomputed result or ",
-          strong("Run"),
-          " to rerun the analysis in R."
-        ),
-        p(
-          "Help us develop the app by contributing your own study to the ",
-          tags$a(
-            href = REGISTRY_GITHUB,
-            "replicateEverything registry",
-            target = "_blank"
-          ),
-          "."
-        ),
-        if (shiny_feedback_tab_visible()) {
-          p("Or use the Feedback tab to give us feedback.")
-        }
-      ),
-      tags$img(
-        src = APP_HEX_LOGO,
-        alt = "Replicate Everything",
-        class = "welcome-logo"
+      class = "welcome-copy",
+      p(
+        "Browse replication materials for published studies, view precomputed ",
+        "tables and figures, or run live replications (beta). Pick an example ",
+        "below, or close this window to browse the full library."
       )
     )
   )
@@ -6238,15 +6212,6 @@ ui <- tagList(
       window.addEventListener('popstate', function() {
         setTimeout(sendUrlDeepLinkFromQuery, 0);
       });
-      Shiny.addCustomMessageHandler('maybeShowStudyTypesGuide', function(msg) {
-        try {
-          var key = 'replicateEverything_study_types_guide_seen';
-          if (window.localStorage && !localStorage.getItem(key)) {
-            localStorage.setItem(key, '1');
-            Shiny.setInputValue('study_types_guide_first_visit', Date.now(), {priority: 'event'});
-          }
-        } catch (e) {}
-      });
     ")),
     tags$style(HTML("
     .replication-table table { display: table; width: auto; max-width: 100%; margin-bottom: 1rem; }
@@ -6518,28 +6483,13 @@ ui <- tagList(
       width: auto;
       display: block;
     }
-    .welcome-intro { margin-bottom: 0.5rem; }
-    .welcome-intro-layout {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.85rem;
-    }
-    .welcome-logo {
-      width: min(96px, 28vw);
-      height: auto;
-      flex: 0 0 auto;
-      display: block;
-      margin-inline: auto;
-    }
+    .welcome-intro { margin-bottom: 0.85rem; }
     .welcome-copy {
       width: 100%;
       min-width: 0;
       text-align: left;
     }
-    .welcome-copy p { margin-bottom: 0.75rem; }
-    .welcome-copy p:last-child { margin-bottom: 0; }
-    .welcome-guide-link,
+    .welcome-copy p { margin-bottom: 0; }
     .study-types-guide-link {
       font-weight: 600;
     }
@@ -7364,6 +7314,34 @@ ui <- tagList(
   id = "main_nav",
   title = app_brand_title(),
   theme = bs_theme(bootswatch = "flatly"),
+  selected = "Studies",
+  tabPanel(
+    "Studies",
+    fluidPage(
+      class = "px-3 py-2",
+      fluidRow(
+        column(
+          width = 4,
+          selectInput(
+            "studies_collection_filter",
+            "Collection",
+            choices = c("All studies" = ALL_STUDIES_COLLECTION),
+            selected = ALL_STUDIES_COLLECTION
+          )
+        ),
+        column(
+          width = 8,
+          class = "d-flex align-items-end justify-content-end pb-2",
+          actionLink(
+            "show_study_types_guide",
+            "Explore different types of study",
+            class = "study-types-guide-link"
+          )
+        )
+      ),
+      uiOutput("studies_bibliography")
+    )
+  ),
   tabPanel(
     "Replicate",
     sidebarLayout(
@@ -7416,33 +7394,6 @@ ui <- tagList(
           tabPanel("Pipeline", uiOutput("selected_pipeline_ui"))
         )
       )
-    )
-  ),
-  tabPanel(
-    "Studies",
-    fluidPage(
-      class = "px-3 py-2",
-      fluidRow(
-        column(
-          width = 4,
-          selectInput(
-            "studies_collection_filter",
-            "Collection",
-            choices = c("All studies" = ALL_STUDIES_COLLECTION),
-            selected = ALL_STUDIES_COLLECTION
-          )
-        ),
-        column(
-          width = 8,
-          class = "d-flex align-items-end justify-content-end pb-2",
-          actionLink(
-            "show_study_types_guide",
-            "Explore different types of study",
-            class = "study-types-guide-link"
-          )
-        )
-      ),
-      uiOutput("studies_bibliography")
     )
   ),
   tabPanel(
@@ -7696,9 +7647,12 @@ server <- function(input, output, session) {
     }
     deep_link_flags$welcome_shown <- TRUE
     showModal(modalDialog(
-      title = "Welcome to our replicateEverything Prototype",
-      app_welcome_intro(),
-      size = "m",
+      title = "Welcome",
+      tagList(
+        app_welcome_intro(),
+        study_types_guide_ui()
+      ),
+      size = "l",
       easyClose = TRUE,
       footer = modalButton("Get started")
     ))
@@ -10440,17 +10394,6 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$show_study_types_guide, {
-    show_study_types_guide_modal()
-  })
-
-  observeEvent(input$main_nav, {
-    if (!identical(input$main_nav, "Studies")) {
-      return()
-    }
-    session$sendCustomMessage("maybeShowStudyTypesGuide", list())
-  }, ignoreInit = TRUE)
-
-  observeEvent(input$study_types_guide_first_visit, {
     show_study_types_guide_modal()
   })
 
