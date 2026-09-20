@@ -17,15 +17,31 @@ test_that("replication_error_message strips Stata-style hyperlinks", {
 test_that("missing_replication_steps_message reports HTTP fetch failure", {
   stub <- list(
     paper = list(
-      doi = "10.9999/example",
+      doi = "10.0000/does-not-exist-xyz",
       materials = "folder",
       title = "Example"
     ),
     repo = "replicate-anything/rep-does-not-exist-xyz"
   )
-  msg <- missing_replication_steps_message(stub, ctx = list())
-  expect_match(msg, "Could not load replication steps")
-  expect_match(msg, "HTTP 404|network error", perl = TRUE)
+  empty <- withr::local_tempdir()
+  withr::with_options(
+    list(
+      replicateEverything.study_folders_root = empty,
+      replicateEverything.registry_root = empty,
+      replicateEverything.use_sibling_packages = FALSE,
+      replicateEverything.index = data.frame(
+        folder = character(),
+        doi = character(),
+        repo = character(),
+        stringsAsFactors = FALSE
+      )
+    ),
+    {
+      msg <- missing_replication_steps_message(stub, ctx = list())
+      expect_match(msg, "Could not load replication steps")
+      expect_match(msg, "HTTP 404|network error", perl = TRUE)
+    }
+  )
 })
 
 test_that("missing_replication_steps_message prefers normalize errors", {

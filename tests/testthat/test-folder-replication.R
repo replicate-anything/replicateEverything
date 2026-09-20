@@ -319,24 +319,47 @@ test_that("try_resolve_study_by_common_alias finds sibling study folder", {
 })
 
 test_that("try_resolve_study_from_registry_folder maps registry folder to study repo", {
-  monorepo_root <- normalizePath(
-    file.path(testthat::test_path(".."), "..", ".."),
-    winslash = "/",
-    mustWork = FALSE
+  root <- withr::local_tempdir()
+  study_dir <- file.path(root, "rep-10.5555-cahw")
+  dir.create(study_dir)
+  writeLines(
+    "paper:\n  doi: https://doi.org/10.5555/cahw\n",
+    file.path(study_dir, "replication.yml")
   )
-  study_dir <- file.path(monorepo_root, "rep-10.5555-cahw")
-  testthat::skip_if_not(dir.exists(study_dir), "cahw study repo missing")
-
-  old <- options(
-    replicateEverything.study_folders_root = monorepo_root,
-    replicateEverything.registry_root = file.path(monorepo_root, "registry")
+  stub_dir <- file.path(root, "registry", "studies")
+  dir.create(stub_dir, recursive = TRUE)
+  writeLines(
+    paste(
+      "paper:",
+      "  doi: https://doi.org/10.5555/cahw",
+      "  study_folder: rep-10.5555-cahw",
+      "repo: replicate-anything/rep-10.5555-cahw",
+      sep = "\n"
+    ),
+    file.path(stub_dir, "10.5555_cahw.yml")
   )
-  on.exit(options(old), add = TRUE)
 
-  resolved <- replicateEverything:::try_resolve_study_from_registry_folder("10.5555_cahw")
-  expect_equal(
-    normalizePath(resolved, winslash = "/"),
-    normalizePath(study_dir, winslash = "/")
+  # cahw lives under registry/drafts/ in the Dropbox checkout and is not in
+  # the live index; this fixture keeps the mapping test independent of that.
+  withr::with_options(
+    list(
+      replicateEverything.study_folders_root = root,
+      replicateEverything.registry_root = file.path(root, "registry"),
+      replicateEverything.index = data.frame(
+        folder = character(),
+        doi = character(),
+        repo = character(),
+        stringsAsFactors = FALSE
+      )
+    ),
+    {
+      resolved <- replicateEverything:::try_resolve_study_from_registry_folder("10.5555_cahw")
+      expect_false(is.null(resolved))
+      expect_equal(
+        normalizePath(resolved, winslash = "/"),
+        normalizePath(study_dir, winslash = "/")
+      )
+    }
   )
 })
 

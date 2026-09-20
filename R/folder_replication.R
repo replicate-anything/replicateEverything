@@ -457,6 +457,15 @@ try_resolve_study_from_registry_folder <- function(loc) {
     }
   }
 
+  # Registry folder names such as 10.5555_cahw still map to rep-10.5555-cahw
+  # when the stub lives under drafts/ and is not in the live index.
+  if (grepl("^10\\.", loc) && grepl("_", loc, fixed = TRUE)) {
+    study_names <- c(
+      study_names,
+      study_folder_from_doi(gsub("_", "/", loc, fixed = TRUE))
+    )
+  }
+
   study_names <- unique(study_names[nzchar(study_names)])
   for (name in study_names) {
     if (dir.exists(name) && file.exists(file.path(name, "replication.yml"))) {
@@ -1687,7 +1696,10 @@ registry_study_yaml_url <- function(
 #' @param folder Registry folder name.
 #' @param registry_root Optional registry checkout root.
 #' @keywords internal
-read_registry_stub_yaml <- function(folder, registry_root = NULL) {
+read_registry_stub_yaml <- function(folder, registry_root = NULL, remote = TRUE) {
+  if (is.null(folder) || !nzchar(as.character(folder)[[1]])) {
+    return(NULL)
+  }
   if (is.null(registry_root)) {
     registry_root <- getOption("replicateEverything.registry_root", NULL)
   }
@@ -1696,6 +1708,9 @@ read_registry_stub_yaml <- function(folder, registry_root = NULL) {
     if (file.exists(path)) {
       return(tryCatch(yaml::read_yaml(path), error = function(e) NULL))
     }
+  }
+  if (!isTRUE(remote)) {
+    return(NULL)
   }
   read_yaml_url(registry_study_yaml_url(folder))
 }

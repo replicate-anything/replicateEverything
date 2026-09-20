@@ -1598,6 +1598,14 @@ verify_stata_dependencies <- function(
   study_root <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
   meta <- complete_folder_study_meta(meta, study_root)
 
+  probe_label <- stata_deps_probe_label(study_root, meta = meta)
+  pkgs <- stata_deps_package_names(meta, study_root = study_root)
+  probe_scripts <- stata_deps_probe_scripts(study_root, meta = meta)
+
+  if (length(probe_scripts) == 0L && length(pkgs) == 0L) {
+    return(invisible(TRUE))
+  }
+
   stata <- find_stata_executable()
   if (is.null(stata)) {
     stop(
@@ -1607,14 +1615,6 @@ verify_stata_dependencies <- function(
     )
   }
   stata_label <- stata_executable_label(stata)
-
-  probe_label <- stata_deps_probe_label(study_root, meta = meta)
-  pkgs <- stata_deps_package_names(meta, study_root = study_root)
-  probe_scripts <- stata_deps_probe_scripts(study_root, meta = meta)
-
-  if (length(probe_scripts) == 0L && length(pkgs) == 0L) {
-    return(invisible(TRUE))
-  }
 
   # Always report which Stata this check is talking to, so a check vs.
   # install mismatch (e.g. two Stata versions installed) is visible rather

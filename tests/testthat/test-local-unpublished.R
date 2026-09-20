@@ -81,6 +81,32 @@ test_that("find_local_study_root falls back to shiny_launch_wd", {
   )
 })
 
+test_that("paper_context does not fetch a GitHub registry stub for unpublished local folders", {
+  study <- withr::local_tempdir("local-demo-")
+  writeLines(
+    "paper:\n  study_handle: workshop-demo\n  title: Local only\n",
+    file.path(study, "replication.yml")
+  )
+  withr::with_dir(study, {
+    resolved <- resolve_doi_input("local")
+    testthat::with_mocked_bindings(
+      read_yaml_url = function(url) {
+        stop("unexpected remote fetch: ", url, call. = FALSE)
+      },
+      {
+        ctx <- paper_context(resolved$doi, folder = basename(study))
+        expect_equal(
+          normalizePath(ctx$local_root, winslash = "/", mustWork = FALSE),
+          normalizePath(study, winslash = "/", mustWork = FALSE)
+        )
+        expect_true(isTRUE(ctx$is_folder_study))
+        meta <- get_replication_meta("local")
+        expect_equal(meta$paper$study_handle, "workshop-demo")
+      }
+    )
+  })
+})
+
 test_that("run_replication('local') works after setwd to an unpublished folder", {
   skip_if_not_installed("estimatr")
   skip_if_not_installed("knitr")

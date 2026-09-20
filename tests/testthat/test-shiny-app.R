@@ -251,6 +251,13 @@ test_that("app.R surfaces a local-study choice and hint text in the DOI picker",
   expect_true(any(grepl('doi_input <- "local"', lines, fixed = TRUE)))
   # Quoted paste from the placeholder (`"local"`) is unwrapped before lookup.
   expect_true(any(grepl("unwrap_quoted_study_input", lines, fixed = TRUE)))
+  # Unpublished local studies must not invent a GitHub registry folder from
+  # the directory name (local-demo -> studies/local-demo.yml 404).
+  expect_false(any(grepl(
+    "registry_folder <- basename(resolved$local_root)",
+    lines,
+    fixed = TRUE
+  )))
 })
 
 test_that("local_study_select_choice falls back to character(0) when no local study is found", {

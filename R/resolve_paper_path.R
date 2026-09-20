@@ -39,6 +39,48 @@ resolve_paper_path <- function(doi) {
   gsub("/", "_", doi)
 }
 
+#' Local study root that already has replication.yml (no GitHub)
+#'
+#' Used so [paper_context()] can skip remote registry stub fetches for
+#' unpublished folders registered via [configure_study_folder()] / `doi = "local"`.
+#'
+#' @param doi Normalized DOI or study handle.
+#' @param folder Optional registry folder name.
+#' @return Normalized path or \code{NULL}.
+#' @keywords internal
+local_yaml_root_for_doi <- function(doi, folder = NULL) {
+  doi <- as.character(doi %||% "")[[1]]
+  folder <- as.character(folder %||% "")[[1]]
+  roots <- character(0)
+  found <- tryCatch(resolve_local_study_folder(doi), error = function(e) NULL)
+  if (!is.null(found)) {
+    roots <- c(roots, found)
+  }
+  folder_map <- getOption("replicateEverything.study_folders", NULL)
+  if (!is.null(folder_map) && length(folder_map) > 0L) {
+    keys <- unique(c(doi, folder, tolower(doi), tolower(folder)))
+    keys <- keys[nzchar(keys)]
+    for (key in keys) {
+      if (is.null(folder_map[[key]])) {
+        next
+      }
+      mapped <- as.character(folder_map[[key]][[1]] %||% folder_map[[key]])
+      if (nzchar(mapped) && dir.exists(mapped)) {
+        roots <- c(roots, mapped)
+      }
+    }
+  }
+  for (root in unique(roots)) {
+    if (
+      file.exists(file.path(root, "replication.yml")) ||
+        file.exists(file.path(root, "inst/replication.yml"))
+    ) {
+      return(normalizePath(root, winslash = "/", mustWork = FALSE))
+    }
+  }
+  NULL
+}
+
 #' Build base URLs and paths for a paper in the registry
 #'
 #' Registry stubs live as \code{studies/<folder>.yml} files.
@@ -83,14 +125,31 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     NULL
   }
 
-  stub <- read_registry_stub_yaml(folder, registry_root = registry_root)
-  if (is.null(stub)) {
+  local_root <- local_yaml_root_for_doi(doi, folder = folder)
+  has_local_yaml <- !is.null(local_root)
+
+  stub <- read_registry_stub_yaml(
+    folder,
+    registry_root = registry_root,
+    remote = !has_local_yaml
+  )
+  if (is.null(stub) && !has_local_yaml) {
     stub <- infer_folder_study_stub(doi, folder = folder)
+  }
+  if (is.null(stub) && has_local_yaml) {
+    yml <- file.path(local_root, "replication.yml")
+    if (!file.exists(yml)) {
+      yml <- file.path(local_root, "inst/replication.yml")
+    }
+    stub <- tryCatch(yaml::read_yaml(yml), error = function(e) NULL)
   }
   ctx_stub <- list(repo = index_repo, folder = folder)
 
   is_folder_study <- !is.null(stub) && is_folder_study_replication(stub, ctx_stub)
   is_package_study <- !is.null(stub) && is_package_replication(stub)
+  if (has_local_yaml && !is_package_study) {
+    is_folder_study <- TRUE
+  }
 
   materials_repo <- if (is_folder_study) {
     study_repo_slug(stub, ctx_stub)
@@ -98,9 +157,13 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     DEFAULT_REGISTRY_REPO
   }
 
+  saved_local <- local_root
   if (is_folder_study) {
     study_ref <- study_repo_ref(stub)
     local_root <- resolve_study_folder_path(stub, ctx_stub)
+    if (is.null(local_root)) {
+      local_root <- saved_local
+    }
     base_url <- registry_url(
       paste0("https://raw.githubusercontent.com/", materials_repo),
       paste0(study_ref, "/")
@@ -108,7 +171,9 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
   } else if (is_package_study) {
     pkg_repo <- as.character((stub$repo %||% stub$paper$package_repo %||% index_repo)[[1]])
     ref <- as.character((stub$paper$package_ref %||% stub$package_ref %||% "main")[[1]])
-    local_root <- NULL
+    if (!has_local_yaml) {
+      local_root <- NULL
+    }
     base_url <- paste0(
       "https://raw.githubusercontent.com/",
       pkg_repo,
@@ -117,7 +182,9 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
       "/"
     )
   } else {
-    local_root <- resolve_local_study_folder(doi)
+    if (is.null(local_root)) {
+      local_root <- resolve_local_study_folder(doi)
+    }
     base_url <- paste0(
       "https://raw.githubusercontent.com/",
       DEFAULT_REGISTRY_REPO,
@@ -125,6 +192,9 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     )
   }
 
+  if (is.null(local_root)) {
+    local_root <- saved_local
+  }
   if (is.null(local_root)) {
     local_root <- resolve_local_study_folder(doi)
   }

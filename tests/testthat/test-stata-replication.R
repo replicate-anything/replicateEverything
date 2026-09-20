@@ -51,11 +51,17 @@ test_that("stata_runner_lines still wires up staging dir globals", {
 })
 
 test_that("stata_runner_lines injects REPLICATE_RSCRIPT when provided", {
+  rscript_path <- "C:/fake/Rscript.exe"
   lines <- replicateEverything:::stata_runner_lines(
     "C:/study/code/tab_1.do", "C:/study",
-    rscript_path = "/usr/bin/Rscript"
+    rscript_path = rscript_path
   )
-  expect_true(any(grepl('global REPLICATE_RSCRIPT "/usr/bin/Rscript"', lines, fixed = TRUE)))
+  injected <- replicateEverything:::stata_path_in_do(rscript_path)
+  expect_true(any(grepl(
+    sprintf("global REPLICATE_RSCRIPT \"%s\"", injected),
+    lines,
+    fixed = TRUE
+  )))
 })
 
 test_that("find_rscript_for_stata returns a usable path when Rscript exists", {

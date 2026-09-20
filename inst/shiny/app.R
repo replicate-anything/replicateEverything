@@ -3980,7 +3980,7 @@ read_yaml_from_url <- function(url) {
     }
   }
   tryCatch({
-    con <- url(url, open = "rb")
+    con <- suppressWarnings(url(url, open = "rb"))
     on.exit(close(con), add = TRUE)
     txt <- readLines(con, warn = FALSE, encoding = "UTF-8")
     if (!length(txt)) {
@@ -4010,7 +4010,7 @@ read_lines_from_url <- function(url) {
     }
   }
   tryCatch({
-    con <- url(url, open = "rb")
+    con <- suppressWarnings(url(url, open = "rb"))
     on.exit(close(con), add = TRUE)
     readLines(con, warn = FALSE, encoding = "UTF-8")
   }, error = function(e) character(0))
@@ -7974,9 +7974,8 @@ server <- function(input, output, session) {
       if (!is.null(local_yaml$paper)) {
         state$local_study_meta <- local_yaml$paper
       }
-      if (is.null(state$registry_folder) || !nzchar(state$registry_folder)) {
-        state$registry_folder <- basename(resolved$local_root)
-      }
+      # Do not invent a registry folder from the directory basename
+      # (presentations/local-demo -> studies/local-demo.yml 404 on GitHub).
     }
 
     withProgress(message = "Preparing study...", value = 0.1, {

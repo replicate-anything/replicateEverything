@@ -45,11 +45,12 @@ enrich_package_replication_meta <- function(meta, ctx) {
 #' @return Parsed \code{replication.yml} contents.
 #' @keywords internal
 get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
-  resolved <- resolve_doi_input(doi)
-  doi <- resolved$doi
+  doi_resolved <- resolve_doi_input(doi)
+  doi <- doi_resolved$doi
+  is_local <- isTRUE(doi_resolved$is_local)
   ctx <- paper_context(doi, repo = repo, folder = folder)
-  if (!is.null(resolved$local_root) && dir.exists(resolved$local_root)) {
-    ctx$local_root <- resolved$local_root
+  if (!is.null(doi_resolved$local_root) && dir.exists(doi_resolved$local_root)) {
+    ctx$local_root <- doi_resolved$local_root
   }
   meta <- NULL
   source_used <- NULL
@@ -59,9 +60,9 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
   if (!is.null(ctx$local_root) && nzchar(as.character(ctx$local_root))) {
     local_roots <- c(local_roots, as.character(ctx$local_root))
   }
-  resolved <- tryCatch(resolve_local_study_folder(doi), error = function(e) NULL)
-  if (!is.null(resolved)) {
-    local_roots <- c(local_roots, resolved)
+  sibling <- tryCatch(resolve_local_study_folder(doi), error = function(e) NULL)
+  if (!is.null(sibling)) {
+    local_roots <- c(local_roots, sibling)
   }
   for (root in unique(local_roots)) {
     for (rel in c("replication.yml", "inst/replication.yml")) {
@@ -95,8 +96,9 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
     }
   }
 
-  # 3. Remote registry stub (flat studies/<folder>.yml only)
-  if (is.null(meta)) {
+  # 3. Remote registry stub (flat studies/<folder>.yml only).
+  # Unpublished local folders are not in the GitHub registry.
+  if (is.null(meta) && !is_local) {
     remote_url <- registry_study_yaml_url(ctx$folder)
     meta <- read_yaml_url(remote_url)
     if (!is.null(meta)) {

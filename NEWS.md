@@ -4,8 +4,10 @@
 
 * [get_code()] returns class \code{replication_code}; printing \code{cat()}s
   the script instead of dumping a quoted character vector.
-* Shiny and [resolve_doi_input()] accept \code{local} with or without wrapping
-  quotes (\code{"local"}, \code{'local'}, curly quotes).
+* Shiny no longer treats an unpublished folder basename as a registry
+  stub (that 404'd `studies/local-demo.yml` on GitHub). [paper_context()]
+  skips remote registry fetches when a local `replication.yml` is already
+  registered.
 * [find_local_study_root()] falls back to
   `options(replicateEverything.shiny_launch_wd)` so [run_shiny_app()] launched
   from a study `.Rproj` still finds `replication.yml` after Shiny changes the
