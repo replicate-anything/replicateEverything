@@ -18,7 +18,7 @@ who clones or installs replicateEverything gets the current guidance.
 Each file is a self-contained Cursor Agent Skill (YAML frontmatter with
 `name:` + `description:`, then the body).
 
-**Policy (see root `AI.md`):** study repos stay light; **Pattern B default** =
+**Policy:** study repos stay light; **Pattern B default** =
 surgical Dataverse file-id pulls → `outputs/`; Pattern A materialize → `data/`
 only when fetch is not a claimed step; full archive only when Pattern C
 justified. OpenICPSR (no public file API): commit needed inputs only, still

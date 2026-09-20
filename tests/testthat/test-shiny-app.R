@@ -249,6 +249,8 @@ test_that("app.R surfaces a local-study choice and hint text in the DOI picker",
   # resolve_study_doi_input already treats blank / "local" input as the
   # working-directory study for both dropdown and free-text submission paths.
   expect_true(any(grepl('doi_input <- "local"', lines, fixed = TRUE)))
+  # Quoted paste from the placeholder (`"local"`) is unwrapped before lookup.
+  expect_true(any(grepl("unwrap_quoted_study_input", lines, fixed = TRUE)))
 })
 
 test_that("local_study_select_choice falls back to character(0) when no local study is found", {
@@ -280,6 +282,57 @@ test_that("local_study_select_choice falls back to character(0) when no local st
   }
   eval(parse(text = lines[start:end]), envir = fn_env)
   expect_identical(fn_env$local_study_select_choice(), character(0))
+})
+
+test_that("local_study_select_choice pins Local study when shiny_launch_wd has yaml", {
+  src <- shiny_app_dir()
+  skip_if_not(nzchar(src) && dir.exists(src), "inst/shiny not available")
+
+  study <- withr::local_tempdir("shiny-local-")
+  writeLines(
+    paste(
+      "paper:",
+      "  study_handle: workshop-demo",
+      "  title: Workshop local-folder demo",
+      sep = "\n"
+    ),
+    file.path(study, "replication.yml")
+  )
+  other <- withr::local_tempdir("shiny-app-wd-")
+
+  lines <- readLines(file.path(src, "app.R"), warn = FALSE)
+  start <- grep("^local_study_select_choice <- function", lines)
+  depth <- 0L
+  end <- start
+  for (i in seq(start, length(lines))) {
+    depth <- depth + nchar(gsub("[^{]", "", lines[[i]])) - nchar(gsub("[^}]", "", lines[[i]]))
+    if (depth <= 0L && i > start) {
+      end <- i
+      break
+    }
+  }
+  fn_env <- new.env(parent = globalenv())
+  fn_env$`%||%` <- function(a, b) if (is.null(a) || (length(a) == 1L && is.na(a))) b else a
+  fn_env$truncate_label <- function(text, max_chars = 40L) {
+    text <- as.character(text)[[1]]
+    if (nchar(text) <= max_chars) text else paste0(substr(text, 1, max_chars - 1L), "\u2026")
+  }
+  fn_env$replicate_fn <- function(name, ...) {
+    fun <- get(name, envir = asNamespace("replicateEverything"), inherits = FALSE)
+    do.call(fun, list(...))
+  }
+  eval(parse(text = lines[start:end]), envir = fn_env)
+
+  withr::with_dir(other, {
+    withr::with_options(
+      list(replicateEverything.shiny_launch_wd = study),
+      {
+        choice <- fn_env$local_study_select_choice()
+        expect_equal(unname(choice), "local")
+        expect_match(names(choice), "Local study", ignore.case = TRUE)
+      }
+    )
+  })
 })
 
 test_that("app.R isolates clientData reads when arming welcome from onFlushed", {

@@ -45,8 +45,12 @@ enrich_package_replication_meta <- function(meta, ctx) {
 #' @return Parsed \code{replication.yml} contents.
 #' @keywords internal
 get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
-  doi <- prepare_doi_for_replication(doi)
+  resolved <- resolve_doi_input(doi)
+  doi <- resolved$doi
   ctx <- paper_context(doi, repo = repo, folder = folder)
+  if (!is.null(resolved$local_root) && dir.exists(resolved$local_root)) {
+    ctx$local_root <- resolved$local_root
+  }
   meta <- NULL
   source_used <- NULL
 
@@ -145,14 +149,28 @@ get_replication_meta_impl <- function(doi, repo = NULL, folder = NULL) {
 #' @return Parsed \code{replication.yml} contents.
 #' @keywords internal
 get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
-  doi_key <- tryCatch(
-    prepare_doi_for_replication(doi),
-    error = function(e) normalize_doi(doi)
+  resolved <- tryCatch(
+    resolve_doi_input(doi),
+    error = function(e) NULL
   )
+  doi_key <- if (!is.null(resolved) && !is.null(resolved$doi)) {
+    resolved$doi
+  } else {
+    tryCatch(
+      prepare_doi_for_replication(doi),
+      error = function(e) normalize_doi(doi)
+    )
+  }
+  root_key <- if (!is.null(resolved) && !is.null(resolved$local_root)) {
+    normalizePath(resolved$local_root, winslash = "/", mustWork = FALSE)
+  } else {
+    ""
+  }
   key <- paste(
     doi_key,
     repo %||% "",
     folder %||% "",
+    root_key,
     sep = "\x1f"
   )
   if (!exists(key, envir = .replication_meta_cache, inherits = FALSE)) {

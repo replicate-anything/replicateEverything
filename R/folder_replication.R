@@ -543,45 +543,109 @@ register_local_study_from_root <- function(local_root) {
   list(doi = doi_out, local_root = local_root, is_local = TRUE)
 }
 
+#' Strip wrapping quotes from a DOI / local / path string
+#'
+#' Shiny's placeholder shows \code{"local"}; people often paste that including
+#' the quotes (also R-style \code{'local'} or curly quotes). Quoted filesystem
+#' paths such as \code{"C:/study"} are unwrapped the same way.
+#'
+#' @param x Character scalar.
+#' @return Character scalar with matching wrapping quotes removed.
+#' @keywords internal
+unwrap_quoted_study_input <- function(x) {
+  if (is.null(x) || length(x) != 1L || is.na(x)) {
+    return(as.character(x %||% ""))
+  }
+  s <- trimws(as.character(x))
+  pairs <- list(
+    c("\"", "\""),
+    c("'", "'"),
+    c("\u201c", "\u201d"),
+    c("\u2018", "\u2019")
+  )
+  changed <- TRUE
+  while (isTRUE(changed) && nchar(s) >= 2L) {
+    changed <- FALSE
+    first <- substr(s, 1L, 1L)
+    last <- substr(s, nchar(s), nchar(s))
+    for (p in pairs) {
+      if (identical(first, p[[1]]) && identical(last, p[[2]])) {
+        s <- trimws(substr(s, 2L, nchar(s) - 1L))
+        changed <- TRUE
+        break
+      }
+    }
+  }
+  s
+}
+
 #' Detect whether a DOI argument requests the local working-directory study
 #'
-#' @param doi Character. Use \code{""}, \code{"local"}, or \code{"."}.
+#' @param doi Character. Use \code{""}, \code{"local"}, or \code{"."}
+#'   (wrapping quotes optional).
 #' @return Logical scalar.
 #' @keywords internal
 is_local_doi_query <- function(doi) {
   if (is.null(doi) || length(doi) != 1L) {
     return(FALSE)
   }
-  x <- tolower(trimws(as.character(doi)))
+  x <- tolower(unwrap_quoted_study_input(doi))
   x %in% c("", "local", ".")
 }
 
 #' Find a folder-backed study root containing \code{replication.yml}
 #'
-#' Walks up from \code{location} (default working directory).
+#' Walks up from \code{location} (default working directory). When that walk
+#' fails, also tries \code{getOption("replicateEverything.shiny_launch_wd")}
+#' so [run_shiny_app()] still finds a study after Shiny changes the process
+#' working directory to \code{inst/shiny}.
 #'
 #' @param location Directory to start from.
 #' @return Normalized study root or \code{NULL}.
 #' @keywords internal
 find_local_study_root <- function(location = getwd()) {
-  if (is.null(location) || length(location) != 1L || is.na(location) || !nzchar(location)) {
+  search_one <- function(start) {
+    if (is.null(start) || length(start) != 1L || is.na(start) || !nzchar(start)) {
+      return(NULL)
+    }
+    dir <- tryCatch(
+      normalizePath(start, winslash = "/", mustWork = FALSE),
+      error = function(e) NULL
+    )
+    if (is.null(dir) || !dir.exists(dir)) {
+      return(NULL)
+    }
+    if (file.exists(file.path(dir, "replication.yml"))) {
+      return(dir)
+    }
+    found <- walk_up_for_relative(dir, "replication.yml")
+    if (is.null(found)) {
+      return(NULL)
+    }
+    normalizePath(found, winslash = "/", mustWork = FALSE)
+  }
+
+  found <- search_one(location)
+  if (!is.null(found)) {
+    return(found)
+  }
+
+  launch_wd <- getOption("replicateEverything.shiny_launch_wd", NULL)
+  if (is.null(launch_wd) || !nzchar(as.character(launch_wd)[[1]])) {
     return(NULL)
   }
-  dir <- tryCatch(
+  loc_norm <- tryCatch(
     normalizePath(location, winslash = "/", mustWork = FALSE),
-    error = function(e) NULL
+    error = function(e) as.character(location)
   )
-  if (is.null(dir) || !dir.exists(dir)) {
+  launch_norm <- tryCatch(
+    normalizePath(launch_wd, winslash = "/", mustWork = FALSE),
+    error = function(e) as.character(launch_wd)
+  )
+  if (identical(loc_norm, launch_norm)) {
     return(NULL)
   }
-  if (file.exists(file.path(dir, "replication.yml"))) {
-    return(dir)
-  }
-  found <- walk_up_for_relative(dir, "replication.yml")
-  if (is.null(found)) {
-    return(NULL)
-  }
-  normalizePath(found, winslash = "/", mustWork = FALSE)
+  search_one(launch_wd)
 }
 
 #' Resolve a DOI or local study query into a canonical DOI
@@ -603,7 +667,7 @@ resolve_doi_input <- function(
   location = getwd(),
   allow_local = TRUE
 ) {
-  raw <- trimws(as.character(doi %||% ""))
+  raw <- unwrap_quoted_study_input(doi %||% "")
 
   if (is_study_path_query(raw)) {
     if (!isTRUE(allow_local)) {

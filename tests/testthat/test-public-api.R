@@ -92,7 +92,12 @@ test_that("get_code returns replication script text", {
       }
     )
     expect_type(code, "character")
+    expect_s3_class(code, "replication_code")
     expect_true(any(nchar(code) > 10L))
+    printed <- paste(capture.output(print(code)), collapse = "\n")
+    expect_false(grepl("^\\[1\\]", printed))
+    first <- code[nzchar(code)][[1]]
+    expect_true(grepl(first, printed, fixed = TRUE))
   })
 })
 

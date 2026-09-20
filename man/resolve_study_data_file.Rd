@@ -7,7 +7,8 @@
 resolve_study_data_file(rel_path, study_root, meta, ctx = NULL)
 }
 \arguments{
-\item{rel_path}{Path relative to study root (e.g. \code{data/file.dta}).}
+\item{rel_path}{Path relative to study root (e.g. \code{data/file.dta}), or
+an absolute / home-relative path.}
 
 \item{study_root}{Normalized study repository root.}
 

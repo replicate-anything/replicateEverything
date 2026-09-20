@@ -160,8 +160,6 @@ Use `collections: [AER]` (or other AEA journal tags) when citation metadata cite
 
 ## See also
 
-- `folder_replication.md` — Step 1b DAG, Step 5 data, blocked-step field table
+- `folder_replication.md` — Step 1b DAG, Step 5 data, Pattern A/B/C, blocked-step field table
 - `check_study_submission.md` — lean materials + incomplete-step review
 - `dataverse_to_replicateEverything.md` — when the deposit **is** on Dataverse
-- Root `AI.md` — Pattern A/B/C + light-repo hard rules
-- Onboarding scratch (monorepo): `onboarding_notes/openicpsr-aer-239169.md`

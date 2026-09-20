@@ -128,6 +128,22 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
   if (is.null(local_root)) {
     local_root <- resolve_local_study_folder(doi)
   }
+  if (is.null(local_root)) {
+    folder_map <- getOption("replicateEverything.study_folders", NULL)
+    if (!is.null(folder_map) && length(folder_map) > 0L) {
+      for (key in unique(c(doi, folder, tolower(doi)))) {
+        if (!nzchar(key) || is.null(folder_map[[key]])) {
+          next
+        }
+        mapped <- as.character(folder_map[[key]][[1]] %||% folder_map[[key]])
+        if (nzchar(mapped) && dir.exists(mapped) &&
+            file.exists(file.path(mapped, "replication.yml"))) {
+          local_root <- normalizePath(mapped, winslash = "/", mustWork = FALSE)
+          break
+        }
+      }
+    }
+  }
 
   list(
     doi = doi,

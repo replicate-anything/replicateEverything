@@ -54,8 +54,10 @@ read_data_file <- function(path, ctx, meta = NULL) {
     ensure_study_data_files(path, ctx$local_root, meta, ctx)
   }
 
-  local_path <- if (!is.null(ctx$local_root)) {
-    file.path(ctx$local_root, path)
+  local_path <- if (is_absolute_declared_path(path)) {
+    resolve_declared_path(path, ctx$local_root %||% getwd())
+  } else if (!is.null(ctx$local_root)) {
+    resolve_declared_path(path, ctx$local_root)
   } else {
     NA_character_
   }
@@ -64,7 +66,7 @@ read_data_file <- function(path, ctx, meta = NULL) {
     return(read_data_path(local_path, ext))
   }
 
-  if (!is.null(meta)) {
+  if (!is.null(meta) && !is_absolute_declared_path(path)) {
     base_root <- extended_study_base_root(meta)
     if (!is.null(base_root) && !identical(base_root, ctx$local_root)) {
       base_path <- file.path(base_root, path)

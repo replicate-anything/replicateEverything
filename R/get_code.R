@@ -35,7 +35,9 @@
 #'   (load \code{data:}, call \code{make_*}, pipe \code{format_*} when applicable).
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
-#' @return A character vector containing the lines of the replication script(s).
+#' @return A character vector of script lines, with class
+#'   \code{replication_code}. Printing uses \code{cat()} so the console shows
+#'   the script, not \code{[1] "line"} quotes.
 #'
 #' @examples
 #' \dontrun{
@@ -82,10 +84,10 @@ get_code <- function(
       ns <- asNamespace(pkg)
       if (exists("get_code", envir = ns, inherits = FALSE)) {
         lines <- call_replication_package(pkg, "get_code", what)
-        return(adjust_package_get_code_for_mode(lines, mode))
+        return(as_replication_code(adjust_package_get_code_for_mode(lines, mode)))
       }
     }
-    return(get_code_from_package_repo(meta, ctx, what, pkg, mode = mode))
+    return(as_replication_code(get_code_from_package_repo(meta, ctx, what, pkg, mode = mode)))
   }
 
   rep <- find_replication_entry(meta, what, language = language)
@@ -138,9 +140,9 @@ get_code <- function(
       what = what
     )
     if (identical(style, "source")) {
-      return(read_code_file(rep$code))
+      return(as_replication_code(read_code_file(rep$code)))
     }
-    return(assemble_stata_display_code(rep, read_code_file))
+    return(as_replication_code(assemble_stata_display_code(rep, read_code_file)))
   }
 
   if (is_python_replication(rep, meta$paper)) {
@@ -151,7 +153,7 @@ get_code <- function(
       doi = doi,
       what = what
     )
-    return(read_code_file(rep$code))
+    return(as_replication_code(read_code_file(rep$code)))
   }
 
   lines <- read_code_file(rep$code)
@@ -182,7 +184,35 @@ get_code <- function(
   if (identical(mode, "run")) {
     lines <- prepare_get_code_for_run(lines, rep)
   }
-  lines
+  as_replication_code(lines)
+}
+
+#' Mark script lines so [print.replication_code()] can \code{cat()} them
+#' @keywords internal
+as_replication_code <- function(lines) {
+  lines <- as.character(lines %||% character(0))
+  structure(lines, class = c("replication_code", "character"))
+}
+
+#' Print replication script lines as code, not a quoted vector
+#'
+#' @param x A \code{replication_code} object from [get_code()].
+#' @param ... Ignored.
+#' @keywords internal
+#' @exportS3Method print replication_code
+print.replication_code <- function(x, ...) {
+  if (length(x)) {
+    cat(unclass(x), sep = "\n")
+    cat("\n")
+  }
+  invisible(x)
+}
+
+#' Keep class after \code{head()} / subset so printing stays \code{cat()}
+#' @keywords internal
+#' @exportS3Method [ replication_code
+`[.replication_code` <- function(x, i, ...) {
+  as_replication_code(NextMethod())
 }
 
 #' Noun for get_code / Code-tab run tips (table / figure / step / result)

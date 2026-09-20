@@ -159,6 +159,14 @@ test_that("ungate_nframe_footer preserves body (legacy helper)", {
   expect_equal(out[[2]], "  make_fig_1()")
 })
 
+test_that("print.replication_code cats lines without [1] quotes", {
+  lines <- as_replication_code(c("# Table 1", "make_tab_1 <- function(data) NULL"))
+  printed <- paste(capture.output(print(lines)), collapse = "\n")
+  expect_false(grepl("[1]", printed, fixed = TRUE))
+  expect_true(grepl("# Table 1", printed, fixed = TRUE))
+  expect_s3_class(head(lines, 1L), "replication_code")
+})
+
 test_that("yaml_implied_call_lines builds load -> make -> format", {
   rep <- list(
     id = "tab_1",

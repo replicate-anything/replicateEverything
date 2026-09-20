@@ -13,6 +13,9 @@ find_local_study_root(location = getwd())
 Normalized study root or \code{NULL}.
 }
 \description{
-Walks up from \code{location} (default working directory).
+Walks up from \code{location} (default working directory). When that walk
+fails, also tries \code{getOption("replicateEverything.shiny_launch_wd")}
+so \code{\link[=run_shiny_app]{run_shiny_app()}} still finds a study after Shiny changes the process
+working directory to \code{inst/shiny}.
 }
 \keyword{internal}

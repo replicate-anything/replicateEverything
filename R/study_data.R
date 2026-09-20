@@ -61,13 +61,57 @@ study_data_folder_name <- function(meta, ctx = NULL) {
   "study"
 }
 
+#' Whether a yaml data/input path is absolute (or home-relative)
+#'
+#' @param path Character scalar.
+#' @return Logical scalar.
+#' @keywords internal
+is_absolute_declared_path <- function(path) {
+  if (is.null(path) || length(path) < 1L) {
+    return(FALSE)
+  }
+  path <- trimws(gsub("\\", "/", as.character(path)[[1]], fixed = TRUE))
+  if (!nzchar(path)) {
+    return(FALSE)
+  }
+  grepl("^~", path) ||
+    grepl("^[a-zA-Z]:", path) ||
+    grepl("^/", path) ||
+    grepl("^//", path)
+}
+
+#' Resolve a yaml-declared data/code path against a study root
+#'
+#' Absolute paths and \code{~/…} stay outside the study tree. Relative paths
+#' join \code{study_root}.
+#'
+#' @param path Declared path from yaml \code{inputs:} / \code{data:}.
+#' @param study_root Study repository root.
+#' @return Normalized path.
+#' @keywords internal
+resolve_declared_path <- function(path, study_root) {
+  path <- trimws(gsub("\\", "/", as.character(path)[[1]], fixed = TRUE))
+  if (grepl("^~", path)) {
+    path <- path.expand(path)
+  }
+  if (is_absolute_declared_path(path)) {
+    return(normalizePath(path, winslash = "/", mustWork = FALSE))
+  }
+  if (is.null(study_root) || !nzchar(as.character(study_root)[[1]])) {
+    return(normalizePath(path, winslash = "/", mustWork = FALSE))
+  }
+  normalizePath(file.path(study_root, path), winslash = "/", mustWork = FALSE)
+}
+
 #' Candidate paths for a replication data file
 #'
-#' Checks (1) the study checkout at \code{study_root/<rel_path>}, (2) a sibling
-#' monorepo study repo when configured, then (3) deployed Shiny data at
+#' Checks (1) an absolute / \code{~/…} yaml path as written, (2) the study
+#' checkout at \code{study_root/<rel_path>}, (3) a sibling monorepo study repo
+#' when configured, then (4) deployed Shiny data at
 #' \code{<study_data_root>/data/<study_folder>/<basename>}.
 #'
-#' @param rel_path Path relative to study root (e.g. \code{data/file.dta}).
+#' @param rel_path Path relative to study root (e.g. \code{data/file.dta}), or
+#'   an absolute / home-relative path.
 #' @param study_root Normalized study repository root.
 #' @param meta Parsed replication metadata.
 #' @param ctx Optional paper context.
@@ -75,6 +119,9 @@ study_data_folder_name <- function(meta, ctx = NULL) {
 #' @keywords internal
 study_data_file_candidates <- function(rel_path, study_root, meta, ctx = NULL) {
   rel_path <- gsub("\\", "/", as.character(rel_path), fixed = TRUE)
+  if (is_absolute_declared_path(rel_path)) {
+    return(unique(resolve_declared_path(rel_path, study_root)))
+  }
   file_name <- basename(rel_path)
   study_name <- study_data_folder_name(meta, ctx)
   root <- study_data_root(ctx)
@@ -285,6 +332,18 @@ ensure_study_data_files <- function(data_files, study_root, meta, ctx = NULL) {
   materialize_declared_data_for_paths(data_files, study_root, meta, ctx = ctx)
 
   resolved_paths <- vapply(data_files, function(rel_path) {
+    if (is_absolute_declared_path(rel_path)) {
+      abs_path <- resolve_declared_path(rel_path, study_root)
+      if (!file.exists(abs_path)) {
+        stop(
+          study_data_not_found_message(
+            rel_path, study_root, abs_path, meta, ctx
+          ),
+          call. = FALSE
+        )
+      }
+      return(normalizePath(abs_path, winslash = "/", mustWork = FALSE))
+    }
     target <- file.path(study_root, rel_path)
     hit <- resolve_study_data_file(rel_path, study_root, meta, ctx)
     if (!isTRUE(hit$found)) {

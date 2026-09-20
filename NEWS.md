@@ -1,3 +1,26 @@
+# replicateEverything (unreleased)
+
+## Unpublished local folders
+
+* [get_code()] returns class \code{replication_code}; printing \code{cat()}s
+  the script instead of dumping a quoted character vector.
+* Shiny and [resolve_doi_input()] accept \code{local} with or without wrapping
+  quotes (\code{"local"}, \code{'local'}, curly quotes).
+* [find_local_study_root()] falls back to
+  `options(replicateEverything.shiny_launch_wd)` so [run_shiny_app()] launched
+  from a study `.Rproj` still finds `replication.yml` after Shiny changes the
+  process working directory to `inst/shiny`. Paste the folder path in the DOI
+  box remains a fallback.
+* Yaml `inputs:` / `data:` may be absolute or `~/…` paths (quote Windows
+  paths). Those files are read in place and are **not** copied into the study
+  tree. Unquoted `C:/…` yaml maps are coerced back to a path.
+* [check_and_bake_study()] no longer fails handle-only folders for a missing
+  GitHub `repo:` slug or missing `tests/testthat/` (both remain recommended
+  before registry inclusion). Bake uses a placeholder `local/<folder>` slug
+  when `repo:` is omitted. [get_replication_meta()] keeps the local folder
+  from `doi = "local"` / a filesystem path so unpublished studies do not fall
+  through to a registry stub lookup.
+
 # replicateEverything 0.7.58
 
 ## Shiny welcome modal copy

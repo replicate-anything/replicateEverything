@@ -114,7 +114,11 @@ check_folder_replication <- function(
   if (is.null(study_repo) || !nzchar(as.character(study_repo[[1]]))) {
     checks <- bind_check_results(
       checks,
-      check_result("study_repo", FALSE, "Set repo or paper.study_repo to the GitHub slug")
+      check_result(
+        "study_repo",
+        TRUE,
+        "Optional until you publish: set repo or paper.study_repo to the GitHub slug"
+      )
     )
   } else {
     checks <- bind_check_results(
@@ -183,9 +187,10 @@ check_folder_replication <- function(
     data_paths <- replication_data_paths(rep)
     base_root <- if (study_has_extension(meta)) extended_study_base_root(meta) else NULL
     for (rel in data_paths) {
-      data_path <- file.path(study_root, rel)
-      if (!file.exists(data_path) && !is.null(base_root)) {
-        data_path <- file.path(base_root, rel)
+      data_path <- resolve_declared_path(rel, study_root)
+      if (!file.exists(data_path) && !is.null(base_root) &&
+          !is_absolute_declared_path(rel)) {
+        data_path <- resolve_declared_path(rel, base_root)
       }
       checks <- bind_check_results(
         checks,
@@ -285,8 +290,12 @@ check_folder_replication <- function(
     checks,
     check_result(
       "testthat_directory",
-      dir.exists(test_dir),
-      if (dir.exists(test_dir)) test_dir else "Recommended: tests/testthat/ with run_replication checks"
+      TRUE,
+      if (dir.exists(test_dir)) {
+        test_dir
+      } else {
+        "Recommended: tests/testthat/ with run_replication checks"
+      }
     )
   )
 

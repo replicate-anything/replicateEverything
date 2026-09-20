@@ -1007,7 +1007,10 @@ maintainer_hint <- function(...) {
 #' Registry dropdown selections use \code{normalize_doi()} only. The DOI/path
 #' field uses \code{resolve_doi_input()} when available.
 resolve_study_doi_input <- function(doi_input, from_registry = FALSE) {
-  doi_input <- trimws(as.character(doi_input %||% ""))
+  doi_input <- tryCatch(
+    replicate_fn("unwrap_quoted_study_input", doi_input),
+    error = function(e) trimws(as.character(doi_input %||% ""))
+  )
   if (isTRUE(from_registry)) {
     if (!nzchar(doi_input)) {
       stop("Study DOI is required.", call. = FALSE)
@@ -7918,7 +7921,10 @@ server <- function(input, output, session) {
   }
 
   load_study <- function(doi_input, from_registry = FALSE) {
-    doi_input <- trimws(as.character(doi_input %||% ""))
+    doi_input <- tryCatch(
+      replicate_fn("unwrap_quoted_study_input", doi_input),
+      error = function(e) trimws(as.character(doi_input %||% ""))
+    )
     if (!isTRUE(from_registry) && !nzchar(doi_input)) {
       doi_input <- "local"
     }

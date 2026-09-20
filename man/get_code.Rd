@@ -36,7 +36,9 @@ function definitions). \code{"run"} appends a yaml-implied execute recipe
 \item{folder}{Optional registry folder name from \code{index.csv}.}
 }
 \value{
-A character vector containing the lines of the replication script(s).
+A character vector of script lines, with class
+\code{replication_code}. Printing uses \code{cat()} so the console shows
+the script, not \code{[1] "line"} quotes.
 }
 \description{
 Returns a single script suitable for the Code tab in Shiny. For Stata

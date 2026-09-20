@@ -167,7 +167,21 @@ test_that("is_local_doi_query recognizes local aliases", {
   expect_true(is_local_doi_query("local"))
   expect_true(is_local_doi_query("LOCAL"))
   expect_true(is_local_doi_query("."))
+  expect_true(is_local_doi_query("\"local\""))
+  expect_true(is_local_doi_query("'local'"))
+  expect_true(is_local_doi_query(" \"local\" "))
+  expect_true(is_local_doi_query("\u201clocal\u201d"))
   expect_false(is_local_doi_query("10.1/example"))
+  expect_false(is_local_doi_query(NULL))
+})
+
+test_that("unwrap_quoted_study_input strips matching wrapping quotes", {
+  expect_equal(unwrap_quoted_study_input("local"), "local")
+  expect_equal(unwrap_quoted_study_input("\"local\""), "local")
+  expect_equal(unwrap_quoted_study_input("'local'"), "local")
+  expect_equal(unwrap_quoted_study_input("\"'local'\""), "local")
+  expect_equal(unwrap_quoted_study_input("\"C:/study\""), "C:/study")
+  expect_equal(unwrap_quoted_study_input("  local  "), "local")
 })
 
 test_that("resolve_doi_input finds local replication.yml", {
@@ -185,6 +199,9 @@ test_that("resolve_doi_input finds local replication.yml", {
     expect_equal(out$doi, "10.9999/localtest")
     expect_true(out$is_local)
     expect_equal(basename(out$local_root), basename(tmp))
+    quoted <- resolve_doi_input("\"local\"")
+    expect_equal(quoted$doi, out$doi)
+    expect_true(quoted$is_local)
   })
 })
 

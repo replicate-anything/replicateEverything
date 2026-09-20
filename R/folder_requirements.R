@@ -176,8 +176,8 @@ folder_study_run_options <- function(study_root, meta, registry_root = NULL) {
     folder <- doi_to_registry_folder(doi)
   }
   study_repo <- infer_study_repo_slug(study_root, meta)
-  if (is.null(study_repo)) {
-    stop("Could not infer study repo slug; set repo or paper.study_repo in replication.yml", call. = FALSE)
+  if (is.null(study_repo) || !nzchar(as.character(study_repo[[1]]))) {
+    study_repo <- paste0("local/", basename(study_root))
   }
 
   authors <- paper$authors %||% ""
@@ -313,11 +313,53 @@ replication_data_paths <- function(rep) {
   if (is.null(data)) {
     return(character(0))
   }
-  if (is.list(data) && !is.data.frame(data)) {
-    data <- unlist(data, use.names = FALSE)
+  coerce_yaml_declared_paths(data)
+}
+
+#' Flatten yaml `inputs:` / `data:` to character paths
+#'
+#' Unquoted Windows paths such as \code{C:/Users/you/file.csv} can parse as a
+#' named list (\code{C} = \code{/Users/you/file.csv}). Rebuild those as a
+#' single absolute path.
+#' @keywords internal
+coerce_yaml_declared_paths <- function(data) {
+  if (is.null(data)) {
+    return(character(0))
   }
-  paths <- as.character(data)
-  paths[nzchar(paths)]
+  if (is.character(data)) {
+    return(data[nzchar(data)])
+  }
+  if (is.data.frame(data)) {
+    return(character(0))
+  }
+  if (!is.list(data)) {
+    paths <- as.character(data)
+    return(paths[nzchar(paths)])
+  }
+  nms <- names(data)
+  if (is.null(nms)) {
+    nms <- rep("", length(data))
+  }
+  out <- character(0)
+  for (i in seq_along(data)) {
+    item <- data[[i]]
+    if (is.list(item) && !is.data.frame(item)) {
+      out <- c(out, coerce_yaml_declared_paths(item))
+      next
+    }
+    val <- as.character(unlist(item, use.names = FALSE))
+    val <- val[nzchar(val)]
+    if (!length(val)) {
+      next
+    }
+    key <- nms[[i]]
+    if (nzchar(key) && grepl("^[A-Za-z]$", key)) {
+      out <- c(out, paste0(key, ":", val[[1]]))
+    } else {
+      out <- c(out, val)
+    }
+  }
+  out
 }
 
 #' Check whether a baked table artifact file is valid for folder checks

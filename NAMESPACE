@@ -10,7 +10,9 @@ S3method(print,folder_replication_check)
 S3method(print,package_replication_check)
 S3method(print,replicate_study)
 S3method(print,replication_check)
+S3method(print,replication_code)
 S3method(print,replication_list)
+S3method("[",replication_code)
 S3method(print,validate_outputs_result)
 S3method(summary,replicate_study)
 export(ai_skill)
@@ -40,9 +42,13 @@ export(save_local_shiny)
 export(search_papers)
 export(summary_study)
 export(validate_outputs)
-importFrom(grDevices,dev.off)
-importFrom(grDevices,png)
+importFrom(grDevices,
+  dev.off,
+  png
+)
 importFrom(stats,na.omit)
-importFrom(utils,download.file)
-importFrom(utils,read.csv)
-importFrom(utils,write.csv)
+importFrom(utils,
+  download.file,
+  read.csv,
+  write.csv
+)
