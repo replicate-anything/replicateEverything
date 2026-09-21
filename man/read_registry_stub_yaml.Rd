@@ -4,7 +4,7 @@
 \alias{read_registry_stub_yaml}
 \title{Read the registry stub yaml for a paper folder}
 \usage{
-read_registry_stub_yaml(folder, registry_root = NULL)
+read_registry_stub_yaml(folder, registry_root = NULL, remote = TRUE)
 }
 \arguments{
 \item{folder}{Registry folder name.}
