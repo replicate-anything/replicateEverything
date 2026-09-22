@@ -82,8 +82,10 @@ repo); for a template with no external deposit they may be the same URL. Shiny
 shows **Source repository** with a kind icon inferred from the URL (Dataverse,
 OSF, World Bank, ICPSR/OpenICPSR, Git, replicateEverything); other http(s) URLs
 fall back to **personal**. Legacy aliases `source_url` / `source_repo` are still
-read. [check_and_bake_study()] fails when the field is missing; [audit_everything()] /
-[audit_report()] surface source-repository gaps.
+read. [check_and_bake_study()] FAILs when the field is missing on **DOI**
+studies; handle-only / unpublished local scaffolds may omit it (PASS with a
+registry-prep reminder). [audit_everything()] / [audit_report()] surface
+source-repository gaps in the registry.
 
 
 ```

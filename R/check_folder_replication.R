@@ -108,7 +108,12 @@ check_folder_replication <- function(
     )
   }
 
-  checks <- bind_check_results(checks, check_paper_source_repository(paper))
+  # DOI / registry-bound studies require source_repository; handle-only local
+  # scaffolds (get_started demos) may omit it until registry registration.
+  checks <- bind_check_results(
+    checks,
+    check_paper_source_repository(paper, required = doi_ok)
+  )
 
   study_repo <- infer_study_repo_slug(study_root, meta)
   if (is.null(study_repo) || !nzchar(as.character(study_repo[[1]]))) {

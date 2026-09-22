@@ -203,3 +203,41 @@ test_that("check_and_bake_study accepts a handle-only folder without repo or tes
   expect_true(result$ok)
   expect_true(file.exists(file.path(study, "outputs", "tab_1.html")))
 })
+
+test_that("check_and_bake_study accepts get_started scaffold without source_repository", {
+  skip_if_not_installed("estimatr")
+  skip_if_not_installed("knitr")
+
+  root <- withr::local_tempdir("gs-bake-")
+  study <- file.path(root, "local-demo")
+  get_started(study, name = "local-demo")
+
+  meta <- yaml::read_yaml(file.path(study, "replication.yml"))
+  expect_null(meta$paper$source_repository)
+  expect_null(meta$paper$doi)
+  expect_equal(meta$paper$study_handle, "local-demo")
+
+  result <- check_and_bake_study(study, build_artifacts = TRUE, install_deps = FALSE)
+  failed <- result$checks[!result$checks$passed, , drop = FALSE]
+  expect_equal(
+    nrow(failed),
+    0L,
+    info = paste(failed$check, failed$message, collapse = "; ")
+  )
+  expect_true(result$ok)
+  src_row <- result$checks[result$checks$check == "paper_source_repository", , drop = FALSE]
+  expect_equal(nrow(src_row), 1L)
+  expect_true(src_row$passed[[1]])
+  expect_match(src_row$message[[1]], "Optional until registry registration")
+  expect_true(file.exists(file.path(study, "outputs", "tab_1.html")))
+})
+
+test_that("check_paper_source_repository still FAILs when required (DOI studies)", {
+  fail_row <- check_paper_source_repository(list(title = "x"), required = TRUE)
+  expect_false(fail_row$passed[[1]])
+  expect_match(fail_row$message[[1]], "required")
+
+  warn_row <- check_paper_source_repository(list(title = "x"), required = FALSE)
+  expect_true(warn_row$passed[[1]])
+  expect_match(warn_row$message[[1]], "Optional until registry registration")
+})

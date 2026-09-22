@@ -4,10 +4,15 @@
 \alias{check_paper_source_repository}
 \title{check_replication row for paper.source_repository}
 \usage{
-check_paper_source_repository(paper)
+check_paper_source_repository(paper, required = TRUE)
 }
 \arguments{
 \item{paper}{Paper list.}
+
+\item{required}{If \code{TRUE} (default), missing \code{paper.source_repository} is a
+FAIL. Set \code{FALSE} for unpublished handle-only local folders (no
+\code{paper.doi}), where the field is recommended before registry registration
+but not required to bake.}
 }
 \value{
 A one-row check result data frame.

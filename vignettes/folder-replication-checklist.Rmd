@@ -48,10 +48,11 @@ generated or committed here.
 
 **Paper metadata**
 
-- `paper.doi` — full DOI URL
+- `paper.doi` — full DOI URL (or `paper.study_handle` for unpublished local scaffolds)
 - `paper.title`
+- `paper.source_repository` — URL of the original data / materials deposit; **required** for DOI / registry-bound studies. Handle-only local scaffolds ([get_started()]) may omit it; [check_and_bake_study()] warns (PASS with reminder) until registry registration
 - `paper.article_url` — optional publisher landing page when `https://doi.org/...` does not resolve (common for older Cambridge Core / APSR entries)
-- `repo` or `paper.study_repo` — GitHub slug (`org/repo`); inferred from folder name when it starts with `rep-`
+- `repo` or `paper.study_repo` — GitHub slug (`org/repo`); inferred from folder name when it starts with `rep-`. Optional for unpublished local folders until you publish
 
 **Maintainer and collections** (required for registry sync)
 

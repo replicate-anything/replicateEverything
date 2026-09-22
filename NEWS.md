@@ -38,6 +38,10 @@
   when `repo:` is omitted. [get_replication_meta()] keeps the local folder
   from `doi = "local"` / a filesystem path so unpublished studies do not fall
   through to a registry stub lookup.
+* Missing `paper.source_repository` is likewise optional for handle-only /
+  unpublished local scaffolds ([get_started()] still omits it): checklist
+  PASSes with a registry-prep reminder. DOI studies still FAIL when the field
+  is absent.
 
 # replicateEverything 0.7.58
 

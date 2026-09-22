@@ -17,6 +17,8 @@ test_that("get_started scaffolds a named mini study, not rep-template", {
   expect_equal(meta$paper$title, "My local demo")
   expect_false(identical(meta$paper$study_handle, "rep-template"))
   expect_null(meta$repo)
+  expect_null(meta$paper$source_repository)
+  expect_null(meta$paper$doi)
   expect_true(any(vapply(meta$steps, function(s) identical(s$id, "tab_1"), logical(1))))
 
   code <- paste(readLines(file.path(study, "code", "tab_1.R"), warn = FALSE), collapse = "\n")

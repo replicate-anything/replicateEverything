@@ -188,12 +188,27 @@ source_repository_href <- function(value) {
 }
 
 #' check_replication row for paper.source_repository
+#'
 #' @param paper Paper list.
+#' @param required If `TRUE` (default), missing `paper.source_repository` is a
+#'   FAIL. Set `FALSE` for unpublished handle-only local folders (no
+#'   `paper.doi`), where the field is recommended before registry registration
+#'   but not required to bake.
 #' @return A one-row check result data frame.
 #' @keywords internal
-check_paper_source_repository <- function(paper) {
+check_paper_source_repository <- function(paper, required = TRUE) {
   srcs <- paper_source_repositories(paper = paper)
   if (!length(srcs)) {
+    if (!isTRUE(required)) {
+      return(check_result(
+        "paper_source_repository",
+        TRUE,
+        paste(
+          "Optional until registry registration:",
+          "set paper.source_repository (URL of the original data deposit)"
+        )
+      ))
+    }
     return(check_result(
       "paper_source_repository",
       FALSE,
