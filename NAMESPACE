@@ -27,6 +27,7 @@ export(check_study_compatibility)
 export(configure_local_monorepo)
 export(describe_study_dag)
 export(get_code)
+export(get_started)
 export(get_study)
 export(install_dependencies)
 export(list_replications)
@@ -42,13 +43,9 @@ export(save_local_shiny)
 export(search_papers)
 export(summary_study)
 export(validate_outputs)
-importFrom(grDevices,
-  dev.off,
-  png
-)
+importFrom(grDevices,dev.off)
+importFrom(grDevices,png)
 importFrom(stats,na.omit)
-importFrom(utils,
-  download.file,
-  read.csv,
-  write.csv
-)
+importFrom(utils,download.file)
+importFrom(utils,read.csv)
+importFrom(utils,write.csv)

@@ -72,6 +72,7 @@ reference:
 - title: 'Contribute: build & check'
   desc: Bake precomputed outputs and validate a study repo before registration.
   contents:
+  - get_started
   - build_study_outputs
   - check_and_bake_study
 - title: 'Maintainer: registry ops'

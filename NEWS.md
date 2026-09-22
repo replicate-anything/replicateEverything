@@ -1,4 +1,20 @@
-# replicateEverything (unreleased)
+# replicateEverything 0.7.59
+
+## get_started() local scaffold
+
+* New [get_started()]: create a demo-like folder study under a path
+  (`.Rproj`, `data/`, `code/`, `outputs/`, `replication.yml`) with an
+  assignable `name` / handle. Refuses `name = "rep-template"` so local
+  starters never collide with the gold template identity.
+* [get_started()] empty-folder check also ignores RStudio / R session junk
+  (`.Rproj.user`, `.Rhistory`, `.RData`, `.Ruserdata`) alongside OS / Dropbox
+  noise.
+* [get_started()] requires a missing or **empty** `path` (no entries other
+    than `.` / `..`). Pass `FORCE = TRUE` to scaffold into a non-empty folder
+    and replace scaffold targets only; unrelated files are left in place.
+    The former `overwrite` argument is removed.
+* [get_started()] accepts `path = "here"` (case-insensitive) for the current
+  working directory; default `name` then uses `basename(getwd())`.
 
 ## Unpublished local folders
 
