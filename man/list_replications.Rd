@@ -5,7 +5,7 @@
 \title{List available replications for a paper}
 \usage{
 list_replications(
-  doi,
+  doi = NULL,
   repo = NULL,
   folder = NULL,
   grouped = FALSE,
@@ -15,9 +15,11 @@ list_replications(
 }
 \arguments{
 \item{doi}{Character. DOI, registry handle, or local study path. Pass
-\code{"local"} (or \code{""} / \code{"."}) to use the study in the
-current working directory — no registry lookup is needed; see
-\code{\link[=resolve_doi_input]{resolve_doi_input()}}.}
+\code{"local"} or \code{"here"} (or omit / \code{NULL} / \code{""} /
+\code{"."}) to use the study in the current working directory when it
+contains \code{replication.yml} — no registry lookup is needed; see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}. When omitted and no local yaml is found, errors
+clearly (does not fall through to the registry).}
 
 \item{repo}{Optional repository slug.}
 
@@ -53,11 +55,12 @@ list_replications("10.1017/s0003055426101749", include = "pipeline")
 list_replications("rep-template")
 
 # Working on a study repo checked out locally: setwd() to the study repo
-# root (or open its RStudio project), then use "local" — no registry or
-# DOI lookup required.
+# root (or open its RStudio project), then omit doi or pass "local" /
+# "here" — no registry or DOI lookup required.
 setwd("path/to/rep-my-study")
+list_replications()
 list_replications("local")
-list_replications("local", grouped = TRUE)
+list_replications("here", grouped = TRUE)
 }
 
 }

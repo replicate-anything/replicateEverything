@@ -22,7 +22,7 @@ is_prep_entry <- function(rep) {
 #' @inheritParams list_replications
 #' @return A list of prep step entries.
 #' @keywords internal
-list_prep_steps <- function(doi, repo = NULL, folder = NULL) {
+list_prep_steps <- function(doi = NULL, repo = NULL, folder = NULL) {
   list_replications(doi, repo = repo, folder = folder, include = "pipeline")
 }
 
@@ -474,7 +474,7 @@ preview_data_file <- function(path, n = 6L) {
 #' @return A data preview, file path character vector, or replication result.
 #' @keywords internal
 run_prep_step <- function(
-  doi,
+  doi = NULL,
   what,
   install_deps = FALSE,
   repo = NULL,

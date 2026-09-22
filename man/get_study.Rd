@@ -4,11 +4,12 @@
 \alias{get_study}
 \title{Resolve a study handle (metadata once)}
 \usage{
-get_study(doi, repo = NULL, folder = NULL)
+get_study(doi = NULL, repo = NULL, folder = NULL)
 }
 \arguments{
-\item{doi}{Character. DOI, registry handle, or \code{"local"} / study path
-(see \code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
+\item{doi}{Character. DOI, registry handle, or \code{"local"} /
+\code{"here"} / study path (see \code{\link[=resolve_doi_input]{resolve_doi_input()}}). Defaults to the
+working-directory study when omitted.}
 
 \item{repo}{Optional repository slug.}
 
@@ -21,8 +22,9 @@ An object of class \code{replicate_study}.
 Returns a compact \code{replicate_study} \strong{handle}: registry index fields plus
 step counts, related studies, and gap tags from the study
 \code{replication.yml}, resolved once. Pass a journal DOI, registry handle
-(e.g. \code{"rep-template"}), or \code{"local"} / a study path (see
-\code{\link[=resolve_doi_input]{resolve_doi_input()}}).
+(e.g. \code{"rep-template"}), or \code{"local"} / \code{"here"} / a study
+path (see \code{\link[=resolve_doi_input]{resolve_doi_input()}}). Omit \code{doi} (or pass \code{NULL}) when
+the working directory contains \code{replication.yml}.
 }
 \details{
 Besides \code{\link{summary.replicate_study}} / \code{\link[=summary_study]{summary_study()}} for a

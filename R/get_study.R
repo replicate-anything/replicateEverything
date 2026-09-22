@@ -3,8 +3,9 @@
 #' Returns a compact \code{replicate_study} **handle**: registry index fields plus
 #' step counts, related studies, and gap tags from the study
 #' \code{replication.yml}, resolved once. Pass a journal DOI, registry handle
-#' (e.g. \code{"rep-template"}), or \code{"local"} / a study path (see
-#' [resolve_doi_input()]).
+#' (e.g. \code{"rep-template"}), or \code{"local"} / \code{"here"} / a study
+#' path (see [resolve_doi_input()]). Omit \code{doi} (or pass \code{NULL}) when
+#' the working directory contains \code{replication.yml}.
 #'
 #' Besides \code{\link{summary.replicate_study}} / [summary_study()] for a
 #' console overview, use the handle to:
@@ -21,8 +22,9 @@
 #'     or share the same resolved context with Shiny / reports.
 #' }
 #'
-#' @param doi Character. DOI, registry handle, or \code{"local"} / study path
-#'   (see [resolve_doi_input()]).
+#' @param doi Character. DOI, registry handle, or \code{"local"} /
+#'   \code{"here"} / study path (see [resolve_doi_input()]). Defaults to the
+#'   working-directory study when omitted.
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #' @return An object of class \code{replicate_study}.
@@ -50,7 +52,8 @@
 #' @seealso [summary.replicate_study()], [summary_study()], [list_replications()],
 #'   [describe_study_dag()], [run_replication()], [load_index()]
 #' @export
-get_study <- function(doi, repo = NULL, folder = NULL) {
+get_study <- function(doi = NULL, repo = NULL, folder = NULL) {
+  doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   paper <- meta$paper %||% list()
   lookup <- tryCatch(
@@ -226,7 +229,7 @@ get_study <- function(doi, repo = NULL, folder = NULL) {
 #'
 #' @seealso [get_study()], [summary.replicate_study()]
 #' @export
-summary_study <- function(doi, repo = NULL, folder = NULL, ...) {
+summary_study <- function(doi = NULL, repo = NULL, folder = NULL, ...) {
   st <- get_study(doi, repo = repo, folder = folder)
   summary(st, ...)
   invisible(st)

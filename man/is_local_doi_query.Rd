@@ -7,8 +7,8 @@
 is_local_doi_query(doi)
 }
 \arguments{
-\item{doi}{Character. Use \code{""}, \code{"local"}, or \code{"."}
-(wrapping quotes optional).}
+\item{doi}{Character. Use \code{""}, \code{"local"}, \code{"here"}, or
+\code{"."} (wrapping quotes optional).}
 }
 \value{
 Logical scalar.

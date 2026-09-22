@@ -17,8 +17,9 @@ build_study_outputs(
 \arguments{
 \item{location}{Local study path, GitHub address, or installed package
 name. Defaults to \code{"."} when the working directory contains
-\code{replication.yml} or \code{DESCRIPTION} — the same study that \code{doi = "local"}
-resolves to for \code{\link[=list_replications]{list_replications()}} / \code{\link[=run_replication]{run_replication()}} / \code{\link[=get_code]{get_code()}}.}
+\code{replication.yml} or \code{DESCRIPTION}. \code{"local"} and \code{"here"} are
+synonyms for that same study (the one \code{doi = "local"} / \code{"here"} resolves
+to for \code{\link[=list_replications]{list_replications()}} / \code{\link[=run_replication]{run_replication()}} / \code{\link[=get_code]{get_code()}}).}
 
 \item{install_deps}{Logical. Install missing CRAN, pip, and Stata dependencies
 when \code{TRUE}.}

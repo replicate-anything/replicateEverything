@@ -4,12 +4,13 @@
 \alias{study_dag_facets}
 \title{Faceted pipeline groups for Shiny (split multi-branch components)}
 \usage{
-study_dag_facets(meta, repo = NULL, folder = NULL)
+study_dag_facets(meta = NULL, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{meta}{Parsed replication metadata, or a DOI / registry handle. Pass
-\code{"local"} to describe the study in the current working directory
-(no registry lookup needed; see \code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
+\code{"local"} or \code{"here"} (or omit / \code{NULL}) to describe the
+study in the current working directory (no registry lookup needed; see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
 
 \item{repo}{Optional repository slug when \code{meta} is a DOI or handle.}
 

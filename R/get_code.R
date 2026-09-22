@@ -23,9 +23,9 @@
 #' reading \code{code/*.R} from the registry repo).
 #'
 #' @param doi Character. DOI of the paper, registry handle, or local study
-#'   path. Pass \code{"local"} to read code from the study in the current
-#'   working directory — no registry lookup is needed; see
-#'   [resolve_doi_input()].
+#'   path. Pass \code{"local"} or \code{"here"} (or omit / \code{NULL}) to
+#'   read code from the study in the current working directory — no registry
+#'   lookup is needed; see [resolve_doi_input()].
 #' @param what Character. Replication identifier (logical id).
 #' @param language Optional \code{"R"} or \code{"stata"}.
 #' @param style Display style: \code{"inline"} (default, inlines Stata sources for
@@ -49,12 +49,14 @@
 #'
 #' # setwd() to a checked-out study repo (or open its RStudio project):
 #' setwd("path/to/rep-my-study")
+#' head(get_code(what = "tab_1"))
 #' head(get_code("local", "tab_1"))
+#' head(get_code("here", "tab_1"))
 #' }
 #'
 #' @export
 get_code <- function(
-  doi,
+  doi = NULL,
   what,
   language = NULL,
   style = c("inline", "source"),
@@ -65,6 +67,7 @@ get_code <- function(
   style <- match.arg(style)
   mode <- match.arg(mode)
 
+  doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   ctx <- paper_context(doi, repo = repo, folder = folder)
 

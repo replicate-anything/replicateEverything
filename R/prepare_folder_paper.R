@@ -6,8 +6,9 @@
 #' (stub written only into the central registry repository).
 #'
 #' @param location Study repo path or GitHub address. Defaults to `"."` — the
-#'   current working directory, i.e. the same study `doi = "local"` resolves
-#'   to for [list_replications()] / [run_replication()] / [get_code()].
+#'   current working directory. \code{"local"} and \code{"here"} are synonyms
+#'   for that same study (the one `doi = "local"` / `"here"` resolves to for
+#'   [list_replications()] / [run_replication()] / [get_code()]).
 #' @param build_artifacts If `TRUE`, build precomputed outputs first.
 #' @param install_deps Passed to the build function.
 #' @param full_replication If `TRUE`, also run every table and figure live.

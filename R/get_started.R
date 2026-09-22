@@ -16,13 +16,14 @@
 #'
 #' @param path Directory for the new study. Created if missing; must be empty
 #'   unless \code{FORCE = TRUE}. Common OS / Dropbox junk files are ignored
-#'   when deciding emptiness (see details above). Use \code{"here"}
-#'   (case-insensitive) for the current working directory (\code{getwd()}).
+#'   when deciding emptiness (see details above). Use \code{"here"} or
+#'   \code{"local"} (case-insensitive synonyms) for the current working
+#'   directory (\code{getwd()}).
 #' @param name Project / study handle. Defaults to \code{basename(path)} after
-#'   resolving \code{path} (so \code{path = "here"} defaults to the basename of
-#'   the working directory). Must not be \code{"rep-template"} (reserved for
-#'   the published gold template). Used for \code{paper.study_handle}, the
-#'   \code{.Rproj} basename, and file headers.
+#'   resolving \code{path} (so \code{path = "here"} / \code{"local"} defaults
+#'   to the basename of the working directory). Must not be
+#'   \code{"rep-template"} (reserved for the published gold template). Used for
+#'   \code{paper.study_handle}, the \code{.Rproj} basename, and file headers.
 #' @param title Optional paper title. Defaults to a clear local-scaffold label
 #'   that includes \code{name}.
 #' @param authors Optional author string for \code{paper.authors}.
@@ -39,6 +40,7 @@
 #' get_started("~/my-first-replication", name = "my-first-replication")
 #' get_started("~/my-first-replication", name = "my-first-replication", FORCE = TRUE)
 #' get_started("here")  # scaffold into getwd(); name defaults to basename(getwd())
+#' get_started("local") # same as "here"
 #' }
 get_started <- function(path,
                         name = basename(path),
@@ -49,7 +51,7 @@ get_started <- function(path,
     stop("`path` is required.", call. = FALSE)
   }
   path <- trimws(as.character(path)[[1]])
-  if (identical(tolower(path), "here")) {
+  if (is_local_study_token(path)) {
     path <- getwd()
   }
   path <- normalizePath(path.expand(path), winslash = "/", mustWork = FALSE)

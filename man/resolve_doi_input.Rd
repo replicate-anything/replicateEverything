@@ -7,21 +7,25 @@
 resolve_doi_input(doi = NULL, location = getwd(), allow_local = TRUE)
 }
 \arguments{
-\item{doi}{Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.}
+\item{doi}{Character DOI, DOI URL, study-repo path, \code{"local"} /
+\code{"here"}, or blank / \code{NULL}.}
 
 \item{location}{Directory to search for a local study (default \code{getwd()}).}
 
-\item{allow_local}{When \code{FALSE}, never treat blank/\code{local}/\code{.}
-as a working-directory study (used by the registry scope of
-\code{\link[=install_dependencies]{install_dependencies()}}).}
+\item{allow_local}{When \code{FALSE}, never treat blank/\code{local}/
+\code{here}/\code{.} as a working-directory study (used by the registry
+scope of \code{\link[=install_dependencies]{install_dependencies()}}).}
 }
 \value{
 A list with \code{doi}, \code{local_root}, and \code{is_local}.
 }
 \description{
-When \code{doi} is blank or \code{"local"}, searches for
-\code{replication.yml} from the working directory upward. When \code{doi} is a
+When \code{doi} is omitted, blank, \code{"local"}, or \code{"here"}, searches
+for \code{replication.yml} from the working directory upward (same study
+\code{\link[=list_replications]{list_replications()}} resolves for those tokens). When \code{doi} is a
 filesystem path, searches that folder (and parents). When a matching local
 study is found, registers it via \code{\link{configure_study_folder}}.
+Missing / local tokens never fall through to the registry: if no local
+\code{replication.yml} is found, resolution errors clearly.
 }
 \keyword{internal}

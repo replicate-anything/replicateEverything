@@ -14,8 +14,9 @@ check_and_bake_study(
 }
 \arguments{
 \item{location}{Study repo path or GitHub address. Defaults to \code{"."} — the
-current working directory, i.e. the same study \code{doi = "local"} resolves
-to for \code{\link[=list_replications]{list_replications()}} / \code{\link[=run_replication]{run_replication()}} / \code{\link[=get_code]{get_code()}}.}
+current working directory. \code{"local"} and \code{"here"} are synonyms
+for that same study (the one \code{doi = "local"} / \code{"here"} resolves to for
+\code{\link[=list_replications]{list_replications()}} / \code{\link[=run_replication]{run_replication()}} / \code{\link[=get_code]{get_code()}}).}
 
 \item{build_artifacts}{If \code{TRUE}, build precomputed outputs first.}
 

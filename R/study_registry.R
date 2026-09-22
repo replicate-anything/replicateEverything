@@ -155,10 +155,14 @@ package_name_from_root <- function(pkg_root) {
 #' Resolve a study repository root (folder-backed or package-backed)
 #' @keywords internal
 resolve_study_root <- function(location) {
-  if (length(location) != 1L || is.na(location) || !nzchar(trimws(location))) {
+  if (is.null(location) || length(location) != 1L || is.na(location)) {
     stop("location must be a non-empty path or GitHub address.", call. = FALSE)
   }
-  loc <- trimws(location)
+  loc <- resolve_local_or_here(location)
+  if (!nzchar(trimws(loc))) {
+    stop("location must be a non-empty path or GitHub address.", call. = FALSE)
+  }
+  loc <- trimws(loc)
   if (dir.exists(loc)) {
     if (
       file.exists(file.path(loc, "replication.yml")) ||

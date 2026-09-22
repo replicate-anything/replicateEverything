@@ -10,8 +10,9 @@
 #' (same step used for display outputs and Shiny).
 #'
 #' @param doi Character. DOI, registry handle, or local study path (see
-#'   [resolve_doi_input()]). Pass \code{"local"} to run against the study in
-#'   the current working directory — no registry lookup is needed.
+#'   [resolve_doi_input()]). Pass \code{"local"} or \code{"here"} (or omit /
+#'   \code{NULL}) to run against the study in the current working directory —
+#'   no registry lookup is needed.
 #' @param what Character. Step or replication identifier (e.g. \code{"tab_1"}),
 #'   or \code{"everything"} to run all non-format steps in the study DAG.
 #' @param language Optional \code{"R"}, \code{"stata"}, or \code{"python"}. When
@@ -52,13 +53,14 @@
 #' # setwd() to a checked-out study repo (or open its RStudio project) and
 #' # run a step against it directly — no DOI or registry lookup required.
 #' setwd("path/to/rep-my-study")
+#' run_replication(what = "tab_1")
 #' run_replication("local", "tab_1")
-#' run_replication("local", "fig_1", format = TRUE)
+#' run_replication("here", "fig_1", format = TRUE)
 #' }
 #'
 #' @export
 run_replication <- function(
-  doi,
+  doi = NULL,
   what,
   language = NULL,
   given = NULL,
@@ -909,6 +911,7 @@ run_replication_one <- function(
   repo = NULL,
   folder = NULL
 ) {
+  doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   stop_if_step_blocked(meta, what)
   if (is_package_replication(meta)) {

@@ -316,8 +316,8 @@ study_input_error_message <- function(
         ""
       },
       ".\n",
-      "Blank or \"local\" input means \"study in getwd()\" and is not used for ",
-      "install_dependencies(\"everywhere\").\n",
+      "Blank, \"local\", or \"here\" input means \"study in getwd()\" and is not ",
+      "used for install_dependencies(\"everywhere\").\n",
       "Expected a DOI, handle, or registry folder slug from index.csv; ",
       "metadata is loaded from the registry stub and study GitHub repo.\n\n",
       doi_hint
@@ -588,10 +588,42 @@ unwrap_quoted_study_input <- function(x) {
   s
 }
 
+#' True when \code{x} is the local-study synonym \code{"local"} or \code{"here"}
+#'
+#' Case-insensitive; leading/trailing whitespace and wrapping quotes are
+#' ignored (see [unwrap_quoted_study_input()]). Both tokens mean the study in
+#' the current working directory (\code{getwd()}).
+#'
+#' @param x Character scalar (or \code{NULL}).
+#' @return Logical scalar.
+#' @keywords internal
+is_local_study_token <- function(x) {
+  if (is.null(x) || length(x) != 1L || is.na(x)) {
+    return(FALSE)
+  }
+  tolower(trimws(unwrap_quoted_study_input(x))) %in% c("local", "here")
+}
+
+#' Map \code{"local"} / \code{"here"} to \code{getwd()}; otherwise return \code{x}
+#'
+#' @param x Path or local-study token.
+#' @return Character path: \code{getwd()} for local/here tokens, otherwise the
+#'   trimmed unwrapped input (possibly empty).
+#' @keywords internal
+resolve_local_or_here <- function(x) {
+  if (is_local_study_token(x)) {
+    return(getwd())
+  }
+  if (is.null(x) || length(x) != 1L || is.na(x)) {
+    return(as.character(x %||% ""))
+  }
+  trimws(unwrap_quoted_study_input(x))
+}
+
 #' Detect whether a DOI argument requests the local working-directory study
 #'
-#' @param doi Character. Use \code{""}, \code{"local"}, or \code{"."}
-#'   (wrapping quotes optional).
+#' @param doi Character. Use \code{""}, \code{"local"}, \code{"here"}, or
+#'   \code{"."} (wrapping quotes optional).
 #' @return Logical scalar.
 #' @keywords internal
 is_local_doi_query <- function(doi) {
@@ -599,7 +631,7 @@ is_local_doi_query <- function(doi) {
     return(FALSE)
   }
   x <- tolower(unwrap_quoted_study_input(doi))
-  x %in% c("", "local", ".")
+  identical(x, "") || identical(x, ".") || is_local_study_token(doi)
 }
 
 #' Find a folder-backed study root containing \code{replication.yml}
@@ -659,16 +691,20 @@ find_local_study_root <- function(location = getwd()) {
 
 #' Resolve a DOI or local study query into a canonical DOI
 #'
-#' When \code{doi} is blank or \code{"local"}, searches for
-#' \code{replication.yml} from the working directory upward. When \code{doi} is a
+#' When \code{doi} is omitted, blank, \code{"local"}, or \code{"here"}, searches
+#' for \code{replication.yml} from the working directory upward (same study
+#' [list_replications()] resolves for those tokens). When \code{doi} is a
 #' filesystem path, searches that folder (and parents). When a matching local
 #' study is found, registers it via \code{\link{configure_study_folder}}.
+#' Missing / local tokens never fall through to the registry: if no local
+#' \code{replication.yml} is found, resolution errors clearly.
 #'
-#' @param doi Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.
+#' @param doi Character DOI, DOI URL, study-repo path, \code{"local"} /
+#'   \code{"here"}, or blank / \code{NULL}.
 #' @param location Directory to search for a local study (default \code{getwd()}).
-#' @param allow_local When \code{FALSE}, never treat blank/\code{local}/\code{.}
-#'   as a working-directory study (used by the registry scope of
-#'   [install_dependencies()]).
+#' @param allow_local When \code{FALSE}, never treat blank/\code{local}/
+#'   \code{here}/\code{.} as a working-directory study (used by the registry
+#'   scope of [install_dependencies()]).
 #' @return A list with \code{doi}, \code{local_root}, and \code{is_local}.
 #' @keywords internal
 resolve_doi_input <- function(
@@ -678,22 +714,8 @@ resolve_doi_input <- function(
 ) {
   raw <- unwrap_quoted_study_input(doi %||% "")
 
-  if (is_study_path_query(raw)) {
-    if (!isTRUE(allow_local)) {
-      stop(study_input_error_message("registry_bulk", input = raw), call. = FALSE)
-    }
-    path_root <- expand_study_path_input(raw)
-    local_root <- if (!is.null(path_root)) {
-      find_local_study_root(path_root)
-    } else {
-      NULL
-    }
-    if (is.null(local_root)) {
-      stop(study_input_error_message("path", path = raw), call. = FALSE)
-    }
-    return(register_local_study_from_root(local_root))
-  }
-
+  # Local-study tokens before path heuristics so a cwd folder named "local"
+  # / "here" does not steal the synonym.
   local_root <- if (isTRUE(allow_local)) {
     find_local_study_root(location)
   } else {
@@ -710,6 +732,22 @@ resolve_doi_input <- function(
         },
         call. = FALSE
       )
+    }
+    return(register_local_study_from_root(local_root))
+  }
+
+  if (is_study_path_query(raw)) {
+    if (!isTRUE(allow_local)) {
+      stop(study_input_error_message("registry_bulk", input = raw), call. = FALSE)
+    }
+    path_root <- expand_study_path_input(raw)
+    local_root <- if (!is.null(path_root)) {
+      find_local_study_root(path_root)
+    } else {
+      NULL
+    }
+    if (is.null(local_root)) {
+      stop(study_input_error_message("path", path = raw), call. = FALSE)
     }
     return(register_local_study_from_root(local_root))
   }

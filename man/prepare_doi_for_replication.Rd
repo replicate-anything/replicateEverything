@@ -7,13 +7,14 @@
 prepare_doi_for_replication(doi, location = getwd(), allow_local = TRUE)
 }
 \arguments{
-\item{doi}{Character DOI, DOI URL, study-repo path, \code{"local"}, or blank.}
+\item{doi}{Character DOI, DOI URL, study-repo path, \code{"local"} /
+\code{"here"}, or blank / \code{NULL}.}
 
 \item{location}{Directory to search for a local study (default \code{getwd()}).}
 
-\item{allow_local}{When \code{FALSE}, never treat blank/\code{local}/\code{.}
-as a working-directory study (used by the registry scope of
-\code{\link[=install_dependencies]{install_dependencies()}}).}
+\item{allow_local}{When \code{FALSE}, never treat blank/\code{local}/
+\code{here}/\code{.} as a working-directory study (used by the registry
+scope of \code{\link[=install_dependencies]{install_dependencies()}}).}
 }
 \value{
 Character DOI.

@@ -4,12 +4,13 @@
 \alias{describe_study_dag}
 \title{Text representation of the study DAG for Shiny / CLI}
 \usage{
-describe_study_dag(meta, repo = NULL, folder = NULL)
+describe_study_dag(meta = NULL, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{meta}{Parsed replication metadata, or a DOI / registry handle. Pass
-\code{"local"} to describe the study in the current working directory
-(no registry lookup needed; see \code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
+\code{"local"} or \code{"here"} (or omit / \code{NULL}) to describe the
+study in the current working directory (no registry lookup needed; see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
 
 \item{repo}{Optional repository slug when \code{meta} is a DOI or handle.}
 
@@ -36,7 +37,9 @@ describe_study_dag(st$doi)
 # setwd() to a checked-out study repo (or open its RStudio project) and
 # sanity-check the parsed DAG without any registry — no DOI needed.
 setwd("path/to/rep-my-study")
+describe_study_dag()
 describe_study_dag("local")
+describe_study_dag("here")
 }
 
 }

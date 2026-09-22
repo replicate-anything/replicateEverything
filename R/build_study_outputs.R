@@ -7,8 +7,9 @@
 #'
 #' @param location Local study path, GitHub address, or installed package
 #'   name. Defaults to `"."` when the working directory contains
-#'   `replication.yml` or `DESCRIPTION` — the same study that `doi = "local"`
-#'   resolves to for [list_replications()] / [run_replication()] / [get_code()].
+#'   `replication.yml` or `DESCRIPTION`. \code{"local"} and \code{"here"} are
+#'   synonyms for that same study (the one `doi = "local"` / `"here"` resolves
+#'   to for [list_replications()] / [run_replication()] / [get_code()]).
 #' @param install_deps Logical. Install missing CRAN, pip, and Stata dependencies
 #'   when `TRUE`.
 #' @param ids Optional character vector of replication ids to build. When

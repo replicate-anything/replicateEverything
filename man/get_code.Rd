@@ -5,7 +5,7 @@
 \title{Retrieve replication code for a paper}
 \usage{
 get_code(
-  doi,
+  doi = NULL,
   what,
   language = NULL,
   style = c("inline", "source"),
@@ -16,9 +16,9 @@ get_code(
 }
 \arguments{
 \item{doi}{Character. DOI of the paper, registry handle, or local study
-path. Pass \code{"local"} to read code from the study in the current
-working directory — no registry lookup is needed; see
-\code{\link[=resolve_doi_input]{resolve_doi_input()}}.}
+path. Pass \code{"local"} or \code{"here"} (or omit / \code{NULL}) to
+read code from the study in the current working directory — no registry
+lookup is needed; see \code{\link[=resolve_doi_input]{resolve_doi_input()}}.}
 
 \item{what}{Character. Replication identifier (logical id).}
 
@@ -74,7 +74,9 @@ get_code("rep-template", "tab_1", mode = "run")
 
 # setwd() to a checked-out study repo (or open its RStudio project):
 setwd("path/to/rep-my-study")
+head(get_code(what = "tab_1"))
 head(get_code("local", "tab_1"))
+head(get_code("here", "tab_1"))
 }
 
 }

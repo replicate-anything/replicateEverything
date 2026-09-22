@@ -4,13 +4,15 @@
 \alias{list_prep_steps}
 \title{List pipeline prep steps for a paper}
 \usage{
-list_prep_steps(doi, repo = NULL, folder = NULL)
+list_prep_steps(doi = NULL, repo = NULL, folder = NULL)
 }
 \arguments{
 \item{doi}{Character. DOI, registry handle, or local study path. Pass
-\code{"local"} (or \code{""} / \code{"."}) to use the study in the
-current working directory — no registry lookup is needed; see
-\code{\link[=resolve_doi_input]{resolve_doi_input()}}.}
+\code{"local"} or \code{"here"} (or omit / \code{NULL} / \code{""} /
+\code{"."}) to use the study in the current working directory when it
+contains \code{replication.yml} — no registry lookup is needed; see
+\code{\link[=resolve_doi_input]{resolve_doi_input()}}. When omitted and no local yaml is found, errors
+clearly (does not fall through to the registry).}
 
 \item{repo}{Optional repository slug.}
 

@@ -5,9 +5,11 @@
 #' logical product (e.g. a single \code{tab_1} when both R and Stata exist).
 #'
 #' @param doi Character. DOI, registry handle, or local study path. Pass
-#'   \code{"local"} (or \code{""} / \code{"."}) to use the study in the
-#'   current working directory — no registry lookup is needed; see
-#'   [resolve_doi_input()].
+#'   \code{"local"} or \code{"here"} (or omit / \code{NULL} / \code{""} /
+#'   \code{"."}) to use the study in the current working directory when it
+#'   contains \code{replication.yml} — no registry lookup is needed; see
+#'   [resolve_doi_input()]. When omitted and no local yaml is found, errors
+#'   clearly (does not fall through to the registry).
 #' @param repo Optional repository slug.
 #' @param folder Optional registry folder name from \code{index.csv}.
 #' @param grouped Logical. When \code{TRUE}, return one entry per logical
@@ -31,16 +33,17 @@
 #' list_replications("rep-template")
 #'
 #' # Working on a study repo checked out locally: setwd() to the study repo
-#' # root (or open its RStudio project), then use "local" — no registry or
-#' # DOI lookup required.
+#' # root (or open its RStudio project), then omit doi or pass "local" /
+#' # "here" — no registry or DOI lookup required.
 #' setwd("path/to/rep-my-study")
+#' list_replications()
 #' list_replications("local")
-#' list_replications("local", grouped = TRUE)
+#' list_replications("here", grouped = TRUE)
 #' }
 #'
 #' @export
 list_replications <- function(
-  doi,
+  doi = NULL,
   repo = NULL,
   folder = NULL,
   grouped = FALSE,
@@ -48,6 +51,7 @@ list_replications <- function(
   include = c("display", "pipeline", "all")
 ) {
   include <- match.arg(include)
+  doi <- prepare_doi_for_replication(doi)
   meta <- get_replication_meta(doi, repo = repo, folder = folder)
   wrap <- function(x) {
     as_replication_list(

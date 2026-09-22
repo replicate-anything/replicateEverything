@@ -166,13 +166,38 @@ test_that("is_local_doi_query recognizes local aliases", {
   expect_true(is_local_doi_query(""))
   expect_true(is_local_doi_query("local"))
   expect_true(is_local_doi_query("LOCAL"))
+  expect_true(is_local_doi_query("here"))
+  expect_true(is_local_doi_query("HERE"))
+  expect_true(is_local_doi_query(" here "))
   expect_true(is_local_doi_query("."))
   expect_true(is_local_doi_query("\"local\""))
   expect_true(is_local_doi_query("'local'"))
+  expect_true(is_local_doi_query("\"here\""))
   expect_true(is_local_doi_query(" \"local\" "))
   expect_true(is_local_doi_query("\u201clocal\u201d"))
   expect_false(is_local_doi_query("10.1/example"))
   expect_false(is_local_doi_query(NULL))
+})
+
+test_that("is_local_study_token and resolve_local_or_here treat local/here as synonyms", {
+  expect_true(is_local_study_token("local"))
+  expect_true(is_local_study_token("HERE"))
+  expect_true(is_local_study_token("\"here\""))
+  expect_false(is_local_study_token(""))
+  expect_false(is_local_study_token("."))
+  expect_false(is_local_study_token(NULL))
+  expect_false(is_local_study_token("10.1/example"))
+
+  wd <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
+  expect_equal(
+    normalizePath(resolve_local_or_here("local"), winslash = "/", mustWork = FALSE),
+    wd
+  )
+  expect_equal(
+    normalizePath(resolve_local_or_here("HERE"), winslash = "/", mustWork = FALSE),
+    wd
+  )
+  expect_equal(resolve_local_or_here("c:/somewhere"), "c:/somewhere")
 })
 
 test_that("unwrap_quoted_study_input strips matching wrapping quotes", {
@@ -202,6 +227,12 @@ test_that("resolve_doi_input finds local replication.yml", {
     quoted <- resolve_doi_input("\"local\"")
     expect_equal(quoted$doi, out$doi)
     expect_true(quoted$is_local)
+    here_out <- resolve_doi_input("here")
+    expect_equal(here_out$doi, out$doi)
+    expect_true(here_out$is_local)
+    omitted <- resolve_doi_input(NULL)
+    expect_equal(omitted$doi, out$doi)
+    expect_true(omitted$is_local)
   })
 })
 
@@ -209,6 +240,8 @@ test_that("resolve_doi_input errors when no local study exists", {
   tmp <- withr::local_tempdir()
   withr::with_dir(tmp, {
     expect_error(resolve_doi_input("local"), "No replication.yml found")
+    expect_error(resolve_doi_input("here"), "No replication.yml found")
+    expect_error(resolve_doi_input(NULL), "No replication.yml found")
   })
 })
 

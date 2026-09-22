@@ -49,8 +49,10 @@ resolve_paper_path <- function(doi) {
 #' @return Normalized path or \code{NULL}.
 #' @keywords internal
 local_yaml_root_for_doi <- function(doi, folder = NULL) {
-  doi <- as.character(doi %||% "")[[1]]
-  folder <- as.character(folder %||% "")[[1]]
+  doi_chr <- as.character(doi %||% "")
+  doi <- if (length(doi_chr) >= 1L) doi_chr[[1]] else ""
+  folder_chr <- as.character(folder %||% "")
+  folder <- if (length(folder_chr) >= 1L) folder_chr[[1]] else ""
   roots <- character(0)
   found <- tryCatch(resolve_local_study_folder(doi), error = function(e) NULL)
   if (!is.null(found)) {
@@ -97,7 +99,16 @@ local_yaml_root_for_doi <- function(doi, folder = NULL) {
 #'   \code{is_folder_study}, and related fields.
 #' @keywords internal
 paper_context <- function(doi, repo = NULL, folder = NULL) {
-  doi <- normalize_doi(doi)
+  pinned_local <- NULL
+  raw <- unwrap_quoted_study_input(doi %||% "")
+  if (is.null(doi) || length(doi) == 0L || is_local_doi_query(raw)) {
+    resolved <- resolve_doi_input(doi)
+    doi <- resolved$doi
+    pinned_local <- resolved$local_root
+  } else {
+    doi_chr <- as.character(doi %||% "")
+    doi <- if (length(doi_chr) >= 1L) normalize_doi(doi_chr[[1]]) else ""
+  }
   if (is.null(folder) || !nzchar(folder)) {
     folder <- resolve_paper_path(doi)
   }
@@ -125,7 +136,7 @@ paper_context <- function(doi, repo = NULL, folder = NULL) {
     NULL
   }
 
-  local_root <- local_yaml_root_for_doi(doi, folder = folder)
+  local_root <- pinned_local %||% local_yaml_root_for_doi(doi, folder = folder)
   has_local_yaml <- !is.null(local_root)
 
   stub <- read_registry_stub_yaml(

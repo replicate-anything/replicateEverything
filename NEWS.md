@@ -1,3 +1,22 @@
+# replicateEverything 0.7.60
+
+## Local / here synonyms and default cwd study
+
+* `"local"` and `"here"` are synonyms everywhere a path / DOI / location
+  argument accepts them (case-insensitive, whitespace-trimmed): cwd /
+  [getwd()] study folder. Shared helpers: `is_local_study_token()`,
+  `resolve_local_or_here()`.
+* [get_started()] accepts `path = "local"` as well as `"here"`.
+* When `doi` / `meta` is omitted (`NULL`), blank, `"local"`, or `"here"` and
+  a `replication.yml` is discoverable from the working directory, consumer
+  verbs use that study — same as `list_replications("local")`. When omitted
+  and no local yaml exists, resolution errors clearly (no silent registry
+  lookup for those tokens). Defaults added on [list_replications()],
+  [run_replication()], [get_code()], [get_study()], [summary_study()],
+  [describe_study_dag()], and related helpers.
+* [resolve_study_root()] / [check_and_bake_study()] /
+  [build_study_outputs()] accept `"local"` / `"here"` for the cwd study.
+
 # replicateEverything 0.7.59
 
 ## get_started() local scaffold
@@ -10,9 +29,9 @@
   (`.Rproj.user`, `.Rhistory`, `.RData`, `.Ruserdata`) alongside OS / Dropbox
   noise.
 * [get_started()] requires a missing or **empty** `path` (no entries other
-    than `.` / `..`). Pass `FORCE = TRUE` to scaffold into a non-empty folder
-    and replace scaffold targets only; unrelated files are left in place.
-    The former `overwrite` argument is removed.
+  than `.` / `..`). Pass `FORCE = TRUE` to scaffold into a non-empty folder
+  and replace scaffold targets only; unrelated files are left in place.
+  The former `overwrite` argument is removed.
 * [get_started()] accepts `path = "here"` (case-insensitive) for the current
   working directory; default `name` then uses `basename(getwd())`.
 

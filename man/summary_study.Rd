@@ -4,11 +4,12 @@
 \alias{summary_study}
 \title{Summarize a study by DOI / handle (constructs then summarizes)}
 \usage{
-summary_study(doi, repo = NULL, folder = NULL, ...)
+summary_study(doi = NULL, repo = NULL, folder = NULL, ...)
 }
 \arguments{
-\item{doi}{Character. DOI, registry handle, or \code{"local"} / study path
-(see \code{\link[=resolve_doi_input]{resolve_doi_input()}}).}
+\item{doi}{Character. DOI, registry handle, or \code{"local"} /
+\code{"here"} / study path (see \code{\link[=resolve_doi_input]{resolve_doi_input()}}). Defaults to the
+working-directory study when omitted.}
 
 \item{repo}{Optional repository slug.}
 

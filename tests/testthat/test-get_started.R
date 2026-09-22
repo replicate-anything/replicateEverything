@@ -77,6 +77,21 @@ test_that("get_started path = 'here' scaffolds into getwd()", {
   expect_equal(meta$paper$study_handle, expected_name)
 })
 
+test_that("get_started path = 'local' is a synonym for 'here'", {
+  temp_empty <- withr::local_tempdir()
+  expect_true(.get_started_dir_is_empty(temp_empty))
+
+  out <- withr::with_dir(temp_empty, get_started("LOCAL"))
+  expect_identical(
+    normalizePath(out, winslash = "/", mustWork = FALSE),
+    normalizePath(temp_empty, winslash = "/", mustWork = FALSE)
+  )
+  expect_true(file.exists(file.path(temp_empty, "replication.yml")))
+  expected_name <- .get_started_sanitize_name(basename(temp_empty))
+  meta <- yaml::read_yaml(file.path(temp_empty, "replication.yml"))
+  expect_equal(meta$paper$study_handle, expected_name)
+})
+
 test_that("get_started refuses reserved template name", {
   root <- withr::local_tempdir()
   expect_error(

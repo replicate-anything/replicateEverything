@@ -8,10 +8,10 @@
 #'
 #' @param location Local study path, GitHub address, or installed package path.
 #'   Defaults to the current working directory when it contains
-#'   `replication.yml` or `DESCRIPTION`. This is the `location` analog of
-#'   `doi = "local"` used by [list_replications()], [run_replication()], and
-#'   [get_code()] — both mean "the study checked out in the current working
-#'   directory"; no registry lookup is required.
+#'   `replication.yml` or `DESCRIPTION`. \code{"local"} and \code{"here"} are
+#'   synonyms for that cwd study — the `location` analog of
+#'   `doi = "local"` / `"here"` used by [list_replications()],
+#'   [run_replication()], and [get_code()]; no registry lookup is required.
 #' @param full_replication If `TRUE`, also run every table and figure via
 #'   [run_replication()] and require success.
 #' @param registry_root Optional path to the registry checkout (folder studies

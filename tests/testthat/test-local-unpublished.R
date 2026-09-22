@@ -121,6 +121,61 @@ test_that("run_replication('local') works after setwd to an unpublished folder",
   })
 })
 
+test_that("local/here/omitted doi resolve to cwd study with replication.yml", {
+  skip_if_not_installed("estimatr")
+  skip_if_not_installed("knitr")
+  study <- withr::local_tempdir("local-synonym-")
+  write_unpublished_tab1_study(study, handle = "unpublished-synonym")
+  withr::with_dir(study, {
+    for (key in list("local", "here", "HERE", NULL)) {
+      reps <- list_replications(key)
+      ids <- vapply(reps, function(r) as.character(r$id[[1]] %||% r$id), character(1))
+      expect_true("tab_1" %in% ids, info = paste("key=", deparse(key)))
+    }
+    expect_true("tab_1" %in% vapply(
+      list_replications(),
+      function(r) as.character(r$id[[1]] %||% r$id),
+      character(1)
+    ))
+
+    code_local <- get_code("local", "tab_1")
+    code_here <- get_code("here", "tab_1")
+    code_omit <- get_code(what = "tab_1")
+    expect_true(inherits(code_local, "replication_code"))
+    expect_identical(as.character(code_local), as.character(code_here))
+    expect_identical(as.character(code_local), as.character(code_omit))
+
+    fit_here <- run_replication("here", "tab_1")
+    fit_omit <- run_replication(what = "tab_1")
+    expect_s3_class(fit_here, "lm_robust")
+    expect_s3_class(fit_omit, "lm_robust")
+
+    dag <- describe_study_dag()
+    expect_true(is.character(dag))
+    expect_true(length(dag) >= 1L)
+
+    root_local <- resolve_study_root("local")
+    root_here <- resolve_study_root("here")
+    expect_equal(
+      normalizePath(root_local, winslash = "/", mustWork = FALSE),
+      normalizePath(study, winslash = "/", mustWork = FALSE)
+    )
+    expect_equal(
+      normalizePath(root_here, winslash = "/", mustWork = FALSE),
+      normalizePath(study, winslash = "/", mustWork = FALSE)
+    )
+  })
+})
+
+test_that("omitted doi errors clearly when no local replication.yml", {
+  tmp <- withr::local_tempdir("no-yml-")
+  withr::with_dir(tmp, {
+    expect_error(list_replications(), "No replication.yml found")
+    expect_error(list_replications("here"), "No replication.yml found")
+    expect_error(get_code(what = "tab_1"), "No replication.yml found")
+  })
+})
+
 test_that("resolve_declared_path keeps absolute files outside the study", {
   study <- withr::local_tempdir("study-root-")
   outside <- withr::local_tempdir("outside-data-")

@@ -544,7 +544,10 @@ study_engines_for_plan <- function(meta, plan) {
 }
 
 resolve_study_meta_input <- function(meta, repo = NULL, folder = NULL) {
-  if (is.character(meta) && length(meta) == 1L && nzchar(trimws(meta))) {
+  if (is.null(meta)) {
+    return(get_replication_meta(NULL, repo = repo, folder = folder))
+  }
+  if (is.character(meta) && length(meta) == 1L) {
     return(get_replication_meta(meta, repo = repo, folder = folder))
   }
   meta
@@ -552,14 +555,15 @@ resolve_study_meta_input <- function(meta, repo = NULL, folder = NULL) {
 
 #' Step display data for Shiny (components of paths of id / label / description)
 #' @param meta Parsed replication metadata, or a DOI / registry handle. Pass
-#'   \code{"local"} to describe the study in the current working directory
-#'   (no registry lookup needed; see [resolve_doi_input()]).
+#'   \code{"local"} or \code{"here"} (or omit / \code{NULL}) to describe the
+#'   study in the current working directory (no registry lookup needed; see
+#'   [resolve_doi_input()]).
 #' @param repo Optional repository slug when `meta` is a DOI or handle.
 #' @param folder Optional registry folder when `meta` is a DOI or handle.
 #' @return A list of components; each component is a list of paths; each path is a
 #'   list of step display records.
 #' @keywords internal
-study_dag_display <- function(meta, repo = NULL, folder = NULL) {
+study_dag_display <- function(meta = NULL, repo = NULL, folder = NULL) {
   meta <- resolve_study_meta_input(meta, repo = repo, folder = folder)
   steps <- normalize_study_steps(meta)
   if (length(steps) == 0L) {
@@ -591,7 +595,7 @@ path_sink_step <- function(path) {
 #' @inheritParams study_dag_display
 #' @return List of facets, each with \code{title} and \code{paths}.
 #' @keywords internal
-study_dag_facets <- function(meta, repo = NULL, folder = NULL) {
+study_dag_facets <- function(meta = NULL, repo = NULL, folder = NULL) {
   components <- study_dag_display(meta, repo = repo, folder = folder)
   facets <- list()
   for (comp in components) {
@@ -696,11 +700,13 @@ study_dag_for_step <- function(meta, step_id, repo = NULL, folder = NULL) {
 #' # setwd() to a checked-out study repo (or open its RStudio project) and
 #' # sanity-check the parsed DAG without any registry — no DOI needed.
 #' setwd("path/to/rep-my-study")
+#' describe_study_dag()
 #' describe_study_dag("local")
+#' describe_study_dag("here")
 #' }
 #'
 #' @export
-describe_study_dag <- function(meta, repo = NULL, folder = NULL) {
+describe_study_dag <- function(meta = NULL, repo = NULL, folder = NULL) {
   meta <- resolve_study_meta_input(meta, repo = repo, folder = folder)
   steps <- normalize_study_steps(meta)
   graph <- study_step_graph(steps)

@@ -15,14 +15,15 @@ get_started(
 \arguments{
 \item{path}{Directory for the new study. Created if missing; must be empty
 unless \code{FORCE = TRUE}. Common OS / Dropbox junk files are ignored
-when deciding emptiness (see details above). Use \code{"here"}
-(case-insensitive) for the current working directory (\code{getwd()}).}
+when deciding emptiness (see details above). Use \code{"here"} or
+\code{"local"} (case-insensitive synonyms) for the current working
+directory (\code{getwd()}).}
 
 \item{name}{Project / study handle. Defaults to \code{basename(path)} after
-resolving \code{path} (so \code{path = "here"} defaults to the basename of
-the working directory). Must not be \code{"rep-template"} (reserved for
-the published gold template). Used for \code{paper.study_handle}, the
-\code{.Rproj} basename, and file headers.}
+resolving \code{path} (so \code{path = "here"} / \code{"local"} defaults
+to the basename of the working directory). Must not be
+\code{"rep-template"} (reserved for the published gold template). Used for
+\code{paper.study_handle}, the \code{.Rproj} basename, and file headers.}
 
 \item{title}{Optional paper title. Defaults to a clear local-scaffold label
 that includes \code{name}.}
@@ -59,5 +60,6 @@ real project files still count as non-empty.
 get_started("~/my-first-replication", name = "my-first-replication")
 get_started("~/my-first-replication", name = "my-first-replication", FORCE = TRUE)
 get_started("here")  # scaffold into getwd(); name defaults to basename(getwd())
+get_started("local") # same as "here"
 }
 }
