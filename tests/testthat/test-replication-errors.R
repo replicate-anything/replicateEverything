@@ -38,8 +38,51 @@ test_that("missing_replication_steps_message reports HTTP fetch failure", {
     ),
     {
       msg <- missing_replication_steps_message(stub, ctx = list())
-      expect_match(msg, "Could not load replication steps")
+      expect_match(msg, "not found or not public")
+      expect_match(
+        msg,
+        "raw\\.githubusercontent\\.com/replicate-anything/rep-does-not-exist-xyz/main/replication\\.yml"
+      )
       expect_match(msg, "HTTP 404|network error", perl = TRUE)
+    }
+  )
+})
+
+test_that("enrich_folder_study_replication_meta errors on missing remote study yaml", {
+  stub <- list(
+    paper = list(
+      doi = "10.0000/does-not-exist-xyz",
+      materials = "folder",
+      title = "Example"
+    ),
+    repo = "replicate-anything/rep-does-not-exist-xyz"
+  )
+  empty <- withr::local_tempdir()
+  withr::with_options(
+    list(
+      replicateEverything.study_folders_root = empty,
+      replicateEverything.registry_root = empty,
+      replicateEverything.use_sibling_packages = FALSE,
+      replicateEverything.index = data.frame(
+        folder = character(),
+        doi = character(),
+        repo = character(),
+        stringsAsFactors = FALSE
+      )
+    ),
+    {
+      err <- tryCatch(
+        enrich_folder_study_replication_meta(stub, ctx = list()),
+        error = function(e) e
+      )
+      expect_true(inherits(err, "error"))
+      msg <- conditionMessage(err)
+      expect_match(msg, "not found or not public")
+      expect_match(
+        msg,
+        "https://raw\\.githubusercontent\\.com/replicate-anything/rep-does-not-exist-xyz/main/replication\\.yml"
+      )
+      expect_false(grepl("must declare a non-empty steps:", msg, fixed = TRUE))
     }
   )
 })
@@ -51,7 +94,7 @@ test_that("missing_replication_steps_message prefers normalize errors", {
   err <- simpleError("Step 'tab_1' uses artifact:; use outputs: only.")
   msg <- missing_replication_steps_message(meta, normalize_error = err)
   expect_match(msg, "artifact:")
-  expect_false(grepl("Could not load replication steps", msg, fixed = TRUE))
+  expect_false(grepl("not found or not public", msg, fixed = TRUE))
 })
 
 test_that("missing_replication_steps_message reports empty fetched yaml", {

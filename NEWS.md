@@ -1,5 +1,19 @@
 # replicateEverything 0.7.60
 
+## Clearer error when study GitHub repo is missing or private
+
+* **UX:** Folder-backed registry stubs omit `steps:` by design. When
+  [enrich_folder_study_replication_meta()] cannot fetch the study
+  `replication.yml` (HTTP 404/403 for a missing or private GitHub repo, bad
+  ref/path, or no local checkout), it now stops with
+  [folder_study_repo_unavailable_message()] naming the exact
+  `raw.githubusercontent.com` URL and `owner/repo@ref` looked up — instead of
+  returning the empty stub and letting [normalize_study_steps()] report the
+  misleading "must declare a non-empty steps: block" message. A successfully
+  fetched yaml that genuinely lacks `steps:` still uses the empty-steps /
+  incomplete-yaml diagnostics. Bundled Shiny no longer sticky-keeps a prior
+  empty-steps error over the clearer [list_replications()] / enrich message.
+
 ## Shiny sidebar sections (optional)
 
 * Optional root `sidebar:` in `replication.yml` is a single ordered list for

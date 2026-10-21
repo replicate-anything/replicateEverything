@@ -1123,6 +1123,12 @@ complete_folder_study_meta <- function(meta, study_root = NULL) {
 
 #' Merge replication entries from a folder-backed study repo into a registry stub
 #'
+#' When the registry stub has no \code{steps:} and the study
+#' \code{replication.yml} cannot be fetched (missing/private GitHub repo, bad
+#' ref/path, or missing local checkout), raises a clear error naming the URL
+#' looked up — instead of returning the empty stub and letting
+#' [normalize_study_steps()] report a misleading empty-\code{steps:} failure.
+#'
 #' @param meta Parsed replication metadata.
 #' @param ctx Paper context from \code{paper_context()}.
 #' @return Updated metadata list.
@@ -1133,11 +1139,27 @@ enrich_folder_study_replication_meta <- function(meta, ctx) {
   }
 
   study_meta <- fetch_folder_study_replication_yaml(meta, ctx)
-  if (is.null(study_meta)) {
+  if (!is.null(study_meta)) {
+    return(merge_folder_study_meta_fields(meta, study_meta))
+  }
+
+  # Stub already has steps (unusual) — leave as-is.
+  if (length(meta$steps %||% list()) > 0L) {
     return(meta)
   }
 
-  merge_folder_study_meta_fields(meta, study_meta)
+  repo <- study_repo_slug(meta, ctx)
+  if (
+    is.null(repo) ||
+      !nzchar(as.character(repo[[1]] %||% repo)) ||
+      identical(as.character(repo[[1]] %||% repo), DEFAULT_REGISTRY_REPO)
+  ) {
+    return(meta)
+  }
+
+  # Remote (or local) study yaml unavailable: do not fall through to the
+  # generic "must declare a non-empty steps: block" normalize error.
+  stop(folder_study_repo_unavailable_message(meta, ctx), call. = FALSE)
 }
 
 #' Folder names to check when locating a sibling folder-backed study repo

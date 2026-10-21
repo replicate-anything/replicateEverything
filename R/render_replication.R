@@ -175,14 +175,45 @@ get_replication_meta <- function(doi, repo = NULL, folder = NULL) {
     root_key,
     sep = "\x1f"
   )
-  if (!exists(key, envir = .replication_meta_cache, inherits = FALSE)) {
-    assign(
-      key,
-      get_replication_meta_impl(doi, repo = repo, folder = folder),
-      envir = .replication_meta_cache
-    )
+  if (exists(key, envir = .replication_meta_cache, inherits = FALSE)) {
+    cached <- get(key, envir = .replication_meta_cache)
+    # Drop memoized registry stubs that never got study-repo steps (e.g. cached
+    # while the GitHub study repo was still private).
+    if (replication_meta_worth_caching(cached)) {
+      return(cached)
+    }
+    rm(list = key, envir = .replication_meta_cache)
   }
-  get(key, envir = .replication_meta_cache)
+  meta <- get_replication_meta_impl(doi, repo = repo, folder = folder)
+  if (replication_meta_worth_caching(meta)) {
+    assign(key, meta, envir = .replication_meta_cache)
+  }
+  meta
+}
+
+#' Whether parsed replication meta is complete enough to memoize
+#'
+#' Folder-backed registry stubs omit \code{steps:}; caching them after a failed
+#' GitHub fetch leaves Shiny stuck on
+#' "replication.yml must declare a non-empty steps: block" even after the study
+#' repo becomes public.
+#'
+#' @param meta Parsed replication metadata.
+#' @return Logical.
+#' @keywords internal
+replication_meta_worth_caching <- function(meta) {
+  if (is.null(meta) || !is.list(meta)) {
+    return(FALSE)
+  }
+  if (length(meta$steps %||% list()) > 0L) {
+    return(TRUE)
+  }
+  # Non-folder studies (or stubs with no study repo) may legitimately lack
+  # steps until a later enrich; still cache to avoid hammering the registry.
+  tryCatch(
+    !is_folder_study_replication(meta, NULL),
+    error = function(e) TRUE
+  )
 }
 
 #' @keywords internal

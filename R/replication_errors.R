@@ -119,16 +119,21 @@ missing_replication_steps_message <- function(
   )
 }
 
-#' Diagnose missing steps for a folder-backed study
+#' Clear error when a folder-backed study repo cannot be fetched
+#'
+#' Used when the registry stub has no \code{steps:} and GitHub (or local)
+#' lookup of the study \code{replication.yml} failed. Prefer this over the
+#' generic empty-\code{steps:} normalize message.
+#'
+#' @param meta Parsed registry stub or study metadata.
+#' @param ctx Optional paper context from [paper_context()].
+#' @return Character scalar.
 #' @keywords internal
-folder_study_steps_unavailable_message <- function(meta, ctx = NULL) {
+folder_study_repo_unavailable_message <- function(meta, ctx = NULL) {
   repo <- study_repo_slug(meta, ctx)
-  ref <- study_repo_ref(meta)
-  header <- paste0(
-    "Could not load replication steps for this study.\n\n",
-    "The registry stub has no steps:; tables and figures come from the study repo ",
-    repo, "@", ref, "."
-  )
+  ref <- study_repo_ref(meta, ctx)
+  repo <- as.character(repo %||% "")
+  ref <- as.character(ref %||% "main")
 
   local_notes <- character(0)
   if (!is.null(ctx) && !is.null(ctx$local_root) && nzchar(as.character(ctx$local_root))) {
@@ -150,7 +155,11 @@ folder_study_steps_unavailable_message <- function(meta, ctx = NULL) {
     probe <- yaml_url_probe(local_yml)
     if (isTRUE(probe$ok)) {
       return(describe_fetched_yaml_without_usable_steps(
-        header,
+        paste0(
+          "Could not load replication steps for this study.\n\n",
+          "The registry stub has no steps:; expected them from the study repo ",
+          repo, "@", ref, "."
+        ),
         source_label = paste0("local study yaml at ", local_yml),
         parsed = probe$parsed,
         probe = probe
@@ -162,10 +171,10 @@ folder_study_steps_unavailable_message <- function(meta, ctx = NULL) {
     )
   }
 
-  if (identical(repo, DEFAULT_REGISTRY_REPO) || !nzchar(repo)) {
+  if (!nzchar(repo) || identical(repo, DEFAULT_REGISTRY_REPO)) {
     return(paste0(
-      header, "\n\n",
-      "No study repository slug is set on the registry stub ",
+      "Study repository not found.\n\n",
+      "The registry stub has no steps: and no study repository slug ",
       "(expected repo: or paper.study_repo)."
     ))
   }
@@ -180,7 +189,11 @@ folder_study_steps_unavailable_message <- function(meta, ctx = NULL) {
   if (length(ok_idx) > 0L) {
     p <- probes[[ok_idx[[1]]]]
     return(describe_fetched_yaml_without_usable_steps(
-      header,
+      paste0(
+        "Could not load replication steps for this study.\n\n",
+        "The registry stub has no steps:; expected them from the study repo ",
+        repo, "@", ref, "."
+      ),
       source_label = urls[[ok_idx[[1]]]],
       parsed = p$parsed,
       probe = p
@@ -188,14 +201,22 @@ folder_study_steps_unavailable_message <- function(meta, ctx = NULL) {
   }
 
   paste0(
-    header, "\n\n",
+    "Study repository not found or not public at ",
+    repo, "@", ref, ".\n\n",
     if (length(local_notes)) paste0(paste(local_notes, collapse = "\n"), "\n\n") else "",
-    "Tried study replication.yml:\n",
+    "Looked up replication.yml at:\n",
     paste(lines, collapse = "\n"),
-    "\n\nIf the status is HTTP 404/403, make the study repository public ",
-    "(or otherwise readable by anonymous raw.githubusercontent.com), ",
-    "check repo:/study_ref, then retry."
+    "\n\nGitHub returns HTTP 404 for both missing and private repositories. ",
+    "Make the study repo public (or otherwise readable by anonymous ",
+    "raw.githubusercontent.com), check repo:/study_ref, then retry ",
+    "(restart Shiny if a previous failed load is still cached)."
   )
+}
+
+#' Diagnose missing steps for a folder-backed study
+#' @keywords internal
+folder_study_steps_unavailable_message <- function(meta, ctx = NULL) {
+  folder_study_repo_unavailable_message(meta, ctx)
 }
 
 #' Diagnose missing steps for a package-backed study

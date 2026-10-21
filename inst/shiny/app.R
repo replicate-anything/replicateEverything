@@ -4088,7 +4088,13 @@ read_local_study_replication_index <- function(stub, folder, repo = DEFAULT_REGI
     error = function(e) NULL
   )
   if (!is.null(merged)) {
-    return(replicate_fn("study_step_entries", merged))
+    index <- tryCatch(
+      replicate_fn("study_step_entries", merged),
+      error = function(e) NULL
+    )
+    if (!is.null(index) && length(index) > 0L) {
+      return(index)
+    }
   }
   ctx <- tryCatch(
     replicate_fn(
@@ -4114,6 +4120,21 @@ study_yaml_replication_index <- function(study_meta, folder = NULL, repo = DEFAU
   if (is.null(study_meta)) {
     return(NULL)
   }
+
+  # Prefer steps already on the fetched study yaml. Calling get_replication_meta
+  # first can hit an in-process cache of the registry stub (no steps:) from an
+  # earlier private-repo failure and throw — even when this study_meta is complete.
+  steps <- study_meta$steps %||% list()
+  if (length(steps) > 0L) {
+    index <- tryCatch(
+      replicate_fn("study_step_entries", study_meta),
+      error = function(e) NULL
+    )
+    if (!is.null(index) && length(index) > 0L) {
+      return(index)
+    }
+  }
+
   lookup <- study_meta$paper$doi %||% study_meta$paper$study_handle %||% NULL
   if (!is.null(lookup) && nzchar(as.character(lookup[[1]] %||% lookup))) {
     merged <- tryCatch(
@@ -4126,13 +4147,16 @@ study_yaml_replication_index <- function(study_meta, folder = NULL, repo = DEFAU
       error = function(e) NULL
     )
     if (!is.null(merged)) {
-      return(replicate_fn("study_step_entries", merged))
+      index <- tryCatch(
+        replicate_fn("study_step_entries", merged),
+        error = function(e) NULL
+      )
+      if (!is.null(index) && length(index) > 0L) {
+        return(index)
+      }
     }
   }
-  steps <- study_meta$steps %||% list()
-  if (length(steps) > 0L) {
-    return(replicate_fn("study_step_entries", study_meta))
-  }
+
   reps <- study_meta$replications %||% list()
   if (length(reps) > 0L) {
     return(c(study_meta$prep %||% list(), reps))
@@ -4195,8 +4219,11 @@ fetch_study_replications_index <- function(folder, repo = DEFAULT_REGISTRY_REPO)
         error = function(e) NULL
       )
       if (!is.null(merged)) {
-        index <- replicate_fn("study_step_entries", merged)
-        if (length(index) > 0L) {
+        index <- tryCatch(
+          replicate_fn("study_step_entries", merged),
+          error = function(e) NULL
+        )
+        if (!is.null(index) && length(index) > 0L) {
           return(index)
         }
       }
@@ -4496,7 +4523,20 @@ get_replications_meta <- function(doi, folder = NULL, repo = NULL) {
         repo = ctx$repo
       ),
       error = function(e) {
-        if (is.null(load_error)) {
+        # Prefer list_replications / enrich diagnostics over an earlier
+        # empty-steps normalize failure from study_step_entries on a stub.
+        prior <- load_error
+        prior_msg <- if (inherits(prior, "condition")) {
+          conditionMessage(prior)
+        } else {
+          ""
+        }
+        replace <- is.null(prior) || grepl(
+          "must declare a non-empty steps:\\s*block",
+          prior_msg,
+          ignore.case = TRUE
+        )
+        if (replace) {
           load_error <<- e
         }
         NULL
