@@ -1396,17 +1396,24 @@ stata_deps_install_targets <- function(
   meta = NULL,
   rep = NULL
 ) {
-  scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
-  if (length(scripts) > 0L) {
-    return(list(
-      scripts = scripts,
-      generated = FALSE,
-      run_dir = NULL,
-      packages = character(0)
-    ))
-  }
+  custom_scripts <- stata_deps_install_scripts(study_root, meta = meta, rep = rep)
   packages <- stata_deps_package_names(meta, study_root = study_root)
-  if (length(packages) == 0L) {
+  generated_script <- character(0)
+  run_dir <- NULL
+  if (length(packages) > 0L) {
+    workdir <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
+    run_dir <- stata_run_dir(workdir, staging_dir)
+    runner <- file.path(run_dir, "replicate_stata_deps_install.do")
+    writeLines(
+      stata_deps_install_lines_from_packages(packages),
+      runner,
+      useBytes = TRUE
+    )
+    generated_script <- runner
+  }
+  scripts <- unique(c(generated_script, custom_scripts))
+  scripts <- scripts[nzchar(scripts)]
+  if (length(scripts) == 0L) {
     return(list(
       scripts = character(0),
       generated = FALSE,
@@ -1414,17 +1421,9 @@ stata_deps_install_targets <- function(
       packages = character(0)
     ))
   }
-  workdir <- normalizePath(study_root, winslash = "/", mustWork = FALSE)
-  run_dir <- stata_run_dir(workdir, staging_dir)
-  runner <- file.path(run_dir, "replicate_stata_deps_install.do")
-  writeLines(
-    stata_deps_install_lines_from_packages(packages),
-    runner,
-    useBytes = TRUE
-  )
   list(
-    scripts = runner,
-    generated = TRUE,
+    scripts = scripts,
+    generated = length(generated_script) > 0L,
     run_dir = run_dir,
     packages = packages
   )

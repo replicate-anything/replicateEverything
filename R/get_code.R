@@ -213,7 +213,7 @@ print.replication_code <- function(x, ...) {
 
 #' Keep class after \code{head()} / subset so printing stays \code{cat()}
 #' @keywords internal
-#' @rawNamespace S3method("[",replication_code)
+#' @exportS3Method "[" replication_code
 `[.replication_code` <- function(x, i, ...) {
   as_replication_code(NextMethod())
 }

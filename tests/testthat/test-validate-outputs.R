@@ -49,6 +49,69 @@ test_that("study_artifact_rel_path falls back to the type-based default", {
   )
 })
 
+test_that("figure Display uses a saved image and ignores non-image outputs", {
+  png_rep <- list(
+    id = "fig_2",
+    type = "figure",
+    outputs = list(
+      "outputs/fig_2.png",
+      "outputs/fig_2_aux.rds",
+      "outputs/fig_2_coefs.rds"
+    )
+  )
+  expect_identical(
+    study_declared_displayable_rels(png_rep),
+    "outputs/fig_2.png"
+  )
+  expect_identical(study_artifact_rel_path(png_rep), "outputs/fig_2.png")
+
+  pdf_rep <- list(
+    id = "fig_a",
+    type = "figure",
+    outputs = list(
+      "outputs/fig_a_coefs.rds",
+      "outputs/fig_a.pdf"
+    )
+  )
+  expect_identical(
+    study_declared_displayable_rels(pdf_rep),
+    "outputs/fig_a.pdf"
+  )
+  expect_identical(study_artifact_rel_path(pdf_rep), "outputs/fig_a.pdf")
+})
+
+test_that("figure Display prefers PNG when PNG and PDF are both declared", {
+  rep <- list(
+    id = "fig_1",
+    type = "figure",
+    outputs = list(
+      "outputs/fig_1.pdf",
+      "outputs/fig_1.png",
+      "outputs/fig_1_coefs.rds"
+    )
+  )
+  expect_identical(
+    study_declared_displayable_rels(rep),
+    "outputs/fig_1.png"
+  )
+  expect_identical(study_artifact_rel_path(rep), "outputs/fig_1.png")
+})
+
+test_that("study_declared_displayable_rels prefers the image for figures with side sinks", {
+  rep <- list(
+    id = "fig_1",
+    type = "figure",
+    outputs = list(
+      "outputs/fig_1.png",
+      "outputs/fig_1_coefs.rds"
+    )
+  )
+  expect_identical(
+    study_declared_displayable_rels(rep),
+    "outputs/fig_1.png"
+  )
+})
+
 test_that("study_declared_displayable_rels omits type fallbacks", {
   rep <- list(
     id = "fig_2",

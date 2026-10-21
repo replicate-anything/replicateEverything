@@ -1,5 +1,24 @@
 # replicateEverything 0.7.60
 
+## Shiny sidebar sections (optional)
+
+* Optional root `sidebar:` in `replication.yml` is a single ordered list for
+  both exhibit section headings and the prep/transform block (e.g. Figures →
+  Key numbers → SI Figures → SI Tables → Steps).
+* Reserved token `Steps` (case-insensitive; legacy alias `Data steps`) marks
+  where the data/transform block appears; heading shows as **Steps**. Transform
+  steps do not need `family: Steps`.
+* Per display step `family:` assigns a step to an exhibit section; when
+  omitted, defaults to Figures / Tables from `type:`.
+* If `sidebar:` is present but omits Steps while data rows exist, Steps is
+  prepended at the top (old default for exhibit-only lists). If Steps is listed
+  but there are no data rows, the empty block is omitted.
+* Backward compatible: studies without `sidebar:` / `family:` keep legacy
+  type-run-length Figures/Tables headings and **Data steps** on top.
+* Deprecated: root `sidebar_data:` (`end` / `start`) — use `Steps` in
+  `sidebar:` instead.
+* Do not confuse with `group:` (dual-engine paths); that field is unrelated.
+
 ## Local / here synonyms and default cwd study
 
 * `"local"` and `"here"` are synonyms everywhere a path / DOI / location

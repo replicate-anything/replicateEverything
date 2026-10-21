@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-09-20T21:11:52Z",
+  "generated_at": "2026-10-21T09:58:20Z",
   "steps": {
     "tab_1": {
-      "seconds": 0,
-      "status": "ok",
-      "recorded_at": "2026-09-20T21:11:52Z"
-    },
-    "fig_1": {
       "seconds": 0.03,
       "status": "ok",
-      "recorded_at": "2026-09-20T21:11:51Z"
+      "recorded_at": "2026-10-21T09:58:20Z"
+    },
+    "fig_1": {
+      "seconds": 0.04,
+      "status": "ok",
+      "recorded_at": "2026-10-21T09:58:17Z"
     }
   }
 }

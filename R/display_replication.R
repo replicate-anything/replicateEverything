@@ -41,6 +41,7 @@ resolve_display_value <- function(
   if (is.list(result) && !is.data.frame(result) && identical(result$source, "package")) {
     return(replication_object(result))
   }
+  # A saved figure or table file is the display. Do not call format_*.
   if (is.character(result) && length(result) >= 1L) {
     if (length(result) == 1L && nzchar(result) && file.exists(result)) {
       return(result)

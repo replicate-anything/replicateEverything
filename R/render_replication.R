@@ -265,7 +265,7 @@ package_installed_artifact_path <- function(what, pkg, meta = NULL, ctx = NULL) 
     local_root <- resolve_replication_package_path(pkg, meta, ctx)
     art_dir <- study_artifact_dir(meta, ctx, installed = FALSE, package = pkg)
     if (!is.null(local_root) && !is.null(art_dir)) {
-      for (ext in c("png", "html", "rds", "svg")) {
+      for (ext in c("png", "pdf", "html", "rds", "svg")) {
         path <- file.path(local_root, "inst", "report", "artifacts", paste0(what, ".", ext))
         if (file.exists(path)) {
           return(normalizePath(path, winslash = "/", mustWork = FALSE))
@@ -284,7 +284,7 @@ package_installed_artifact_path <- function(what, pkg, meta = NULL, ctx = NULL) 
   if (is.null(art_dir) || !nzchar(art_dir)) {
     return(NULL)
   }
-  for (ext in c("png", "html", "rds", "svg")) {
+  for (ext in c("png", "pdf", "html", "rds", "svg")) {
     path <- file.path(art_dir, paste0(what, ".", ext))
     if (file.exists(path)) {
       return(normalizePath(path, winslash = "/", mustWork = FALSE))
@@ -332,7 +332,7 @@ load_artifact_file_path <- function(path) {
     if (is.null(resp) || httr::status_code(resp) >= 400L) {
       return(NULL)
     }
-    if (ext %in% c("png", "svg", "jpg", "jpeg", "xlsx", "xlsm", "xls")) {
+    if (ext %in% c("png", "pdf", "svg", "jpg", "jpeg", "xlsx", "xlsm", "xls")) {
       tmp <- tempfile(fileext = paste0(".", ext))
       writeBin(httr::content(resp, as = "raw"), tmp)
       return(tmp)
@@ -1022,6 +1022,7 @@ read_artifact_file <- function(path, ext) {
     ext,
     html = normalize_html_table(paste(readLines(path, warn = FALSE), collapse = "\n")),
     png = path,
+    pdf = path,
     svg = path,
     # File-backed Excel tables (e.g. Hahn tab_1/tab_2): keep the path so Shiny
     # can preview via readxl instead of treating the workbook as text.

@@ -43,9 +43,13 @@ export(save_local_shiny)
 export(search_papers)
 export(summary_study)
 export(validate_outputs)
-importFrom(grDevices,dev.off)
-importFrom(grDevices,png)
+importFrom(grDevices,
+  dev.off,
+  png
+)
 importFrom(stats,na.omit)
-importFrom(utils,download.file)
-importFrom(utils,read.csv)
-importFrom(utils,write.csv)
+importFrom(utils,
+  download.file,
+  read.csv,
+  write.csv
+)

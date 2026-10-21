@@ -496,7 +496,17 @@ xlsx_preview_sheet_names <- function(sheets) {
 #'
 #' @keywords internal
 displayable_output_ext_regex <- function() {
-  "\\.(html|png|rds|svg|xlsx|xlsm|xls|csv|dta|tab)$"
+  "\\.(html|png|pdf|rds|svg|xlsx|xlsm|xls|csv|dta|tab)$"
+}
+
+#' Extensions Display treats as a saved figure image
+#'
+#' When a figure declares one of these, Display returns the image file(s) and
+#' does not load non-image \code{outputs:} (analysis objects, tabular sinks,
+#' etc.) that would otherwise be stacked as panels or passed to \code{format_*}.
+#' @keywords internal
+figure_display_image_ext_regex <- function() {
+  "\\.(png|pdf|svg|jpe?g|gif|webp)$"
 }
 
 #' Declared \code{outputs:} paths for a prep/transform step (any extension)
@@ -536,13 +546,27 @@ study_declared_displayable_rels <- function(rep) {
   outs <- vapply(outs, function(x) as.character(x[[1]] %||% x), character(1))
   outs <- outs[nzchar(outs)]
   outs <- outs[grepl(displayable_output_ext_regex(), outs, ignore.case = TRUE)]
-  # Tables that also write benchmarks/csv side products: Display and bake must
-  # use the HTML sink. Loading csv+html as multi-panels breaks format_* (expects
-  # the analysis object) and as_table_ui (shows raw / blank content).
+  # Tables that also write non-HTML side products (csv, dta, …): Display and
+  # bake use the HTML sink only. Loading those together as multi-panels breaks
+  # format_* (expects the analysis object) and table UI (raw / blank content).
   if (identical(as.character(rep$type %||% ""), "table")) {
     html <- outs[grepl("\\.html$", outs, ignore.case = TRUE)]
     if (length(html)) {
       return(html)
+    }
+  }
+  # Figures: prefer a declared image over non-image outputs (rds, csv, …) so
+  # Display opens the saved figure and does not stack auxiliary sinks or call
+  # format_* to redraw it. When both PNG and other images (e.g. PDF) are
+  # listed, Display uses PNG only; other image types apply only if no PNG.
+  if (identical(as.character(rep$type %||% ""), "figure")) {
+    images <- outs[grepl(figure_display_image_ext_regex(), outs, ignore.case = TRUE)]
+    if (length(images)) {
+      pngs <- images[grepl("\\.png$", images, ignore.case = TRUE)]
+      if (length(pngs)) {
+        return(pngs)
+      }
+      return(images)
     }
   }
   outs

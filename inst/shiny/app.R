@@ -3655,6 +3655,10 @@ replications_to_df <- function(reps) {
         if (nzchar(desc)) desc else replication_display_label(primary)
       },
       type = as.character(primary$type),
+      family = {
+        fam <- trimws(as.character(primary$family[[1]] %||% primary$family %||% ""))
+        fam
+      },
       incomplete = isTRUE(primary$incomplete %||% FALSE),
       shiny_run = tryCatch(
         isTRUE(replicate_fn("step_shiny_run_enabled", primary)),
@@ -4542,10 +4546,28 @@ get_replications_meta <- function(doi, folder = NULL, repo = NULL) {
     }
   )
 
+  full_meta <- tryCatch({
+    replicate_fn(
+      "get_replication_meta",
+      doi,
+      folder = ctx$folder,
+      repo = ctx$repo
+    )
+  }, error = function(e) NULL)
+
+  sidebar_labels <- tryCatch({
+    if (is.null(full_meta)) {
+      character(0)
+    } else {
+      replicate_fn("study_sidebar_section_labels", full_meta)
+    }
+  }, error = function(e) character(0))
+
   list(
     replications = split$replications,
     prep = split$prep,
     data_order = data_order,
+    sidebar_labels = as.character(sidebar_labels %||% character(0)),
     error = if (replication_display_count(split$replications) == 0L) load_error else NULL,
     diagnostics = diagnostics
   )
@@ -4849,7 +4871,7 @@ as_figure_ui <- function(result) {
   # Multi-panel or single file-backed figure path(s) from load_artifact_panels().
   if (is.character(obj) && length(obj) >= 1L) {
     paths <- obj[nzchar(obj) & file.exists(obj)]
-    image_exts <- c("png", "svg", "jpg", "jpeg", "gif", "webp")
+    image_exts <- c("png", "pdf", "svg", "jpg", "jpeg", "gif", "webp")
     image_paths <- paths[tolower(tools::file_ext(paths)) %in% image_exts]
     html_paths <- paths[tolower(tools::file_ext(paths)) %in% c("html", "htm")]
 
@@ -4860,6 +4882,7 @@ as_figure_ui <- function(result) {
         mime <- switch(
           ext,
           png = "image/png",
+          pdf = "application/pdf",
           svg = "image/svg+xml",
           jpg = "image/jpeg",
           jpeg = "image/jpeg",
@@ -4872,13 +4895,23 @@ as_figure_ui <- function(result) {
           next
         }
         b64 <- jsonlite::base64_enc(raw)
-        panels[[length(panels) + 1L]] <- tags$div(
-          class = "replication-figure-panel mb-3",
+        src <- paste0("data:", mime, ";base64,", b64)
+        panel <- if (identical(ext, "pdf")) {
+          tags$embed(
+            src = src,
+            type = "application/pdf",
+            style = "width:100%;height:70vh;display:block;"
+          )
+        } else {
           tags$img(
-            src = paste0("data:", mime, ";base64,", b64),
+            src = src,
             alt = basename(p),
             style = "max-width:100%;height:auto;display:block;"
-          ),
+          )
+        }
+        panels[[length(panels) + 1L]] <- tags$div(
+          class = "replication-figure-panel mb-3",
+          panel,
           if (length(image_paths) + length(html_paths) > 1L) {
             tags$div(class = "small text-muted mt-1", basename(p))
           }
@@ -7618,6 +7651,7 @@ server <- function(input, output, session) {
     registry_folder = NULL,
     registry_repo = NULL,
     local_study_meta = NULL,
+    sidebar_labels = character(0),
     group_engines = list(),
     study_audit = NULL,
     study_audit_running = FALSE,
@@ -7940,6 +7974,7 @@ server <- function(input, output, session) {
         state$replications_df <- NULL
         state$replications_load_error <- e
         state$replications_index_diagnostics <- NULL
+        state$sidebar_labels <- character(0)
         state$selected_replication <- NULL
         state$selected_type <- NULL
         state$selected_result <- NULL
@@ -7988,6 +8023,7 @@ server <- function(input, output, session) {
     state$prep_steps <- meta$prep %||% list()
     state$prep_df <- prep_to_df(state$prep_steps)
     state$data_step_order <- meta$data_order %||% character(0)
+    state$sidebar_labels <- as.character(meta$sidebar_labels %||% character(0))
     state$replications_load_error <- meta$error
     if (
       is.null(state$replications_load_error) &&
@@ -9117,9 +9153,11 @@ server <- function(input, output, session) {
       return(replication_index_debug_ui(state$replications_index_diagnostics))
     }
 
-    figs <- reps[reps$type == "figure", , drop = FALSE]
-    tabs <- reps[reps$type == "table", , drop = FALSE]
+    # Exhibit rows stay in replication.yml order. A heading is emitted only
+    # when the type changes, so a study that declares figures before tables
+    # lists figures first. Ordinary transforms are not in this frame.
     transforms <- reps[reps$type == "transform", , drop = FALSE]
+    exhibit <- reps[reps$type %in% c("figure", "table"), , drop = FALSE]
     active <- state$selected_replication
     prep_df <- state$prep_df
     has_prep <- !is.null(prep_df) && nrow(prep_df) > 0
@@ -9424,31 +9462,94 @@ server <- function(input, output, session) {
       }
     }
 
-    tagList(
-      if (length(data_step_uis) > 0L) {
-        tagList(
-          tags$h6(class = "text-muted mb-2", "Data steps"),
-          data_step_uis
-        )
-      },
-      if (nrow(tabs) > 0) {
-        tagList(
-          tags$h6(class = "text-muted mb-2", "Tables"),
-          lapply(seq_len(nrow(tabs)), function(i) {
-            row <- tabs[i, , drop = FALSE]
-            replication_row(
-              row,
-              active_id = active,
-              engine = group_engine(row$group[[1]], row)
+    # Exhibit headings: optional yaml sidebar:/family: section mode; else
+    # legacy type-run-length Figures/Tables. Root sidebar: also places the
+    # reserved Steps token (prep/transform block); omit sidebar: for legacy
+    # Data steps on top.
+    sidebar_labels <- as.character(state$sidebar_labels %||% character(0))
+    exhibit_sections <- list()
+    if (!is.null(exhibit) && nrow(exhibit) > 0L) {
+      use_sections <- tryCatch(
+        isTRUE(replicate_fn(
+          "study_uses_sidebar_sections",
+          list(sidebar = sidebar_labels),
+          exhibit
+        )),
+        error = function(e) {
+          any(
+            nzchar(sidebar_labels) &
+              !tolower(trimws(sidebar_labels)) %in% c("steps", "data steps")
+          ) ||
+            ("family" %in% names(exhibit) && any(nzchar(as.character(exhibit$family))))
+        }
+      )
+      exhibit_sections <- tryCatch(
+        if (isTRUE(use_sections)) {
+          replicate_fn("exhibit_sidebar_sections", exhibit, sidebar_labels)
+        } else {
+          replicate_fn("exhibit_type_run_sections", exhibit)
+        },
+        error = function(e) {
+          # Fallback: previous type-run-length behavior.
+          types <- as.character(exhibit$type)
+          change <- c(TRUE, types[-1L] != types[-length(types)])
+          starts <- which(change)
+          ends <- c(starts[-1L] - 1L, length(types))
+          lapply(seq_along(starts), function(b) {
+            block <- exhibit[starts[[b]]:ends[[b]], , drop = FALSE]
+            list(
+              title = if (identical(types[[starts[[b]]]], "figure")) "Figures" else "Tables",
+              rows = block
             )
           })
+        }
+      )
+    }
+
+    plan <- tryCatch(
+      replicate_fn(
+        "sidebar_unified_plan",
+        sidebar_labels,
+        exhibit_sections,
+        length(data_step_uis) > 0L
+      ),
+      error = function(e) {
+        # Fallback: data first, then exhibits (legacy).
+        out <- list()
+        if (length(data_step_uis) > 0L) {
+          out[[length(out) + 1L]] <- list(kind = "data", title = "Data steps")
+        }
+        for (sec in exhibit_sections) {
+          out[[length(out) + 1L]] <- list(
+            kind = "exhibit",
+            title = sec$title,
+            rows = sec$rows
+          )
+        }
+        out
+      }
+    )
+
+    ordered_blocks <- list()
+    for (i in seq_along(plan)) {
+      item <- plan[[i]]
+      kind <- as.character(item$kind %||% "")
+      heading <- as.character(item$title %||% "")
+      heading_class <- if (i == 1L) "text-muted mb-2" else "text-muted mb-2 mt-2"
+      if (identical(kind, "data") && length(data_step_uis) > 0L) {
+        ordered_blocks[[length(ordered_blocks) + 1L]] <- tagList(
+          tags$h6(class = heading_class, if (nzchar(heading)) heading else "Steps"),
+          data_step_uis
         )
-      },
-      if (nrow(figs) > 0) {
-        tagList(
-          tags$h6(class = "text-muted mb-2 mt-2", "Figures"),
-          lapply(seq_len(nrow(figs)), function(i) {
-            row <- figs[i, , drop = FALSE]
+      } else if (identical(kind, "exhibit")) {
+        block <- item$rows
+        if (!nzchar(heading) || is.null(block) || !nrow(block)) {
+          next
+        }
+        ordered_blocks[[length(ordered_blocks) + 1L]] <- tagList(
+          tags$h6(class = heading_class, heading),
+          lapply(seq_len(nrow(block)), function(i_row) {
+            row <- block[i_row, , drop = FALSE]
             replication_row(
               row,
               active_id = active,
@@ -9457,7 +9558,8 @@ server <- function(input, output, session) {
           })
         )
       }
-    )
+    }
+    do.call(tagList, ordered_blocks)
   })
 
   observeEvent(input$engine_action, {
