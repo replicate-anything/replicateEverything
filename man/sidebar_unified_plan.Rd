@@ -14,8 +14,7 @@ sidebar_unified_plan(
 \item{sidebar_labels}{Full root \code{sidebar:} labels (may include Steps).}
 
 \item{exhibit_sections}{List of \code{list(title=, rows=)} from
-\code{\link[=exhibit_sidebar_sections]{exhibit_sidebar_sections()}} or
-\code{\link[=exhibit_type_run_sections]{exhibit_type_run_sections()}}.}
+\code{\link[=exhibit_sidebar_sections]{exhibit_sidebar_sections()}} or \code{\link[=exhibit_type_run_sections]{exhibit_type_run_sections()}}.}
 
 \item{has_data}{Logical: whether prep/transform rows exist to show.}
 }
@@ -31,13 +30,13 @@ legacy \code{Data steps}) marks where the data block appears.
 \details{
 Behavior:
 \itemize{
-  \item \code{sidebar:} omitted — legacy: data block first with heading
-    \strong{Data steps}, then exhibit sections.
-  \item \code{sidebar:} present with \code{Steps} — data block at that
-    position, heading \strong{Steps}. Empty Steps (no data rows) is omitted.
-  \item \code{sidebar:} present without \code{Steps} but data rows exist —
-    prepend data block at top (heading \strong{Steps}) so exhibit-only
-    lists keep the old default.
+\item \code{sidebar:} omitted — legacy: data block first with heading
+\strong{Data steps}, then exhibit sections.
+\item \code{sidebar:} present with \code{Steps} — data block at that
+position, heading \strong{Steps}. Empty Steps (no data rows) is omitted.
+\item \code{sidebar:} present without \code{Steps} but data rows exist —
+prepend data block at top (heading \strong{Steps}) so exhibit-only
+lists keep the old default.
 }
 }
 \keyword{internal}
